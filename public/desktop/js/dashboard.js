@@ -195,3 +195,16 @@ iniciarDashboard();
 setInterval(() => {
     cargarDashboard();
 }, 5000);
+
+// Botón cerrar sesión
+document.getElementById('btnLogout')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    if (confirm('¿Cerrar sesión?')) {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            window.location.href = '/login';
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+        }
+    }
+});

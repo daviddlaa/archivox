@@ -57,3 +57,16 @@ function renderCharts(datos, segmentos) {
 }
 
 window.addEventListener('DOMContentLoaded', cargarDatos);
+
+// Botón cerrar sesión
+document.getElementById('btnLogout')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    if (confirm('¿Cerrar sesión?')) {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            window.location.href = '/m/login';
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+        }
+    }
+});
