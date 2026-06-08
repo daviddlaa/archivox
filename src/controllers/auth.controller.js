@@ -1,8 +1,8 @@
 const bcrypt = require('bcryptjs');
-const db = require('../config/database');
+const pool = require('../config/database.pg.js');
 
 // Registro de usuario
-exports.registrar = (req, res) => {
+exports.registrar = async (req, res) => {
     const { username, password, nombre } = req.body;
 
     if (!username || !password) {
@@ -11,33 +11,33 @@ exports.registrar = (req, res) => {
         });
     }
 
-    // Hashear contraseña
-    const passwordHash = bcrypt.hashSync(password, 10);
-
     try {
-        const stmt = db.prepare(
-            `INSERT INTO usuarios (username, password, nombre) VALUES (?, ?, ?)`
+        // Hashear contraseña
+        const passwordHash = bcrypt.hashSync(password, 10);
+
+        const result = await pool.query(
+            'INSERT INTO usuarios (username, password, nombre) VALUES ($1, $2, $3) RETURNING id',
+            [username, passwordHash, nombre || username]
         );
-        const result = stmt.run(username, passwordHash, nombre || username);
 
         res.json({
             mensaje: 'Usuario registrado correctamente',
-            usuarioId: result.lastInsertRowid
+            usuarioId: result.rows[0].id
         });
     } catch (err) {
-        if (err.message.includes('UNIQUE constraint failed')) {
+        if (err.code === '23505') { // UNIQUE constraint
             return res.status(400).json({
                 error: 'El usuario ya existe'
             });
         }
-        return res.status(500).json({
+        res.status(500).json({
             error: err.message
         });
     }
 };
 
 // Login de usuario
-exports.login = (req, res) => {
+exports.login = async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -47,10 +47,12 @@ exports.login = (req, res) => {
     }
 
     try {
-        const stmt = db.prepare(
-            `SELECT * FROM usuarios WHERE username = ?`
+        const result = await pool.query(
+            'SELECT * FROM usuarios WHERE username = $1',
+            [username]
         );
-        const usuario = stmt.get(username);
+
+        const usuario = result.rows[0];
 
         if (!usuario) {
             return res.status(401).json({
@@ -67,9 +69,10 @@ exports.login = (req, res) => {
         }
 
         // Actualizar último login
-        db.prepare(
-            `UPDATE usuarios SET ultimo_login = CURRENT_TIMESTAMP WHERE id = ?`
-        ).run(usuario.id);
+        await pool.query(
+            'UPDATE usuarios SET ultimo_login = CURRENT_TIMESTAMP WHERE id = $1',
+            [usuario.id]
+        );
 
         // Guardar usuario en sesión
         req.session.usuario = {
@@ -89,7 +92,7 @@ exports.login = (req, res) => {
             }
         });
     } catch (err) {
-        return res.status(500).json({
+        res.status(500).json({
             error: err.message
         });
     }
@@ -125,7 +128,7 @@ exports.verificarSesion = (req, res) => {
 };
 
 // Listar usuarios (solo admin)
-exports.listarUsuarios = (req, res) => {
+exports.listarUsuarios = async (req, res) => {
     if (req.session.usuario.rol !== 'admin') {
         return res.status(403).json({
             error: 'Acceso denegado'
@@ -133,14 +136,13 @@ exports.listarUsuarios = (req, res) => {
     }
 
     try {
-        const stmt = db.prepare(
-            `SELECT id, username, nombre, rol, created_at, ultimo_login FROM usuarios ORDER BY created_at DESC`
+        const result = await pool.query(
+            'SELECT id, username, nombre, rol, created_at, ultimo_login FROM usuarios ORDER BY created_at DESC'
         );
-        const usuarios = stmt.all();
 
-        res.json(usuarios);
+        res.json(result.rows);
     } catch (err) {
-        return res.status(500).json({
+        res.status(500).json({
             error: err.message
         });
     }

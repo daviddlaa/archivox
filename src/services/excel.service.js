@@ -1,6 +1,6 @@
 const ExcelJS = require('exceljs');
 const fs = require('fs');
-const db = require('../config/database');
+const pool = require('../config/database.pg.js');
 
 exports.procesarExcel = async (filePath) => {
 
@@ -17,66 +17,70 @@ exports.procesarExcel = async (filePath) => {
     });
 
     let procesados = 0;
+    const client = await pool.connect();
 
-    // Usar prepared statement para mejor-sqlite3
-    const stmt = db.prepare(`
-        INSERT INTO solicitudes
-        (
-            id_solicitud,
-            estado,
-            cedula,
-            nombre,
-            celular,
-            segmento,
-            producto,
-            fecha_solicitud
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    try {
+        // Iniciar transacción
+        await client.query('BEGIN');
 
-        ON CONFLICT(id_solicitud)
-        DO UPDATE SET
-            estado = excluded.estado,
-            cedula = excluded.cedula,
-            nombre = excluded.nombre,
-            celular = excluded.celular,
-            segmento = excluded.segmento,
-            producto = excluded.producto,
-            fecha_solicitud = excluded.fecha_solicitud,
-            fecha_actualizacion = CURRENT_TIMESTAMP
-    `);
+        const stmt = await client.prepare(`
+            INSERT INTO solicitudes
+            (
+                id_solicitud,
+                estado,
+                cedula,
+                nombre,
+                celular,
+                segmento,
+                producto,
+                fecha_solicitud
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 
-    const insertMany = db.transaction((rows) => {
-        for (const row of rows) {
-            stmt.run(
-                row.IDSOLICITUD,
-                row.ESTADO,
-                row.CEDULA,
-                row.NOMBRE,
-                row.CELULAR,
-                row.SEGMENTO,
-                row.PRODUCTO,
-                row.FECHASOLICITUD
-            );
+            ON CONFLICT(id_solicitud)
+            DO UPDATE SET
+                estado = EXCLUDED.estado,
+                cedula = EXCLUDED.cedula,
+                nombre = EXCLUDED.nombre,
+                celular = EXCLUDED.celular,
+                segmento = EXCLUDED.segmento,
+                producto = EXCLUDED.producto,
+                fecha_solicitud = EXCLUDED.fecha_solicitud,
+                fecha_actualizacion = CURRENT_TIMESTAMP
+        `);
+
+        for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+
+            const row = worksheet.getRow(rowNumber);
+
+            const registro = {};
+
+            row.eachCell((cell, colNumber) => {
+                registro[headers[colNumber - 1]] = cell.value;
+            });
+
+await stmt.query([
+                registro.IDSOLICITUD,
+                registro.ESTADO,
+                registro.CEDULA,
+                registro.NOMBRE,
+                registro.CELULAR,
+                registro.SEGMENTO,
+                registro.PRODUCTO,
+                registro.FECHASOLICITUD
+            ]);
+
             procesados++;
         }
-    });
 
-    const rows = [];
+        await client.query('COMMIT');
 
-    for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
-
-        const row = worksheet.getRow(rowNumber);
-
-        const registro = {};
-
-        row.eachCell((cell, colNumber) => {
-            registro[headers[colNumber - 1]] = cell.value;
-        });
-
-        rows.push(registro);
+    } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+    } finally {
+        client.release();
     }
-
-    insertMany(rows);
 
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);

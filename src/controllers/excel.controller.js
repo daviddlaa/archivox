@@ -1,5 +1,5 @@
 const excelService = require('../services/excel.service');
-const db = require('../config/database');
+const pool = require('../config/database.pg.js');
 
 exports.uploadExcel = async (req, res) => {
 
@@ -44,7 +44,7 @@ exports.uploadExcel = async (req, res) => {
 
 };
 
-exports.listarSolicitudes = (req, res) => {
+exports.listarSolicitudes = async (req, res) => {
 
     const {
         estado,
@@ -60,27 +60,27 @@ exports.listarSolicitudes = (req, res) => {
     const params = [];
 
     if (estado) {
-        sql += ' AND estado = ?';
+        sql += ' AND estado = $' + (params.length + 1);
         params.push(estado);
     }
 
     if (segmento) {
-        sql += ' AND segmento = ?';
+        sql += ' AND segmento = $' + (params.length + 1);
         params.push(segmento);
     }
 
     if (cedula) {
-        sql += ' AND cedula = ?';
+        sql += ' AND cedula = $' + (params.length + 1);
         params.push(cedula);
     }
 
     if (producto) {
-        sql += ' AND producto = ?';
+        sql += ' AND producto = $' + (params.length + 1);
         params.push(producto);
     }
 
     if (nombre) {
-        sql += ' AND nombre LIKE ?';
+        sql += ' AND nombre ILIKE $' + (params.length + 1);
         params.push('%' + nombre + '%');
     }
 
@@ -98,10 +98,8 @@ exports.listarSolicitudes = (req, res) => {
     sql = sql + ' ORDER BY ' + columnaOrden + ' ' + direccionOrden;
 
     try {
-        const stmt = db.prepare(sql);
-        const rows = params.length > 0 ? stmt.all(...params) : stmt.all();
-
-        res.json(rows);
+        const result = await pool.query(sql, params);
+        res.json(result.rows);
     } catch (err) {
         return res.status(500).json({
             error: err.message
@@ -109,53 +107,22 @@ exports.listarSolicitudes = (req, res) => {
     }
 
 };
-exports.dashboard = (req, res) => {
+
+exports.dashboard = async (req, res) => {
 
     const sql = `
         SELECT
-
             COUNT(*) as total,
-
-            SUM(
-                CASE
-                    WHEN estado = 'ACTIVADA'
-                    THEN 1
-                    ELSE 0
-                END
-            ) as activadas,
-
-            SUM(
-                CASE
-                    WHEN estado = 'RECHAZADA'
-                    THEN 1
-                    ELSE 0
-                END
-            ) as rechazadas,
-
-            SUM(
-                CASE
-                    WHEN estado = 'DEVUELTA'
-                    THEN 1
-                    ELSE 0
-                END
-            ) as devueltas,
-
-            SUM(
-                CASE
-                    WHEN estado = 'APROBADA PARA LIBERACIÓN'
-                    THEN 1
-                    ELSE 0
-                END
-            ) as pendientes
-
+            SUM(CASE WHEN estado = 'ACTIVADA' THEN 1 ELSE 0 END) as activadas,
+            SUM(CASE WHEN estado = 'RECHAZADA' THEN 1 ELSE 0 END) as rechazadas,
+            SUM(CASE WHEN estado = 'DEVUELTA' THEN 1 ELSE 0 END) as devueltas,
+            SUM(CASE WHEN estado = 'APROBADA PARA LIBERACIÓN' THEN 1 ELSE 0 END) as pendientes
         FROM solicitudes
     `;
 
     try {
-        const stmt = db.prepare(sql);
-        const row = stmt.get();
-
-        res.json(row);
+        const result = await pool.query(sql);
+        res.json(result.rows[0]);
     } catch (err) {
         return res.status(500).json({
             error: err.message
@@ -163,7 +130,8 @@ exports.dashboard = (req, res) => {
     }
 
 };
-exports.dashboardSegmentos = (req, res) => {
+
+exports.dashboardSegmentos = async (req, res) => {
 
     const sql = `
         SELECT
@@ -175,10 +143,8 @@ exports.dashboardSegmentos = (req, res) => {
     `;
 
     try {
-        const stmt = db.prepare(sql);
-        const rows = stmt.all();
-
-        res.json(rows);
+        const result = await pool.query(sql);
+        res.json(result.rows);
     } catch (err) {
         return res.status(500).json({
             error: err.message
@@ -186,7 +152,8 @@ exports.dashboardSegmentos = (req, res) => {
     }
 
 };
-exports.dashboardEstados = (req, res) => {
+
+exports.dashboardEstados = async (req, res) => {
 
     const sql = `
         SELECT
@@ -198,10 +165,8 @@ exports.dashboardEstados = (req, res) => {
     `;
 
     try {
-        const stmt = db.prepare(sql);
-        const rows = stmt.all();
-
-        res.json(rows);
+        const result = await pool.query(sql);
+        res.json(result.rows);
     } catch (err) {
         return res.status(500).json({
             error: err.message
@@ -211,7 +176,7 @@ exports.dashboardEstados = (req, res) => {
 };
 
 // Segmentos filtrados por estado
-exports.dashboardSegmentosFiltrado = (req, res) => {
+exports.dashboardSegmentosFiltrado = async (req, res) => {
     const { estado } = req.query;
     
     let sql = `
@@ -220,18 +185,18 @@ exports.dashboardSegmentosFiltrado = (req, res) => {
             COUNT(*) as total
         FROM solicitudes
     `;
+    const params = [];
     
     if (estado) {
-        sql += ' WHERE estado = ?';
+        sql += ' WHERE estado = $1';
+        params.push(estado);
     }
     
     sql += ' GROUP BY segmento ORDER BY total DESC';
 
     try {
-        const stmt = db.prepare(sql);
-        const rows = estado ? stmt.all(estado) : stmt.all();
-
-        res.json(rows);
+        const result = await pool.query(sql, params);
+        res.json(result.rows);
     } catch (err) {
         return res.status(500).json({
             error: err.message
@@ -241,7 +206,7 @@ exports.dashboardSegmentosFiltrado = (req, res) => {
 };
 
 // Estados filtrados por segmento
-exports.dashboardEstadosFiltrado = (req, res) => {
+exports.dashboardEstadosFiltrado = async (req, res) => {
     const { segmento } = req.query;
     
     let sql = `
@@ -250,18 +215,18 @@ exports.dashboardEstadosFiltrado = (req, res) => {
             COUNT(*) as total
         FROM solicitudes
     `;
+    const params = [];
     
     if (segmento) {
-        sql += ' WHERE segmento = ?';
+        sql += ' WHERE segmento = $1';
+        params.push(segmento);
     }
     
     sql += ' GROUP BY estado ORDER BY total DESC';
 
     try {
-        const stmt = db.prepare(sql);
-        const rows = segmento ? stmt.all(segmento) : stmt.all();
-
-        res.json(rows);
+        const result = await pool.query(sql, params);
+        res.json(result.rows);
     } catch (err) {
         return res.status(500).json({
             error: err.message

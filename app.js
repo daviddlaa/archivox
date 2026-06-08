@@ -6,9 +6,14 @@ const session = require('express-session');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
-require('./src/config/initDb');
+// Usar PostgreSQL (Render)
+require('./src/config/initDb.pg');
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// IMPORTANTE: Habilitar trust proxy para que express-rate-limit funcione detrás de proxies (Render, Nginx, etc.)
+// Esto permite leer el header X-Forwarded-For correctamente
+app.set('trust proxy', 1);
 
 // SEGURIDAD: helmet establece headers seguros
 // CSP desactivado temporalmente para permitir scripts inline en producción
