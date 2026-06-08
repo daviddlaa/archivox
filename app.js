@@ -11,15 +11,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // SEGURIDAD: helmet establece headers seguros
+// CSP desactivado temporalmente para permitir scripts inline en producción
 app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            scriptSrc: ["'self'"],
-            imgSrc: ["'self'", "data:"],
-        },
-    },
+    contentSecurityPolicy: false,
 }));
 
 // Middlewares globales
