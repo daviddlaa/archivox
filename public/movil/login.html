@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Archivox</title>
+<link rel="stylesheet" href="/css/login.css">
+    <style>
+        .login-container {
+            max-width: 100%;
+            margin: 10px;
+            padding: 30px 20px;
+        }
+        .login-logo h1 {
+            font-size: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-logo">
+            <h1>📊 Archivox</h1>
+            <p>Sistema de Gestión</p>
+        </div>
+
+        <div id="mensaje"></div>
+
+        <!-- Formulario de Login -->
+        <form id="loginForm" class="login-form">
+            <div class="form-group">
+                <label for="username">Usuario</label>
+                <input type="text" id="username" name="username" required placeholder="Usuario">
+            </div>
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" name="password" required placeholder="Contraseña">
+            </div>
+            <button type="submit" class="btn-login">Entrar</button>
+        </form>
+
+        <div class="toggle-form">
+            <p>¿Sin cuenta? <button type="button" onclick="mostrarRegistro()">Regístrate</button></p>
+        </div>
+
+        <!-- Formulario de Registro -->
+        <form id="registroForm" class="login-form" style="display: none;">
+            <div class="form-group">
+                <label for="regUsername">Usuario</label>
+                <input type="text" id="regUsername" name="username" required placeholder="Usuario">
+            </div>
+            <div class="form-group">
+                <label for="regPassword">Contraseña</label>
+                <input type="password" id="regPassword" name="password" required placeholder="Contraseña">
+            </div>
+            <div class="form-group">
+                <label for="regNombre">Nombre (opcional)</label>
+                <input type="text" id="regNombre" name="nombre" placeholder="Nombre">
+            </div>
+            <button type="submit" class="btn-login">Crear Cuenta</button>
+            <button type="button" class="btn-switch" onclick="mostrarLogin()">← Volver</button>
+        </form>
+    </div>
+
+<script src="/js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitudes - Archivox</title>
+<link rel="stylesheet" href="/css/solicitudes.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .header-actions h1 {
+            margin: 0;
+            color: #1f2937;
+        }
+        .subtitulo {
+            color: #6b7280;
+            margin-top: 5px;
+            margin-bottom: 0;
+        }
+        .btn-principal {
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .btn-principal:hover {
+            background: #1d4ed8;
+        }
+        .btn-secundario {
+            background: #f3f4f6;
+            color: #374151;
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            margin-right: 10px;
+        }
+        .btn-secundario:hover {
+            background: #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-actions">
+            <div>
+                <h1>📋 Solicitudes</h1>
+                <p class="subtitulo">Consulta y filtra los registros importados</p>
+            </div>
+            <div>
+                <a href="/" class="btn-secundario">🏠 Dashboard</a>
+                <a href="/importar" class="btn-principal">📤 Importar Excel</a>
+            </div>
+        </div>
+        
+<div class="stats">
+            <div class="mini-card">
+                <span id="totalRegistros">0</span>
+                <small>Total Registros</small>
+            </div>
+            <div class="mini-card">
+                <span id="mostrando">0</span>
+                <small>Mostrando</small>
+            </div>
+            <div class="mini-card">
+                <span id="seleccionadas-count">0</span>
+                <small>Seleccionadas</small>
+            </div>
+<div class="actions-mini">
+                <button class="btn-action btn-whatsapp" id="btn-whatsapp" title="Enviar a WhatsApp" style="display:none;">📱 Enviar datos a WhatsApp</button>
+            </div>
+        </div>
+
+        <div class="filters-container">
+            <div class="filter-section">
+                <label>Estado</label>
+                <div class="filter-buttons" id="filtro-estado">
+                    <button class="filter-btn active" data-value="">Todos</button>
+                </div>
+            </div>
+            <div class="filter-section">
+                <label>Segmento</label>
+                <div class="filter-buttons" id="filtro-segmento">
+                    <button class="filter-btn active" data-value="">Todos</button>
+                </div>
+            </div>
+            <div class="search-section">
+                <input type="text" id="cedula" placeholder="🔍 Buscar por cédula y por nombres y apellidos">
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="th-checkbox">
+                            <input type="checkbox" id="seleccionar-todos" title="Seleccionar todos">
+                        </th>
+                        <th class="sortable" data-columna="id_solicitud">Solicitud</th>
+                        <th class="sortable" data-columna="estado">Estado</th>
+<th class="sortable" data-columna="cedula">Cédula</th>
+                        <th class="sortable" data-columna="nombre">Nombre</th>
+                        <th class="sortable" data-columna="celular">Celular</th>
+                        <th class="sortable" data-columna="segmento">Segmento</th>
+                        <th class="sortable" data-columna="producto">Producto</th>
+                        <th class="sortable" data-columna="fecha_solicitud">Fecha Solicitud</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+<script src="/desktop/js/solicitudes.js"></script>
+</body>
+</html>

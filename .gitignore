@@ -1,0 +1,18 @@
+# Node_modules
+node_modules/
+
+# Archivos de entorno (contienen secretos)
+.env
+
+# Base de datos
+*.db
+
+# Archivos de uploads temporales
+uploads/*
+
+# Logs
+*.log
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

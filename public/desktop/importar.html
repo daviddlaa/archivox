@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar Excel - Archivox</title>
+<link rel="stylesheet" href="/css/importar.css">
+    <style>
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            color: white;
+            padding: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+        }
+        .sidebar .logo h2 {
+            margin: 0;
+            font-size: 24px;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .sidebar nav a {
+            color: #d1d5db;
+            text-decoration: none;
+            padding: 12px 16px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-size: 15px;
+        }
+        .sidebar nav a:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+        .contenido {
+            margin-left: 250px;
+            padding: 30px;
+            min-height: 100vh;
+            background: #f0f2f5;
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo">
+            <h2>📊 Archivox</h2>
+        </div>
+        <nav>
+            <a href="/">📊 Dashboard</a>
+            <a href="/importar">📤 Importar Excel</a>
+            <a href="/solicitudes">📋 Solicitudes</a>
+        </nav>
+    </aside>
+
+    <main class="contenido">
+        <div class="container">
+            <h1>📤 Importar Excel</h1>
+            <p style="color:#6b7280;margin-bottom:20px;">Sube tus archivos Excel (.xlsx, .xls) para importar solicitudes</p>
+            
+            <form id="formExcel">
+                <input type="file" id="excelFiles" name="excelFiles" multiple accept=".xlsx,.xls">
+                <button type="submit">📤 Subir Archivos</button>
+            </form>
+
+            <div id="mensaje"></div>
+        </div>
+    </main>
+
+<script src="/desktop/js/importar.js"></script>
+</body>
+</html>

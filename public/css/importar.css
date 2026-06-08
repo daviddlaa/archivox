@@ -1,0 +1,237 @@
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:#f5f7fb;
+}
+
+.container{
+    max-width:800px;
+    margin:40px auto;
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+}
+
+h1{
+    margin-top:0;
+    color:#1f2937;
+}
+
+form{
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+input[type="file"]{
+    border:2px dashed #cbd5e1;
+    padding:20px;
+    border-radius:10px;
+    background:#f8fafc;
+    cursor:pointer;
+}
+
+input[type="file"]:hover{
+    background:#eef4ff;
+}
+
+button{
+    background:#2563eb;
+    color:white;
+    border:none;
+    padding:12px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:15px;
+}
+
+button:hover{
+    background:#1d4ed8;
+}
+
+button:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+}
+
+.info{
+    background:#eef4ff;
+    border-left:4px solid #2563eb;
+    padding:15px;
+    border-radius:8px;
+}
+
+.loading{
+    background:#fff8db;
+    border-left:4px solid #f59e0b;
+    padding:15px;
+    border-radius:8px;
+}
+
+.success{
+    background:#ecfdf5;
+    border-left:4px solid #10b981;
+    padding:15px;
+    border-radius:8px;
+}
+
+.error{
+    background:#fef2f2;
+    border-left:4px solid #ef4444;
+    padding:15px;
+    border-radius:8px;
+}
+
+.archivo{
+    padding:5px 0;
+    border-bottom:1px solid #eee;
+}
+
+.archivo:last-child{
+    border-bottom:none;
+}
+.btn-ver{
+    display:inline-block;
+    margin-top:15px;
+    background:#2563eb;
+    color:white;
+    text-decoration:none;
+    padding:10px 15px;
+    border-radius:8px;
+    font-weight:bold;
+}
+
+.btn-ver:hover{
+    background:#1d4ed8;
+}
+.topbar{
+    max-width:800px;
+    margin:20px auto 0;
+    display:flex;
+    gap:10px;
+}
+
+.btn-nav{
+    background:#1f2937;
+    color:white;
+    text-decoration:none;
+    padding:10px 15px;
+    border-radius:8px;
+    font-size:14px;
+}
+
+.btn-nav:hover{
+    background:#374151;
+}
+
+/* Menú Hamburguesa */
+.menu-toggle{
+    display:none;
+    position:fixed;
+    top:15px;
+    right:15px;
+    z-index:1000;
+    background:#1f2937;
+    color:white;
+    border:none;
+    padding:12px;
+    border-radius:8px;
+    font-size:24px;
+    cursor:pointer;
+    box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}
+
+.menu-overlay{
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.5);
+    z-index:999;
+}
+
+.sidebar.movil{
+    transform:translateX(-100%);
+}
+
+@media (max-width: 768px){
+    .menu-toggle{
+        display:block;
+    }
+    
+    .menu-overlay.active{
+        display:block;
+    }
+    
+    .topbar{
+        margin-top:70px;
+    }
+    
+    .sidebar{
+        position:fixed;
+        top:0;
+        left:0;
+        width:280px;
+        height:100vh;
+        background:linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        color:white;
+        padding:20px;
+        z-index:1001;
+        transition:transform 0.3s ease;
+    }
+    
+    .sidebar.movil{
+        transform:translateX(0);
+    }
+    
+    .sidebar .logo h2{
+        font-size:24px;
+    }
+    
+    .sidebar nav{
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+        margin-top:30px;
+    }
+    
+    .sidebar nav a{
+        color:#d1d5db;
+        text-decoration:none;
+        padding:12px 16px;
+        border-radius:10px;
+        font-size:15px;
+    }
+    
+    .menu-close{
+        position:absolute;
+        top:15px;
+        right:15px;
+        background:none;
+        border:none;
+        color:white;
+        font-size:28px;
+        cursor:pointer;
+    }
+    
+    .container{
+        margin:20px 15px;
+        padding:20px;
+    }
+    
+    .container h1{
+        font-size:22px;
+    }
+    
+    input[type="file"]{
+        padding:25px 15px;
+    }
+    
+    button[type="submit"]{
+        padding:15px;
+        font-size:16px;
+    }
+}

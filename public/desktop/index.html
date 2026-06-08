@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Archivox</title>
+<link rel="stylesheet" href="/css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>📊 Archivox</h2>
+            </div>
+            <nav>
+                <a href="/">📊 Dashboard</a>
+                <a href="/importar">📤 Importar Excel</a>
+                <a href="/solicitudes">📋 Solicitudes</a>
+            </nav>
+        </aside>
+        <main class="contenido">
+            <h1>Dashboard</h1>
+            <div class="cards">
+                <div class="card card-total">
+                    <div class="card-icon">📄</div>
+                    <div class="card-content">
+                        <h3>Total Solicitudes</h3>
+                        <span id="totalSolicitudes">0</span>
+                    </div>
+                </div>
+                <div class="card card-verde">
+                    <div class="card-icon">✅</div>
+                    <div class="card-content">
+                        <h3>Activadas</h3>
+                        <span id="totalActivadas">0</span>
+                    </div>
+                </div>
+                <div class="card card-rojo">
+                    <div class="card-icon">❌</div>
+                    <div class="card-content">
+                        <h3>Rechazadas</h3>
+                        <span id="totalRechazadas">0</span>
+                    </div>
+                </div>
+                <div class="card card-amarillo">
+                    <div class="card-icon">⏳</div>
+                    <div class="card-content">
+                        <h3>Pendientes</h3>
+                        <span id="totalPendientes">0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bienvenida">
+                <h2>Bienvenido al sistema</h2>
+                <p>Desde aquí podrás importar Excel, consultar solicitudes y monitorear el estado de los créditos.</p>
+            </div>
+            <div class="dashboard-grid">
+                <div class="panel">
+                    <h3>📊 Estados</h3>
+                    <div class="chart-container">
+                        <canvas id="chartEstados"></canvas>
+                    </div>
+                </div>
+                <div class="panel">
+                    <h3>🎯 Segmentos</h3>
+                    <div class="chart-container">
+                        <canvas id="chartSegmentos"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+<script src="/desktop/js/dashboard.js"></script>
+</body>
+</html>
