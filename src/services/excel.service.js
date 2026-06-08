@@ -23,7 +23,7 @@ exports.procesarExcel = async (filePath) => {
         // Iniciar transacción
         await client.query('BEGIN');
 
-        const stmt = await client.prepare(`
+        const sql = `
             INSERT INTO solicitudes
             (
                 id_solicitud,
@@ -47,7 +47,7 @@ exports.procesarExcel = async (filePath) => {
                 producto = EXCLUDED.producto,
                 fecha_solicitud = EXCLUDED.fecha_solicitud,
                 fecha_actualizacion = CURRENT_TIMESTAMP
-        `);
+        `;
 
         for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
 
@@ -59,7 +59,7 @@ exports.procesarExcel = async (filePath) => {
                 registro[headers[colNumber - 1]] = cell.value;
             });
 
-await stmt.query([
+            await client.query(sql, [
                 registro.IDSOLICITUD,
                 registro.ESTADO,
                 registro.CEDULA,
