@@ -18,6 +18,51 @@ exports.procesarExcel = async (filePath) => {
 
     let procesados = 0;
 
+    // Usar prepared statement para mejor-sqlite3
+    const stmt = db.prepare(`
+        INSERT INTO solicitudes
+        (
+            id_solicitud,
+            estado,
+            cedula,
+            nombre,
+            celular,
+            segmento,
+            producto,
+            fecha_solicitud
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+
+        ON CONFLICT(id_solicitud)
+        DO UPDATE SET
+            estado = excluded.estado,
+            cedula = excluded.cedula,
+            nombre = excluded.nombre,
+            celular = excluded.celular,
+            segmento = excluded.segmento,
+            producto = excluded.producto,
+            fecha_solicitud = excluded.fecha_solicitud,
+            fecha_actualizacion = CURRENT_TIMESTAMP
+    `);
+
+    const insertMany = db.transaction((rows) => {
+        for (const row of rows) {
+            stmt.run(
+                row.IDSOLICITUD,
+                row.ESTADO,
+                row.CEDULA,
+                row.NOMBRE,
+                row.CELULAR,
+                row.SEGMENTO,
+                row.PRODUCTO,
+                row.FECHASOLICITUD
+            );
+            procesados++;
+        }
+    });
+
+    const rows = [];
+
     for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
 
         const row = worksheet.getRow(rowNumber);
@@ -28,59 +73,10 @@ exports.procesarExcel = async (filePath) => {
             registro[headers[colNumber - 1]] = cell.value;
         });
 
-        await new Promise((resolve, reject) => {
-
-            db.run(
-                `
-                INSERT INTO solicitudes
-                (
-                    id_solicitud,
-                    estado,
-                    cedula,
-                    nombre,
-                    celular,
-                    segmento,
-                    producto,
-                    fecha_solicitud
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-
-                ON CONFLICT(id_solicitud)
-                DO UPDATE SET
-                    estado = excluded.estado,
-                    cedula = excluded.cedula,
-                    nombre = excluded.nombre,
-                    celular = excluded.celular,
-                    segmento = excluded.segmento,
-                    producto = excluded.producto,
-                    fecha_solicitud = excluded.fecha_solicitud,
-                    fecha_actualizacion = CURRENT_TIMESTAMP
-                `,
-                [
-                    registro.IDSOLICITUD,
-                    registro.ESTADO,
-                    registro.CEDULA,
-                    registro.NOMBRE,
-                    registro.CELULAR,
-                    registro.SEGMENTO,
-                    registro.PRODUCTO,
-                    registro.FECHASOLICITUD
-                ],
-                function (err) {
-
-                    if (err) {
-                        reject(err);
-                    } else {
-                        procesados++;
-                        resolve();
-                    }
-
-                }
-            );
-
-        });
-
+        rows.push(registro);
     }
+
+    insertMany(rows);
 
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);

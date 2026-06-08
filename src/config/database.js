@@ -1,7 +1,7 @@
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 const path = require('path');
 
-const db = new sqlite3.Database(
+const db = new Database(
     path.join(__dirname, '../../database.db'),
     (err) => {
         if (err) {
@@ -11,5 +11,8 @@ const db = new sqlite3.Database(
         }
     }
 );
+
+// Configurar para mejor compatibilidad
+db.pragma('journal_mode = WAL');
 
 module.exports = db;

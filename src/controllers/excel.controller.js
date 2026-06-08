@@ -97,17 +97,16 @@ exports.listarSolicitudes = (req, res) => {
     let direccionOrden = direccion === 'ASC' ? 'ASC' : 'DESC';
     sql = sql + ' ORDER BY ' + columnaOrden + ' ' + direccionOrden;
 
-    db.all(sql, params, function(err, rows) {
-
-        if (err) {
-            return res.status(500).json({
-                error: err.message
-            });
-        }
+    try {
+        const stmt = db.prepare(sql);
+        const rows = params.length > 0 ? stmt.all(...params) : stmt.all();
 
         res.json(rows);
-
-    });
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
 
 };
 exports.dashboard = (req, res) => {
@@ -152,19 +151,16 @@ exports.dashboard = (req, res) => {
         FROM solicitudes
     `;
 
-    db.get(sql, [], (err, row) => {
-
-        if (err) {
-
-            return res.status(500).json({
-                error: err.message
-            });
-
-        }
+    try {
+        const stmt = db.prepare(sql);
+        const row = stmt.get();
 
         res.json(row);
-
-    });
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
 
 };
 exports.dashboardSegmentos = (req, res) => {
@@ -178,19 +174,16 @@ exports.dashboardSegmentos = (req, res) => {
         ORDER BY total DESC
     `;
 
-    db.all(sql, [], (err, rows) => {
-
-        if (err) {
-
-            return res.status(500).json({
-                error: err.message
-            });
-
-        }
+    try {
+        const stmt = db.prepare(sql);
+        const rows = stmt.all();
 
         res.json(rows);
-
-    });
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
 
 };
 exports.dashboardEstados = (req, res) => {
@@ -204,19 +197,16 @@ exports.dashboardEstados = (req, res) => {
         ORDER BY total DESC
     `;
 
-    db.all(sql, [], (err, rows) => {
-
-        if (err) {
-
-            return res.status(500).json({
-                error: err.message
-            });
-
-        }
+    try {
+        const stmt = db.prepare(sql);
+        const rows = stmt.all();
 
         res.json(rows);
-
-    });
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
 
 };
 
@@ -230,26 +220,23 @@ exports.dashboardSegmentosFiltrado = (req, res) => {
             COUNT(*) as total
         FROM solicitudes
     `;
-    const params = [];
     
     if (estado) {
         sql += ' WHERE estado = ?';
-        params.push(estado);
     }
     
     sql += ' GROUP BY segmento ORDER BY total DESC';
 
-    db.all(sql, params, (err, rows) => {
-
-        if (err) {
-            return res.status(500).json({
-                error: err.message
-            });
-        }
+    try {
+        const stmt = db.prepare(sql);
+        const rows = estado ? stmt.all(estado) : stmt.all();
 
         res.json(rows);
-
-    });
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
 
 };
 
@@ -263,25 +250,22 @@ exports.dashboardEstadosFiltrado = (req, res) => {
             COUNT(*) as total
         FROM solicitudes
     `;
-    const params = [];
     
     if (segmento) {
         sql += ' WHERE segmento = ?';
-        params.push(segmento);
     }
     
     sql += ' GROUP BY estado ORDER BY total DESC';
 
-    db.all(sql, params, (err, rows) => {
-
-        if (err) {
-            return res.status(500).json({
-                error: err.message
-            });
-        }
+    try {
+        const stmt = db.prepare(sql);
+        const rows = segmento ? stmt.all(segmento) : stmt.all();
 
         res.json(rows);
-
-    });
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
 
 };

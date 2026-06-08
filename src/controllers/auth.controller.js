@@ -14,27 +14,26 @@ exports.registrar = (req, res) => {
     // Hashear contraseña
     const passwordHash = bcrypt.hashSync(password, 10);
 
-    db.run(
-        `INSERT INTO usuarios (username, password, nombre) VALUES (?, ?, ?)`,
-        [username, passwordHash, nombre || username],
-        function(err) {
-            if (err) {
-                if (err.message.includes('UNIQUE constraint failed')) {
-                    return res.status(400).json({
-                        error: 'El usuario ya existe'
-                    });
-                }
-                return res.status(500).json({
-                    error: err.message
-                });
-            }
+    try {
+        const stmt = db.prepare(
+            `INSERT INTO usuarios (username, password, nombre) VALUES (?, ?, ?)`
+        );
+        const result = stmt.run(username, passwordHash, nombre || username);
 
-            res.json({
-                mensaje: 'Usuario registrado correctamente',
-                usuarioId: this.lastID
+        res.json({
+            mensaje: 'Usuario registrado correctamente',
+            usuarioId: result.lastInsertRowid
+        });
+    } catch (err) {
+        if (err.message.includes('UNIQUE constraint failed')) {
+            return res.status(400).json({
+                error: 'El usuario ya existe'
             });
         }
-    );
+        return res.status(500).json({
+            error: err.message
+        });
+    }
 };
 
 // Login de usuario
@@ -47,55 +46,53 @@ exports.login = (req, res) => {
         });
     }
 
-    db.get(
-        `SELECT * FROM usuarios WHERE username = ?`,
-        [username],
-        function(err, usuario) {
-            if (err) {
-                return res.status(500).json({
-                    error: err.message
-                });
-            }
+    try {
+        const stmt = db.prepare(
+            `SELECT * FROM usuarios WHERE username = ?`
+        );
+        const usuario = stmt.get(username);
 
-            if (!usuario) {
-                return res.status(401).json({
-                    error: 'Usuario o contraseña incorrectos'
-                });
-            }
+        if (!usuario) {
+            return res.status(401).json({
+                error: 'Usuario o contraseña incorrectos'
+            });
+        }
 
-            // Verificar contraseña
-            const passwordValido = bcrypt.compareSync(password, usuario.password);
-            if (!passwordValido) {
-                return res.status(401).json({
-                    error: 'Usuario o contraseña incorrectos'
-                });
-            }
+        // Verificar contraseña
+        const passwordValido = bcrypt.compareSync(password, usuario.password);
+        if (!passwordValido) {
+            return res.status(401).json({
+                error: 'Usuario o contraseña incorrectos'
+            });
+        }
 
-            // Actualizar último login
-            db.run(
-                `UPDATE usuarios SET ultimo_login = CURRENT_TIMESTAMP WHERE id = ?`,
-                [usuario.id]
-            );
+        // Actualizar último login
+        db.prepare(
+            `UPDATE usuarios SET ultimo_login = CURRENT_TIMESTAMP WHERE id = ?`
+        ).run(usuario.id);
 
-            // Guardar usuario en sesión
-            req.session.usuario = {
+        // Guardar usuario en sesión
+        req.session.usuario = {
+            id: usuario.id,
+            username: usuario.username,
+            nombre: usuario.nombre,
+            rol: usuario.rol
+        };
+
+        res.json({
+            mensaje: 'Login exitoso',
+            usuario: {
                 id: usuario.id,
                 username: usuario.username,
                 nombre: usuario.nombre,
                 rol: usuario.rol
-            };
-
-            res.json({
-                mensaje: 'Login exitoso',
-                usuario: {
-                    id: usuario.id,
-                    username: usuario.username,
-                    nombre: usuario.nombre,
-                    rol: usuario.rol
-                }
-            });
-        }
-    );
+            }
+        });
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
 };
 
 // Logout de usuario
@@ -135,17 +132,16 @@ exports.listarUsuarios = (req, res) => {
         });
     }
 
-    db.all(
-        `SELECT id, username, nombre, rol, created_at, ultimo_login FROM usuarios ORDER BY created_at DESC`,
-        [],
-        function(err, usuarios) {
-            if (err) {
-                return res.status(500).json({
-                    error: err.message
-                });
-            }
+    try {
+        const stmt = db.prepare(
+            `SELECT id, username, nombre, rol, created_at, ultimo_login FROM usuarios ORDER BY created_at DESC`
+        );
+        const usuarios = stmt.all();
 
-            res.json(usuarios);
-        }
-    );
+        res.json(usuarios);
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
 };
