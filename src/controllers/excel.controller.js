@@ -13,13 +13,22 @@ exports.uploadExcel = async (req, res) => {
 
         }
 
+        // Obtener ID del usuario de la sesión
+        const usuarioId = req.session.usuario?.id;
+        if (!usuarioId) {
+            return res.status(401).json({
+                error: 'No autenticado'
+            });
+        }
+
         let totalRegistros = 0;
 
         for (const archivo of req.files) {
 
             const resultado =
                 await excelService.procesarExcel(
-                    archivo.path
+                    archivo.path,
+                    usuarioId
                 );
 
             totalRegistros += resultado.total;
@@ -56,8 +65,16 @@ exports.listarSolicitudes = async (req, res) => {
         direccion
     } = req.query;
 
-    let sql = 'SELECT * FROM solicitudes WHERE 1=1';
-    const params = [];
+    // Obtener ID del usuario de la sesión
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({
+            error: 'No autenticado'
+        });
+    }
+
+    let sql = 'SELECT * FROM solicitudes WHERE usuario_id = $1';
+    const params = [usuarioId];
 
     if (estado) {
         sql += ' AND estado = $' + (params.length + 1);
@@ -110,6 +127,14 @@ exports.listarSolicitudes = async (req, res) => {
 
 exports.dashboard = async (req, res) => {
 
+    // Obtener ID del usuario de la sesión
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({
+            error: 'No autenticado'
+        });
+    }
+
     const sql = `
         SELECT
             COUNT(*) as total,
@@ -118,10 +143,11 @@ exports.dashboard = async (req, res) => {
             SUM(CASE WHEN estado = 'DEVUELTA' THEN 1 ELSE 0 END) as devueltas,
             SUM(CASE WHEN estado = 'APROBADA PARA LIBERACIÓN' THEN 1 ELSE 0 END) as pendientes
         FROM solicitudes
+        WHERE usuario_id = $1
     `;
 
     try {
-        const result = await pool.query(sql);
+        const result = await pool.query(sql, [usuarioId]);
         res.json(result.rows[0]);
     } catch (err) {
         return res.status(500).json({
@@ -133,17 +159,26 @@ exports.dashboard = async (req, res) => {
 
 exports.dashboardSegmentos = async (req, res) => {
 
+    // Obtener ID del usuario de la sesión
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({
+            error: 'No autenticado'
+        });
+    }
+
     const sql = `
         SELECT
             segmento,
             COUNT(*) as total
         FROM solicitudes
+        WHERE usuario_id = $1
         GROUP BY segmento
         ORDER BY total DESC
     `;
 
     try {
-        const result = await pool.query(sql);
+        const result = await pool.query(sql, [usuarioId]);
         res.json(result.rows);
     } catch (err) {
         return res.status(500).json({
@@ -155,17 +190,26 @@ exports.dashboardSegmentos = async (req, res) => {
 
 exports.dashboardEstados = async (req, res) => {
 
+    // Obtener ID del usuario de la sesión
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({
+            error: 'No autenticado'
+        });
+    }
+
     const sql = `
         SELECT
             estado,
             COUNT(*) as total
         FROM solicitudes
+        WHERE usuario_id = $1
         GROUP BY estado
         ORDER BY total DESC
     `;
 
     try {
-        const result = await pool.query(sql);
+        const result = await pool.query(sql, [usuarioId]);
         res.json(result.rows);
     } catch (err) {
         return res.status(500).json({
@@ -179,16 +223,25 @@ exports.dashboardEstados = async (req, res) => {
 exports.dashboardSegmentosFiltrado = async (req, res) => {
     const { estado } = req.query;
     
+    // Obtener ID del usuario de la sesión
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({
+            error: 'No autenticado'
+        });
+    }
+    
     let sql = `
         SELECT
             segmento,
             COUNT(*) as total
         FROM solicitudes
+        WHERE usuario_id = $1
     `;
-    const params = [];
+    const params = [usuarioId];
     
     if (estado) {
-        sql += ' WHERE estado = $1';
+        sql += ' AND estado = $' + (params.length + 1);
         params.push(estado);
     }
     
@@ -209,16 +262,25 @@ exports.dashboardSegmentosFiltrado = async (req, res) => {
 exports.dashboardEstadosFiltrado = async (req, res) => {
     const { segmento } = req.query;
     
+    // Obtener ID del usuario de la sesión
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({
+            error: 'No autenticado'
+        });
+    }
+    
     let sql = `
         SELECT
             estado,
             COUNT(*) as total
         FROM solicitudes
+        WHERE usuario_id = $1
     `;
-    const params = [];
+    const params = [usuarioId];
     
     if (segmento) {
-        sql += ' WHERE segmento = $1';
+        sql += ' AND segmento = $' + (params.length + 1);
         params.push(segmento);
     }
     

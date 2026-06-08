@@ -2,7 +2,7 @@ const ExcelJS = require('exceljs');
 const fs = require('fs');
 const pool = require('../config/database.pg.js');
 
-exports.procesarExcel = async (filePath) => {
+exports.procesarExcel = async (filePath, usuarioId) => {
 
     const workbook = new ExcelJS.Workbook();
 
@@ -33,9 +33,10 @@ exports.procesarExcel = async (filePath) => {
                 celular,
                 segmento,
                 producto,
-                fecha_solicitud
+                fecha_solicitud,
+                usuario_id
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 
             ON CONFLICT(id_solicitud)
             DO UPDATE SET
@@ -46,6 +47,7 @@ exports.procesarExcel = async (filePath) => {
                 segmento = EXCLUDED.segmento,
                 producto = EXCLUDED.producto,
                 fecha_solicitud = EXCLUDED.fecha_solicitud,
+                usuario_id = EXCLUDED.usuario_id,
                 fecha_actualizacion = CURRENT_TIMESTAMP
         `;
 
@@ -67,7 +69,8 @@ exports.procesarExcel = async (filePath) => {
                 registro.CELULAR,
                 registro.SEGMENTO,
                 registro.PRODUCTO,
-                registro.FECHASOLICITUD
+                registro.FECHASOLICITUD,
+                usuarioId
             ]);
 
             procesados++;
