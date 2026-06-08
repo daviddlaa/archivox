@@ -1,16 +1,8 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const db = new Database(
-    path.join(__dirname, '../../database.db'),
-    (err) => {
-        if (err) {
-            console.error(err.message);
-        } else {
-            console.log('SQLite conectado');
-        }
-    }
-);
+const dbPath = path.join(__dirname, '../../database.db');
+const db = new Database(dbPath);
 
 // Configurar para mejor compatibilidad
 db.pragma('journal_mode = WAL');
