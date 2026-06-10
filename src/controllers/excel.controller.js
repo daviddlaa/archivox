@@ -61,6 +61,7 @@ exports.listarSolicitudes = async (req, res) => {
         cedula,
         producto,
         nombre,
+        telefono,
         orden,
         direccion
     } = req.query;
@@ -96,9 +97,14 @@ exports.listarSolicitudes = async (req, res) => {
         params.push(producto);
     }
 
-    if (nombre) {
+if (nombre) {
         sql += ' AND nombre ILIKE $' + (params.length + 1);
         params.push('%' + nombre + '%');
+    }
+
+    if (telefono) {
+        sql += ' AND celular ILIKE $' + (params.length + 1);
+        params.push('%' + telefono + '%');
     }
 
     // Ordenamiento

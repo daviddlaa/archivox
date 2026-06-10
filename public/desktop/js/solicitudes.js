@@ -327,7 +327,11 @@ async function cargarSolicitudes() {
 
         if (estadoActual) params += 'estado=' + encodeURIComponent(estadoActual) + '&';
         if (segmentoActual) params += 'segmento=' + encodeURIComponent(segmentoActual) + '&';
-        if (cedula) params += 'nombre=' + encodeURIComponent(cedula) + '&';
+        if (cedula) {
+            // Buscar por nombre, cédula o teléfono
+            params += 'nombre=' + encodeURIComponent(cedula) + '&';
+            params += 'telefono=' + encodeURIComponent(cedula) + '&';
+        }
         params += 'orden=' + columnaOrdenar + '&direccion=' + ordenActual;
 
         var response = await fetch('/api/excel/solicitudes?' + params);
@@ -388,7 +392,7 @@ tabla.innerHTML = html;
     }
 }
 
-// Búsqueda en vivo (live search)
+// Búsqueda en vivo (live search) - busca por nombre, cédula o teléfono
 var debounceTimer;
 document.getElementById('cedula').oninput = function() {
     clearTimeout(debounceTimer);
@@ -396,6 +400,12 @@ document.getElementById('cedula').oninput = function() {
         cargarSolicitudes();
     }, 300);
 };
+
+// Función para buscar también por teléfono (se envía como parámetro "telefono")
+function buscarPorTelefono() {
+    var cedula = document.getElementById('cedula').value;
+    cargarSolicitudes();
+}
 
 // Evento para ordenar columnas
 var encabezados = document.querySelectorAll('th.sortable');

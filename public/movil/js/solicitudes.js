@@ -147,11 +147,12 @@ function aplicarFiltros() {
     const filtrados = todosDatos.filter(d => {
         if (filtros.estado && d.estado !== filtros.estado) return false;
         if (filtros.segmento && d.segmento !== filtros.segmento) return false;
-        if (filtros.busqueda) {
+if (filtros.busqueda) {
             const q = filtros.busqueda;
             const matchCedula = d.cedula && d.cedula.toString().includes(q);
             const matchNombre = d.nombre && d.nombre.toLowerCase().includes(q);
-            if (!matchCedula && !matchNombre) return false;
+            const matchCelular = d.celular && d.celular.toString().includes(q);
+            if (!matchCedula && !matchNombre && !matchCelular) return false;
         }
         return true;
     });
@@ -177,7 +178,7 @@ function renderizarCards(datos) {
         
         const seleccionado = filasSeleccionadas.indexOf(d.id_solicitud) > -1 ? 'seleccionada' : '';
         
-        return `
+return `
         <div class="client-card ${seleccionado}" id="card-${d.id_solicitud}" onclick="toggleCard('${d.id_solicitud}')">
             <div class="card-head">
                 <span class="client-id">#${d.id_solicitud}</span>
@@ -185,6 +186,7 @@ function renderizarCards(datos) {
             </div>
             <div class="client-name">${d.nombre || 'Sin nombre'}</div>
             <div class="client-cedula">Cédula: ${d.cedula || 'N/A'}</div>
+            <div class="client-celular">📱 ${d.celular || 'N/A'}</div>
             <div class="tags">
                 <span class="tag">${d.segmento || 'N/A'}</span>
                 <span class="tag">${d.producto || 'N/A'}</span>
