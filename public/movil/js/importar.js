@@ -18,14 +18,14 @@ document.getElementById('formExcel')?.addEventListener('submit', async (e) => {
     for (const f of files) formData.append('excelFiles', f);
     
     try {
-        const res = await fetch('/api/excel/importar', { method: 'POST', body: formData });
+        const res = await fetch('/api/excel/upload', { method: 'POST', body: formData });
         const data = await res.json();
         
-        if (data.success) {
-            msg.innerHTML = '<div class="msg success">✓ ' + data.message + ' (' + data.registros + ' registros)</div>';
+        if (res.ok) {
+            msg.innerHTML = '<div class="msg success">✓ ' + data.mensaje + ' (' + data.registros + ' registros)</div>';
             document.getElementById('excelFiles').value = '';
         } else {
-            msg.innerHTML = '<div class="msg error">✗ ' + data.message + '</div>';
+            msg.innerHTML = '<div class="msg error">✗ ' + data.error + '</div>';
         }
     } catch (err) {
         msg.innerHTML = '<div class="msg error">Error al subir archivos</div>';
