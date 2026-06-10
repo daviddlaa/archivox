@@ -1,4 +1,4 @@
-// Importar móvil v2
+// Importar móvil - versión completa
 document.getElementById('formExcel')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const files = document.getElementById('excelFiles').files;
@@ -10,9 +10,17 @@ document.getElementById('formExcel')?.addEventListener('submit', async (e) => {
         return;
     }
     
+    // Mostrar animación de loading
     btn.disabled = true;
-    btn.textContent = 'Subiendo...';
-    msg.innerHTML = '<div class="msg loading">Subiendo archivos...</div>';
+    btn.textContent = '⏳ Subiendo...';
+    
+    // Mostrar archivos seleccionados
+    let htmlInfo = '<div class="msg info"><strong>' + files.length + '</strong> archivo(s) seleccionado(s)<br><br>';
+    for (const f of files) {
+        htmlInfo += '📄 ' + f.name + '<br>';
+    }
+    htmlInfo += '</div>';
+    msg.innerHTML = htmlInfo + '<div class="msg loading">Procesando...</div>';
     
     const formData = new FormData();
     for (const f of files) formData.append('excelFiles', f);
@@ -22,7 +30,12 @@ document.getElementById('formExcel')?.addEventListener('submit', async (e) => {
         const data = await res.json();
         
         if (res.ok) {
-            msg.innerHTML = '<div class="msg success">✓ ' + data.mensaje + ' (' + data.registros + ' registros)</div>';
+            msg.innerHTML = '<div class="msg success">' +
+                '<strong>✓ Importación completada</strong><br><br>' +
+                '📂 Archivos: <strong>' + data.archivos + '</strong><br>' +
+                '📊 Registros: <strong>' + data.registros + '</strong>' +
+                '</div>';
+            // Limpiar formulario
             document.getElementById('excelFiles').value = '';
         } else {
             msg.innerHTML = '<div class="msg error">✗ ' + data.error + '</div>';
@@ -33,4 +46,22 @@ document.getElementById('formExcel')?.addEventListener('submit', async (e) => {
     
     btn.disabled = false;
     btn.textContent = 'Subir Archivos';
+});
+
+// Listener para mostrar archivos seleccionados al elegirlos
+document.getElementById('excelFiles')?.addEventListener('change', function() {
+    const msg = document.getElementById('mensaje');
+    const files = this.files;
+    
+    if (!files.length) {
+        msg.innerHTML = '';
+        return;
+    }
+    
+    let html = '<div class="msg info"><strong>' + files.length + '</strong> archivo(s) seleccionado(s)<br><br>';
+    for (const f of files) {
+        html += '📄 ' + f.name + '<br>';
+    }
+    html += '</div>';
+    msg.innerHTML = html;
 });
