@@ -42,13 +42,22 @@ async function cargarDashboard() {
 
 async function cargarPromedios() {
     try {
-        const [responseMes, responseSemana] = await Promise.all([
-            fetch('/api/excel/dashboard/promedio/mes'),
-            fetch('/api/excel/dashboard/promedio/semana')
-        ]);
+        const responseMes = await fetch('/api/excel/dashboard/promedio/mes');
+        console.log('RESP promedio/mes:', responseMes.status);
+        
+        const responseSemana = await fetch('/api/excel/dashboard/promedio/semana');
+        console.log('RESP promedio/semana:', responseSemana.status);
+        
+        if (!responseMes.ok || !responseSemana.ok) {
+            console.error('Error en promedio:', responseMes.status, responseSemana.status);
+            return;
+        }
         
         const datosMes = await responseMes.json();
         const datosSemana = await responseSemana.json();
+        
+        console.log('DATOS promedioMes:', datosMes);
+        console.log('DATOS promedioSemana:', datosSemana);
         
         document.getElementById('promedioMes').textContent = datosMes.promedio.toLocaleString();
         document.getElementById('promedioSemana').textContent = datosSemana.promedio.toLocaleString();
