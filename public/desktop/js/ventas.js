@@ -5,6 +5,78 @@ let configBonos = { bono1: 3000, bono2: 7000, bono3: 12000, bono4: 20000, bono5:
 let vendedores = [];
 let grafico = null;
 
+// ================== SWEETALERT CONFIG METAS ==================
+function mostrarConfigMetas() {
+    const html = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left;">
+            <div><label style="font-size: 12px; color: #6b7280;">Meta 1 ($)</label><input type="number" id="sw-bono1" value="${configBonos.bono1}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;"></div>
+            <div><label style="font-size: 12px; color: #6b7280;">Meta 2 ($)</label><input type="number" id="sw-bono2" value="${configBonos.bono2}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;"></div>
+            <div><label style="font-size: 12px; color: #6b7280;">Meta 3 ($)</label><input type="number" id="sw-bono3" value="${configBonos.bono3}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;"></div>
+            <div><label style="font-size: 12px; color: #6b7280;">Meta 4 ($)</label><input type="number" id="sw-bono4" value="${configBonos.bono4}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;"></div>
+            <div><label style="font-size: 12px; color: #6b7280;">Meta 5 ($)</label><input type="number" id="sw-bono5" value="${configBonos.bono5}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;"></div>
+            <div><label style="font-size: 12px; color: #6b7280;">Meta 6 ($)</label><input type="number" id="sw-bono6" value="${configBonos.bono6}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;"></div>
+            <div style="grid-column: span 2;"><label style="font-size: 12px; color: #6b7280;">Meta Equipo ($)</label><input type="number" id="sw-meta-equipo" value="${configBonos.meta_equipo}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;"></div>
+        </div>
+    `;
+    
+    Swal.fire({
+        title: '⚙️ Configurar Metas',
+        html: html,
+        confirmButtonText: '💾 Guardar',
+        confirmButtonColor: '#3b82f6',
+        cancelButtonText: 'Cancelar',
+        showCancelButton: true,
+        width: '500px',
+        preConfirm: () => {
+            return {
+                bono1: parseFloat(document.getElementById('sw-bono1').value) || 3000,
+                bono2: parseFloat(document.getElementById('sw-bono2').value) || 7000,
+                bono3: parseFloat(document.getElementById('sw-bono3').value) || 12000,
+                bono4: parseFloat(document.getElementById('sw-bono4').value) || 20000,
+                bono5: parseFloat(document.getElementById('sw-bono5').value) || 30000,
+                bono6: parseFloat(document.getElementById('sw-bono6').value) || 40000,
+                meta_equipo: parseFloat(document.getElementById('sw-meta-equipo').value) || 40000
+            };
+        }
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            guardarConfigBonosSweetAlert(result.value);
+        }
+    });
+}
+
+async function guardarConfigBonosSweetAlert(data) {
+    const payload = { mes: currentMes, ...data };
+    try {
+        await fetch('/api/excel/config-bonos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        configBonos = data;
+        // Actualizar inputs ocultos
+        document.getElementById('bono1').value = data.bono1;
+        document.getElementById('bono2').value = data.bono2;
+        document.getElementById('bono3').value = data.bono3;
+        document.getElementById('bono4').value = data.bono4;
+        document.getElementById('bono5').value = data.bono5;
+        document.getElementById('bono6').value = data.bono6;
+        document.getElementById('metaEquipoInput').value = data.meta_equipo;
+        
+        renderizarTabla();
+        actualizarResumen();
+        actualizarGrafico();
+        
+        Swal.fire('✅ Guardado', 'Configuración guardada correctamente', 'success');
+    } catch (err) {
+        console.error('Error guardando config:', err);
+        Swal.fire('❌ Error', 'No se pudo guardar la configuración', 'error');
+    }
+}
+
+// ================== FIN SWEETALERT ==================
+
 // Generar meses del año en curso
 function generarMeses() {
     const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -208,7 +280,7 @@ async function guardarConfigBonos() {
     }
 }
 
-// Actualizar gráfico
+// Actualizar gráfico (versión pequeña para escritorio)
 function actualizarGrafico() {
     const ctx = document.getElementById('graficoVentas');
     if (!ctx) return;
@@ -226,14 +298,21 @@ function actualizarGrafico() {
                 label: 'Ventas ($)',
                 data: datos,
                 backgroundColor: datos.map((v, i) => v >= configBonos.bono3 ? '#10b981' : '#3b82f6'),
-                borderRadius: 6
+                borderRadius: 4
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
             plugins: { legend: { display: false } },
             scales: {
-                y: { beginAtZero: true }
+                y: { 
+                    beginAtZero: true,
+                    ticks: { font: { size: 10 } }
+                },
+                x: {
+                    ticks: { font: { size: 10 } }
+                }
             }
         }
     });

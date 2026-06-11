@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Equipo de Ventas - Archivox</title>
+<title>Equipo de Ventas - Archivox</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding-bottom: 70px; }
@@ -23,11 +24,24 @@
         .resumen-card .meta { font-size: 11px; color: #6b7280; }
         
         /* Tabla */
-        .tabla-ventas { background: white; margin: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow-x: auto; }
-        .tabla-ventas table { width: 100%; min-width: 600px; border-collapse: collapse; }
-        .tabla-ventas th { background: #1f2937; color: white; padding: 12px 10px; text-align: left; font-size: 12px; white-space: nowrap; }
-        .tabla-ventas td { padding: 10px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
-        .tabla-ventas input { width: 100px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+/* Cards para móvil */
+        .cards-container { padding: 0 15px; display: flex; flex-direction: column; gap: 12px; }
+        .vendedor-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .vendedor-card .nombre { font-size: 16px; font-weight: bold; color: #1f2937; margin-bottom: 8px; }
+        .vendedor-card .datos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .vendedor-card .dato label { font-size: 10px; color: #6b7280; text-transform: uppercase; }
+        .vendedor-card .dato .valor { font-size: 14px; color: #1f2937; font-weight: 600; }
+        .vendedor-card .inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+        .vendedor-card .inputs input { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+        .vendedor-card .meta-badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-top: 8px; }
+        .vendedor-card .meta-badge.alcanzado { background: #d1fae5; color: #065f46; }
+        .vendedor-card .meta-badge.faltante { background: #fef3c7; color: #92400e; }
+        .vendedor-card .btn-accion { display: flex; gap: 8px; margin-top: 10px; }
+        
+        .btn-config-meta { background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; margin: 15px; width: calc(100% - 30px); }
+        
+        /* Tabla (oculta, se usa en escritorio) */
+        .tabla-ventas { display: none; }
         
         .btn-agregar { background: #10b981; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; margin: 15px; width: calc(100% - 30px); }
         
@@ -97,10 +111,14 @@
         </table>
     </div>
     
+<button class="btn-config-meta" onclick="mostrarConfigMetas()">⚙️ Configurar Metas</button>
     <button class="btn-agregar" onclick="agregarVendedor()">+ Agregar Vendedor</button>
     <button class="btn-guardar" onclick="guardarTodo()">💾 Guardar Todo</button>
     
-    <div class="config-bonos">
+    <!-- Cards container for móvil -->
+    <div class="cards-container" id="cardsVendedores"></div>
+    
+    <div class="config-bonos" style="display: none;">
         <h3>⚙️ Configurar Bonos</h3>
         <div class="config-grid">
             <div><label>Bono 1 ($)</label><input type="number" id="bono1" value="3000"></div>
