@@ -314,6 +314,13 @@ exports.dashboardPromedioMes = async (req, res) => {
     }
     
     try {
+        // DEBUG: ver total sin fecha
+        const totalSinFecha = await pool.query(
+            'SELECT COUNT(*) as total FROM solicitudes WHERE usuario_id = $1',
+            [usuarioId]
+        );
+        console.log('DEBUG promedioMes - usuarioId:', usuarioId, 'total sin fecha:', totalSinFecha.rows[0]);
+        
         // Contar solicitudes últimos 90 días
         const result = await pool.query(
             `SELECT COUNT(*) as total 
@@ -324,6 +331,7 @@ exports.dashboardPromedioMes = async (req, res) => {
         );
         
         const total = parseInt(result.rows[0]?.total) || 0;
+        console.log('DEBUG promedioMes - total con fecha:', total);
         
         // Dividir por 3 meses
         const promedio = Math.round(total / 3);
@@ -349,6 +357,13 @@ exports.dashboardPromedioSemana = async (req, res) => {
     }
     
     try {
+        // DEBUG: ver total sin fecha
+        const totalSinFecha = await pool.query(
+            'SELECT COUNT(*) as total FROM solicitudes WHERE usuario_id = $1',
+            [usuarioId]
+        );
+        console.log('DEBUG promedioSemana - usuarioId:', usuarioId, 'total sin fecha:', totalSinFecha.rows[0]);
+        
         // Contar solicitudes últimos 63 días
         const result = await pool.query(
             `SELECT COUNT(*) as total 
@@ -359,6 +374,7 @@ exports.dashboardPromedioSemana = async (req, res) => {
         );
         
         const total = parseInt(result.rows[0]?.total) || 0;
+        console.log('DEBUG promedioSemana - total con fecha:', total);
         
         // Dividir por 9 semanas
         const promedio = Math.round(total / 9);
