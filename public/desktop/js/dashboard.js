@@ -40,32 +40,6 @@ async function cargarDashboard() {
     }
 }
 
-async function cargarPromedios() {
-    try {
-        const responseMes = await fetch('/api/excel/dashboard/promedio/mes');
-        console.log('RESP promedio/mes:', responseMes.status);
-        
-        const responseSemana = await fetch('/api/excel/dashboard/promedio/semana');
-        console.log('RESP promedio/semana:', responseSemana.status);
-        
-        if (!responseMes.ok || !responseSemana.ok) {
-            console.error('Error en promedio:', responseMes.status, responseSemana.status);
-            return;
-        }
-        
-        const datosMes = await responseMes.json();
-        const datosSemana = await responseSemana.json();
-        
-        console.log('DATOS promedioMes:', datosMes);
-        console.log('DATOS promedioSemana:', datosSemana);
-        
-        document.getElementById('promedioMes').textContent = datosMes.promedio.toLocaleString();
-        document.getElementById('promedioSemana').textContent = datosSemana.promedio.toLocaleString();
-    } catch (error) {
-        console.error('Error cargando promedios:', error);
-    }
-}
-
 async function cargarEstados() {
     try {
         const response = await fetch('/api/excel/dashboard/estados');
@@ -213,7 +187,6 @@ async function actualizarDashboard() {
 
 async function iniciarDashboard() {
     await cargarDashboard();
-    await cargarPromedios();
     await actualizarDashboard();
 }
 
@@ -221,7 +194,6 @@ iniciarDashboard();
 
 setInterval(() => {
     cargarDashboard();
-    cargarPromedios();
 }, 5000);
 
 // Botón cerrar sesión
