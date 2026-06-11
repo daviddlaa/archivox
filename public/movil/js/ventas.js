@@ -89,41 +89,52 @@ function renderizarCards() {
     vendedores.forEach((v, index) => {
         const suma = (parseFloat(v.periodo1) || 0) + (parseFloat(v.periodo2) || 0);
         const meta = calcularMeta(suma);
-        const falta = siguienteMeta(suma);
+        const siguiente = siguienteMeta(suma);
         
-        // Badge: mostrar "Meta: $X" si alcanzó alguna, o "Sin meta" si no
-        const badgeTexto = meta.monto > 0 ? `Meta: $${meta.monto.toLocaleString()}` : 'Sin meta';
-        const badgeClass = meta.monto > 0 ? 'alcanzado' : 'sin-meta';
+        // Meta alcanzada: mostrar la meta que ya superó
+        const metaAlcanzada = meta.monto > 0 ? `$${meta.monto.toLocaleString()}` : '-';
         
-        // Falta: siempre mostrar cuánto falta para la siguiente meta
-        // Si ya superó todas las metas (falta=0), mostrar "Completado!"
-        const faltaTexto = falta > 0 ? `$${falta.toLocaleString()}` : 'Completado!';
+        // Falta: mostrar "Aún falta $X" o "Completado!"
+        const faltaTexto = siguiente > 0 ? `Aún falta $${siguiente.toLocaleString()}` : '¡Completado!';
+        
+        // Siguiente meta: mostrar la siguiente meta a alcanzar
+        const siguienteMetaTxt = obtenerSiguienteMeta(suma);
+        const siguienteMetaDisplay = siguienteMetaTxt > 0 ? `$${siguienteMetaTxt.toLocaleString()}` : '-';
         
         const card = document.createElement('div');
         card.className = 'vendedor-card';
         card.innerHTML = `
             <div class="nombre">
-                <input type="text" value="${v.vendedor}" onchange="actualizarVendedor(${index}, 'vendedor', this.value)" placeholder="Nombre del vendedor" style="width: 100%; font-size: 16px; font-weight: bold; border: 1px solid #d1d5db; border-radius: 6px; padding: 8px;">
+                <input type="text" value="${v.vendedor}" onchange="actualizarVendedor(${index}, 'vendedor', this.value)" placeholder="Nombre del vendedor" style="width: 100%; font-size: 18px; font-weight: bold; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px;">
             </div>
             <div class="datos">
                 <div class="dato">
-                    <label>Suma</label>
+                    <label>Total Vendido</label>
                     <div class="valor">$${suma.toLocaleString()}</div>
                 </div>
                 <div class="dato">
-                    <label>Falta</label>
-                    <div class="valor">${faltaTexto}</div>
+                    <label>Meta Alcanzada</label>
+                    <div class="valor meta-alcanzada">${metaAlcanzada}</div>
                 </div>
             </div>
-            <div class="meta-badge ${badgeClass}">${badgeTexto}</div>
+            <div class="datos">
+                <div class="dato">
+                    <label>Próxima Meta</label>
+                    <div class="valor sig-meta">${siguienteMetaDisplay}</div>
+                </div>
+                <div class="dato">
+                    <label>Estado</label>
+                    <div class="valor falta-texto">${faltaTexto}</div>
+                </div>
+            </div>
             <div class="inputs">
                 <div>
-                    <label style="font-size: 10px; color: #6b7280;">P1 ($)</label>
-                    <input type="number" value="${v.periodo1 || 0}" onchange="actualizarVendedor(${index}, 'periodo1', this.value)" step="0.01">
+                    <label style="font-size: 12px; color: #6b7280;">P1 ($)</label>
+                    <input type="number" value="${v.periodo1 || 0}" onchange="actualizarVendedor(${index}, 'periodo1', this.value)" step="0.01" style="font-size: 16px; padding: 10px;">
                 </div>
                 <div>
-                    <label style="font-size: 10px; color: #6b7280;">P2 ($)</label>
-                    <input type="number" value="${v.periodo2 || 0}" onchange="actualizarVendedor(${index}, 'periodo2', this.value)" step="0.01">
+                    <label style="font-size: 12px; color: #6b7280;">P2 ($)</label>
+                    <input type="number" value="${v.periodo2 || 0}" onchange="actualizarVendedor(${index}, 'periodo2', this.value)" step="0.01" style="font-size: 16px; padding: 10px;">
                 </div>
             </div>
             <div class="btn-accion">
@@ -132,6 +143,15 @@ function renderizarCards() {
         `;
         container.appendChild(card);
     });
+}
+
+// Obtener siguiente meta (la próxima meta a alcanzar)
+function obtenerSiguienteMeta(totalVenta) {
+    const metas = [configBonos.bono1, configBonos.bono2, configBonos.bono3, configBonos.bono4, configBonos.bono5, configBonos.bono6];
+    for (const meta of metas) {
+        if (totalVenta < meta) return meta;
+    }
+    return 0;
 }
 
 // ================== FIN CARDS ==================

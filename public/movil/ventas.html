@@ -23,32 +23,40 @@
         .resumen-card .valor { font-size: 22px; font-weight: bold; color: #1f2937; }
         .resumen-card .meta { font-size: 11px; color: #6b7280; }
         
-        /* Tabla */
-/* Cards para móvil */
-        .cards-container { padding: 0 15px; display: flex; flex-direction: column; gap: 12px; }
-        .vendedor-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .vendedor-card .nombre { font-size: 16px; font-weight: bold; color: #1f2937; margin-bottom: 8px; }
-        .vendedor-card .datos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .vendedor-card .dato label { font-size: 10px; color: #6b7280; text-transform: uppercase; }
-        .vendedor-card .dato .valor { font-size: 14px; color: #1f2937; font-weight: 600; }
-        .vendedor-card .inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-        .vendedor-card .inputs input { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+/* Tabla */
+/* Cards para móvil - MÁS GRANDES */
+        .cards-container { padding: 0 15px; padding-bottom: 100px; display: flex; flex-direction: column; gap: 16px; }
+        .vendedor-card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .vendedor-card .nombre { font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 12px; }
+        .vendedor-card .datos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px; }
+        .vendedor-card .dato label { font-size: 12px; color: #6b7280; text-transform: uppercase; font-weight: 600; }
+        .vendedor-card .dato .valor { font-size: 18px; color: #1f2937; font-weight: 700; }
+        .vendedor-card .dato .meta-alcanzada { color: #059669; }
+        .vendedor-card .dato .sig-meta { color: #7c3aed; }
+        .vendedor-card .dato .falta-texto { color: #dc2626; }
+        .vendedor-card .inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+        .vendedor-card .inputs input { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; }
         .vendedor-card .meta-badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-top: 8px; }
 .vendedor-card .meta-badge.alcanzado { background: #d1fae5; color: #065f46; }
         .vendedor-card .meta-badge.faltante { background: #fef3c7; color: #92400e; }
         .vendedor-card .meta-badge.sin-meta { background: #f3f4f6; color: #6b7280; }
-        .vendedor-card .btn-accion { display: flex; gap: 8px; margin-top: 10px; }
+        .vendedor-card .btn-accion { display: flex; gap: 8px; margin-top: 12px; }
         
-        .btn-config-meta { background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; margin: 15px; width: calc(100% - 30px); }
+        /* Botones flotantes (FAB) - FLOATING ACTION BUTTONS */
+        .fab-container { position: fixed; bottom: 80px; right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 999; }
+        .fab-btn { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: transform 0.2s; }
+        .fab-btn:active { transform: scale(0.9); }
+        .fab-agregar { background: #10b981; color: white; }
+        .fab-guardar { background: #3b82f6; color: white; }
+        .fab-config { background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: white; }
+        
+        /* Ocultar botones originales */
+        .btn-config-meta, .btn-agregar, .btn-guardar { display: none; }
         
         /* Tabla (oculta, se usa en escritorio) */
         .tabla-ventas { display: none; }
         
-        .btn-agregar { background: #10b981; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; margin: 15px; width: calc(100% - 30px); }
-        
-        .btn-guardar { background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; margin: 15px; width: calc(100% - 30px); }
-        
-        .btn-eliminar { background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+        .btn-eliminar { background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
         
         /* Estado */
         .estado-bono { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
@@ -118,6 +126,13 @@
     
     <!-- Cards container for móvil -->
     <div class="cards-container" id="cardsVendedores"></div>
+    
+    <!-- Botones flotantes (FAB) -->
+    <div class="fab-container">
+        <button class="fab-btn fab-agregar" onclick="agregarVendedor()" title="Agregar Vendedor">+</button>
+        <button class="fab-btn fab-guardar" onclick="guardarTodo()" title="Guardar Todo">💾</button>
+        <button class="fab-btn fab-config" onclick="mostrarConfigMetas()" title="Configurar Metas">⚙️</button>
+    </div>
     
     <div class="config-bonos" style="display: none;">
         <h3>⚙️ Configurar Bonos</h3>
