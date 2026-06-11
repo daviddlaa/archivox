@@ -312,31 +312,45 @@ exports.dashboardPromedioMes = async (req, res) => {
         });
     }
     
-    const sql = `
+    // Primero obtener el total general
+    const sqlTotal = `
+        SELECT COUNT(*) as total_general
+        FROM solicitudes
+        WHERE usuario_id = $1
+    `;
+    
+    // Obtener promedio mensual
+    const sqlPromedio = `
         SELECT 
             TO_CHAR(fecha_solicitud, 'YYYY-MM') as mes,
             COUNT(*) as total
         FROM solicitudes
         WHERE usuario_id = $1 
+            AND fecha_solicitud IS NOT NULL
             AND fecha_solicitud >= DATE_TRUNC('month', NOW()) - INTERVAL '6 months'
         GROUP BY TO_CHAR(fecha_solicitud, 'YYYY-MM')
         ORDER BY mes ASC
     `;
     
     try {
-        const result = await pool.query(sql, [usuarioId]);
+        const [resultPromedio, resultTotal] = await Promise.all([
+            pool.query(sqlPromedio, [usuarioId]),
+            pool.query(sqlTotal, [usuarioId])
+        ]);
         
-        // Calcular promedio
-        const totalMeses = result.rows.length;
+        // Calcular promedio de los meses con datos
+        const rows = resultPromedio.rows;
+        const totalMeses = rows.length;
         const promedio = totalMeses > 0 
-            ? Math.round(result.rows.reduce((sum, row) => sum + parseInt(row.total), 0) / totalMeses)
-            : 0;
+            ? Math.round(rows.reduce((sum, row) => sum + parseInt(row.total), 0) / totalMeses)
+            : parseInt(resultTotal.rows[0]?.total_general) || 0;
         
         res.json({
             promedio: promedio,
-            datos: result.rows
+            datos: rows
         });
     } catch (err) {
+        console.error('Error dashboardPromedioMes:', err);
         return res.status(500).json({
             error: err.message
         });
@@ -352,31 +366,45 @@ exports.dashboardPromedioSemana = async (req, res) => {
         });
     }
     
-    const sql = `
+    // Obtener total general
+    const sqlTotal = `
+        SELECT COUNT(*) as total_general
+        FROM solicitudes
+        WHERE usuario_id = $1
+    `;
+    
+    // Obtener promedio semanal
+    const sqlPromedio = `
         SELECT 
             DATE_TRUNC('week', fecha_solicitud)::date as semana,
             COUNT(*) as total
         FROM solicitudes
         WHERE usuario_id = $1 
+            AND fecha_solicitud IS NOT NULL
             AND fecha_solicitud >= NOW() - INTERVAL '4 weeks'
         GROUP BY DATE_TRUNC('week', fecha_solicitud)
         ORDER BY semana ASC
     `;
     
     try {
-        const result = await pool.query(sql, [usuarioId]);
+        const [resultPromedio, resultTotal] = await Promise.all([
+            pool.query(sqlPromedio, [usuarioId]),
+            pool.query(sqlTotal, [usuarioId])
+        ]);
         
         // Calcular promedio
-        const totalSemanas = result.rows.length;
+        const rows = resultPromedio.rows;
+        const totalSemanas = rows.length;
         const promedio = totalSemanas > 0 
-            ? Math.round(result.rows.reduce((sum, row) => sum + parseInt(row.total), 0) / totalSemanas)
-            : 0;
+            ? Math.round(rows.reduce((sum, row) => sum + parseInt(row.total), 0) / totalSemanas)
+            : parseInt(resultTotal.rows[0]?.total_general) || 0;
         
         res.json({
             promedio: promedio,
-            datos: result.rows
+            datos: rows
         });
     } catch (err) {
+        console.error('Error dashboardPromedioSemana:', err);
         return res.status(500).json({
             error: err.message
         });
