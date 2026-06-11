@@ -90,7 +90,14 @@ function renderizarCards() {
         const suma = (parseFloat(v.periodo1) || 0) + (parseFloat(v.periodo2) || 0);
         const meta = calcularMeta(suma);
         const falta = siguienteMeta(suma);
-        const badgeClass = falta === 0 ? 'alcanzado' : 'faltante';
+        
+        // Badge: mostrar "Meta: $X" si alcanzó alguna, o "Sin meta" si no
+        const badgeTexto = meta.monto > 0 ? `Meta: $${meta.monto.toLocaleString()}` : 'Sin meta';
+        const badgeClass = meta.monto > 0 ? 'alcanzado' : 'sin-meta';
+        
+        // Falta: siempre mostrar cuánto falta para la siguiente meta
+        // Si ya superó todas las metas (falta=0), mostrar "Completado!"
+        const faltaTexto = falta > 0 ? `$${falta.toLocaleString()}` : 'Completado!';
         
         const card = document.createElement('div');
         card.className = 'vendedor-card';
@@ -105,10 +112,10 @@ function renderizarCards() {
                 </div>
                 <div class="dato">
                     <label>Falta</label>
-                    <div class="valor">${falta > 0 ? '-$' + falta.toLocaleString() : '¡OK!'}</div>
+                    <div class="valor">${faltaTexto}</div>
                 </div>
             </div>
-            <div class="meta-badge ${badgeClass}">${meta.nombre}</div>
+            <div class="meta-badge ${badgeClass}">${badgeTexto}</div>
             <div class="inputs">
                 <div>
                     <label style="font-size: 10px; color: #6b7280;">P1 ($)</label>

@@ -64,7 +64,7 @@ async function guardarConfigBonosSweetAlert(data) {
         document.getElementById('bono6').value = data.bono6;
         document.getElementById('metaEquipoInput').value = data.meta_equipo;
         
-        renderizarTabla();
+renderizarCards();
         actualizarResumen();
         actualizarGrafico();
         
@@ -143,7 +143,7 @@ async function cargarVendedores() {
     try {
         const response = await fetch(`/api/excel/ventas-equipo?mes=${currentMes}`);
         vendedores = await response.json();
-        renderizarTabla();
+        renderizarCards();
         actualizarResumen();
         actualizarGrafico();
     } catch (err) {
@@ -151,13 +151,15 @@ async function cargarVendedores() {
     }
 }
 
-// Renderizar tabla
-function renderizarTabla() {
-    const tbody = document.getElementById('tablaVendedores');
-    tbody.innerHTML = '';
+// Renderizar cards (escritorio) - similar a móvil pero con diseño adaptado
+function renderizarCards() {
+    const container = document.getElementById('cardsVendedores');
+    if (!container) return;
+    
+    container.innerHTML = '';
     
     if (vendedores.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7">No hay vendedores. Agrega uno nuevo.</td></tr>';
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280; grid-column: span 2;">Sin vendedores. Agrega uno.</div>';
         return;
     }
     
@@ -166,30 +168,58 @@ function renderizarTabla() {
         const meta = calcularMeta(suma);
         const falta = siguienteMeta(suma);
         
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="text" value="${v.vendedor}" onchange="actualizarVendedor(${index}, 'vendedor', this.value)" placeholder="Nombre"></td>
-            <td><input type="number" value="${v.periodo1 || 0}" onchange="actualizarVendedor(${index}, 'periodo1', this.value)" step="0.01"></td>
-            <td><input type="number" value="${v.periodo2 || 0}" onchange="actualizarVendedor(${index}, 'periodo2', this.value)" step="0.01"></td>
-            <td><strong>$${suma.toLocaleString()}</strong></td>
-            <td><span class="estado-bono ${meta.monto > 0 ? 'alcanzado' : 'sin-bono'}">${meta.nombre}</span></td>
-            <td>${falta > 0 ? `Faltan $${falta.toLocaleString()}` : '🎉 Completado!'}</td>
-            <td><button class="btn-eliminar" onclick="eliminarVendedor(${v.id})">🗑️</button></td>
+        // Badge: mostrar "Meta: $X" si alcanzó alguna, o "Sin meta" si no
+        const badgeTexto = meta.monto > 0 ? `Meta: $${meta.monto.toLocaleString()}` : 'Sin meta';
+        const badgeClass = meta.monto > 0 ? 'alcanzado' : 'sin-meta';
+        
+        // Falta: mostrar cuánto falta para la siguiente meta
+        const faltaTexto = falta > 0 ? `$${falta.toLocaleString()}` : 'Completado!';
+        
+        const card = document.createElement('div');
+        card.className = 'vendedor-card';
+        card.innerHTML = `
+            <div class="nombre">
+                <input type="text" value="${v.vendedor}" onchange="actualizarVendedor(${index}, 'vendedor', this.value)" placeholder="Nombre del vendedor">
+            </div>
+            <div class="datos">
+                <div class="dato">
+                    <label>Suma</label>
+                    <div class="valor">$${suma.toLocaleString()}</div>
+                </div>
+                <div class="dato">
+                    <label>Falta</label>
+                    <div class="valor">${faltaTexto}</div>
+                </div>
+            </div>
+            <div class="meta-badge ${badgeClass}">${badgeTexto}</div>
+            <div class="inputs">
+                <div>
+                    <label style="font-size: 10px; color: #6b7280;">P1 ($)</label>
+                    <input type="number" value="${v.periodo1 || 0}" onchange="actualizarVendedor(${index}, 'periodo1', this.value)" step="0.01">
+                </div>
+                <div>
+                    <label style="font-size: 10px; color: #6b7280;">P2 ($)</label>
+                    <input type="number" value="${v.periodo2 || 0}" onchange="actualizarVendedor(${index}, 'periodo2', this.value)" step="0.01">
+                </div>
+            </div>
+            <div class="btn-accion">
+                <button class="btn-eliminar" onclick="eliminarVendedor(${v.id})">🗑️ Eliminar</button>
+            </div>
         `;
-        tbody.appendChild(tr);
+        container.appendChild(card);
     });
 }
 
 // Agregar vendedor
 function agregarVendedor() {
     vendedores.push({ id: null, vendedor: '', periodo1: 0, periodo2: 0 });
-    renderizarTabla();
+    renderizarCards();
 }
 
 // Actualizar vendedor
 function actualizarVendedor(index, campo, valor) {
     vendedores[index][campo] = valor;
-    renderizarTabla();
+    renderizarCards();
     actualizarResumen();
     actualizarGrafico();
 }
@@ -271,9 +301,9 @@ async function guardarConfigBonos() {
             body: JSON.stringify(data)
         });
         
-        configBonos = data;
+configBonos = data;
         alert('¡Configuración guardada!');
-        renderizarTabla();
+        renderizarCards();
         actualizarResumen();
     } catch (err) {
         console.error('Error guardando config:', err);
