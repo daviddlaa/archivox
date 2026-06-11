@@ -304,7 +304,7 @@ exports.dashboardEstadosFiltrado = async (req, res) => {
 };
 
 // Promedio de solicitudes por mes (últimos 3 meses)
-// Cálculo: (solicitudes_mes1 + solicitudes_mes2 + solicitudes_mes3) / 3
+// Cálculo: contar solicitudes últimos 90 días y dividir por 3
 exports.dashboardPromedioMes = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -314,20 +314,19 @@ exports.dashboardPromedioMes = async (req, res) => {
     }
     
     try {
-        // Obtener promedio real de los últimos 3 meses
+        // Contar solicitudes últimos 90 días
         const result = await pool.query(
-            `SELECT COALESCE(AVG(cnt_mes), 0)::integer as promedio
-             FROM (
-                 SELECT COUNT(*) as cnt_mes
-                 FROM solicitudes 
-                 WHERE usuario_id = $1 
-                   AND fecha_solicitud >= CURRENT_DATE - INTERVAL '90 days'
-                 GROUP BY TO_CHAR(fecha_solicitud, 'YYYY-MM')
-             ) mensual`,
+            `SELECT COUNT(*) as total 
+             FROM solicitudes 
+             WHERE usuario_id = $1 
+               AND fecha_solicitud >= CURRENT_DATE - INTERVAL '90 days'`,
             [usuarioId]
         );
         
-        const promedio = parseInt(result.rows[0]?.promedio) || 0;
+        const total = parseInt(result.rows[0]?.total) || 0;
+        
+        // Dividir por 3 meses
+        const promedio = Math.round(total / 3);
         
         res.json({
             promedio: promedio,
@@ -340,7 +339,7 @@ exports.dashboardPromedioMes = async (req, res) => {
 };
 
 // Promedio de solicitudes por semana (últimas 9 semanas)
-// Cálculo: (solicitudes_sem1 + ... + solicitudes_sem9) / 9
+// Cálculo: contar solicitudes últimos 63 días y dividir por 9
 exports.dashboardPromedioSemana = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -350,20 +349,19 @@ exports.dashboardPromedioSemana = async (req, res) => {
     }
     
     try {
-        // Obtener promedio real de las últimas 9 semanas
+        // Contar solicitudes últimos 63 días
         const result = await pool.query(
-            `SELECT COALESCE(AVG(cnt_semana), 0)::integer as promedio
-             FROM (
-                 SELECT COUNT(*) as cnt_semana
-                 FROM solicitudes 
-                 WHERE usuario_id = $1 
-                   AND fecha_solicitud >= CURRENT_DATE - INTERVAL '63 days'
-                 GROUP BY DATE_TRUNC('week', fecha_solicitud)
-             ) semanal`,
+            `SELECT COUNT(*) as total 
+             FROM solicitudes 
+             WHERE usuario_id = $1 
+               AND fecha_solicitud >= CURRENT_DATE - INTERVAL '63 days'`,
             [usuarioId]
         );
         
-        const promedio = parseInt(result.rows[0]?.promedio) || 0;
+        const total = parseInt(result.rows[0]?.total) || 0;
+        
+        // Dividir por 9 semanas
+        const promedio = Math.round(total / 9);
         
         res.json({
             promedio: promedio,
