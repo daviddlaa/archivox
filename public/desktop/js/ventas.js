@@ -26,15 +26,15 @@ function generarMeses() {
     currentMes = mesActual;
 }
 
-// Calcular bono alcanzado
-function calcularBono(totalVenta) {
-    if (totalVenta >= configBonos.bono6) return { nombre: `Bono $${configBonos.bono6.toLocaleString()}`, monto: configBonos.bono6 };
-    if (totalVenta >= configBonos.bono5) return { nombre: `Bono $${configBonos.bono5.toLocaleString()}`, monto: configBonos.bono5 };
-    if (totalVenta >= configBonos.bono4) return { nombre: `Bono $${configBonos.bono4.toLocaleString()}`, monto: configBonos.bono4 };
-    if (totalVenta >= configBonos.bono3) return { nombre: `Bono $${configBonos.bono3.toLocaleString()}`, monto: configBonos.bono3 };
-    if (totalVenta >= configBonos.bono2) return { nombre: `Bono $${configBonos.bono2.toLocaleString()}`, monto: configBonos.bono2 };
-    if (totalVenta >= configBonos.bono1) return { nombre: `Bono $${configBonos.bono1.toLocaleString()}`, monto: configBonos.bono1 };
-    return { nombre: 'Sin bono', monto: 0 };
+// Calcular meta alcanzada
+function calcularMeta(totalVenta) {
+    if (totalVenta >= configBonos.bono6) return { nombre: `Meta $${configBonos.bono6.toLocaleString()}`, monto: configBonos.bono6 };
+    if (totalVenta >= configBonos.bono5) return { nombre: `Meta $${configBonos.bono5.toLocaleString()}`, monto: configBonos.bono5 };
+    if (totalVenta >= configBonos.bono4) return { nombre: `Meta $${configBonos.bono4.toLocaleString()}`, monto: configBonos.bono4 };
+    if (totalVenta >= configBonos.bono3) return { nombre: `Meta $${configBonos.bono3.toLocaleString()}`, monto: configBonos.bono3 };
+    if (totalVenta >= configBonos.bono2) return { nombre: `Meta $${configBonos.bono2.toLocaleString()}`, monto: configBonos.bono2 };
+    if (totalVenta >= configBonos.bono1) return { nombre: `Meta $${configBonos.bono1.toLocaleString()}`, monto: configBonos.bono1 };
+    return { nombre: 'Sin meta', monto: 0 };
 }
 
 // Calcular siguiente meta
@@ -91,7 +91,7 @@ function renderizarTabla() {
     
     vendedores.forEach((v, index) => {
         const suma = (parseFloat(v.periodo1) || 0) + (parseFloat(v.periodo2) || 0);
-        const bono = calcularBono(suma);
+        const meta = calcularMeta(suma);
         const falta = siguienteMeta(suma);
         
         const tr = document.createElement('tr');
@@ -100,7 +100,7 @@ function renderizarTabla() {
             <td><input type="number" value="${v.periodo1 || 0}" onchange="actualizarVendedor(${index}, 'periodo1', this.value)" step="0.01"></td>
             <td><input type="number" value="${v.periodo2 || 0}" onchange="actualizarVendedor(${index}, 'periodo2', this.value)" step="0.01"></td>
             <td><strong>$${suma.toLocaleString()}</strong></td>
-            <td><span class="estado-bono ${bono.monto > 0 ? 'alcanzado' : 'sin-bono'}">${bono.nombre}</span></td>
+            <td><span class="estado-bono ${meta.monto > 0 ? 'alcanzado' : 'sin-bono'}">${meta.nombre}</span></td>
             <td>${falta > 0 ? `Faltan $${falta.toLocaleString()}` : '🎉 Completado!'}</td>
             <td><button class="btn-eliminar" onclick="eliminarVendedor(${v.id})">🗑️</button></td>
         `;
@@ -128,7 +128,7 @@ async function eliminarVendedor(id) {
     
     try {
         await fetch(`/api/excel/ventas-equipo/${id}`, { method: 'DELETE' });
-        carregarVendedores();
+        cargarVendedores();
     } catch (err) {
         console.error('Error eliminando:', err);
     }
@@ -156,7 +156,7 @@ async function guardarTodo() {
     }
     
     alert('¡Guardado correctamente!');
-    carregarVendedores();
+    cargarVendedores();
 }
 
 // Actualizar resumen
@@ -245,12 +245,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('selectorMes').addEventListener('change', (e) => {
         currentMes = e.target.value;
-        carregarConfigBonos();
-        carregarVendedores();
+        cargarConfigBonos();
+        cargarVendedores();
     });
     
-    carregarConfigBonos();
-    carregarVendedores();
+    cargarConfigBonos();
+    cargarVendedores();
     
     // Logout
     document.getElementById('btnLogout')?.addEventListener('click', async (e) => {

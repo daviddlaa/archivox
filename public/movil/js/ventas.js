@@ -27,15 +27,15 @@ function generarMeses() {
     currentMes = mesActual;
 }
 
-// Calcular bono alcanzado
-function calcularBono(totalVenta) {
+// Calcular meta alcanzada
+function calcularMeta(totalVenta) {
     if (totalVenta >= configBonos.bono6) return { nombre: `$${configBonos.bono6}`, monto: configBonos.bono6 };
     if (totalVenta >= configBonos.bono5) return { nombre: `$${configBonos.bono5}`, monto: configBonos.bono5 };
     if (totalVenta >= configBonos.bono4) return { nombre: `$${configBonos.bono4}`, monto: configBonos.bono4 };
     if (totalVenta >= configBonos.bono3) return { nombre: `$${configBonos.bono3}`, monto: configBonos.bono3 };
     if (totalVenta >= configBonos.bono2) return { nombre: `$${configBonos.bono2}`, monto: configBonos.bono2 };
     if (totalVenta >= configBonos.bono1) return { nombre: `$${configBonos.bono1}`, monto: configBonos.bono1 };
-    return { nombre: 'Sin', monto: 0 };
+    return { nombre: 'Sin meta', monto: 0 };
 }
 
 // Calcular siguiente meta
@@ -48,7 +48,7 @@ function siguienteMeta(totalVenta) {
 }
 
 // Cargar configuración de bonos
-async function carregarConfigBonos() {
+async function cargarConfigBonos() {
     try {
         const response = await fetch(`/api/excel/config-bonos?mes=${currentMes}`);
         const data = await response.json();
@@ -67,7 +67,7 @@ async function carregarConfigBonos() {
 }
 
 // Cargar vendedores
-async function carregarVendedores() {
+async function cargarVendedores() {
     try {
         const response = await fetch(`/api/excel/ventas-equipo?mes=${currentMes}`);
         vendedores = await response.json();
@@ -92,7 +92,7 @@ function renderizarTabla() {
     
     vendedores.forEach((v, index) => {
         const suma = (parseFloat(v.periodo1) || 0) + (parseFloat(v.periodo2) || 0);
-        const bono = calcularBono(suma);
+        const meta = calcularMeta(suma);
         const falta = siguienteMeta(suma);
         
         const tr = document.createElement('tr');
@@ -101,7 +101,7 @@ function renderizarTabla() {
             <td><input type="number" value="${v.periodo1 || 0}" onchange="actualizarVendedor(${index}, 'periodo1', this.value)"></td>
             <td><input type="number" value="${v.periodo2 || 0}" onchange="actualizarVendedor(${index}, 'periodo2', this.value)"></td>
             <td><strong>$${suma.toLocaleString()}</strong></td>
-            <td>${bono.nombre}</td>
+            <td>${meta.nombre}</td>
             <td>${falta > 0 ? '-$' + falta : 'OK!'}</td>
             <td><button class="btn-eliminar" onclick="eliminarVendedor(${v.id})">X</button></td>
         `;
@@ -128,7 +128,7 @@ async function eliminarVendedor(id) {
     
     try {
         await fetch(`/api/excel/ventas-equipo/${id}`, { method: 'DELETE' });
-        carregarVendedores();
+        cargarVendedores();
     } catch (err) {
         console.error('Error:', err);
     }
@@ -156,7 +156,7 @@ async function guardarTodo() {
     }
     
     alert('¡Guardado!');
-    carregarVendedores();
+    cargarVendedores();
 }
 
 // Actualizar resumen
@@ -220,13 +220,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selector) {
         selector.addEventListener('change', (e) => {
             currentMes = e.target.value;
-            carregarConfigBonos();
-            carregarVendedores();
+            cargarConfigBonos();
+            cargarVendedores();
         });
     }
     
-    carregarConfigBonos();
-    carregarVendedores();
+    cargarConfigBonos();
+    cargarVendedores();
     
     // Logout
     const btnLogout = document.getElementById('btnLogout');
