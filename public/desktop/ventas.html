@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ventas Mensuales - Archivox</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>📊 Archivox</h2>
+            </div>
+            <nav>
+                <a href="/">📊 Dashboard</a>
+                <a href="/ventas">💰 Ventas Mensuales</a>
+                <a href="/importar">📤 Importar Excel</a>
+                <a href="/solicitudes">📋 Solicitudes</a>
+                <a href="#" id="btnLogout" style="color: #ef4444; margin-top: auto;">🚪 Cerrar Sesión</a>
+            </nav>
+        </aside>
+        <main class="contenido">
+            <h1>💰 Ventas Mensuales</h1>
+            <div class="cards">
+                <div class="card card-azul">
+                    <div class="card-icon">📈</div>
+                    <div class="card-content">
+                        <h3>Total Activadas</h3>
+                        <span id="totalActivadas">0</span>
+                    </div>
+                </div>
+                <div class="card card-verde">
+                    <div class="card-icon">✅</div>
+                    <div class="card-content">
+                        <h3>Este Mes</h3>
+                        <span id="ventasEsteMes">0</span>
+                    </div>
+                </div>
+                <div class="card card-morado">
+                    <div class="card-icon">📊</div>
+                    <div class="card-content">
+                        <h3>Promedio Mensual</h3>
+                        <span id="promedioMensual">0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bienvenida">
+                <h2>📈 Resumen de Ventas</h2>
+                <p>Visualiza el rendimiento de tus solicitudes activadas por mes.</p>
+            </div>
+            <div class="panel">
+                <h3>💹 Ventas Mensuales (Últimos 12 Meses)</h3>
+                <div class="chart-container">
+                    <canvas id="chartVentas"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="/desktop/js/ventas.js"></script>
+</body>
+</html>

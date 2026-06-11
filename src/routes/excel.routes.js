@@ -59,4 +59,10 @@ router.get(
     excelController.dashboardPromedioSemana
 );
 
+// Rutas de ventas mensuales
+router.get(
+    '/dashboard/ventas-mensuales',
+    excelController.dashboardVentasMensuales
+);
+
 module.exports = router;

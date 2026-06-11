@@ -94,6 +94,9 @@ app.get('/m/importar', requiresAuth, (req, res) => {
 app.get('/m/solicitudes', requiresAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/solicitudes.html'));
 });
+app.get('/m/ventas', requiresAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/movil/ventas.html'));
+});
 
 // Rutas protegidas - requieren autenticación
 app.get('/importar', requiresAuth, (req, res) => {
@@ -112,6 +115,10 @@ app.get('/solicitudes', requiresAuth, (req, res) => {
     } else {
         res.sendFile(path.join(__dirname, 'public/desktop/solicitudes.html'));
     }
+});
+
+app.get('/ventas', requiresAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/desktop/ventas.html'));
 });
 
 // Rutas de login (públicas)

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Archivox - Dashboard</title>
+    <title>Archivox - Ventas Mensuales</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -22,9 +22,6 @@
         .icono { font-size: 28px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
         .card-total .icono { background: #e0e7ff; }
         .card-verde .icono { background: #d1fae5; }
-        .card-rojo .icono { background: #fee2e2; }
-.card-amarillo .icono { background: #fef3c7; }
-        .card-azul .icono { background: #dbeafe; }
         .card-morado .icono { background: #ede9fe; }
         .info h3 { font-size: 12px; color: #6b7280; text-transform: uppercase; }
         .info span { font-size: 24px; font-weight: bold; color: #1f2937; }
@@ -41,52 +38,43 @@
 </head>
 <body>
     <div class="header">
-        <h1>📊 Archivox</h1>
-        <p>Dashboard</p>
+        <h1>💰 Archivox</h1>
+        <p>Ventas Mensuales</p>
     </div>
 
     <div class="bienvenida">
-        <h2>Bienvenido al sistema</h2>
-        <p>Consulta el estado de tus solicitudes</p>
+        <h2>📈 Resumen de Ventas</h2>
+        <p>Visualiza el rendimiento de tus solicitudes activadas</p>
     </div>
 
-<div class="cards-cont">
+    <div class="cards-cont">
         <div class="card card-total">
-            <div class="icono">📄</div>
-            <div class="info"><h3>Total</h3><span id="totalSolicitudes">0</span></div>
+            <div class="icono">📈</div>
+            <div class="info"><h3>Total Activadas</h3><span id="totalActivadas">0</span></div>
         </div>
         <div class="card card-verde">
             <div class="icono">✅</div>
-            <div class="info"><h3>Activadas</h3><span id="totalActivadas">0</span></div>
+            <div class="info"><h3>Este Mes</h3><span id="ventasEsteMes">0</span></div>
         </div>
-        <div class="card card-rojo">
-            <div class="icono">❌</div>
-            <div class="info"><h3>Rechazadas</h3><span id="totalRechazadas">0</span></div>
-        </div>
-        <div class="card card-amarillo">
-            <div class="icono">⏳</div>
-            <div class="info"><h3>Pendientes</h3><span id="totalPendientes">0</span></div>
+        <div class="card card-morado">
+            <div class="icono">📊</div>
+            <div class="info"><h3>Promedio Mensual</h3><span id="promedioMensual">0</span></div>
         </div>
     </div>
 
     <div class="panel">
-        <h3>📊 Estados</h3>
-        <div class="chart-cont"><canvas id="chartEstados"></canvas></div>
+        <h3>💹 Ventas Mensuales</h3>
+        <div class="chart-cont"><canvas id="chartVentas"></canvas></div>
     </div>
 
-    <div class="panel">
-        <h3>🎯 Segmentos</h3>
-        <div class="chart-cont"><canvas id="chartSegmentos"></canvas></div>
-    </div>
-
-<nav class="nav-bottom">
-        <a href="/m" class="active"><span>📊</span>Dashboard</a>
-        <a href="/m/ventas"><span>💰</span>Ventas</a>
+    <nav class="nav-bottom">
+        <a href="/m"><span>📊</span>Dashboard</a>
+        <a href="/m/ventas" class="active"><span>💰</span>Ventas</a>
         <a href="/m/importar"><span>📤</span>Importar</a>
         <a href="/m/solicitudes"><span>📋</span>Solicitudes</a>
         <a href="#" id="btnLogout"><span>🚪</span>Salir</a>
     </nav>
 
-<script src="/movil/js/dashboard.js"></script>
+    <script src="/movil/js/ventas.js"></script>
 </body>
 </html>

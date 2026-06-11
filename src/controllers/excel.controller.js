@@ -388,3 +388,35 @@ exports.dashboardPromedioSemana = async (req, res) => {
         res.json({ promedio: 0, datos: [] });
     }
 };
+
+// Ventas mensuales - últimas 12 meses de solicitudes ACTIVADAS
+exports.dashboardVentasMensuales = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({
+            error: 'No autenticado'
+        });
+    }
+    
+    try {
+        // Obtener ventas de los últimos 12 meses (solo estado ACTIVADA)
+        const result = await pool.query(
+            `SELECT 
+                TO_CHAR(fecha_solicitud, 'YYYY-MM') as mes,
+                TO_CHAR(fecha_solicitud, 'Mon YYYY') as mes_formato,
+                COUNT(*) as total
+             FROM solicitudes
+             WHERE usuario_id = $1 
+               AND estado = 'ACTIVADA'
+               AND fecha_solicitud >= CURRENT_DATE - INTERVAL '12 months'
+             GROUP BY TO_CHAR(fecha_solicitud, 'YYYY-MM')
+             ORDER BY mes ASC`,
+            [usuarioId]
+        );
+        
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error dashboardVentasMensuales:', err);
+        res.json([]);
+    }
+};
