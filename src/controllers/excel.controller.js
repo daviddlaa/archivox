@@ -313,25 +313,16 @@ exports.dashboardPromedioMes = async (req, res) => {
     }
     
     try {
-        // Obtener total general
-        const resultTotal = await pool.query(
-            'SELECT COALESCE(COUNT(*), 0)::integer as total_general FROM solicitudes WHERE usuario_id = $1',
-            [usuarioId]
-        );
-        const totalGeneral = parseInt(resultTotal.rows[0]?.total_general) || 0;
-        
-        // Query simple - promedio real
-        const resultPromedio = await pool.query(
-            `SELECT COALESCE(AVG(cnt), 0)::integer as promedio FROM (
-                SELECT COUNT(*) as cnt FROM solicitudes 
-                WHERE usuario_id = $1 AND fecha_solicitud IS NOT NULL
-                AND fecha_solicitud >= CURRENT_DATE - INTERVAL '180 days'
-                GROUP BY TO_CHAR(fecha_solicitud, 'YYYY-MM')
-            ) sub`,
+        // Query simple - solo contar sin subconsulta
+        const totalResult = await pool.query(
+            'SELECT COUNT(*)::integer as total FROM solicitudes WHERE usuario_id = $1',
             [usuarioId]
         );
         
-        const promedio = parseInt(resultPromedio.rows[0]?.promedio) || totalGeneral;
+        const total = parseInt(totalResult.rows[0]?.total) || 0;
+        
+        // Dividir por 6 para promedio mensual
+        const promedio = Math.ceil(total / 6);
         
         res.json({
             promedio: promedio,
@@ -339,7 +330,6 @@ exports.dashboardPromedioMes = async (req, res) => {
         });
     } catch (err) {
         console.error('Error dashboardPromedioMes:', err);
-        // En caso de error, devolver 0
         res.json({ promedio: 0, datos: [] });
     }
 };
@@ -354,25 +344,16 @@ exports.dashboardPromedioSemana = async (req, res) => {
     }
     
     try {
-        // Obtener total general
-        const resultTotal = await pool.query(
-            'SELECT COALESCE(COUNT(*), 0)::integer as total_general FROM solicitudes WHERE usuario_id = $1',
-            [usuarioId]
-        );
-        const totalGeneral = parseInt(resultTotal.rows[0]?.total_general) || 0;
-        
-        // Query simple - promedio real
-        const resultPromedio = await pool.query(
-            `SELECT COALESCE(AVG(cnt), 0)::integer as promedio FROM (
-                SELECT COUNT(*) as cnt FROM solicitudes 
-                WHERE usuario_id = $1 AND fecha_solicitud IS NOT NULL
-                AND fecha_solicitud >= CURRENT_DATE - INTERVAL '28 days'
-                GROUP BY DATE_TRUNC('week', fecha_solicitud)
-            ) sub`,
+        // Query simple - solo contar sin subconsulta
+        const totalResult = await pool.query(
+            'SELECT COUNT(*)::integer as total FROM solicitudes WHERE usuario_id = $1',
             [usuarioId]
         );
         
-        const promedio = parseInt(resultPromedio.rows[0]?.promedio) || totalGeneral;
+        const total = parseInt(totalResult.rows[0]?.total) || 0;
+        
+        // Dividir por 4 para promedio semanal
+        const promedio = Math.ceil(total / 4);
         
         res.json({
             promedio: promedio,
@@ -380,7 +361,6 @@ exports.dashboardPromedioSemana = async (req, res) => {
         });
     } catch (err) {
         console.error('Error dashboardPromedioSemana:', err);
-        // En caso de error, devolver 0
         res.json({ promedio: 0, datos: [] });
     }
 };
