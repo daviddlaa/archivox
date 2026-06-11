@@ -302,3 +302,83 @@ exports.dashboardEstadosFiltrado = async (req, res) => {
     }
 
 };
+
+// Promedio de solicitudes por mes (últimos 6 meses)
+exports.dashboardPromedioMes = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({
+            error: 'No autenticado'
+        });
+    }
+    
+    const sql = `
+        SELECT 
+            TO_CHAR(fecha_solicitud, 'YYYY-MM') as mes,
+            COUNT(*) as total
+        FROM solicitudes
+        WHERE usuario_id = $1 
+            AND fecha_solicitud >= DATE_TRUNC('month', NOW()) - INTERVAL '6 months'
+        GROUP BY TO_CHAR(fecha_solicitud, 'YYYY-MM')
+        ORDER BY mes ASC
+    `;
+    
+    try {
+        const result = await pool.query(sql, [usuarioId]);
+        
+        // Calcular promedio
+        const totalMeses = result.rows.length;
+        const promedio = totalMeses > 0 
+            ? Math.round(result.rows.reduce((sum, row) => sum + parseInt(row.total), 0) / totalMeses)
+            : 0;
+        
+        res.json({
+            promedio: promedio,
+            datos: result.rows
+        });
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
+};
+
+// Promedio de solicitudes por semana (últimas 4 semanas)
+exports.dashboardPromedioSemana = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({
+            error: 'No autenticado'
+        });
+    }
+    
+    const sql = `
+        SELECT 
+            DATE_TRUNC('week', fecha_solicitud)::date as semana,
+            COUNT(*) as total
+        FROM solicitudes
+        WHERE usuario_id = $1 
+            AND fecha_solicitud >= NOW() - INTERVAL '4 weeks'
+        GROUP BY DATE_TRUNC('week', fecha_solicitud)
+        ORDER BY semana ASC
+    `;
+    
+    try {
+        const result = await pool.query(sql, [usuarioId]);
+        
+        // Calcular promedio
+        const totalSemanas = result.rows.length;
+        const promedio = totalSemanas > 0 
+            ? Math.round(result.rows.reduce((sum, row) => sum + parseInt(row.total), 0) / totalSemanas)
+            : 0;
+        
+        res.json({
+            promedio: promedio,
+            datos: result.rows
+        });
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
+};

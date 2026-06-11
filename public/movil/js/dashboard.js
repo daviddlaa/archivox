@@ -10,6 +10,9 @@ async function cargarDatos() {
         document.getElementById('totalRechazadas').textContent = datos.rechazadas || 0;
         document.getElementById('totalPendientes').textContent = datos.pendientes || 0;
         
+        // Cargar promedios
+        await cargarPromedios();
+        
         // Fetch segmentos
         const resSeg = await fetch('/api/excel/dashboard/segmentos');
         const segmentos = await resSeg.json();
@@ -17,6 +20,23 @@ async function cargarDatos() {
         renderCharts(datos, segmentos);
     } catch (e) {
         console.error('Error:', e);
+    }
+}
+
+async function cargarPromedios() {
+    try {
+        const [responseMes, responseSemana] = await Promise.all([
+            fetch('/api/excel/dashboard/promedio/mes'),
+            fetch('/api/excel/dashboard/promedio/semana')
+        ]);
+        
+        const datosMes = await responseMes.json();
+        const datosSemana = await responseSemana.json();
+        
+        document.getElementById('promedioMes').textContent = datosMes.promedio || 0;
+        document.getElementById('promedioSemana').textContent = datosSemana.promedio || 0;
+    } catch (error) {
+        console.error('Error cargando promedios:', error);
     }
 }
 

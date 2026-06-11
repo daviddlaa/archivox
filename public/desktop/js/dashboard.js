@@ -40,6 +40,23 @@ async function cargarDashboard() {
     }
 }
 
+async function cargarPromedios() {
+    try {
+        const [responseMes, responseSemana] = await Promise.all([
+            fetch('/api/excel/dashboard/promedio/mes'),
+            fetch('/api/excel/dashboard/promedio/semana')
+        ]);
+        
+        const datosMes = await responseMes.json();
+        const datosSemana = await responseSemana.json();
+        
+        document.getElementById('promedioMes').textContent = datosMes.promedio.toLocaleString();
+        document.getElementById('promedioSemana').textContent = datosSemana.promedio.toLocaleString();
+    } catch (error) {
+        console.error('Error cargando promedios:', error);
+    }
+}
+
 async function cargarEstados() {
     try {
         const response = await fetch('/api/excel/dashboard/estados');
@@ -187,6 +204,7 @@ async function actualizarDashboard() {
 
 async function iniciarDashboard() {
     await cargarDashboard();
+    await cargarPromedios();
     await actualizarDashboard();
 }
 

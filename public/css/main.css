@@ -111,6 +111,14 @@ h1{
     background:linear-gradient(180deg, #f59e0b, #fbbf24);
 }
 
+.card-azul::before{
+    background:linear-gradient(180deg, #3b82f6, #60a5fa);
+}
+
+.card-morado::before{
+    background:linear-gradient(180deg, #8b5cf6, #a78bfa);
+}
+
 .card-icon{
     font-size:40px;
     width:60px;
@@ -136,6 +144,14 @@ h1{
 
 .card-amarillo .card-icon{
     background:linear-gradient(135deg, #fef3c7, #fde68a);
+}
+
+.card-azul .card-icon{
+    background:linear-gradient(135deg, #dbeafe, #bfdbfe);
+}
+
+.card-morado .card-icon{
+    background:linear-gradient(135deg, #ede9fe, #ddd6fe);
 }
 
 .card-content h3{

@@ -48,4 +48,15 @@ router.get(
     excelController.dashboardEstadosFiltrado
 );
 
+// Rutas de promedio
+router.get(
+    '/dashboard/promedio/mes',
+    excelController.dashboardPromedioMes
+);
+
+router.get(
+    '/dashboard/promedio/semana',
+    excelController.dashboardPromedioSemana
+);
+
 module.exports = router;
