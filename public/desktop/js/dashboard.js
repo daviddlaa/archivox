@@ -212,6 +212,7 @@ iniciarDashboard();
 
 setInterval(() => {
     cargarDashboard();
+    cargarPromedios();
 }, 5000);
 
 // Botón cerrar sesión
