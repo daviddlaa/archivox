@@ -3,32 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Archivox - Ventas Mensuales</title>
+    <title>Equipo de Ventas - Archivox</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding-bottom: 70px; }
         
         .header { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: white; padding: 20px; position: sticky; top: 0; z-index: 100; }
-        .header h1 { font-size: 22px; }
-        .header p { font-size: 13px; opacity: 0.8; }
+        .header h1 { font-size: 20px; margin-bottom: 5px; }
         
-        .bienvenida { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 15px; padding: 20px; border-radius: 12px; color: white; }
-        .bienvenida h2 { font-size: 18px; margin-bottom: 5px; }
-        .bienvenida p { font-size: 14px; opacity: 0.9; }
+        .selector-mes { background: white; padding: 15px; margin: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .selector-mes label { font-size: 14px; color: #6b7280; display: block; margin-bottom: 8px; }
+        .selector-mes select { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; }
         
-        .cards-cont { display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
-        .card { background: white; border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .icono { font-size: 28px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
-        .card-total .icono { background: #e0e7ff; }
-        .card-verde .icono { background: #d1fae5; }
-        .card-morado .icono { background: #ede9fe; }
-        .info h3 { font-size: 12px; color: #6b7280; text-transform: uppercase; }
-        .info span { font-size: 24px; font-weight: bold; color: #1f2937; }
+        .resumen { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 15px; margin-bottom: 15px; }
+        .resumen-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }
+        .resumen-card h3 { font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 5px; }
+        .resumen-card .valor { font-size: 22px; font-weight: bold; color: #1f2937; }
+        .resumen-card .meta { font-size: 11px; color: #6b7280; }
         
-        .panel { background: white; margin: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .panel h3 { font-size: 16px; color: #1f2937; margin-bottom: 15px; }
-        .chart-cont { position: relative; height: 220px; }
+        /* Tabla */
+        .tabla-ventas { background: white; margin: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow-x: auto; }
+        .tabla-ventas table { width: 100%; min-width: 600px; border-collapse: collapse; }
+        .tabla-ventas th { background: #1f2937; color: white; padding: 12px 10px; text-align: left; font-size: 12px; white-space: nowrap; }
+        .tabla-ventas td { padding: 10px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+        .tabla-ventas input { width: 100px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+        
+        .btn-agregar { background: #10b981; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; margin: 15px; width: calc(100% - 30px); }
+        
+        .btn-guardar { background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; margin: 15px; width: calc(100% - 30px); }
+        
+        .btn-eliminar { background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+        
+        /* Estado */
+        .estado-bono { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .estado-bono.alcanzado { background: #d1fae5; color: #065f46; }
+        .estado-bono.faltante { background: #fef3c7; color: #92400e; }
+        
+        /* Config */
+        .config-bonos { background: white; margin: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .config-bonos h3 { font-size: 16px; color: #1f2937; margin-bottom: 15px; }
+        .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .config-grid label { font-size: 12px; color: #6b7280; }
+        .config-grid input { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; }
         
         .nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
         .nav-bottom a { text-decoration: none; color: #6b7280; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
@@ -38,43 +55,72 @@
 </head>
 <body>
     <div class="header">
-        <h1>💰 Archivox</h1>
-        <p>Ventas Mensuales</p>
+        <h1>💰 Control de Ventas</h1>
     </div>
-
-    <div class="bienvenida">
-        <h2>📈 Resumen de Ventas</h2>
-        <p>Visualiza el rendimiento de tus solicitudes activadas</p>
+    
+    <div class="selector-mes">
+        <label>Seleccionar Mes:</label>
+        <select id="selectorMes">
+            <option value="">Cargando...</option>
+        </select>
     </div>
-
-    <div class="cards-cont">
-        <div class="card card-total">
-            <div class="icono">📈</div>
-            <div class="info"><h3>Total Activadas</h3><span id="totalActivadas">0</span></div>
+    
+    <div class="resumen">
+        <div class="resumen-card">
+            <h3>Total Equipo</h3>
+            <div class="valor" id="totalEquipo">$0</div>
+            <div class="meta" id="metaEquipo">Meta: $0</div>
         </div>
-        <div class="card card-verde">
-            <div class="icono">✅</div>
-            <div class="info"><h3>Este Mes</h3><span id="ventasEsteMes">0</span></div>
-        </div>
-        <div class="card card-morado">
-            <div class="icono">📊</div>
-            <div class="info"><h3>Promedio Mensual</h3><span id="promedioMensual">0</span></div>
+        <div class="resumen-card">
+            <h3>Mejor Vendedor</h3>
+            <div class="valor" id="mejorVendedor">-</div>
+            <div class="meta" id="ventasMejor">$0</div>
         </div>
     </div>
-
-    <div class="panel">
-        <h3>💹 Ventas Mensuales</h3>
-        <div class="chart-cont"><canvas id="chartVentas"></canvas></div>
+    
+    <div class="tabla-ventas">
+        <table>
+            <thead>
+                <tr>
+                    <th>Vendedor</th>
+                    <th>P1</th>
+                    <th>P2</th>
+                    <th>Suma</th>
+                    <th>Bono</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="tablaVendedores">
+                <tr><td colspan="7">Cargando...</td></tr>
+            </tbody>
+        </table>
     </div>
-
+    
+    <button class="btn-agregar" onclick="agregarVendedor()">+ Agregar Vendedor</button>
+    <button class="btn-guardar" onclick="guardarTodo()">💾 Guardar Todo</button>
+    
+    <div class="config-bonos">
+        <h3>⚙️ Configurar Bonos</h3>
+        <div class="config-grid">
+            <div><label>Bono 1 ($)</label><input type="number" id="bono1" value="3000"></div>
+            <div><label>Bono 2 ($)</label><input type="number" id="bono2" value="7000"></div>
+            <div><label>Bono 3 ($)</label><input type="number" id="bono3" value="12000"></div>
+            <div><label>Bono 4 ($)</label><input type="number" id="bono4" value="20000"></div>
+            <div><label>Bono 5 ($)</label><input type="number" id="bono5" value="30000"></div>
+            <div><label>Bono 6 ($)</label><input type="number" id="bono6" value="40000"></div>
+        </div>
+        <button class="btn-guardar" onclick="guardarConfigBonos()" style="margin-top: 15px;">Guardar Config</button>
+    </div>
+    
     <nav class="nav-bottom">
         <a href="/m"><span>📊</span>Dashboard</a>
-        <a href="/m/ventas" class="active"><span>💰</span>Ventas</a>
+        <a href="/m/equipo-ventas" class="active"><span>💰</span>Ventas</a>
         <a href="/m/importar"><span>📤</span>Importar</a>
         <a href="/m/solicitudes"><span>📋</span>Solicitudes</a>
         <a href="#" id="btnLogout"><span>🚪</span>Salir</a>
     </nav>
-
+    
     <script src="/movil/js/ventas.js"></script>
 </body>
 </html>

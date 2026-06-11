@@ -65,4 +65,41 @@ router.get(
     excelController.dashboardVentasMensuales
 );
 
+// ================== CONTROL DE VENTAS DEL EQUIPO ==================
+
+// Obtener ventas del equipo
+router.get(
+    '/ventas-equipo',
+    requiresAuth,
+    excelController.getVentasEquipo
+);
+
+// Agregar/actualizar vendedor
+router.post(
+    '/ventas-equipo',
+    requiresAuth,
+    excelController.addVendedor
+);
+
+// Eliminar vendedor
+router.delete(
+    '/ventas-equipo/:id',
+    requiresAuth,
+    excelController.deleteVendedor
+);
+
+// Obtener configuración de bonos
+router.get(
+    '/config-bonos',
+    requiresAuth,
+    excelController.getConfigBonos
+);
+
+// Guardar configuración de bonos
+router.post(
+    '/config-bonos',
+    requiresAuth,
+    excelController.saveConfigBonos
+);
+
 module.exports = router;

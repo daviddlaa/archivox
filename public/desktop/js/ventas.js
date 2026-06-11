@@ -1,98 +1,261 @@
-// Cargar datos de ventas mensuales
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        // Verificar sesión
-        const sessionRes = await fetch('/api/auth/sesion');
-        if (!sessionRes.ok) {
-            window.location.href = '/login';
-            return;
-        }
+// ================== CONTROL DE VENTAS DEL EQUIPO ==================
 
-        // Cargar ventas mensuales
-        const ventasRes = await fetch('/api/excel/dashboard/ventas-mensuales');
-        const ventasData = await ventasRes.json();
-        
-        // Cargar datos del dashboard para totales
-        const dashboardRes = await fetch('/api/excel/dashboard');
-        const dashboardData = await dashboardRes.json();
+let currentMes = '';
+let configBonos = { bono1: 3000, bono2: 7000, bono3: 12000, bono4: 20000, bono5: 30000, bono6: 40000, meta_equipo: 40000 };
+let vendedores = [];
+let grafico = null;
 
-        // Actualizar totales
-        document.getElementById('totalActivadas').textContent = dashboardData.activadas || 0;
-        
-        // Calcular ventas de este mes
-        const hoy = new Date();
-        const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
-        const ventaEsteMes = ventasData.find(v => v.mes === mesActual);
-        document.getElementById('ventasEsteMes').textContent = ventaEsteMes ? ventaEsteMes.total : 0;
-        
-        // Calcular promedio mensual
-        const promedio = ventasData.length > 0 
-            ? Math.round(ventasData.reduce((sum, v) => sum + parseInt(v.total), 0) / ventasData.length)
-            : 0;
-        document.getElementById('promedioMensual').textContent = promedio;
+// Generar meses del año en curso
+function generarMeses() {
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const anio = new Date().getFullYear();
+    const selector = document.getElementById('selectorMes');
+    
+    selector.innerHTML = '';
+    meses.forEach((mes, index) => {
+        const valor = `${anio}-${String(index + 1).padStart(2, '0')}`;
+        const option = document.createElement('option');
+        option.value = valor;
+        option.textContent = `${mes} ${anio}`;
+        selector.appendChild(option);
+    });
+    
+    // Seleccionar mes actual por defecto
+    const mesActual = `${anio}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+    selector.value = mesActual;
+    currentMes = mesActual;
+}
 
-        // Crear gráfico
-        const meses = [];
-        const totals = [];
-        
-        // Últimos 12 meses
-        for (let i = 11; i >= 0; i--) {
-            const fecha = new Date();
-            fecha.setMonth(fecha.getMonth() - i);
-            const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
-            const mesNombre = fecha.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
-            
-            const venta = ventasData.find(v => v.mes === mesKey);
-            meses.push(mesNombre);
-            totals.push(venta ? parseInt(venta.total) : 0);
-        }
+// Calcular bono alcanzado
+function calcularBono(totalVenta) {
+    if (totalVenta >= configBonos.bono6) return { nombre: `Bono $${configBonos.bono6.toLocaleString()}`, monto: configBonos.bono6 };
+    if (totalVenta >= configBonos.bono5) return { nombre: `Bono $${configBonos.bono5.toLocaleString()}`, monto: configBonos.bono5 };
+    if (totalVenta >= configBonos.bono4) return { nombre: `Bono $${configBonos.bono4.toLocaleString()}`, monto: configBonos.bono4 };
+    if (totalVenta >= configBonos.bono3) return { nombre: `Bono $${configBonos.bono3.toLocaleString()}`, monto: configBonos.bono3 };
+    if (totalVenta >= configBonos.bono2) return { nombre: `Bono $${configBonos.bono2.toLocaleString()}`, monto: configBonos.bono2 };
+    if (totalVenta >= configBonos.bono1) return { nombre: `Bono $${configBonos.bono1.toLocaleString()}`, monto: configBonos.bono1 };
+    return { nombre: 'Sin bono', monto: 0 };
+}
 
-        // Gráfico de ventas
-        const ctx = document.getElementById('chartVentas').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: meses,
-                datasets: [{
-                    label: 'Ventas Activadas',
-                    data: totals,
-                    backgroundColor: 'rgba(99, 102, 241, 0.8)',
-                    borderColor: 'rgba(99, 102, 241, 1)',
-                    borderWidth: 1,
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
-                }
-            }
-        });
-
-    } catch (error) {
-        console.error('Error al cargar ventas:', error);
+// Calcular siguiente meta
+function siguienteMeta(totalVenta) {
+    const metas = [configBonos.bono1, configBonos.bono2, configBonos.bono3, configBonos.bono4, configBonos.bono5, configBonos.bono6];
+    for (const meta of metas) {
+        if (totalVenta < meta) return meta - totalVenta;
     }
-});
+    return 0;
+}
 
-// Cerrar sesión
-document.getElementById('btnLogout')?.addEventListener('click', async (e) => {
-    e.preventDefault();
+// Cargar configuración de bonos
+async function cargarConfigBonos() {
     try {
+        const response = await fetch(`/api/excel/config-bonos?mes=${currentMes}`);
+        const data = await response.json();
+        if (data && data.bono1) {
+            configBonos = data;
+            document.getElementById('bono1').value = data.bono1;
+            document.getElementById('bono2').value = data.bono2;
+            document.getElementById('bono3').value = data.bono3;
+            document.getElementById('bono4').value = data.bono4;
+            document.getElementById('bono5').value = data.bono5;
+            document.getElementById('bono6').value = data.bono6;
+            document.getElementById('metaEquipoInput').value = data.meta_equipo;
+        }
+    } catch (err) {
+        console.error('Error cargando config:', err);
+    }
+}
+
+// Cargar vendedores
+async function cargarVendedores() {
+    try {
+        const response = await fetch(`/api/excel/ventas-equipo?mes=${currentMes}`);
+        vendedores = await response.json();
+        renderizarTabla();
+        actualizarResumen();
+        actualizarGrafico();
+    } catch (err) {
+        console.error('Error cargando vendedores:', err);
+    }
+}
+
+// Renderizar tabla
+function renderizarTabla() {
+    const tbody = document.getElementById('tablaVendedores');
+    tbody.innerHTML = '';
+    
+    if (vendedores.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7">No hay vendedores. Agrega uno nuevo.</td></tr>';
+        return;
+    }
+    
+    vendedores.forEach((v, index) => {
+        const suma = (parseFloat(v.periodo1) || 0) + (parseFloat(v.periodo2) || 0);
+        const bono = calcularBono(suma);
+        const falta = siguienteMeta(suma);
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" value="${v.vendedor}" onchange="actualizarVendedor(${index}, 'vendedor', this.value)" placeholder="Nombre"></td>
+            <td><input type="number" value="${v.periodo1 || 0}" onchange="actualizarVendedor(${index}, 'periodo1', this.value)" step="0.01"></td>
+            <td><input type="number" value="${v.periodo2 || 0}" onchange="actualizarVendedor(${index}, 'periodo2', this.value)" step="0.01"></td>
+            <td><strong>$${suma.toLocaleString()}</strong></td>
+            <td><span class="estado-bono ${bono.monto > 0 ? 'alcanzado' : 'sin-bono'}">${bono.nombre}</span></td>
+            <td>${falta > 0 ? `Faltan $${falta.toLocaleString()}` : '🎉 Completado!'}</td>
+            <td><button class="btn-eliminar" onclick="eliminarVendedor(${v.id})">🗑️</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Agregar vendedor
+function agregarVendedor() {
+    vendedores.push({ id: null, vendedor: '', periodo1: 0, periodo2: 0 });
+    renderizarTabla();
+}
+
+// Actualizar vendedor
+function actualizarVendedor(index, campo, valor) {
+    vendedores[index][campo] = valor;
+    renderizarTabla();
+    actualizarResumen();
+    actualizarGrafico();
+}
+
+// Eliminar vendedor
+async function eliminarVendedor(id) {
+    if (!id || !confirm('¿Eliminar este vendedor?')) return;
+    
+    try {
+        await fetch(`/api/excel/ventas-equipo/${id}`, { method: 'DELETE' });
+        carregarVendedores();
+    } catch (err) {
+        console.error('Error eliminando:', err);
+    }
+}
+
+// Guardar todo
+async function guardarTodo() {
+    for (const v of vendedores) {
+        if (!v.vendedor || v.vendedor.trim() === '') continue;
+        
+        try {
+            await fetch('/api/excel/ventas-equipo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    mes: currentMes,
+                    vendedor: v.vendedor,
+                    periodo1: parseFloat(v.periodo1) || 0,
+                    periodo2: parseFloat(v.periodo2) || 0
+                })
+            });
+        } catch (err) {
+            console.error('Error guardando:', err);
+        }
+    }
+    
+    alert('¡Guardado correctamente!');
+    carregarVendedores();
+}
+
+// Actualizar resumen
+function actualizarResumen() {
+    let total = 0;
+    let mejor = { nombre: '-', ventas: 0 };
+    
+    vendedores.forEach(v => {
+        const suma = (parseFloat(v.periodo1) || 0) + (parseFloat(v.periodo2) || 0);
+        total += suma;
+        if (suma > mejor.ventas) {
+            mejor = { nombre: v.vendedor, ventas: suma };
+        }
+    });
+    
+    document.getElementById('totalEquipo').textContent = `$${total.toLocaleString()}`;
+    document.getElementById('metaEquipo').textContent = `Meta: $${configBonos.meta_equipo.toLocaleString()}`;
+    document.getElementById('mejorVendedor').textContent = mejor.nombre;
+    document.getElementById('ventasMejor').textContent = `$${mejor.ventas.toLocaleString()}`;
+    document.getElementById('totalVendedores').textContent = vendedores.length;
+}
+
+// Guardar config bonos
+async function guardarConfigBonos() {
+    const data = {
+        mes: currentMes,
+        bono1: parseFloat(document.getElementById('bono1').value) || 3000,
+        bono2: parseFloat(document.getElementById('bono2').value) || 7000,
+        bono3: parseFloat(document.getElementById('bono3').value) || 12000,
+        bono4: parseFloat(document.getElementById('bono4').value) || 20000,
+        bono5: parseFloat(document.getElementById('bono5').value) || 30000,
+        bono6: parseFloat(document.getElementById('bono6').value) || 40000,
+        meta_equipo: parseFloat(document.getElementById('metaEquipoInput').value) || 40000
+    };
+    
+    try {
+        await fetch('/api/excel/config-bonos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        configBonos = data;
+        alert('¡Configuración guardada!');
+        renderizarTabla();
+        actualizarResumen();
+    } catch (err) {
+        console.error('Error guardando config:', err);
+    }
+}
+
+// Actualizar gráfico
+function actualizarGrafico() {
+    const ctx = document.getElementById('graficoVentas');
+    if (!ctx) return;
+    
+    if (grafico) grafico.destroy();
+    
+    const labels = vendedores.map(v => v.vendedor);
+    const datos = vendedores.map(v => (parseFloat(v.periodo1) || 0) + (parseFloat(v.periodo2) || 0));
+    
+    grafico = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Ventas ($)',
+                data: datos,
+                backgroundColor: datos.map((v, i) => v >= configBonos.bono3 ? '#10b981' : '#3b82f6'),
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', () => {
+    generarMeses();
+    
+    document.getElementById('selectorMes').addEventListener('change', (e) => {
+        currentMes = e.target.value;
+        carregarConfigBonos();
+        carregarVendedores();
+    });
+    
+    carregarConfigBonos();
+    carregarVendedores();
+    
+    // Logout
+    document.getElementById('btnLogout')?.addEventListener('click', async (e) => {
+        e.preventDefault();
         await fetch('/api/auth/logout', { method: 'POST' });
         window.location.href = '/login';
-    } catch (error) {
-        console.error('Error al cerrar sesión:', error);
-    }
+    });
 });

@@ -420,3 +420,159 @@ exports.dashboardVentasMensuales = async (req, res) => {
         res.json([]);
     }
 };
+
+// ================== CONTROL DE VENTAS DEL EQUIPO ==================
+
+// Obtener ventas del equipo por mes
+exports.getVentasEquipo = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { mes } = req.query;
+    
+    try {
+        let sql = `SELECT * FROM ventas_vendedores WHERE usuario_id = $1`;
+        const params = [usuarioId];
+        
+        if (mes) {
+            sql += ` AND mes = $2`;
+            params.push(mes);
+        }
+        
+        sql += ` ORDER BY vendedor ASC`;
+        
+        const result = await pool.query(sql, params);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error getVentasEquipo:', err);
+        res.json([]);
+    }
+};
+
+// Agregar vendedor al equipo
+exports.addVendedor = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { mes, vendedor, periodo1 = 0, periodo2 = 0 } = req.body;
+    
+    if (!mes || !vendedor) {
+        return res.status(400).json({ error: 'Mes y vendedor requeridos' });
+    }
+    
+    try {
+        // Upsert - insertar o actualizar
+        const result = await pool.query(
+            `INSERT INTO ventas_vendedores (usuario_id, mes, vendedor, periodo1, periodo2)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (mes, vendedor, usuario_id)
+             DO UPDATE SET periodo1 = $4, periodo2 = $5, updated_at = CURRENT_TIMESTAMP
+             RETURNING *`,
+            [usuarioId, mes, vendedor, periodo1, periodo2]
+        );
+        
+        res.json({ mensaje: 'Vendedor guardado', data: result.rows[0] });
+    } catch (err) {
+        console.error('Error addVendedor:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Eliminar vendedor
+exports.deleteVendedor = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { id } = req.params;
+    
+    try {
+        await pool.query(
+            `DELETE FROM ventas_vendedores WHERE id = $1 AND usuario_id = $2`,
+            [id, usuarioId]
+        );
+        
+        res.json({ mensaje: 'Vendedor eliminado' });
+    } catch (err) {
+        console.error('Error deleteVendedor:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Obtener configuración de bonos
+exports.getConfigBonos = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { mes } = req.query;
+    
+    try {
+        let sql = `SELECT * FROM config_bonos WHERE usuario_id = $1`;
+        const params = [usuarioId];
+        
+        if (mes) {
+            sql += ` AND mes = $2`;
+            params.push(mes);
+        }
+        
+        sql += ` ORDER BY mes DESC LIMIT 1`;
+        
+        const result = await pool.query(sql, params);
+        
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            // Devolver config por defecto
+            res.json({
+                bono1: 3000, bono2: 7000, bono3: 12000,
+                bono4: 20000, bono5: 30000, bono6: 40000,
+                meta_equipo: 40000
+            });
+        }
+    } catch (err) {
+        console.error('Error getConfigBonos:', err);
+        res.json({});
+    }
+};
+
+// Guardar configuración de bonos
+exports.saveConfigBonos = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const {
+        mes,
+        bono1 = 3000, bono2 = 7000, bono3 = 12000,
+        bono4 = 20000, bono5 = 30000, bono6 = 40000,
+        meta_equipo = 40000
+    } = req.body;
+    
+    if (!mes) {
+        return res.status(400).json({ error: 'Mes requerido' });
+    }
+    
+    try {
+        const result = await pool.query(
+            `INSERT INTO config_bonos (usuario_id, mes, bono1, bono2, bono3, bono4, bono5, bono6, meta_equipo)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+             ON CONFLICT (mes, usuario_id)
+             DO UPDATE SET bono1 = $3, bono2 = $4, bono3 = $5, bono4 = $6, bono5 = $7, bono6 = $8, meta_equipo = $9
+             RETURNING *`,
+            [usuarioId, mes, bono1, bono2, bono3, bono4, bono5, bono6, meta_equipo]
+        );
+        
+        res.json({ mensaje: 'Configuración guardada', data: result.rows[0] });
+    } catch (err) {
+        console.error('Error saveConfigBonos:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
