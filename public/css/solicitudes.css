@@ -909,3 +909,299 @@ tr:hover{
         font-size: 22px;
     }
 }
+
+/* ===== MODAL DE GESTIONES - LAYOUT MEJORADO PARA PANTALLAS GRANDES ===== */
+
+/* Header del modal */
+.gestion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid #e5e7eb;
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-radius: 16px 16px 0 0;
+}
+
+.gestion-header h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.gestion-header .btn-cerrar {
+    background: #f3f4f6;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gestion-header .btn-cerrar:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Layout de dos columnas */
+.gestion-layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 25px;
+    padding: 25px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Columna Izquierda */
+.gestion-izquierda {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Panel Info Cliente */
+.info-cliente {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.info-cliente h3 {
+    margin: 0 0 15px 0;
+    color: #1f2937;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.info-item .info-label {
+    font-size: 11px;
+    color: #6b7280;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.info-item .info-value {
+    font-size: 14px;
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.info-item .estado-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background: #dcfce7;
+    color: #065f46;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Panel Nueva Gestión */
+.nueva-gestion {
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    border: 2px solid #2563eb;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.nueva-gestion h3 {
+    margin: 0 0 15px 0;
+    color: #1e40af;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #374151;
+    font-size: 13px;
+}
+
+.input-readonly,
+.input-select,
+.input-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.input-readonly {
+    background: #f3f4f6;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.input-select {
+    background: white;
+    cursor: pointer;
+}
+
+.input-select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.input-textarea {
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+}
+
+.input-textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.btn-guardar {
+    width: 100%;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 10px;
+}
+
+.btn-guardar:hover {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn-guardar:active {
+    transform: translateY(0);
+}
+
+/* Columna Derecha - Historial */
+.gestion-derecha {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.gestion-derecha h3 {
+    margin: 0 0 15px 0;
+    color: #1f2937;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.historial-container {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* Tarjetas de historial - mejoradas */
+.historial-card {
+    padding: 16px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    border-left: 4px solid;
+}
+
+.historial-card .historial-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.historial-card .historial-tipo {
+    font-weight: 700;
+    font-size: 15px;
+    color: #1f2937;
+}
+
+.historial-card .historial-fecha {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.historial-card .historial-obs {
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.historial-card .historial-acciones {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.historial-card .btn-editar {
+    padding: 6px 12px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.historial-card .btn-eliminar {
+    padding: 6px 12px;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Responsive para modal en pantallas más pequeñas */
+@media (max-width: 900px) {
+    .gestion-layout {
+        grid-template-columns: 1fr;
+        max-height: 75vh;
+    }
+    
+    .gestion-izquierda {
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 20px;
+    }
+}

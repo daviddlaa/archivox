@@ -586,7 +586,7 @@ function formatFechaGestion(fecha) {
     return dia + '/' + mes + '/' + anio + ' ' + hora + ':' + minuto;
 }
 
-// Función para abrir modal de Gestiones
+// Función para abrir modal de Gestiones - Layout mejorado para pantallas grandes
 function abrirGestiones(id) {
     var datos = datosFilas[id];
     if (!datos) {
@@ -601,56 +601,70 @@ function abrirGestiones(id) {
     }
     
     var contenido = '';
-    contenido += '<div style="padding: 20px; max-height: 80vh; overflow-y: auto;">';
-    contenido += '<h2 style="margin-top: 0; color: #1f2937;">📋 Gestiones - Solicitud #' + id + '</h2>';
-    contenido += '<div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
-    contenido += '<p><strong>Nombre:</strong> ' + (datos.nombre || 'N/A') + '</p>';
-    contenido += '<p><strong>Cédula:</strong> ' + (datos.cedula || 'N/A') + '</p>';
-    contenido += '<p><strong>Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
-    contenido += '<p><strong>Estado:</strong> ' + (datos.estado || 'N/A') + '</p>';
+    // Header
+    contenido += '<div class="gestion-header">';
+    contenido += '<h2>📋 Gestiones - Solicitud #' + id + '</h2>';
+    contenido += '<button class="btn-cerrar" onclick="cerrarModal()">✕</button>';
     contenido += '</div>';
     
-    // Sección de nueva gestión
-    contenido += '<div style="border: 2px solid #2563eb; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #eff6ff;">';
-    contenido += '<h3 style="margin-top: 0; color: #1f2937; font-size: 16px;">➕ Nueva Gestión</h3>';
+    // Layout de dos columnas
+    contenido += '<div class="gestion-layout">';
     
-    // Fecha y hora (automático)
-    contenido += '<div style="display: flex; gap: 10px; margin-bottom: 12px;">';
-    contenido += '<div style="flex: 1;">';
-    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">📅 Fecha y Hora:</label>';
-    contenido += '<input type="text" id="fecha-gestion" value="' + getFechaHoraActual() + '" readonly style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: #f3f4f6; color: #6b7280;">';
+    // Columna Izquierda: Info + Nueva Gestión
+    contenido += '<div class="gestion-izquierda">';
+    
+    // Panel Info Cliente
+    contenido += '<div class="info-cliente">';
+    contenido += '<h3>👤 Información del Cliente</h3>';
+    contenido += '<div class="info-grid">';
+    contenido += '<div class="info-item"><span class="info-label">Nombre</span><span class="info-value">' + (datos.nombre || 'N/A') + '</span></div>';
+    contenido += '<div class="info-item"><span class="info-label">Cédula</span><span class="info-value">' + (datos.cedula || 'N/A') + '</span></div>';
+    contenido += '<div class="info-item"><span class="info-label">Celular</span><span class="info-value">' + (datos.celular || 'N/A') + '</span></div>';
+    contenido += '<div class="info-item"><span class="info-label">Estado</span><span class="info-value estado-badge">' + (datos.estado || 'N/A') + '</span></div>';
+    contenido += '<div class="info-item"><span class="info-label">Segmento</span><span class="info-value">' + (datos.segmento || 'N/A') + '</span></div>';
+    contenido += '<div class="info-item"><span class="info-label">Producto</span><span class="info-value">' + (datos.producto || 'N/A') + '</span></div>';
     contenido += '</div>';
     contenido += '</div>';
     
-    // Tipo de gestión (dropdown)
-    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">📋 Tipo de Gestión:</label>';
-    contenido += '<select id="tipo-gestion" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 12px; background: white;">';
-    contenido += opcionesDropdown;
-    contenido += '</select>';
+    // Sección de Nueva Gestión
+    contenido += '<div class="nueva-gestion">';
+    contenido += '<h3>➕ Nueva Gestión</h3>';
+    
+    // Fecha y hora
+    contenido += '<div class="form-group">';
+    contenido += '<label>📅 Fecha y Hora</label>';
+    contenido += '<input type="text" id="fecha-gestion" value="' + getFechaHoraActual() + '" readonly class="input-readonly">';
+    contenido += '</div>';
+    
+    // Tipo de gestión
+    contenido += '<div class="form-group">';
+    contenido += '<label>📋 Tipo de Gestión</label>';
+    contenido += '<select id="tipo-gestion" class="input-select">' + opcionesDropdown + '</select>';
+    contenido += '</div>';
     
     // Observación
-    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">📝 Observación:</label>';
-    contenido += '<textarea id="observacion-gestion" rows="4" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical; margin-bottom: 12px;" placeholder="Escriba su observación aquí..."></textarea>';
+    contenido += '<div class="form-group">';
+    contenido += '<label>📝 Observación</label>';
+    contenido += '<textarea id="observacion-gestion" rows="5" class="input-textarea" placeholder="Escriba su observación aquí..."></textarea>';
+    contenido += '</div>';
     
     // Botón guardar
-    contenido += '<button onclick="guardarGestion(\'' + id + '\')" style="width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;">💾 Guardar Gestión</button>';
+    contenido += '<button onclick="guardarGestion(\'' + id + '\')" class="btn-guardar">💾 Guardar Gestión</button>';
     contenido += '</div>';
     
-    // Historial de gestiones
-    contenido += '<div id="historial-gestiones" style="margin-top: 15px;">';
-    contenido += '<h3 style="color: #1f2937; font-size: 16px;">📜 Historial de Gestiones</h3>';
-    contenido += '<div id="lista-historial" style="text-align: center; padding: 20px; color: #6b7280;">Cargando...</div>';
+    contenido += '</div>'; // Fin columna izquierda
+    
+    // Columna Derecha: Historial
+    contenido += '<div class="gestion-derecha">';
+    contenido += '<h3>📜 Historial de Gestiones</h3>';
+    contenido += '<div id="lista-historial" class="historial-container">Cargando...</div>';
     contenido += '</div>';
     
-    // Botones cerrar
-    contenido += '<div style="margin-top: 20px; display: flex; justify-content: flex-end;">';
-    contenido += '<button onclick="cerrarModal()" style="padding: 10px 20px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer;">✕ Cerrar</button>';
-    contenido += '</div>';
-    contenido += '</div>';
+    contenido += '</div>'; // Fin layout
     
     crearModal(contenido);
     
-    // Cargar historial de gestines
+    // Cargar historial
     cargarHistorialGestiones(id);
 }
 
@@ -683,7 +697,7 @@ function abrirCompletar(id) {
     crearModal(contenido);
 }
 
-// Función para crear modal genérico
+// Función para crear modal genérico - Mejorado para pantallas grandes
 function crearModal(contenido) {
     // Eliminar modal existente si hay
     var modalExistente = document.getElementById('modal-generico');
@@ -696,7 +710,8 @@ function crearModal(contenido) {
     overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
     
     var modal = document.createElement('div');
-    modal.style.cssText = 'background: white; border-radius: 12px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);';
+    // Modal más grande para pantallas grandes: 950px
+    modal.style.cssText = 'background: white; border-radius: 16px; max-width: 950px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4);';
     modal.innerHTML = contenido;
     
     // Cerrar al hacer click en el overlay
@@ -991,6 +1006,153 @@ function guardarCompletar(id) {
     
     alert('Información guardada para solicitud #' + id);
    cerrarModal();
+}
+
+// ================== EXPORTAR SELECCIONADAS ==================
+
+// Función para exportar las filas seleccionadas a Excel/CSV
+function exportarSeleccionadas() {
+    if (filasSeleccionadas.length === 0) {
+        alert('Selecciona al menos una fila primero');
+        return;
+    }
+    
+    // Crear datos para exportar
+    var datosAExportar = [];
+    filasSeleccionadas.forEach(function(id) {
+        var datos = datosFilas[id];
+        if (datos) {
+            datosAExportar.push({
+                'Solicitud': datos.id_solicitud,
+                'Estado': datos.estado,
+                'Cédula': datos.cedula,
+                'Nombre': datos.nombre,
+                'Celular': datos.celular,
+                'Código Plus': datos.codigo_plus,
+                'Segmento': datos.segmento,
+                'Producto': datos.producto,
+                'Fecha Solicitud': datos.fecha_solicitud
+            });
+        }
+    });
+    
+    if (datosAExportar.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+    }
+    
+    // Converter para CSV
+    var csvContent = '\uFEFF'; // BOM para UTF-8
+    var headers = Object.keys(datosAExportar[0]);
+    csvContent += headers.join(',') + '\n';
+    
+    datosAExportar.forEach(function(row) {
+        var values = headers.map(function(header) {
+            var value = row[header] || '';
+            // Escapar comillas y envolver en comillas si contiene coma
+            if (String(value).indexOf(',') > -1 || String(value).indexOf('"') > -1) {
+                value = '"' + String(value).replace(/"/g, '""') + '"';
+            }
+            return value;
+        });
+        csvContent += values.join(',') + '\n';
+    });
+    
+    // Descargar archivo
+    var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement('a');
+    var url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'solicitudes_seleccionadas_' + getFechaHoraActual().replace(/[\s:]/g, '-') + '.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    alert('Se exportaron ' + datosAExportar.length + ' registros');
+}
+
+// ================== MARCAR SELECCIONADAS ==================
+
+// Función para marcar todas las filas visibles
+function marcarSeleccionadas() {
+    var checkboxes = document.querySelectorAll('.checkbox-fila');
+    
+    if (filasSeleccionadas.length === checkboxes.length) {
+        // Si ya están todas, desmarcar todas
+        checkboxes.forEach(function(cb) {
+            cb.checked = false;
+            var fila = cb.closest('tr');
+            fila.classList.remove('fila-seleccionada');
+        });
+        filasSeleccionadas = [];
+    } else {
+        // Marcar todas
+        filasSeleccionadas = [];
+        checkboxes.forEach(function(cb) {
+            cb.checked = true;
+            var fila = cb.closest('tr');
+            var id = cb.value;
+            if (filasSeleccionadas.indexOf(id) === -1) {
+                filasSeleccionadas.push(id);
+            }
+            fila.classList.add('fila-seleccionada');
+        });
+    }
+    
+    actualizarCheckboxes();
+    actualizarContador();
+}
+
+// ================== LIMPIAR FILTROS ==================
+
+// Función para limpiar todos los filtros
+function limpiarFiltros() {
+    // Limpiar búsqueda
+    document.getElementById('cedula').value = '';
+    
+    // Resetear botones de estado
+    var botonesEstado = document.querySelectorAll('#filtro-estado .filter-btn');
+    botonesEstado.forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    botonesEstado[0].classList.add('active');
+    
+    // Resetear botones de segmento
+    var botonesSegmento = document.querySelectorAll('#filtro-segmento .filter-btn');
+    botonesSegmento.forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    botonesSegmento[0].classList.add('active');
+    
+    // Resetear variables
+    estadoActual = '';
+    segmentoActual = '';
+    columnaOrdenar = 'id_solicitud';
+    ordenActual = 'DESC';
+    
+    // Actualizar info panel
+    actualizarInfoPanel();
+    
+    // Recargar datos
+    cargarSolicitudes();
+}
+
+// Actualizar info panel con filtros actuales
+function actualizarInfoPanel() {
+    var estadoInfo = document.querySelector('.info-panel .info-stat:nth-child(1) .info-value');
+    var segmentoInfo = document.querySelector('.info-panel .info-stat:nth-child(2) .info-value');
+    var ultimaActualizacion = document.getElementById('ultima-actualizacion');
+    
+    if (estadoInfo) {
+        estadoInfo.textContent = estadoActual || 'Todos';
+    }
+    if (segmentoInfo) {
+        segmentoInfo.textContent = segmentoActual || 'Todos';
+    }
+    if (ultimaActualizacion) {
+        ultimaActualizacion.textContent = getFechaHoraActual();
+    }
 }
 
 // Inicializar
