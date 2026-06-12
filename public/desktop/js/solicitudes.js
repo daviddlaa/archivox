@@ -740,7 +740,9 @@ async function cargarHistorialGestiones(id) {
             return;
         }
         
-        var gestines = await response.json();
+var gestines = await response.json();
+        console.log('DEBUG cargarHistorialGestiones - gestines:', gestines);
+        console.log('DEBUG cargarHistorialGestiones - gestines.length:', gestines ? gestines.length : 'undefined');
         
         if (!gestines || gestines.length === 0) {
             container.innerHTML = '<div style="padding: 15px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 8px;">No hay gestines registradas</div>';
