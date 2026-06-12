@@ -720,11 +720,20 @@ function cerrarModal() {
 
 // Función para cargar historial de gestines
 async function cargarHistorialGestiones(id) {
+    console.log('DEBUG cargarHistorialGestiones - iniando con id:', id);
+    
     var container = document.getElementById('lista-historial');
-    if (!container) return;
+    if (!container) {
+        console.log('DEBUG cargarHistorialGestiones - container no encontrado');
+        return;
+    }
+    
+    container.innerHTML = '<div style="padding:15px;text-align:center;color:#6b7280;">Cargando gestines...</div>';
+    console.log('DEBUG cargarHistorialGestiones - fetchingAPI...');
     
     try {
         var response = await fetch('/api/excel/gestiones/' + id);
+        console.log('DEBUG cargarHistorialGestiones - response:', response.status);
         
         if (!response.ok) {
             container.innerHTML = '<div style="color: red;">Error al cargar historial</div>';
