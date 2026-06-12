@@ -72,64 +72,104 @@
             </div>
         </div>
         
-<div class="stats">
-            <div class="mini-card">
-                <span id="totalRegistros">0</span>
-                <small>Total Registros</small>
+<!-- Fila Superior: Stats + Filtros en 3 columnas -->
+        <div class="stats-grid">
+            <!-- Columna 1: Stats -->
+            <div class="stats-column">
+                <div class="stats-row">
+                    <div class="stat-card stat-total">
+                        <span class="stat-value" id="totalRegistros">0</span>
+                        <span class="stat-label">Total Registros</span>
+                    </div>
+                    <div class="stat-card stat-showing">
+                        <span class="stat-value" id="mostrando">0</span>
+                        <span class="stat-label">Mostrando</span>
+                    </div>
+                    <div class="stat-card stat-selected">
+                        <span class="stat-value" id="seleccionadas-count">0</span>
+                        <span class="stat-label">Seleccionadas</span>
+                    </div>
+                </div>
+                <div class="actions-mini">
+                    <button class="btn-action btn-whatsapp" id="btn-whatsapp" title="Enviar a WhatsApp" style="display:none;">📱 WhatsApp</button>
+                </div>
             </div>
-            <div class="mini-card">
-                <span id="mostrando">0</span>
-                <small>Mostrando</small>
-            </div>
-            <div class="mini-card">
-                <span id="seleccionadas-count">0</span>
-                <small>Seleccionadas</small>
-            </div>
-<div class="actions-mini">
-                <button class="btn-action btn-whatsapp" id="btn-whatsapp" title="Enviar a WhatsApp" style="display:none;">📱 Enviar datos a WhatsApp</button>
-            </div>
-        </div>
-
-        <div class="filters-container">
-            <div class="filter-section">
-                <label>Estado</label>
+            
+            <!-- Columna 2: Filtros Estado -->
+            <div class="filter-column">
+                <label class="filter-label">📌 Estado</label>
                 <div class="filter-buttons" id="filtro-estado">
                     <button class="filter-btn active" data-value="">Todos</button>
                 </div>
             </div>
-            <div class="filter-section">
-                <label>Segmento</label>
+            
+            <!-- Columna 3: Filtros Segmento -->
+            <div class="filter-column">
+                <label class="filter-label">🏷️ Segmento</label>
                 <div class="filter-buttons" id="filtro-segmento">
                     <button class="filter-btn active" data-value="">Todos</button>
                 </div>
             </div>
-            <div class="search-section">
-                <input type="text" id="cedula" placeholder="🔍 Buscar por cédula y por nombres y apellidos">
-            </div>
         </div>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th class="th-checkbox">
-                            <input type="checkbox" id="seleccionar-todos" title="Seleccionar todos">
-                        </th>
-<th class="sortable" data-columna="id_solicitud">Solicitud</th>
-                        <th class="sortable" data-columna="estado">Estado</th>
-                        <th class="sortable" data-columna="cedula">Cédula</th>
-                        <th class="sortable" data-columna="nombre">Nombre</th>
-                        <th class="sortable" data-columna="celular">Celular</th>
-<th class="sortable" data-columna="codigo_plus">Código Plus</th>
-                        <th class="sortable" data-columna="segmento">Segmento</th>
-                        <th class="sortable" data-columna="producto">Producto</th>
-                        <th class="sortable" data-columna="fecha_solicitud">Fecha Solicitud</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla">
-                </tbody>
-            </table>
+        <!-- Fila de Búsqueda -->
+        <div class="search-row">
+            <input type="text" id="cedula" placeholder="🔍 Buscar por cédula, nombres, apellidos o teléfono...">
+        </div>
+
+        <!-- Contenido Principal: Panel Izquierdo + Tabla -->
+        <div class="main-content-grid">
+            <!-- Panel Izquierdo: Info Rápida -->
+            <aside class="info-panel">
+                <h3>📊 Resumen</h3>
+                <div class="info-stats">
+                    <div class="info-stat">
+                        <span class="info-label">Estado Actual</span>
+                        <span class="info-value">Todos</span>
+                    </div>
+                    <div class="info-stat">
+                        <span class="info-label">Segmento</span>
+                        <span class="info-value">Todos</span>
+                    </div>
+                    <div class="info-stat">
+                        <span class="info-label">Última Actualización</span>
+                        <span class="info-value" id="ultima-actualizacion">-</span>
+                    </div>
+                </div>
+                <div class="quick-actions">
+                    <h4>⚡ Acciones Rápidas</h4>
+                    <button class="quick-btn" onclick="exportarSeleccionadas()">📥 Exportar</button>
+                    <button class="quick-btn" onclick="marcarSeleccionadas()">✓ Marcar Todas</button>
+                    <button class="quick-btn" onclick="limpiarFiltros()">🧹 Limpiar</button>
+                </div>
+            </aside>
+            
+<!-- Panel Derecho: Tabla -->
+            <div class="table-panel">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="th-checkbox">
+                                    <input type="checkbox" id="seleccionar-todos" title="Seleccionar todos">
+                                </th>
+                                <th class="sortable" data-columna="id_solicitud">Solicitud</th>
+                                <th class="sortable" data-columna="estado">Estado</th>
+                                <th class="sortable" data-columna="cedula">Cédula</th>
+                                <th class="sortable" data-columna="nombre">Nombre</th>
+                                <th class="sortable" data-columna="celular">Celular</th>
+                                <th class="sortable" data-columna="codigo_plus">Código Plus</th>
+                                <th class="sortable" data-columna="segmento">Segmento</th>
+                                <th class="sortable" data-columna="producto">Producto</th>
+                                <th class="sortable" data-columna="fecha_solicitud">Fecha Solicitud</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
