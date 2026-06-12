@@ -814,12 +814,12 @@ function guardarGestion(id) {
             tipo_gestion: tipo_gestion,
             observacion: obs
         })
-    })
-    .then(function(response) {
-        return response.json();
+})
+    .then(function(res) {
+        return res.json();
     })
     .then(function(resultado) {
-        if (response.ok) {
+        if (resultado && !resultado.error) {
             // Recargar historial
             cargarHistorialGestiones(id);
             

@@ -577,50 +577,6 @@ exports.saveConfigBonos = async (req, res) => {
     }
 };
 
-// ================== TABLA DE GESTIONES (Temporal) ==================
-
-// Crear tabla de gestions (ruta temporal para ejecutar desde CLI)
-exports.crearTablaGestiones = async (req, res) => {
-    const usuarioId = req.session.usuario?.id;
-    if (!usuarioId) {
-        return res.status(401).json({ error: 'No autenticado' });
-    }
-    
-    try {
-        // Verificar si la tabla ya existe
-        const checkTable = await pool.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_name = 'gestiones'
-        `);
-        
-        if (checkTable.rows.length > 0) {
-            return res.json({ mensaje: 'La tabla gestines ya existe', existente: true });
-        }
-        
-        // Crear la tabla
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS gestiones (
-                id SERIAL PRIMARY KEY,
-                solicitud_id INTEGER NOT NULL,
-                usuario_id INTEGER NOT NULL,
-                tipo_gestion TEXT NOT NULL,
-                observacion TEXT,
-                fecha_gestion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
-                FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id_solicitud)
-            )
-        `);
-        
-        res.json({ mensaje: 'Tabla gestines creada exitosamente', existente: false });
-    } catch (err) {
-        console.error('Error crearTablaGestiones:', err);
-        res.status(500).json({ error: err.message });
-    }
-};
-
 // ================== GESTIONES ==================
 
 // Crear una nueva gestión

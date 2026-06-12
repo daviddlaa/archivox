@@ -120,19 +120,6 @@ router.put(
 
 // ================== GESTIONES ==================
 
-// Ruta temporal para crear tabla de gestines (ejecutar desde CLI)
-// NOTA: Esta ruta es temporal y pública para poder crear la tabla
-router.post(
-    '/crear-tabla-gestiones',
-    excelController.crearTablaGestiones
-);
-
-// Versión GET para testing (más fácil de probar en navegador)
-router.get(
-    '/crear-tabla-gestiones',
-    excelController.crearTablaGestiones
-);
-
 // Crear una nueva gestión
 router.post(
     '/gestiones',
