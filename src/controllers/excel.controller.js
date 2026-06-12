@@ -577,6 +577,47 @@ exports.saveConfigBonos = async (req, res) => {
     }
 };
 
+// ================== TABLA DE GESTIONES ==================
+
+// Crear tabla de gestiones (ruta temporal para ejecutar desde CLI)
+exports.crearTablaGestiones = async (req, res) => {
+    console.log('DEBUG crearTablaGestiones - Iniciando...');
+    
+    try {
+        // Verificar si la tabla ya existe
+        const checkTable = await pool.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name = 'gestiones'
+        `);
+        
+        if (checkTable.rows.length > 0) {
+            console.log('DEBUG crearTablaGestiones - La tabla ya existe');
+            return res.json({ mensaje: 'La tabla gestienes ya existe', existente: true });
+        }
+        
+        // Crear la tabla
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS gestiones (
+                id SERIAL PRIMARY KEY,
+                solicitud_id INTEGER NOT NULL,
+                usuario_id INTEGER NOT NULL,
+                tipo_gestion TEXT NOT NULL,
+                observacion TEXT,
+                fecha_gestion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        console.log('DEBUG crearTablaGestiones - Tabla creada exitosamente');
+        res.json({ mensaje: 'Tabla gestienes creada exitosamente', existente: false });
+    } catch (err) {
+        console.error('DEBUG crearTablaGestiones - Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // ================== GESTIONES ==================
 
 // Crear una nueva gestión
@@ -622,9 +663,9 @@ exports.getGestiones = async (req, res) => {
     const { solicitud_id } = req.params;
     console.log('DEBUG getGestiones - solicitud_id:', solicitud_id);
     
-    try {
+try {
         const result = await pool.query(
-            `SELECT * FROM gestines 
+            `SELECT * FROM gestienes 
              WHERE solicitud_id = $1 AND usuario_id = $2
              ORDER BY fecha_gestion DESC`,
             [solicitud_id, usuarioId]
@@ -658,7 +699,7 @@ exports.actualizarGestion = async (req, res) => {
     
 try {
         const result = await pool.query(
-            `UPDATE gestines 
+            `UPDATE gestienes 
              SET tipo_gestion = $1, observacion = $2, updated_at = CURRENT_TIMESTAMP
              WHERE id = $3 AND usuario_id = $4
              RETURNING *`,
@@ -691,7 +732,7 @@ exports.eliminarGestion = async (req, res) => {
     
 try {
         const result = await pool.query(
-            `DELETE FROM gestines WHERE id = $1 AND usuario_id = $2 RETURNING id`,
+            `DELETE FROM gestienes WHERE id = $1 AND usuario_id = $2 RETURNING id`,
             [id, usuarioId]
         );
         
