@@ -121,9 +121,9 @@ router.put(
 // ================== GESTIONES ==================
 
 // Ruta temporal para crear tabla de gestines (ejecutar desde CLI)
+// NOTA: Esta ruta es temporal y pública para poder crear la tabla
 router.post(
     '/crear-tabla-gestiones',
-    requiresAuth,
     excelController.crearTablaGestiones
 );
 
