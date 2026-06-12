@@ -307,7 +307,7 @@ exports.dashboardEstadosFiltrado = async (req, res) => {
 // Cálculo: contar solicitudes últimos 90 días y dividir por 3
 exports.dashboardPromedioMes = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
-if (!usuarioId) {
+    if (!usuarioId) {
         return res.status(401).json({
             error: 'No autenticado'
         });
@@ -342,7 +342,7 @@ if (!usuarioId) {
 // Cálculo: contar solicitudes últimos 63 días y dividir por 9
 exports.dashboardPromedioSemana = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
-if (!usuarioId) {
+    if (!usuarioId) {
         return res.status(401).json({
             error: 'No autenticado'
         });
@@ -555,10 +555,10 @@ exports.saveConfigBonos = async (req, res) => {
         );
         
         res.json({ mensaje: 'Configuración guardada', data: result.rows[0] });
-    } catch (err) {
+} catch (err) {
         console.error('Error saveConfigBonos:', err);
         res.status(500).json({ error: err.message });
-}
+    }
 };
 
 // ================== GESTIONES ==================
