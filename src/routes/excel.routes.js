@@ -120,17 +120,6 @@ router.put(
 
 // ================== GESTIONES ==================
 
-// Ruta temporal para crear tabla de gestienes
-router.post(
-    '/crear-tabla-gestiones',
-    excelController.crearTablaGestiones
-);
-
-router.get(
-    '/crear-tabla-gestiones',
-    excelController.crearTablaGestiones
-);
-
 // Crear una nueva gestión
 router.post(
     '/gestiones',
