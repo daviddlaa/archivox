@@ -53,7 +53,7 @@ const initTables = async () => {
             )
         `);
         
-        // Tabla de configuración de bonos por mes
+// Tabla de configuración de bonos por mes
         await client.query(`
             CREATE TABLE IF NOT EXISTS config_bonos (
                 id SERIAL PRIMARY KEY,
@@ -68,6 +68,20 @@ const initTables = async () => {
                 meta_equipo REAL DEFAULT 40000,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+            )
+        `);
+        
+// Tabla de gestes
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS gestines (
+                id SERIAL PRIMARY KEY,
+                solicitud_id INTEGER NOT NULL,
+                usuario_id INTEGER NOT NULL,
+                tipo_gestion TEXT NOT NULL,
+                observacion TEXT,
+                fecha_gestion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
         
