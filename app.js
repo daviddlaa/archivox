@@ -153,6 +153,30 @@ app.get('/registro', (req, res) => {
 app.use('/api/excel', require('./src/routes/excel.routes'));
 app.use('/api/auth', require('./src/routes/auth.routes'));
 
+// =============================================================================
+// RUTA TEMPORAL: Agregar columna codigo_plus (Eliminar después de usar)
+// =============================================================================
+app.get('/api/migrations/add-codigo-plus', async (req, res) => {
+    const pool = require('./src/config/database.pg');
+    try {
+        // Verificar si la columna ya existe
+        const checkColumn = await pool.query(`
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name = 'solicitudes' AND column_name = 'codigo_plus'
+        `);
+        
+        if (checkColumn.rows.length > 0) {
+            return res.json({ mensaje: 'La columna codigo_plus ya existe en la tabla solicitudes' });
+        }
+        
+        // Agregar la columna
+        await pool.query('ALTER TABLE solicitudes ADD COLUMN codigo_plus TEXT');
+        res.json({ mensaje: 'Columna codigo_plus agregada correctamente' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Archivos estáticos - servir desde public general (AL FINAL)
 app.use(express.static('public'));
 
