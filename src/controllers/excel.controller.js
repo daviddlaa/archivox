@@ -665,7 +665,7 @@ exports.getGestiones = async (req, res) => {
     
 try {
         const result = await pool.query(
-            `SELECT * FROM gestienes 
+            `SELECT * FROM gestion_es 
              WHERE solicitud_id = $1 AND usuario_id = $2
              ORDER BY fecha_gestion DESC`,
             [solicitud_id, usuarioId]
@@ -699,7 +699,7 @@ exports.actualizarGestion = async (req, res) => {
     
 try {
         const result = await pool.query(
-            `UPDATE gestienes 
+            `UPDATE gestion_es 
              SET tipo_gestion = $1, observacion = $2, updated_at = CURRENT_TIMESTAMP
              WHERE id = $3 AND usuario_id = $4
              RETURNING *`,
@@ -732,7 +732,7 @@ exports.eliminarGestion = async (req, res) => {
     
 try {
         const result = await pool.query(
-            `DELETE FROM gestienes WHERE id = $1 AND usuario_id = $2 RETURNING id`,
+            `DELETE FROM gestion_es WHERE id = $1 AND usuario_id = $2 RETURNING id`,
             [id, usuarioId]
         );
         
