@@ -601,14 +601,17 @@ exports.getGestiones = async (req, res) => {
     
     const { solicitud_id } = req.params;
     
+    console.log('DEBUG getGestiones - solicitud_id:', solicitud_id, 'usuarioId:', usuarioId);
+    
     try {
-const result = await pool.query(
+        const result = await pool.query(
             `SELECT * FROM gestion_es 
              WHERE solicitud_id = $1 AND usuario_id = $2
              ORDER BY fecha_gestion DESC`,
             [solicitud_id, usuarioId]
         );
         
+        console.log('DEBUG getGestiones - rows:', result.rows.length);
         res.json(result.rows);
     } catch (err) {
         console.error('Error getGestiones:', err);
