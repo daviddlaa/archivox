@@ -561,6 +561,41 @@ exports.saveConfigBonos = async (req, res) => {
     }
 };
 
+// ================== TABLA DE GESTIONES ==================
+
+// Crear tabla de gestion_es (ruta temporal para ejecutar desde CLI)
+exports.crearTablaGestiones = async (req, res) => {
+    try {
+        const checkTable = await pool.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name = 'gestiones'
+        `);
+        
+        if (checkTable.rows.length > 0) {
+            return res.json({ mensaje: 'La tabla gestion_es ya existe', existente: true });
+        }
+        
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS gestiones (
+                id SERIAL PRIMARY KEY,
+                solicitud_id INTEGER NOT NULL,
+                usuario_id INTEGER NOT NULL,
+                tipo_gestion TEXT NOT NULL,
+                observacion TEXT,
+                fecha_gestion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        res.json({ mensaje: 'Tabla gestion_es creada exitosamente', existente: false });
+    } catch (err) {
+        console.error('Error crearTablaGestiones:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // ================== GESTIONES ==================
 
 // Crear una nueva gestión
