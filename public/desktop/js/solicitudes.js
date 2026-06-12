@@ -350,7 +350,7 @@ var datos = await response.json();
         mostrando.textContent = datos.length ? datos.length : 0;
 
 if (!datos.length) {
-            tabla.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;">No se encontraron registros</td></tr>';
+tabla.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;">No se encontraron registros</td></tr>';
             return;
         }
 
@@ -373,10 +373,10 @@ var html = '';
             html += '<td>' + (item.cedula || '') + '</td>';
             html += '<td>' + (item.nombre || '') + '</td>';
 html += '<td>' + (item.celular || '') + '</td>';
-html += '<td><input type="text" class="input-codigo-plus" value="' + (item.codigo_plus || '') + '" data-id="' + id + '" placeholder="Ingrese código" autocomplete="off"></td>';
-            html += '<td>' + (item.segmento || '') + '</td>';
-            html += '<td>' + (item.producto || '') + '</td>';
-            html += '<td>' + (item.fecha_solicitud || '') + '</td>';
+            // Código + Segmento combinados
+            html += '<td><div class="cell-combinado"><span class="codigo-plus-cell">' + (item.codigo_plus || '—') + '</span><span class="segmento-cell">' + (item.segmento || '—') + '</span></div></td>';
+            // Producto + Fecha combinados
+            html += '<td><div class="cell-combinado"><span class="producto-cell">' + (item.producto || '—') + '</span><span class="fecha-cell">' + (item.fecha_solicitud || '—') + '</span></div></td>';
             html += '<td class="td-acciones">';
             html += '<button class="btn-accion btn-gestiones" onclick="abrirGestiones(\'' + id + '\')" title="Gestiones">📋</button>';
             html += '<button class="btn-accion btn-completar" onclick="abrirCompletar(\'' + id + '\')" title="Completar información">✏️</button>';
@@ -393,7 +393,7 @@ tabla.innerHTML = html;
 
     } catch (error) {
         console.error('Error:', error);
-        document.getElementById('tabla').innerHTML = '<tr><td colspan="8" style="color:red;text-align:center;padding:20px;">Error al cargar datos</td></tr>';
+document.getElementById('tabla').innerHTML = '<tr><td colspan="9" style="color:red;text-align:center;padding:20px;">Error al cargar datos</td></tr>';
     }
 }
 
