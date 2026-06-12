@@ -586,3 +586,40 @@ tr:hover{
         font-size: 13px;
     }
 }
+
+/* ===== BOTONES DE ACCIONES EN TABLA ===== */
+.td-acciones {
+    text-align: center !important;
+    white-space: nowrap;
+}
+
+.btn-accion {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 0 2px;
+    transition: all 0.2s ease;
+    background: #f3f4f6;
+}
+
+.btn-accion:hover {
+    transform: scale(1.1);
+}
+
+.btn-gestiones {
+    background: #fef3c7;
+}
+
+.btn-gestiones:hover {
+    background: #fde68a;
+}
+
+.btn-completar {
+    background: #d1fae5;
+}
+
+.btn-completar:hover {
+    background: #a7f3d0;
+}

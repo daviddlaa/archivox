@@ -599,7 +599,7 @@ exports.actualizarCodigoPlus = async (req, res) => {
              SET codigo_plus = $1, fecha_actualizacion = CURRENT_TIMESTAMP
              WHERE id_solicitud = $2 AND usuario_id = $3
              RETURNING *`,
-            [codigo_plus, id, usuarioId]
+            [codigo_plus || null, id, usuarioId]
         );
         
         if (result.rows.length === 0) {

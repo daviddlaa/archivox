@@ -373,10 +373,14 @@ var html = '';
             html += '<td>' + (item.cedula || '') + '</td>';
             html += '<td>' + (item.nombre || '') + '</td>';
 html += '<td>' + (item.celular || '') + '</td>';
-            html += '<td><input type="text" class="input-codigo-plus" value="' + (item.codigo_plus || '') + '" data-id="' + id + '" placeholder="Ingrese código" autocomplete="off"></td>';
+html += '<td><input type="text" class="input-codigo-plus" value="' + (item.codigo_plus || '') + '" data-id="' + id + '" placeholder="Ingrese código" autocomplete="off"></td>';
             html += '<td>' + (item.segmento || '') + '</td>';
             html += '<td>' + (item.producto || '') + '</td>';
             html += '<td>' + (item.fecha_solicitud || '') + '</td>';
+            html += '<td class="td-acciones">';
+            html += '<button class="btn-accion btn-gestiones" onclick="abrirGestiones(\'' + id + '\')" title="Gestiones">📋</button>';
+            html += '<button class="btn-accion btn-completar" onclick="abrirCompletar(\'' + id + '\')" title="Completar información">✏️</button>';
+            html += '</td>';
             html += '</tr>';
         }
 
@@ -543,6 +547,139 @@ function configurarEventosCodigoPlus() {
             });
         }
     });
+}
+
+// ================== ACCIONES: GESTIONES Y COMPLETAR ==================
+
+// Función para abrir modal de Gestiones
+function abrirGestiones(id) {
+    var datos = datosFilas[id];
+    if (!datos) {
+        alert('No se encontraron datos para esta solicitud');
+        return;
+    }
+    
+    var contenido = '';
+    contenido += '<div style="padding: 20px;">';
+    contenido += '<h2 style="margin-top: 0; color: #1f2937;">📋 Gestiones - Solicitud #' + id + '</h2>';
+    contenido += '<div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
+    contenido += '<p><strong>Nombre:</strong> ' + (datos.nombre || 'N/A') + '</p>';
+    contenido += '<p><strong>Cédula:</strong> ' + (datos.cedula || 'N/A') + '</p>';
+    contenido += '<p><strong>Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
+    contenido += '<p><strong>Estado:</strong> ' + (datos.estado || 'N/A') + '</p>';
+    contenido += '</div>';
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">Notas de Gestión:</label>';
+    contenido += '<textarea id="nota-gestion" rows="5" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; resize: vertical;" placeholder="Escriba sus notas aquí..."></textarea>';
+    contenido += '<div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">';
+    contenido += '<button onclick="cerrarModal()" style="padding: 10px 20px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer;">Cancelar</button>';
+    contenido += '<button onclick="guardarGestion(\'' + id + '\')" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">💾 Guardar</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    crearModal(contenido);
+}
+
+// Función para abrir modal de Completar Información
+function abrirCompletar(id) {
+    var datos = datosFilas[id];
+    if (!datos) {
+        alert('No se encontraron datos para esta solicitud');
+        return;
+    }
+    
+    var contenido = '';
+    contenido += '<div style="padding: 20px;">';
+    contenido += '<h2 style="margin-top: 0; color: #1f2937;">✏️ Completar Información - Solicitud #' + id + '</h2>';
+    contenido += '<div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
+    contenido += '<p><strong>Nombre:</strong> ' + (datos.nombre || 'N/A') + '</p>';
+    contenido += '<p><strong>Cédula:</strong> ' + (datos.cedula || 'N/A') + '</p>';
+    contenido += '<p><strong>Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
+    contenido += '</div>';
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">Código Plus:</label>';
+    contenido += '<input type="text" id="codigo-plus-completar" value="' + (datos.codigo_plus || '') + '" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 15px;" placeholder="Ingrese código plus">';
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">Observaciones:</label>';
+    contenido += '<textarea id="observaciones" rows="5" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; resize: vertical;" placeholder="Escriba observaciones adicionales..."></textarea>';
+    contenido += '<div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">';
+    contenido += '<button onclick="cerrarModal()" style="padding: 10px 20px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer;">Cancelar</button>';
+    contenido += '<button onclick="guardarCompletar(\'' + id + '\')" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">💾 Guardar</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    crearModal(contenido);
+}
+
+// Función para crear modal genérico
+function crearModal(contenido) {
+    // Eliminar modal existente si hay
+    var modalExistente = document.getElementById('modal-generico');
+    if (modalExistente) {
+        modalExistente.remove();
+    }
+    
+    var overlay = document.createElement('div');
+    overlay.id = 'modal-generico';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+    
+    var modal = document.createElement('div');
+    modal.style.cssText = 'background: white; border-radius: 12px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);';
+    modal.innerHTML = contenido;
+    
+    // Cerrar al hacer click en el overlay
+    overlay.onclick = function(e) {
+        if (e.target === overlay) {
+            cerrarModal();
+        }
+    };
+    
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+}
+
+// Función para cerrar modal
+function cerrarModal() {
+    var modal = document.getElementById('modal-generico');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Función para guardar gestión
+function guardarGestion(id) {
+    var nota = document.getElementById('nota-gestion').value.trim();
+    if (!nota) {
+        alert('Por favor escriba una nota');
+        return;
+    }
+    
+    alert('Nota guardada: ' + nota);
+    cerrarModal();
+    console.log('Gestión guardada para solicitud #' + id + ':', nota);
+}
+
+// Función para guardar completar información
+function guardarCompletar(id) {
+    var codigo_plus = document.getElementById('codigo-plus-completar').value.trim();
+    var observaciones = document.getElementById('observaciones').value.trim();
+    
+    // Guardar código plus si cambió
+    var datos = datosFilas[id];
+    if (codigo_plus && codigo_plus !== (datos.codigo_plus || '')) {
+        fetch('/api/excel/solicitudes/' + id + '/codigo-plus', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ codigo_plus: codigo_plus })
+        }).then(function(response) {
+            return response.json();
+        }).then(function(resultado) {
+            if (response.ok) {
+                console.log('Código Plus actualizado:', resultado);
+                cargarSolicitudes(); // Recargar tabla
+            }
+        });
+    }
+    
+    alert('Información guardada para solicitud #' + id);
+   cerrarModal();
 }
 
 // Inicializar

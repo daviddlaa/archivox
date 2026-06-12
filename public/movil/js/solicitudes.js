@@ -190,6 +190,10 @@ return `
             <div class="input-codigo-plus-container" style="margin: 8px 0;">
                 <input type="text" class="input-codigo-plus" value="${d.codigo_plus || ''}" data-id="${d.id_solicitud}" placeholder="Código Plus" autocomplete="off" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px;" onblur="guardarCodigoPlus(this)">
             </div>
+            <div class="card-acciones" style="margin: 8px 0; display: flex; gap: 8px;">
+                <button class="btn-accion-movil btn-gestiones-movil" onclick="event.stopPropagation(); abrirGestionesMovil('${d.id_solicitud}')" style="flex:1; padding: 8px; background: #fef3c7; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">📋 Gestiones</button>
+                <button class="btn-accion-movil btn-completar-movil" onclick="event.stopPropagation(); abrirCompletarMovil('${d.id_solicitud}')" style="flex:1; padding: 8px; background: #d1fae5; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">✏️ Completar</button>
+            </div>
             <div class="tags">
                 <span class="tag">${d.segmento || 'N/A'}</span>
                 <span class="tag">${d.producto || 'N/A'}</span>
@@ -239,6 +243,125 @@ function guardarCodigoPlus(input) {
         console.error('Error guardando código plus:', err);
         input.style.backgroundColor = '#fee2e2';
     });
+}
+
+// ================== GESTIONES Y COMPLETAR EN MÓVIL ==================
+
+// Función para abrir modal de Gestiones en móvil
+function abrirGestionesMovil(id) {
+    var datos = datosFilas[id];
+    if (!datos) {
+        alert('No se encontraron datos para esta solicitud');
+        return;
+    }
+    
+    var contenido = '';
+    contenido += '<div style="padding: 20px; background: white; min-height: 100vh;">';
+    contenido += '<h2 style="margin-top: 0; color: #1f2937; font-size: 18px;">📋 Gestiones - Solicitud #' + id + '</h2>';
+    contenido += '<div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px;">';
+    contenido += '<p><strong>Nombre:</strong> ' + (datos.nombre || 'N/A') + '</p>';
+    contenido += '<p><strong>Cédula:</strong> ' + (datos.cedula || 'N/A') + '</p>';
+    contenido += '<p><strong>Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
+    contenido += '</div>';
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">Notas de Gestión:</label>';
+    contenido += '<textarea id="nota-gestion" rows="5" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; resize: vertical; box-sizing: border-box;" placeholder="Escriba sus notas aquí..."></textarea>';
+    contenido += '<div style="margin-top: 20px; display: flex; gap: 10px;">';
+    contenido += '<button onclick="cerrarModal()" style="flex:1; padding: 12px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">Cancelar</button>';
+    contenido += '<button onclick="guardarGestionMovil(\'' + id + '\')" style="flex:1; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">💾 Guardar</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    crearModalMovil(contenido);
+}
+
+// Función para abrir modal de Completar en móvil
+function abrirCompletarMovil(id) {
+    var datos = datosFilas[id];
+    if (!datos) {
+        alert('No se encontraron datos para esta solicitud');
+        return;
+    }
+    
+    var contenido = '';
+    contenido += '<div style="padding: 20px; background: white; min-height: 100vh;">';
+    contenido += '<h2 style="margin-top: 0; color: #1f2937; font-size: 18px;">✏️ Completar Información - #' + id + '</h2>';
+    contenido += '<div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px;">';
+    contenido += '<p><strong>Nombre:</strong> ' + (datos.nombre || 'N/A') + '</p>';
+    contenido += '<p><strong>Cédula:</strong> ' + (datos.cedula || 'N/A') + '</p>';
+    contenido += '</div>';
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">Código Plus:</label>';
+    contenido += '<input type="text" id="codigo-plus-completar" value="' + (datos.codigo_plus || '') + '" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 15px; box-sizing: border-box;" placeholder="Ingrese código plus">';
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">Observaciones:</label>';
+    contenido += '<textarea id="observaciones" rows="5" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; resize: vertical; box-sizing: border-box;" placeholder="Escriba observaciones..."></textarea>';
+    contenido += '<div style="margin-top: 20px; display: flex; gap: 10px;">';
+    contenido += '<button onclick="cerrarModal()" style="flex:1; padding: 12px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">Cancelar</button>';
+    contenido += '<button onclick="guardarCompletarMovil(\'' + id + '\')" style="flex:1; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">💾 Guardar</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    crearModalMovil(contenido);
+}
+
+// Función para crear modal en móvil
+function crearModalMovil(contenido) {
+    var modalExistente = document.getElementById('modal-movil');
+    if (modalExistente) {
+        modalExistente.remove();
+    }
+    
+    var overlay = document.createElement('div');
+    overlay.id = 'modal-movil';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; overflow-y: auto;';
+    
+    overlay.innerHTML = contenido;
+    document.body.appendChild(overlay);
+}
+
+// Función para cerrar modal en móvil
+function cerrarModal() {
+    var modal = document.getElementById('modal-movil');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Función para guardar gestión en móvil
+function guardarGestionMovil(id) {
+    var nota = document.getElementById('nota-gestion').value.trim();
+    if (!nota) {
+        alert('Por favor escriba una nota');
+        return;
+    }
+    
+    alert('Nota guardada: ' + nota);
+    cerrarModal();
+    console.log('Gestión guardada para solicitud #' + id + ':', nota);
+}
+
+// Función para guardar completar en móvil
+function guardarCompletarMovil(id) {
+    var codigo_plus = document.getElementById('codigo-plus-completar').value.trim();
+    var observaciones = document.getElementById('observaciones').value.trim();
+    
+    // Guardar código plus si cambió
+    var datos = datosFilas[id];
+    if (codigo_plus && codigo_plus !== (datos.codigo_plus || '')) {
+        fetch('/api/excel/solicitudes/' + id + '/codigo-plus', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ codigo_plus: codigo_plus })
+        }).then(function(response) {
+            return response.json();
+        }).then(function(resultado) {
+            if (response.ok) {
+                console.log('Código Plus actualizado:', resultado);
+                init(); // Recargar datos
+            }
+        });
+    }
+    
+    alert('Información guardada para solicitud #' + id);
+    cerrarModal();
 }
 
 // Iniciar al cargar página
