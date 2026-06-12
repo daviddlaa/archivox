@@ -118,4 +118,27 @@ router.put(
     excelController.actualizarCodigoPlus
 );
 
+// ================== GESTIONES ==================
+
+// Ruta temporal para crear tabla de gestines (ejecutar desde CLI)
+router.post(
+    '/crear-tabla-gestiones',
+    requiresAuth,
+    excelController.crearTablaGestiones
+);
+
+// Crear una nueva gestión
+router.post(
+    '/gestiones',
+    requiresAuth,
+    excelController.crearGestion
+);
+
+// Obtener gestines de una solicitud
+router.get(
+    '/gestiones/:solicitud_id',
+    requiresAuth,
+    excelController.getGestiones
+);
+
 module.exports = router;

@@ -577,6 +577,104 @@ exports.saveConfigBonos = async (req, res) => {
     }
 };
 
+// ================== TABLA DE GESTIONES (Temporal) ==================
+
+// Crear tabla de gestions (ruta temporal para ejecutar desde CLI)
+exports.crearTablaGestiones = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    try {
+        // Verificar si la tabla ya existe
+        const checkTable = await pool.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name = 'gestiones'
+        `);
+        
+        if (checkTable.rows.length > 0) {
+            return res.json({ mensaje: 'La tabla gestines ya existe', existente: true });
+        }
+        
+        // Crear la tabla
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS gestiones (
+                id SERIAL PRIMARY KEY,
+                solicitud_id INTEGER NOT NULL,
+                usuario_id INTEGER NOT NULL,
+                tipo_gestion TEXT NOT NULL,
+                observacion TEXT,
+                fecha_gestion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+                FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id_solicitud)
+            )
+        `);
+        
+        res.json({ mensaje: 'Tabla gestines creada exitosamente', existente: false });
+    } catch (err) {
+        console.error('Error crearTablaGestiones:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// ================== GESTIONES ==================
+
+// Crear una nueva gestión
+exports.crearGestion = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { solicitud_id, tipo_gestion, observacion } = req.body;
+    
+    if (!solicitud_id || !tipo_gestion) {
+        return res.status(400).json({ error: 'solicitud_id y tipo_gestion son requeridos' });
+    }
+    
+    try {
+        const result = await pool.query(
+            `INSERT INTO gestiones (solicitud_id, usuario_id, tipo_gestion, observacion)
+             VALUES ($1, $2, $3, $4)
+             RETURNING *`,
+            [solicitud_id, usuarioId, tipo_gestion, observacion || '']
+        );
+        
+        res.json({ mensaje: 'Gestión guardada', data: result.rows[0] });
+    } catch (err) {
+        console.error('Error crearGestion:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Obtener gestiones de una solicitud
+exports.getGestiones = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { solicitud_id } = req.params;
+    
+    try {
+        const result = await pool.query(
+            `SELECT * FROM gestiones 
+             WHERE solicitud_id = $1 AND usuario_id = $2
+             ORDER BY fecha_gestion DESC`,
+            [solicitud_id, usuarioId]
+        );
+        
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error getGestiones:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // ================== CÓDIGO PLUS ==================
 
 // Actualizar código plus de una solicitud

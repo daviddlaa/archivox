@@ -551,6 +551,41 @@ function configurarEventosCodigoPlus() {
 
 // ================== ACCIONES: GESTIONES Y COMPLETAR ==================
 
+// Opciones de tipo de gestión
+var opcionesTipoGestion = [
+    'Seguimiento',
+    'Cobranza',
+    'Llamada',
+    'WhatsApp',
+    'Reclamo',
+    'Cita',
+    'Otro'
+];
+
+// Función para obtener la fecha y hora actual formateada
+function getFechaHoraActual() {
+    var ahora = new Date();
+    var dia = String(ahora.getDate()).padStart(2, '0');
+    var mes = String(ahora.getMonth() + 1).padStart(2, '0');
+    var anio = ahora.getFullYear();
+    var hora = String(ahora.getHours()).padStart(2, '0');
+    var minuto = String(ahora.getMinutes()).padStart(2, '0');
+    var segundo = String(ahora.getSeconds()).padStart(2, '0');
+    return dia + '/' + mes + '/' + anio + ' ' + hora + ':' + minuto + ':' + segundo;
+}
+
+// Función para formatear fecha de gestión
+function formatFechaGestion(fecha) {
+    if (!fecha) return '';
+    var d = new Date(fecha);
+    var dia = String(d.getDate()).padStart(2, '0');
+    var mes = String(d.getMonth() + 1).padStart(2, '0');
+    var anio = d.getFullYear();
+    var hora = String(d.getHours()).padStart(2, '0');
+    var minuto = String(d.getMinutes()).padStart(2, '0');
+    return dia + '/' + mes + '/' + anio + ' ' + hora + ':' + minuto;
+}
+
 // Función para abrir modal de Gestiones
 function abrirGestiones(id) {
     var datos = datosFilas[id];
@@ -559,8 +594,14 @@ function abrirGestiones(id) {
         return;
     }
     
+    // Crear opciones del dropdown
+    var opcionesDropdown = '';
+    for (var i = 0; i < opcionesTipoGestion.length; i++) {
+        opcionesDropdown += '<option value="' + opcionesTipoGestion[i] + '">' + opcionesTipoGestion[i] + '</option>';
+    }
+    
     var contenido = '';
-    contenido += '<div style="padding: 20px;">';
+    contenido += '<div style="padding: 20px; max-height: 80vh; overflow-y: auto;">';
     contenido += '<h2 style="margin-top: 0; color: #1f2937;">📋 Gestiones - Solicitud #' + id + '</h2>';
     contenido += '<div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
     contenido += '<p><strong>Nombre:</strong> ' + (datos.nombre || 'N/A') + '</p>';
@@ -568,15 +609,49 @@ function abrirGestiones(id) {
     contenido += '<p><strong>Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
     contenido += '<p><strong>Estado:</strong> ' + (datos.estado || 'N/A') + '</p>';
     contenido += '</div>';
-    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">Notas de Gestión:</label>';
-    contenido += '<textarea id="nota-gestion" rows="5" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; resize: vertical;" placeholder="Escriba sus notas aquí..."></textarea>';
-    contenido += '<div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">';
-    contenido += '<button onclick="cerrarModal()" style="padding: 10px 20px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer;">Cancelar</button>';
-    contenido += '<button onclick="guardarGestion(\'' + id + '\')" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">💾 Guardar</button>';
+    
+    // Sección de nueva gestión
+    contenido += '<div style="border: 2px solid #2563eb; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #eff6ff;">';
+    contenido += '<h3 style="margin-top: 0; color: #1f2937; font-size: 16px;">➕ Nueva Gestión</h3>';
+    
+    // Fecha y hora (automático)
+    contenido += '<div style="display: flex; gap: 10px; margin-bottom: 12px;">';
+    contenido += '<div style="flex: 1;">';
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">📅 Fecha y Hora:</label>';
+    contenido += '<input type="text" id="fecha-gestion" value="' + getFechaHoraActual() + '" readonly style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: #f3f4f6; color: #6b7280;">';
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    // Tipo de gestión (dropdown)
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">📋 Tipo de Gestión:</label>';
+    contenido += '<select id="tipo-gestion" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 12px; background: white;">';
+    contenido += opcionesDropdown;
+    contenido += '</select>';
+    
+    // Observación
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">📝 Observación:</label>';
+    contenido += '<textarea id="observacion-gestion" rows="4" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical; margin-bottom: 12px;" placeholder="Escriba su observación aquí..."></textarea>';
+    
+    // Botón guardar
+    contenido += '<button onclick="guardarGestion(\'' + id + '\')" style="width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;">💾 Guardar Gestión</button>';
+    contenido += '</div>';
+    
+    // Historial de gestiones
+    contenido += '<div id="historial-gestiones" style="margin-top: 15px;">';
+    contenido += '<h3 style="color: #1f2937; font-size: 16px;">📜 Historial de Gestiones</h3>';
+    contenido += '<div id="lista-historial" style="text-align: center; padding: 20px; color: #6b7280;">Cargando...</div>';
+    contenido += '</div>';
+    
+    // Botones cerrar
+    contenido += '<div style="margin-top: 20px; display: flex; justify-content: flex-end;">';
+    contenido += '<button onclick="cerrarModal()" style="padding: 10px 20px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer;">✕ Cerrar</button>';
     contenido += '</div>';
     contenido += '</div>';
     
     crearModal(contenido);
+    
+    // Cargar historial de gestines
+    cargarHistorialGestiones(id);
 }
 
 // Función para abrir modal de Completar Información
@@ -643,17 +718,133 @@ function cerrarModal() {
     }
 }
 
+// Función para cargar historial de gestines
+async function cargarHistorialGestiones(id) {
+    var container = document.getElementById('lista-historial');
+    if (!container) return;
+    
+    try {
+        var response = await fetch('/api/excel/gestiones/' + id);
+        
+        if (!response.ok) {
+            container.innerHTML = '<div style="color: red;">Error al cargar historial</div>';
+            return;
+        }
+        
+        var gestines = await response.json();
+        
+        if (!gestines || gestines.length === 0) {
+            container.innerHTML = '<div style="padding: 15px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 8px;">No hay gestines registradas</div>';
+            return;
+        }
+        
+        var html = '';
+        var coloresTipo = {
+            'Seguimiento': '#dbeafe',
+            'Cobranza': '#fee2e2',
+            'Llamada': '#d1fae5',
+            'WhatsApp': '#dcfce7',
+            'Reclamo': '#fef3c7',
+            'Cita': '#e0e7ff',
+            'Otro': '#f3f4f6'
+        };
+        
+        for (var i = 0; i < gestines.length; i++) {
+            var g = gestines[i];
+            var color = coloresTipo[g.tipo_gestion] || '#f3f4f6';
+            var fechaFormateada = formatFechaGestion(g.fecha_gestion);
+            
+            html += '<div style="background: ' + color + '; padding: 12px; border-radius: 8px; margin-bottom: 10px;">';
+            html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">';
+            html += '<span style="font-weight: 600; font-size: 13px; color: #1f2937;">📋 ' + (g.tipo_gestion || '') + '</span>';
+            html += '<span style="font-size: 11px; color: #6b7280;">' + fechaFormateada + '</span>';
+            html += '</div>';
+            
+            if (g.observacion) {
+                html += '<div style="font-size: 13px; color: #374151; line-height: 1.4;">' + g.observacion + '</div>';
+            }
+            html += '</div>';
+        }
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error cargando historial:', error);
+        container.innerHTML = '<div style="color: red;">Error al cargar historial</div>';
+    }
+}
+
 // Función para guardar gestión
 function guardarGestion(id) {
-    var nota = document.getElementById('nota-gestion').value.trim();
-    if (!nota) {
-        alert('Por favor escriba una nota');
+    var tipo = document.getElementById('tipo-gestion');
+    var observacion = document.getElementById('observacion-gestion');
+    
+    if (!tipo || !observacion) {
+        alert('Error: No se encontraron los campos del formulario');
         return;
     }
     
-    alert('Nota guardada: ' + nota);
-    cerrarModal();
-    console.log('Gestión guardada para solicitud #' + id + ':', nota);
+    var tipo_gestion = tipo.value;
+    var obs = observacion.value.trim();
+    
+    if (!tipo_gestion) {
+        alert('Por favor seleccione un tipo de gestión');
+        return;
+    }
+    
+    if (!obs) {
+        alert('Por favor escriba una observación');
+        return;
+    }
+    
+    // Mostrar indicador de guardado
+    var btn = document.querySelector('button[onclick="guardarGestion(\'' + id + '\')"]');
+    if (btn) {
+        btn.textContent = '💾 Guardando...';
+        btn.disabled = true;
+    }
+    
+    fetch('/api/excel/gestiones', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            solicitud_id: id,
+            tipo_gestion: tipo_gestion,
+            observacion: obs
+        })
+    })
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(resultado) {
+        if (response.ok) {
+            // Recargar historial
+            cargarHistorialGestiones(id);
+            
+            // Limpiar campos
+            document.getElementById('observacion-gestion').value = '';
+            document.getElementById('tipo-gestion').selectedIndex = 0;
+            
+            // Actualizar fecha/hora
+            document.getElementById('fecha-gestion').value = getFechaHoraActual();
+            
+            alert('Gestión guardada correctamente');
+        } else {
+            alert('Error: ' + (resultado.error || 'Error desconocido'));
+        }
+    })
+    .catch(function(err) {
+        console.error('Error guardando gestión:', err);
+        alert('Error al guardar la gestión');
+    })
+    .finally(function() {
+        if (btn) {
+            btn.textContent = '💾 Guardar Gestión';
+            btn.disabled = false;
+        }
+    });
 }
 
 // Función para guardar completar información
