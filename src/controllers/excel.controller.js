@@ -92,12 +92,12 @@ exports.listarSolicitudes = async (req, res) => {
         params.push(cedula);
     }
 
-    if (producto) {
+if (producto) {
         sql += ' AND producto = $' + (params.length + 1);
         params.push(producto);
     }
 
-if (nombre) {
+    if (nombre) {
         sql += ' AND nombre ILIKE $' + (params.length + 1);
         params.push('%' + nombre + '%');
     }
