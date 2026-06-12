@@ -616,9 +616,9 @@ exports.getGestiones = async (req, res) => {
     
     const { solicitud_id } = req.params;
     
-    try {
+try {
         const result = await pool.query(
-            `SELECT * FROM gestion_es 
+            `SELECT * FROM gestines 
              WHERE solicitud_id = $1 AND usuario_id = $2
              ORDER BY fecha_gestion DESC`,
             [solicitud_id, usuarioId]
@@ -649,9 +649,9 @@ exports.actualizarGestion = async (req, res) => {
         return res.status(400).json({ error: 'Tipo de gestión requerido' });
     }
     
-    try {
+try {
         const result = await pool.query(
-            `UPDATE gestion_es 
+            `UPDATE gestines 
              SET tipo_gestion = $1, observacion = $2, updated_at = CURRENT_TIMESTAMP
              WHERE id = $3 AND usuario_id = $4
              RETURNING *`,
@@ -682,9 +682,9 @@ exports.eliminarGestion = async (req, res) => {
         return res.status(400).json({ error: 'ID de gestión requerido' });
     }
     
-    try {
+try {
         const result = await pool.query(
-            `DELETE FROM gestion_es WHERE id = $1 AND usuario_id = $2 RETURNING id`,
+            `DELETE FROM gestines WHERE id = $1 AND usuario_id = $2 RETURNING id`,
             [id, usuarioId]
         );
         
