@@ -552,3 +552,37 @@ tr:hover{
         display:table-cell !important;
     }
 }
+
+/* ===== CÓDIGO PLUS ===== */
+.input-codigo-plus {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    width: 120px;
+    transition: all 0.2s ease;
+}
+
+.input-codigo-plus:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.input-codigo-plus::placeholder {
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+/* En móvil el input código plus es más ancho */
+@media (max-width: 768px){
+    .input-codigo-plus {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    .input-codigo-plus::placeholder {
+        font-size: 13px;
+    }
+}

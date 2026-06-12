@@ -102,4 +102,20 @@ router.post(
     excelController.saveConfigBonos
 );
 
+// ================== CÓDIGO PLUS ==================
+
+// Obtener una solicitud por ID
+router.get(
+    '/solicitudes/:id',
+    requiresAuth,
+    excelController.getSolicitud
+);
+
+// Actualizar código plus de una solicitud
+router.put(
+    '/solicitudes/:id/codigo-plus',
+    requiresAuth,
+    excelController.actualizarCodigoPlus
+);
+
 module.exports = router;

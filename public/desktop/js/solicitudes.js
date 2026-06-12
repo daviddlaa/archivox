@@ -372,7 +372,8 @@ var html = '';
             html += '<td><span class="estado estado-' + estadoClase + '">' + (item.estado || '') + '</span></td>';
             html += '<td>' + (item.cedula || '') + '</td>';
             html += '<td>' + (item.nombre || '') + '</td>';
-            html += '<td>' + (item.celular || '') + '</td>';
+html += '<td>' + (item.celular || '') + '</td>';
+            html += '<td><input type="text" class="input-codigo-plus" value="' + (item.codigo_plus || '') + '" data-id="' + id + '" placeholder="Ingrese código" autocomplete="off"></td>';
             html += '<td>' + (item.segmento || '') + '</td>';
             html += '<td>' + (item.producto || '') + '</td>';
             html += '<td>' + (item.fecha_solicitud || '') + '</td>';
@@ -449,10 +450,106 @@ function configurarEventosCheckboxes() {
     }
 }
 
+// ================== CÓDIGO PLUS ==================
+
+// Variable para debounce de código plus
+var debounceCodigoPlus = {};
+
+// Función para actualizar código plus con debounce
+async function actualizarCodigoPlus(input) {
+    var id = input.dataset.id;
+    var codigo_plus = input.value.trim();
+    
+    // Cancelar actualización previa si existe
+    if (debounceCodigoPlus[id]) {
+        clearTimeout(debounceCodigoPlus[id]);
+    }
+    
+    // Mostrar indicador de guardado
+    input.style.backgroundColor = '#fef3c7';
+    
+    // Debounce de 500ms
+    debounceCodigoPlus[id] = setTimeout(async function() {
+        try {
+            var response = await fetch('/api/excel/solicitudes/' + id + '/codigo-plus', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ codigo_plus: codigo_plus })
+            });
+            
+            var resultado = await response.json();
+            
+            if (response.ok) {
+                // Mostrar guardado exitoso
+                input.style.backgroundColor = '#dcfce7';
+                setTimeout(function() {
+                    input.style.backgroundColor = '';
+                }, 1000);
+                console.log('Código Plus guardado:', resultado);
+            } else {
+                // Mostrar error
+                input.style.backgroundColor = '#fee2e2';
+                console.error('Error:', resultado.error);
+                alert('Error al guardar: ' + resultado.error);
+            }
+        } catch (error) {
+            console.error('Error guardando código plus:', error);
+            input.style.backgroundColor = '#fee2e2';
+        }
+    }, 500);
+}
+
+// Configurar eventos de código plus
+function configurarEventosCodigoPlus() {
+    var tabla = document.getElementById('tabla');
+    if (!tabla) return;
+    
+    tabla.addEventListener('input', function(e) {
+        if (e.target.classList.contains('input-codigo-plus')) {
+            actualizarCodigoPlus(e.target);
+        }
+    });
+    
+    tabla.addEventListener('blur', function(e) {
+        if (e.target.classList.contains('input-codigo-plus')) {
+            // Guardar inmediatamente al perder foco
+            var input = e.target;
+            var id = input.dataset.id;
+            var codigo_plus = input.value.trim();
+            
+            if (debounceCodigoPlus[id]) {
+                clearTimeout(debounceCodigoPlus[id]);
+            }
+            
+            fetch('/api/excel/solicitudes/' + id + '/codigo-plus', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ codigo_plus: codigo_plus })
+            }).then(function(response) {
+                return response.json();
+            }).then(function(resultado) {
+                if (response.ok) {
+                    input.style.backgroundColor = '#dcfce7';
+                    setTimeout(function() {
+                        input.style.backgroundColor = '';
+                    }, 1000);
+                }
+            }).catch(function(err) {
+                console.error('Error:', err);
+            });
+        }
+    });
+}
+
 // Inicializar
 cargarTotales();
 cargarEstados();
 cargarSegmentos();
 cargarSolicitudes();
 configurarEventosCheckboxes();
+configurarEventosCodigoPlus();
 actualizarContador();

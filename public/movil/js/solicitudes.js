@@ -187,6 +187,9 @@ return `
             <div class="client-name">${d.nombre || 'Sin nombre'}</div>
             <div class="client-cedula">Cédula: ${d.cedula || 'N/A'}</div>
             <div class="client-celular">📱 ${d.celular || 'N/A'}</div>
+            <div class="input-codigo-plus-container" style="margin: 8px 0;">
+                <input type="text" class="input-codigo-plus" value="${d.codigo_plus || ''}" data-id="${d.id_solicitud}" placeholder="Código Plus" autocomplete="off" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px;" onblur="guardarCodigoPlus(this)">
+            </div>
             <div class="tags">
                 <span class="tag">${d.segmento || 'N/A'}</span>
                 <span class="tag">${d.producto || 'N/A'}</span>
@@ -195,6 +198,47 @@ return `
         </div>
         `;
     }).join('');
+}
+
+// ================== CÓDIGO PLUS ==================
+
+// Guardar código plus cuando el input pierde el foco
+function guardarCodigoPlus(input) {
+    var id = input.dataset.id;
+    var codigo_plus = input.value.trim();
+    
+    // Mostrar indicador de guardado
+    input.style.backgroundColor = '#fef3c7';
+    
+    fetch('/api/excel/solicitudes/' + id + '/codigo-plus', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ codigo_plus: codigo_plus })
+    })
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(resultado) {
+        if (response.ok) {
+            // Mostrar guardado exitoso
+            input.style.backgroundColor = '#dcfce7';
+            setTimeout(function() {
+                input.style.backgroundColor = '';
+            }, 1000);
+            console.log('Código Plus guardado:', resultado);
+        } else {
+            // Mostrar error
+            input.style.backgroundColor = '#fee2e2';
+            console.error('Error:', resultado.error);
+            alert('Error al guardar: ' + resultado.error);
+        }
+    })
+    .catch(function(err) {
+        console.error('Error guardando código plus:', err);
+        input.style.backgroundColor = '#fee2e2';
+    });
 }
 
 // Iniciar al cargar página

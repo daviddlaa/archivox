@@ -24,6 +24,7 @@ db.exec(`
         celular TEXT,
         segmento TEXT,
         producto TEXT,
+        codigo_plus TEXT,
         fecha_solicitud TEXT,
         usuario_id INTEGER,
         fecha_importacion DATETIME DEFAULT CURRENT_TIMESTAMP,

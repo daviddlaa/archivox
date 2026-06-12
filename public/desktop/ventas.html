@@ -36,14 +36,17 @@
         
         /* Cards de vendedores (escritorio) */
         .cards-container { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
-        .vendedor-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-        .vendedor-card .nombre { font-size: 15px; font-weight: bold; color: #1f2937; margin-bottom: 10px; }
-        .vendedor-card .nombre input { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; font-weight: bold; }
-        .vendedor-card .datos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .vendedor-card .dato label { font-size: 11px; color: #6b7280; text-transform: uppercase; display: block; margin-bottom: 3px; }
-        .vendedor-card .dato .valor { font-size: 16px; color: #1f2937; font-weight: 600; }
-        .vendedor-card .inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .vendedor-card .inputs input { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; }
+.vendedor-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .vendedor-card .nombre { font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 12px; }
+        .vendedor-card .nombre input { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px; font-weight: bold; }
+        .vendedor-card .datos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .vendedor-card .dato label { font-size: 12px; color: #6b7280; text-transform: uppercase; display: block; margin-bottom: 4px; }
+        .vendedor-card .dato .valor { font-size: 18px; color: #1f2937; font-weight: 600; }
+        .vendedor-card .inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .vendedor-card .inputs input { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+        .vendedor-card .estado-badge { display: inline-block; padding: 6px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+        .vendedor-card .estado-badge.alcanzado { background: #d1fae5; color: #065f46; }
+        .vendedor-card .estado-badge.faltante { background: #fef3c7; color: #92400e; }
         .vendedor-card .meta-badge { display: inline-block; padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-top: 10px; }
         .vendedor-card .meta-badge.alcanzado { background: #d1fae5; color: #065f46; }
         .vendedor-card .meta-badge.faltante { background: #fef3c7; color: #92400e; }

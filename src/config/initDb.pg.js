@@ -17,7 +17,7 @@ const initTables = async () => {
             )
         `);
         
-        // Tabla de solicitudes
+// Tabla de solicitudes
         await client.query(`
             CREATE TABLE IF NOT EXISTS solicitudes (
                 id SERIAL PRIMARY KEY,
@@ -28,6 +28,7 @@ const initTables = async () => {
                 celular TEXT,
                 segmento TEXT,
                 producto TEXT,
+                codigo_plus TEXT,
                 fecha_solicitud TEXT,
                 usuario_id INTEGER,
                 fecha_importacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -576,3 +576,65 @@ exports.saveConfigBonos = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+// ================== CÓDIGO PLUS ==================
+
+// Actualizar código plus de una solicitud
+exports.actualizarCodigoPlus = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { id } = req.params;
+    const { codigo_plus } = req.body;
+    
+    if (!id) {
+        return res.status(400).json({ error: 'ID de solicitud requerido' });
+    }
+    
+    try {
+        const result = await pool.query(
+            `UPDATE solicitudes 
+             SET codigo_plus = $1, fecha_actualizacion = CURRENT_TIMESTAMP
+             WHERE id_solicitud = $2 AND usuario_id = $3
+             RETURNING *`,
+            [codigo_plus, id, usuarioId]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Solicitud no encontrada' });
+        }
+        
+        res.json({ mensaje: 'Código Plus actualizado', data: result.rows[0] });
+    } catch (err) {
+        console.error('Error actualizarCodigoPlus:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Obtener una solicitud por ID
+exports.getSolicitud = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { id } = req.params;
+    
+    try {
+        const result = await pool.query(
+            'SELECT * FROM solicitudes WHERE id_solicitud = $1 AND usuario_id = $2',
+            [id, usuarioId]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Solicitud no encontrada' });
+        }
+        
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error getSolicitud:', err);
+        res.status(500).json({ error: err.message });
+    }
+};

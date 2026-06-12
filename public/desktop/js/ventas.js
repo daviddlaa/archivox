@@ -151,7 +151,16 @@ async function cargarVendedores() {
     }
 }
 
-// Renderizar cards (escritorio) - similar a móvil pero con diseño adaptado
+// Obtener siguiente meta
+function obtenerSiguienteMeta(totalVenta) {
+    const metas = [configBonos.bono1, configBonos.bono2, configBonos.bono3, configBonos.bono4, configBonos.bono5, configBonos.bono6];
+    for (const meta of metas) {
+        if (totalVenta < meta) return meta;
+    }
+    return 0;
+}
+
+// Renderizar cards (escritorio) - diseño mejorado con más campos
 function renderizarCards() {
     const container = document.getElementById('cardsVendedores');
     if (!container) return;
@@ -167,13 +176,21 @@ function renderizarCards() {
         const suma = (parseFloat(v.periodo1) || 0) + (parseFloat(v.periodo2) || 0);
         const meta = calcularMeta(suma);
         const falta = siguienteMeta(suma);
+        const siguiente = obtenerSiguienteMeta(suma);
         
-        // Badge: mostrar "Meta: $X" si alcanzó alguna, o "Sin meta" si no
+        // Meta alcanzada: mostrar "$X" si alcanzó alguna, o "Sin meta" si no
+        const metaAlcanzada = meta.monto > 0 ? `$${meta.monto.toLocaleString()}` : 'Sin meta';
+        
+        // Próxima meta: mostrar la siguiente meta a alcanzar
+        const proxMeta = siguiente > 0 ? `$${siguiente.toLocaleString()}` : 'Completado!';
+        
+        // Estado: mostrar "Aún falta $X" o "Completado!"
+        const estadoTexto = falta > 0 ? `Aún falta $${falta.toLocaleString()}` : 'Completado!';
+        const estadoClass = falta > 0 ? 'faltante' : 'alcanzado';
+        
+        // Badge
         const badgeTexto = meta.monto > 0 ? `Meta: $${meta.monto.toLocaleString()}` : 'Sin meta';
         const badgeClass = meta.monto > 0 ? 'alcanzado' : 'sin-meta';
-        
-        // Falta: mostrar cuánto falta para la siguiente meta
-        const faltaTexto = falta > 0 ? `$${falta.toLocaleString()}` : 'Completado!';
         
         const card = document.createElement('div');
         card.className = 'vendedor-card';
@@ -183,22 +200,32 @@ function renderizarCards() {
             </div>
             <div class="datos">
                 <div class="dato">
-                    <label>Suma</label>
+                    <label>Total Vendido</label>
                     <div class="valor">$${suma.toLocaleString()}</div>
                 </div>
                 <div class="dato">
-                    <label>Falta</label>
-                    <div class="valor">${faltaTexto}</div>
+                    <label>Meta Alcanzada</label>
+                    <div class="valor">${metaAlcanzada}</div>
+                </div>
+            </div>
+            <div class="datos">
+                <div class="dato">
+                    <label>Próxima Meta</label>
+                    <div class="valor">${proxMeta}</div>
+                </div>
+                <div class="dato">
+                    <label>Estado</label>
+                    <div class="estado-badge ${estadoClass}">${estadoTexto}</div>
                 </div>
             </div>
             <div class="meta-badge ${badgeClass}">${badgeTexto}</div>
             <div class="inputs">
                 <div>
-                    <label style="font-size: 10px; color: #6b7280;">P1 ($)</label>
+                    <label style="font-size: 12px; color: #6b7280;">P1 ($)</label>
                     <input type="number" value="${v.periodo1 || 0}" onchange="actualizarVendedor(${index}, 'periodo1', this.value)" step="0.01">
                 </div>
                 <div>
-                    <label style="font-size: 10px; color: #6b7280;">P2 ($)</label>
+                    <label style="font-size: 12px; color: #6b7280;">P2 ($)</label>
                     <input type="number" value="${v.periodo2 || 0}" onchange="actualizarVendedor(${index}, 'periodo2', this.value)" step="0.01">
                 </div>
             </div>
