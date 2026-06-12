@@ -307,20 +307,13 @@ exports.dashboardEstadosFiltrado = async (req, res) => {
 // Cálculo: contar solicitudes últimos 90 días y dividir por 3
 exports.dashboardPromedioMes = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
-    if (!usuarioId) {
+if (!usuarioId) {
         return res.status(401).json({
             error: 'No autenticado'
         });
     }
     
     try {
-        // DEBUG: ver total sin fecha
-        const totalSinFecha = await pool.query(
-            'SELECT COUNT(*) as total FROM solicitudes WHERE usuario_id = $1',
-            [usuarioId]
-        );
-        console.log('DEBUG promedioMes - usuarioId:', usuarioId, 'total sin fecha:', totalSinFecha.rows[0]);
-        
         // Contar solicitudes últimos 90 días
         const result = await pool.query(
             `SELECT COUNT(*) as total 
@@ -331,7 +324,6 @@ exports.dashboardPromedioMes = async (req, res) => {
         );
         
         const total = parseInt(result.rows[0]?.total) || 0;
-        console.log('DEBUG promedioMes - total con fecha:', total);
         
         // Dividir por 3 meses
         const promedio = Math.round(total / 3);
@@ -350,20 +342,13 @@ exports.dashboardPromedioMes = async (req, res) => {
 // Cálculo: contar solicitudes últimos 63 días y dividir por 9
 exports.dashboardPromedioSemana = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
-    if (!usuarioId) {
+if (!usuarioId) {
         return res.status(401).json({
             error: 'No autenticado'
         });
     }
     
     try {
-        // DEBUG: ver total sin fecha
-        const totalSinFecha = await pool.query(
-            'SELECT COUNT(*) as total FROM solicitudes WHERE usuario_id = $1',
-            [usuarioId]
-        );
-        console.log('DEBUG promedioSemana - usuarioId:', usuarioId, 'total sin fecha:', totalSinFecha.rows[0]);
-        
         // Contar solicitudes últimos 63 días
         const result = await pool.query(
             `SELECT COUNT(*) as total 
@@ -374,7 +359,6 @@ exports.dashboardPromedioSemana = async (req, res) => {
         );
         
         const total = parseInt(result.rows[0]?.total) || 0;
-        console.log('DEBUG promedioSemana - total con fecha:', total);
         
         // Dividir por 9 semanas
         const promedio = Math.round(total / 9);
@@ -389,7 +373,7 @@ exports.dashboardPromedioSemana = async (req, res) => {
     }
 };
 
-// Ventas mensuales - últimas 12 meses de solicitudes ACTIVADAS
+// Ventas mensuales
 exports.dashboardVentasMensuales = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -574,44 +558,7 @@ exports.saveConfigBonos = async (req, res) => {
     } catch (err) {
         console.error('Error saveConfigBonos:', err);
         res.status(500).json({ error: err.message });
-    }
-};
-
-// ================== TABLA DE GESTIONES ==================
-
-// Crear tabla de gestiones (ruta temporal para ejecutar desde CLI)
-exports.crearTablaGestiones = async (req, res) => {
-    try {
-        // Verificar si la tabla ya existe
-        const checkTable = await pool.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_name = 'gestiones'
-        `);
-        
-        if (checkTable.rows.length > 0) {
-            return res.json({ mensaje: 'La tabla gestienes ya existe', existente: true });
-        }
-        
-        // Crear la tabla
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS gestiones (
-                id SERIAL PRIMARY KEY,
-                solicitud_id INTEGER NOT NULL,
-                usuario_id INTEGER NOT NULL,
-                tipo_gestion TEXT NOT NULL,
-                observacion TEXT,
-                fecha_gestion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        
-        res.json({ mensaje: 'Tabla gestienes creada exitosamente', existente: false });
-    } catch (err) {
-        console.error('Error crearTablaGestiones:', err);
-        res.status(500).json({ error: err.message });
-    }
+}
 };
 
 // ================== GESTIONES ==================
@@ -655,7 +602,7 @@ exports.getGestiones = async (req, res) => {
     const { solicitud_id } = req.params;
     
     try {
-        const result = await pool.query(
+const result = await pool.query(
             `SELECT * FROM gestion_es 
              WHERE solicitud_id = $1 AND usuario_id = $2
              ORDER BY fecha_gestion DESC`,
