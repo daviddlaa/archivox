@@ -591,37 +591,48 @@ tr:hover{
 .td-acciones {
     text-align: center !important;
     white-space: nowrap;
+    min-width: 100px !important;
+    display: table-cell !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .btn-accion {
-    padding: 6px 10px;
+    padding: 8px 12px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 16px;
-    margin: 0 2px;
+    font-size: 18px;
+    margin: 0 4px;
     transition: all 0.2s ease;
     background: #f3f4f6;
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-width: 36px;
+    min-height: 36px;
 }
 
 .btn-accion:hover {
-    transform: scale(1.1);
+    transform: scale(1.15);
 }
 
 .btn-gestiones {
-    background: #fef3c7;
+    background: #fef3c7 !important;
+    border: 2px solid #f59e0b !important;
 }
 
 .btn-gestiones:hover {
-    background: #fde68a;
+    background: #fde68a !important;
 }
 
 .btn-completar {
-    background: #d1fae5;
+    background: #d1fae5 !important;
+    border: 2px solid #10b981 !important;
 }
 
 .btn-completar:hover {
-    background: #a7f3d0;
+    background: #a7f3d0 !important;
 }
 
 /* ===== NUEVO LAYOUT PARA PANTALLAS GRANDES ===== */
