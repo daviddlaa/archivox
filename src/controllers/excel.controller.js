@@ -581,8 +581,6 @@ exports.saveConfigBonos = async (req, res) => {
 
 // Crear tabla de gestiones (ruta temporal para ejecutar desde CLI)
 exports.crearTablaGestiones = async (req, res) => {
-    console.log('DEBUG crearTablaGestiones - Iniciando...');
-    
     try {
         // Verificar si la tabla ya existe
         const checkTable = await pool.query(`
@@ -592,7 +590,6 @@ exports.crearTablaGestiones = async (req, res) => {
         `);
         
         if (checkTable.rows.length > 0) {
-            console.log('DEBUG crearTablaGestiones - La tabla ya existe');
             return res.json({ mensaje: 'La tabla gestienes ya existe', existente: true });
         }
         
@@ -610,10 +607,9 @@ exports.crearTablaGestiones = async (req, res) => {
             )
         `);
         
-        console.log('DEBUG crearTablaGestiones - Tabla creada exitosamente');
         res.json({ mensaje: 'Tabla gestienes creada exitosamente', existente: false });
     } catch (err) {
-        console.error('DEBUG crearTablaGestiones - Error:', err);
+        console.error('Error crearTablaGestiones:', err);
         res.status(500).json({ error: err.message });
     }
 };
@@ -650,28 +646,22 @@ exports.crearGestion = async (req, res) => {
 
 // Obtener gestiones de una solicitud
 exports.getGestiones = async (req, res) => {
-    console.log('DEBUG getGestiones - params:', req.params);
-    console.log('DEBUG getGestiones - session:', req.session);
-    
     const usuarioId = req.session.usuario?.id;
-    console.log('DEBUG getGestiones - usuarioId:', usuarioId);
     
     if (!usuarioId) {
         return res.status(401).json({ error: 'No autenticado' });
     }
     
     const { solicitud_id } = req.params;
-    console.log('DEBUG getGestiones - solicitud_id:', solicitud_id);
     
-try {
+    try {
         const result = await pool.query(
-            `SELECT * FROM gestiones 
+            `SELECT * FROM gestion_es 
              WHERE solicitud_id = $1 AND usuario_id = $2
              ORDER BY fecha_gestion DESC`,
             [solicitud_id, usuarioId]
         );
         
-        console.log('DEBUG getGestiones - rows:', result.rows.length);
         res.json(result.rows);
     } catch (err) {
         console.error('Error getGestiones:', err);
