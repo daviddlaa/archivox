@@ -127,6 +127,12 @@ router.post(
     excelController.crearTablaGestiones
 );
 
+// Versión GET para testing (más fácil de probar en navegador)
+router.get(
+    '/crear-tabla-gestiones',
+    excelController.crearTablaGestiones
+);
+
 // Crear una nueva gestión
 router.post(
     '/gestiones',
