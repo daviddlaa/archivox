@@ -618,7 +618,7 @@ exports.getGestiones = async (req, res) => {
     
     try {
         const result = await pool.query(
-            `SELECT * FROM gestiones 
+            `SELECT * FROM gestion_es 
              WHERE solicitud_id = $1 AND usuario_id = $2
              ORDER BY fecha_gestion DESC`,
             [solicitud_id, usuarioId]
@@ -627,6 +627,74 @@ exports.getGestiones = async (req, res) => {
         res.json(result.rows);
     } catch (err) {
         console.error('Error getGestiones:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Actualizar una gestión existente
+exports.actualizarGestion = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { id } = req.params;
+    const { tipo_gestion, observacion } = req.body;
+    
+    if (!id) {
+        return res.status(400).json({ error: 'ID de gestión requerido' });
+    }
+    
+    if (!tipo_gestion) {
+        return res.status(400).json({ error: 'Tipo de gestión requerido' });
+    }
+    
+    try {
+        const result = await pool.query(
+            `UPDATE gestion_es 
+             SET tipo_gestion = $1, observacion = $2, updated_at = CURRENT_TIMESTAMP
+             WHERE id = $3 AND usuario_id = $4
+             RETURNING *`,
+            [tipo_gestion, observacion || '', id, usuarioId]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Gestión no encontrada' });
+        }
+        
+        res.json({ mensaje: 'Gestión actualizada', data: result.rows[0] });
+    } catch (err) {
+        console.error('Error actualizarGestion:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Eliminar una gestión
+exports.eliminarGestion = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { id } = req.params;
+    
+    if (!id) {
+        return res.status(400).json({ error: 'ID de gestión requerido' });
+    }
+    
+    try {
+        const result = await pool.query(
+            `DELETE FROM gestion_es WHERE id = $1 AND usuario_id = $2 RETURNING id`,
+            [id, usuarioId]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Gestión no encontrada' });
+        }
+        
+        res.json({ mensaje: 'Gestión eliminada' });
+    } catch (err) {
+        console.error('Error eliminarGestion:', err);
         res.status(500).json({ error: err.message });
     }
 };

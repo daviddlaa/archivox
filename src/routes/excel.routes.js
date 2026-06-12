@@ -134,4 +134,18 @@ router.get(
     excelController.getGestiones
 );
 
+// Actualizar una gestión
+router.put(
+    '/gestiones/:id',
+    requiresAuth,
+    excelController.actualizarGestion
+);
+
+// Eliminar una gestión
+router.delete(
+    '/gestiones/:id',
+    requiresAuth,
+    excelController.eliminarGestion
+);
+
 module.exports = router;

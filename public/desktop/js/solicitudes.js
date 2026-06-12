@@ -761,8 +761,14 @@ async function cargarHistorialGestiones(id) {
             html += '</div>';
             
             if (g.observacion) {
-                html += '<div style="font-size: 13px; color: #374151; line-height: 1.4;">' + g.observacion + '</div>';
+                html += '<div style="font-size: 13px; color: #374151; line-height: 1.4; margin-bottom: 8px;">' + g.observacion + '</div>';
             }
+            
+            // Botones de editar y eliminar
+            html += '<div style="display: flex; gap: 8px; justify-content: flex-end;">';
+            html += '<button onclick="editarGestion(\'' + g.id + '\', \'' + id + '\')" style="padding: 4px 10px; background: #2563eb; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer;">✏️ Editar</button>';
+            html += '<button onclick="confirmarEliminarGestion(\'' + g.id + '\', \'' + id + '\')" style="padding: 4px 10px; background: #dc2626; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer;">🗑️ Eliminar</button>';
+            html += '</div>';
             html += '</div>';
         }
         
@@ -772,6 +778,109 @@ async function cargarHistorialGestiones(id) {
         console.error('Error cargando historial:', error);
         container.innerHTML = '<div style="color: red;">Error al cargar historial</div>';
     }
+}
+
+// Función para editar una gestión
+function editarGestion(gestionId, solicitudId) {
+    // Primero obtener los datos de la gestión
+    fetch('/api/excel/gestiones/' + solicitudId)
+        .then(function(res) { return res.json(); })
+        .then(function(gestines) {
+            var gestion = gestines.find(function(g) { return g.id == gestionId; });
+            if (!gestion) {
+                alert('Gestión no encontrada');
+                return;
+            }
+            
+            // Crear opciones del dropdown
+            var opcionesDropdown = '';
+            for (var i = 0; i < opcionesTipoGestion.length; i++) {
+                var selected = opcionesTipoGestion[i] === gestion.tipo_gestion ? 'selected' : '';
+                opcionesDropdown += '<option value="' + opcionesTipoGestion[i] + '" ' + selected + '>' + opcionesTipoGestion[i] + '</option>';
+            }
+            
+            var contenido = '';
+            contenido += '<div style="padding: 20px;">';
+            contenido += '<h2 style="margin-top: 0; color: #1f2937;">✏️ Editar Gestión</h2>';
+            
+            // Tipo de gestión
+            contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">📋 Tipo de Gestión:</label>';
+            contenido += '<select id="tipo-gestion-editar" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 12px; background: white;">';
+            contenido += opcionesDropdown;
+            contenido += '</select>';
+            
+            // Observación
+            contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">📝 Observación:</label>';
+            contenido += '<textarea id="observacion-editar" rows="4" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical; margin-bottom: 12px;">' + (gestion.observacion || '') + '</textarea>';
+            
+            // Botones
+            contenido += '<div style="display: flex; gap: 10px; justify-content: flex-end;">';
+            contenido += '<button onclick="cerrarModal()" style="padding: 10px 20px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer;">Cancelar</button>';
+            contenido += '<button onclick="guardarEdicionGestion(\'' + gestionId + '\', \'' + solicitudId + '\')" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">💾 Guardar</button>';
+            contenido += '</div>';
+            contenido += '</div>';
+            
+            crearModal(contenido);
+        })
+        .catch(function(err) {
+            console.error('Error:', err);
+            alert('Error al cargar gestión');
+        });
+}
+
+// Función para guardar la edición de una gestión
+function guardarEdicionGestion(gestionId, solicitudId) {
+    var tipo = document.getElementById('tipo-gestion-editar').value;
+    var observacion = document.getElementById('observacion-editar').value.trim();
+    
+    if (!tipo) {
+        alert('Por favor seleccione un tipo de gestión');
+        return;
+    }
+    
+    fetch('/api/excel/gestiones/' + gestionId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo_gestion: tipo, observacion: observacion })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(resultado) {
+        if (resultado && !resultado.error) {
+            alert('Gestión actualizada correctamente');
+            cerrarModal();
+            cargarHistorialGestiones(solicitudId);
+        } else {
+            alert('Error: ' + (resultado.error || 'Error desconocidos'));
+        }
+    })
+    .catch(function(err) {
+        console.error('Error:', err);
+        alert('Error al guardar');
+    });
+}
+
+// Función para confirmar y eliminar una gestión
+function confirmarEliminarGestion(gestionId, solicitudId) {
+    if (!confirm('¿Está seguro de eliminar esta gestión?')) {
+        return;
+    }
+    
+    fetch('/api/excel/gestiones/' + gestionId, {
+        method: 'DELETE'
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(resultado) {
+        if (resultado && !resultado.error) {
+            alert('Gestión eliminada correctamente');
+            cargarHistorialGestiones(solicitudId);
+        } else {
+            alert('Error: ' + (resultado.error || 'Error desconocido'));
+        }
+    })
+    .catch(function(err) {
+        console.error('Error:', err);
+        alert('Error al eliminar');
+    });
 }
 
 // Función para guardar gestión
