@@ -787,10 +787,10 @@ exports.limpiarSolicitudes = async (req, res) => {
         
         const solicIds = solicIdsResult.rows.map(r => r.id);
         
-        // Eliminar gestines asociadas a esas solicitudes (por solicitud_id)
+// Eliminar gestiones asociadas a esas solicitudes (por solicitud_id)
         if (solicIds.length > 0) {
             await client.query(
-                'DELETE FROM gestines WHERE solicitud_id = ANY($1)',
+                'DELETE FROM gestiones WHERE solicitud_id = ANY($1)',
                 [solicIds]
             );
         }
