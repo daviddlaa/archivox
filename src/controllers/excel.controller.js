@@ -787,20 +787,32 @@ exports.limpiarSolicitudes = async (req, res) => {
         
 const solicIds = solicIdsResult.rows.map(r => r.id);
         
-// IMPORTANTE: Primero eliminar las gestienes (o Gestiones) - tabla child asociada a esas solicitudes
+        // IMPORTANTE: Primero eliminar las gestienes (o Gestiones) - tabla child asociada a esas solicitudes
         // El error indica que hay foreign key constraint: "gestiones_solicitud_id_fkey" 
         // Por eso debemos primero eliminar child (gestiones) antes de parent (solicitudes)
-// Intentar eliminar de várias tablas posibles (primero la tabla child antes de parent)
-        const tablasChild = ['gestines', 'gestiones', 'gestion'];
-        for (const tabla of tablasChild) {
+        
+        // Intentar eliminar de várias tablas posibles (cada una en su propia consulta)
+        // No usamos transaccion aqui para evitar que un error aborte todo
+        if (solicIds.length > 0) {
+            // Intentar sin transaccion para cada tabla - si falla una tabla, las demas siguen funcionando
             try {
-                await client.query(
-                    'DELETE FROM ' + tabla + ' WHERE solicitud_id = ANY($1)',
+                await pool.query(
+                    'DELETE FROM gestines WHERE solicitud_id = ANY($1)',
                     [solicIds]
                 );
-            } catch (e) {
-                // Ignorar error - tabla no existe o no tiene registros
-            }
+            } catch (e) { /* Ignorar */ }
+            try {
+                await pool.query(
+                    'DELETE FROM gestione WHERE solicitud_id = ANY($1)',
+                    [solicIds]
+                );
+            } catch (e) { /* Ignorar */ }
+            try {
+                await pool.query(
+                    'DELETE FROM gestion WHERE solicitud_id = ANY($1)',
+                    [solicIds]
+                );
+            } catch (e) { /* Ignorar */ }
         }
         
         // Ahora eliminar las solicitudes (parent table)
