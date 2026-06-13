@@ -152,6 +152,7 @@ app.get('/registro', (req, res) => {
 // API routes
 app.use('/api/excel', require('./src/routes/excel.routes'));
 app.use('/api/auth', require('./src/routes/auth.routes'));
+app.use('/api/debug', require('./src/routes/debug.routes'));
 
 // Archivos estáticos
 app.use(express.static('public'));
