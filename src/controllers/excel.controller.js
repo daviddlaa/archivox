@@ -774,11 +774,21 @@ exports.limpiarSolicitudes = async (req, res) => {
             });
         }
         
-        // Primero eliminar gestines asociadas (para integridad referencial)
-        await pool.query(
-            'DELETE FROM gestines WHERE usuario_id = $1',
+        // Primero obtener los IDs de las solicitudes del usuario
+        const solicIdsResult = await pool.query(
+            'SELECT id FROM solicitudes WHERE usuario_id = $1',
             [usuarioId]
         );
+        
+        const solicIds = solicIdsResult.rows.map(r => r.id);
+        
+        // Eliminar gestines asociadas a esas solicitudes
+        if (solicIds.length > 0) {
+            await pool.query(
+                'DELETE FROM gestines WHERE solicitud_id = ANY($1)',
+                [solicIds]
+            );
+        }
         
         // Eliminar solicitudes
         const result = await pool.query(
