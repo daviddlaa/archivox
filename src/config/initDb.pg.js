@@ -1,4 +1,4 @@
-const pool = require('./database.pg.js');
+﻿const pool = require('./database.pg.js');
 
 const initTables = async () => {
     const client = await pool.connect();
@@ -73,7 +73,7 @@ const initTables = async () => {
         
 // Tabla de gestes
         await client.query(`
-            CREATE TABLE IF NOT EXISTS gestines (
+            CREATE TABLE IF NOT EXISTS gestiones (
                 id SERIAL PRIMARY KEY,
                 solicitud_id INTEGER NOT NULL,
                 usuario_id INTEGER NOT NULL,
@@ -96,3 +96,4 @@ const initTables = async () => {
 initTables();
 
 module.exports = pool;
+

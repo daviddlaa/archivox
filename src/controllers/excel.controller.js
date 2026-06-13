@@ -1,4 +1,4 @@
-const excelService = require('../services/excel.service');
+﻿ const excelService = require('../services/excel.service');
 const pool = require('../config/database.pg.js');
 
 exports.uploadExcel = async (req, res) => {
@@ -578,7 +578,7 @@ exports.crearGestion = async (req, res) => {
     
     try {
 const result = await pool.query(
-            `INSERT INTO gestines (solicitud_id, usuario_id, tipo_gestion, observacion)
+            `INSERT INTO gestiones (solicitud_id, usuario_id, tipo_gestion, observacion)
              VALUES ($1, $2, $3, $4)
              RETURNING *`,
             [solicitud_id, usuarioId, tipo_gestion, observacion || '']
@@ -605,7 +605,7 @@ exports.getGestiones = async (req, res) => {
     
 try {
         const result = await pool.query(
-            `SELECT * FROM gestines 
+            `SELECT * FROM gestiones 
              WHERE solicitud_id = $1 AND usuario_id = $2
              ORDER BY fecha_gestion DESC`,
             [solicitud_id, usuarioId]
@@ -639,7 +639,7 @@ exports.actualizarGestion = async (req, res) => {
     
 try {
         const result = await pool.query(
-            `UPDATE gestines 
+            `UPDATE gestiones 
              SET tipo_gestion = $1, observacion = $2, updated_at = CURRENT_TIMESTAMP
              WHERE id = $3 AND usuario_id = $4
              RETURNING *`,
@@ -672,7 +672,7 @@ exports.eliminarGestion = async (req, res) => {
     
 try {
         const result = await pool.query(
-            `DELETE FROM gestines WHERE id = $1 AND usuario_id = $2 RETURNING id`,
+            `DELETE FROM gestiones WHERE id = $1 AND usuario_id = $2 RETURNING id`,
             [id, usuarioId]
         );
         
@@ -781,15 +781,15 @@ exports.limpiarSolicitudes = async (req, res) => {
         
         // Primero obtener los IDs de las solicitudes del usuario
         const solicIdsResult = await client.query(
-            'SELECT id FROM solicitudes WHERE usuario_id = $1',
+'SELECT id_solicitud FROM solicitudes WHERE usuario_id = $1'
             [usuarioId]
         );
         
-const solicIds = solicIdsResult.rows.map(r => r.id);
+const solicIds = solicIdsResult.rows.map(r => r.id_solicitud);
         
-// IMPORTANTE: Primero eliminar de 'gestiones' (tabla child) - tiene foreign key constraint
-        // "gestiones_solicitud_id_fkey" impide eliminar de solicitudes antes de eliminar gestienes
-        // Tabla correcta es 'gestiones' (no gestines)
+// IMPORTANTE: Primero eliminar de 'gestiones'
+        // "gestiones_solicitud_id_fkey" impide eliminar de solicitudes antes de eliminar gestiones
+        // Tabla correcta es 'gestiones' (no gestiones)
         if (solicIds.length > 0) {
             try {
                 await pool.query(
@@ -826,3 +826,12 @@ const solicIds = solicIdsResult.rows.map(r => r.id);
         client.release();
     }
 };
+
+
+
+
+
+
+
+
+
