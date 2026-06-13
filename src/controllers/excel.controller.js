@@ -1,4 +1,4 @@
-ï»¿ const excelService = require('../services/excel.service');
+ const excelService = require('../services/excel.service');
 const pool = require('../config/database.pg.js');
 
 exports.uploadExcel = async (req, res) => {
@@ -13,7 +13,7 @@ exports.uploadExcel = async (req, res) => {
 
         }
 
-        // Obtener ID del usuario de la sesiÃ³n
+        // Obtener ID del usuario de la sesión
         const usuarioId = req.session.usuario?.id;
         if (!usuarioId) {
             return res.status(401).json({
@@ -36,7 +36,7 @@ exports.uploadExcel = async (req, res) => {
         }
 
         res.json({
-            mensaje: 'ImportaciÃ³n exitosa',
+            mensaje: 'Importación exitosa',
             archivos: req.files.length,
             registros: totalRegistros
         });
@@ -66,7 +66,7 @@ exports.listarSolicitudes = async (req, res) => {
         direccion
     } = req.query;
 
-    // Obtener ID del usuario de la sesiÃ³n
+    // Obtener ID del usuario de la sesión
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({
@@ -133,7 +133,7 @@ if (producto) {
 
 exports.dashboard = async (req, res) => {
 
-    // Obtener ID del usuario de la sesiÃ³n
+    // Obtener ID del usuario de la sesión
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({
@@ -147,7 +147,7 @@ exports.dashboard = async (req, res) => {
             SUM(CASE WHEN estado = 'ACTIVADA' THEN 1 ELSE 0 END) as activadas,
             SUM(CASE WHEN estado = 'RECHAZADA' THEN 1 ELSE 0 END) as rechazadas,
             SUM(CASE WHEN estado = 'DEVUELTA' THEN 1 ELSE 0 END) as devueltas,
-            SUM(CASE WHEN estado = 'APROBADA PARA LIBERACIÃ“N' THEN 1 ELSE 0 END) as pendientes
+            SUM(CASE WHEN estado = 'APROBADA PARA LIBERACIÓN' THEN 1 ELSE 0 END) as pendientes
         FROM solicitudes
         WHERE usuario_id = $1
     `;
@@ -165,7 +165,7 @@ exports.dashboard = async (req, res) => {
 
 exports.dashboardSegmentos = async (req, res) => {
 
-    // Obtener ID del usuario de la sesiÃ³n
+    // Obtener ID del usuario de la sesión
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({
@@ -196,7 +196,7 @@ exports.dashboardSegmentos = async (req, res) => {
 
 exports.dashboardEstados = async (req, res) => {
 
-    // Obtener ID del usuario de la sesiÃ³n
+    // Obtener ID del usuario de la sesión
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({
@@ -229,7 +229,7 @@ exports.dashboardEstados = async (req, res) => {
 exports.dashboardSegmentosFiltrado = async (req, res) => {
     const { estado } = req.query;
     
-    // Obtener ID del usuario de la sesiÃ³n
+    // Obtener ID del usuario de la sesión
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({
@@ -268,7 +268,7 @@ exports.dashboardSegmentosFiltrado = async (req, res) => {
 exports.dashboardEstadosFiltrado = async (req, res) => {
     const { segmento } = req.query;
     
-    // Obtener ID del usuario de la sesiÃ³n
+    // Obtener ID del usuario de la sesión
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({
@@ -303,8 +303,8 @@ exports.dashboardEstadosFiltrado = async (req, res) => {
 
 };
 
-// Promedio de solicitudes por mes (Ãºltimos 3 meses)
-// CÃ¡lculo: contar solicitudes Ãºltimos 90 dÃ­as y dividir por 3
+// Promedio de solicitudes por mes (últimos 3 meses)
+// Cálculo: contar solicitudes últimos 90 días y dividir por 3
 exports.dashboardPromedioMes = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -314,7 +314,7 @@ exports.dashboardPromedioMes = async (req, res) => {
     }
     
     try {
-        // Contar solicitudes Ãºltimos 90 dÃ­as
+        // Contar solicitudes últimos 90 días
         const result = await pool.query(
             `SELECT COUNT(*) as total 
              FROM solicitudes 
@@ -338,8 +338,8 @@ exports.dashboardPromedioMes = async (req, res) => {
     }
 };
 
-// Promedio de solicitudes por semana (Ãºltimas 9 semanas)
-// CÃ¡lculo: contar solicitudes Ãºltimos 63 dÃ­as y dividir por 9
+// Promedio de solicitudes por semana (últimas 9 semanas)
+// Cálculo: contar solicitudes últimos 63 días y dividir por 9
 exports.dashboardPromedioSemana = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -349,7 +349,7 @@ exports.dashboardPromedioSemana = async (req, res) => {
     }
     
     try {
-        // Contar solicitudes Ãºltimos 63 dÃ­as
+        // Contar solicitudes últimos 63 días
         const result = await pool.query(
             `SELECT COUNT(*) as total 
              FROM solicitudes 
@@ -383,7 +383,7 @@ exports.dashboardVentasMensuales = async (req, res) => {
     }
     
     try {
-        // Obtener ventas de los Ãºltimos 12 meses (solo estado ACTIVADA)
+        // Obtener ventas de los últimos 12 meses (solo estado ACTIVADA)
         const result = await pool.query(
             `SELECT 
                 TO_CHAR(fecha_solicitud, 'YYYY-MM') as mes,
@@ -488,7 +488,7 @@ exports.deleteVendedor = async (req, res) => {
     }
 };
 
-// Obtener configuraciÃ³n de bonos
+// Obtener configuración de bonos
 exports.getConfigBonos = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -526,7 +526,7 @@ exports.getConfigBonos = async (req, res) => {
     }
 };
 
-// Guardar configuraciÃ³n de bonos
+// Guardar configuración de bonos
 exports.saveConfigBonos = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -554,7 +554,7 @@ exports.saveConfigBonos = async (req, res) => {
             [usuarioId, mes, bono1, bono2, bono3, bono4, bono5, bono6, meta_equipo]
         );
         
-        res.json({ mensaje: 'ConfiguraciÃ³n guardada', data: result.rows[0] });
+        res.json({ mensaje: 'Configuración guardada', data: result.rows[0] });
 } catch (err) {
         console.error('Error saveConfigBonos:', err);
         res.status(500).json({ error: err.message });
@@ -563,7 +563,7 @@ exports.saveConfigBonos = async (req, res) => {
 
 // ================== GESTIONES ==================
 
-// Crear una nueva gestiÃ³n
+// Crear una nueva gestión
 exports.crearGestion = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -584,7 +584,7 @@ const result = await pool.query(
             [solicitud_id, usuarioId, tipo_gestion, observacion || '']
         );
         
-        res.json({ mensaje: 'GestiÃ³n guardada', data: result.rows[0] });
+        res.json({ mensaje: 'Gestión guardada', data: result.rows[0] });
     } catch (err) {
         console.error('Error crearGestion:', err);
         res.status(500).json({ error: err.message });
@@ -619,7 +619,7 @@ try {
     }
 };
 
-// Actualizar una gestiÃ³n existente
+// Actualizar una gestión existente
 exports.actualizarGestion = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -630,11 +630,11 @@ exports.actualizarGestion = async (req, res) => {
     const { tipo_gestion, observacion } = req.body;
     
     if (!id) {
-        return res.status(400).json({ error: 'ID de gestiÃ³n requerido' });
+        return res.status(400).json({ error: 'ID de gestión requerido' });
     }
     
     if (!tipo_gestion) {
-        return res.status(400).json({ error: 'Tipo de gestiÃ³n requerido' });
+        return res.status(400).json({ error: 'Tipo de gestión requerido' });
     }
     
 try {
@@ -647,17 +647,17 @@ try {
         );
         
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'GestiÃ³n no encontrada' });
+            return res.status(404).json({ error: 'Gestión no encontrada' });
         }
         
-        res.json({ mensaje: 'GestiÃ³n actualizada', data: result.rows[0] });
+        res.json({ mensaje: 'Gestión actualizada', data: result.rows[0] });
     } catch (err) {
         console.error('Error actualizarGestion:', err);
         res.status(500).json({ error: err.message });
     }
 };
 
-// Eliminar una gestiÃ³n
+// Eliminar una gestión
 exports.eliminarGestion = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -667,7 +667,7 @@ exports.eliminarGestion = async (req, res) => {
     const { id } = req.params;
     
     if (!id) {
-        return res.status(400).json({ error: 'ID de gestiÃ³n requerido' });
+        return res.status(400).json({ error: 'ID de gestión requerido' });
     }
     
 try {
@@ -677,19 +677,19 @@ try {
         );
         
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'GestiÃ³n no encontrada' });
+            return res.status(404).json({ error: 'Gestión no encontrada' });
         }
         
-        res.json({ mensaje: 'GestiÃ³n eliminada' });
+        res.json({ mensaje: 'Gestión eliminada' });
     } catch (err) {
         console.error('Error eliminarGestion:', err);
         res.status(500).json({ error: err.message });
     }
 };
 
-// ================== CÃ“DIGO PLUS ==================
+// ================== CÓDIGO PLUS ==================
 
-// Actualizar cÃ³digo plus de una solicitud
+// Actualizar código plus de una solicitud
 exports.actualizarCodigoPlus = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -716,7 +716,7 @@ exports.actualizarCodigoPlus = async (req, res) => {
             return res.status(404).json({ error: 'Solicitud no encontrada' });
         }
         
-        res.json({ mensaje: 'CÃ³digo Plus actualizado', data: result.rows[0] });
+        res.json({ mensaje: 'Código Plus actualizado', data: result.rows[0] });
     } catch (err) {
         console.error('Error actualizarCodigoPlus:', err);
         res.status(500).json({ error: err.message });
@@ -776,7 +776,7 @@ exports.limpiarSolicitudes = async (req, res) => {
             });
         }
         
-        // Iniciar transacciÃ³n
+        // Iniciar transacción
         await client.query('BEGIN');
         
         // Primero obtener los IDs de las solicitudes del usuario
@@ -792,7 +792,7 @@ const solicIds = solicIdsResult.rows.map(r => r.id_solicitud);
         // Tabla correcta es 'gestiones' (no gestiones)
         if (solicIds.length > 0) {
             try {
-                await pool.query(
+                await client.query(
                     'DELETE FROM gestiones WHERE solicitud_id = ANY($1)',
                     [solicIds]
                 );
@@ -805,7 +805,7 @@ const solicIds = solicIdsResult.rows.map(r => r.id_solicitud);
             [usuarioId]
         );
         
-        // Confirmar transacciÃ³n
+        // Confirmar transacción
         await client.query('COMMIT');
         
         console.log('DEBUG limpiarSolicitudes - eliminadas:', result.rowCount, 'por usuario:', usuarioId);
@@ -816,7 +816,7 @@ const solicIds = solicIdsResult.rows.map(r => r.id_solicitud);
         });
         
     } catch (err) {
-        // Revertir transacciÃ³n en caso de error
+        // Revertir transacción en caso de error
         await client.query('ROLLBACK');
         console.error('Error limpiarSolicitudes:', err);
         res.status(500).json({
@@ -826,6 +826,7 @@ const solicIds = solicIdsResult.rows.map(r => r.id_solicitud);
         client.release();
     }
 };
+
 
 
 
