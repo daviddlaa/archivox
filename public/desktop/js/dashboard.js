@@ -208,3 +208,99 @@ document.getElementById('btnLogout')?.addEventListener('click', async (e) => {
         }
     }
 });
+
+// ================== LIMPIAR SOLICITUDES ==================
+
+// Función para limpiar todas las solicitudes del usuario
+async function limpiarSolicitudes() {
+    // Primero obtener el total de solicitudes para mostrar en la confirmación
+    try {
+        const responseDash = await fetch('/api/excel/dashboard');
+        const datos = await responseDash.json();
+        const total = parseInt(datos.total) || 0;
+        
+        if (total === 0) {
+            alert('No hay solicitudes para eliminar.');
+            return;
+        }
+        
+        // Mostrar confirmación
+        const confirmar = confirm(
+            '¿Estás seguro de eliminar todas tus solicitudes?\n\n' +
+            'Esta acción no se puede deshacer.\n' +
+            'Total de solicitudes a eliminar: ' + total.toLocaleString()
+        );
+        
+        if (!confirmar) {
+            return;
+        }
+        
+        // Segunda confirmación para seguridad
+        const confirmar2 = confirm(
+            '⚠️ CONFIRMACIÓN FINAL ⚠️\n\n' +
+            'Se eliminarán ' + total.toLocaleString() + ' solicitudes.\n' +
+            '¿Continuar?'
+        );
+        
+        if (!confirmar2) {
+            return;
+        }
+        
+        // Deshabilitar botón mientras procesa
+        const btn = document.getElementById('btn-limpiar');
+        const btnMovil = document.getElementById('btn-limpiar-movil');
+        
+        if (btn) {
+            btn.textContent = '⏳ Eliminando...';
+            btn.disabled = true;
+        }
+        if (btnMovil) {
+            btnMovil.textContent = '⏳ Eliminando...';
+            btnMovil.disabled = true;
+        }
+        
+        // Ejecutar la limpieza
+        const response = await fetch('/api/excel/solicitudes', {
+            method: 'DELETE'
+        });
+        
+        const resultado = await response.json();
+        
+        if (response.ok) {
+            alert('✅ ' + resultado.mensaje + '\n\n' + 'Se eliminaron: ' + resultado.eliminadas.toLocaleString() + ' solicitudes');
+            
+            // Recargar dashboard
+            await cargarDashboard();
+            await actualizarDashboard();
+        } else {
+            alert('Error: ' + resultado.error);
+        }
+        
+        // Restaurar botón
+        if (btn) {
+            btn.textContent = '🧹 Limpiar Todo';
+            btn.disabled = false;
+        }
+        if (btnMovil) {
+            btnMovil.textContent = '🧹 Limpiar Todo';
+            btnMovil.disabled = false;
+        }
+        
+    } catch (error) {
+        console.error('Error al limpiar solicitudes:', error);
+        alert('Error al procesar la solicitud. Verifica la conexión.');
+        
+        // Restaurar botón en caso de error
+        const btn = document.getElementById('btn-limpiar');
+        const btnMovil = document.getElementById('btn-limpiar-movil');
+        
+        if (btn) {
+            btn.textContent = '🧹 Limpiar Todo';
+            btn.disabled = false;
+        }
+        if (btnMovil) {
+            btnMovil.textContent = '🧹 Limpiar Todo';
+            btnMovil.disabled = false;
+        }
+    }
+}

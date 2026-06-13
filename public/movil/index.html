@@ -45,12 +45,18 @@
         <p>Dashboard</p>
     </div>
 
-    <div class="bienvenida">
+<div class="bienvenida">
         <h2>Bienvenido al sistema</h2>
         <p>Consulta el estado de tus solicitudes</p>
     </div>
 
-<div class="cards-cont">
+    <div style="padding: 0 15px; margin-bottom: 15px;">
+        <button id="btn-limpiar-movil" onclick="limpiarSolicitudes()" style="width: 100%; padding: 14px; background: #dc2626; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 600;">
+            🧹 Limpiar Todo
+        </button>
+    </div>
+
+    <div class="cards-cont">
         <div class="card card-total">
             <div class="icono">📄</div>
             <div class="info"><h3>Total</h3><span id="totalSolicitudes">0</span></div>

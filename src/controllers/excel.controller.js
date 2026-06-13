@@ -748,3 +748,55 @@ exports.getSolicitud = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+// ================== LIMPIAR SOLICITUDES ==================
+
+// Limpiar todas las solicitudes del usuario actual
+exports.limpiarSolicitudes = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    try {
+        // Contar solicitudes antes de eliminar
+        const countResult = await pool.query(
+            'SELECT COUNT(*) as total FROM solicitudes WHERE usuario_id = $1',
+            [usuarioId]
+        );
+        
+        const total = parseInt(countResult.rows[0]?.total) || 0;
+        
+        if (total === 0) {
+            return res.json({
+                mensaje: 'No hay solicitudes para eliminar',
+                eliminadas: 0
+            });
+        }
+        
+        // Primero eliminar gestines asociadas (para integridad referencial)
+        await pool.query(
+            'DELETE FROM gestines WHERE usuario_id = $1',
+            [usuarioId]
+        );
+        
+        // Eliminar solicitudes
+        const result = await pool.query(
+            'DELETE FROM solicitudes WHERE usuario_id = $1',
+            [usuarioId]
+        );
+        
+        console.log('DEBUG limpiarSolicitudes - eliminadas:', result.rowCount, 'por usuario:', usuarioId);
+        
+        res.json({
+            mensaje: 'Solicitudes eliminadas correctamente',
+            eliminadas: result.rowCount
+        });
+        
+    } catch (err) {
+        console.error('Error limpiarSolicitudes:', err);
+        res.status(500).json({
+            error: err.message
+        });
+    }
+};

@@ -70,3 +70,81 @@ document.getElementById('btnLogout')?.addEventListener('click', async (e) => {
         }
     }
 });
+
+// ================== LIMPIAR SOLICITUDES ==================
+
+// Función para limpiar todas las solicitudes del usuario
+async function limpiarSolicitudes() {
+    try {
+        // Obtener el total de solicitudes
+        const responseDash = await fetch('/api/excel/dashboard');
+        const datos = await responseDash.json();
+        const total = parseInt(datos.total) || 0;
+        
+        if (total === 0) {
+            alert('No hay solicitudes para eliminar.');
+            return;
+        }
+        
+        // Mostrar confirmación
+        const confirmar = confirm(
+            '¿Estás seguro de eliminar todas tus solicitudes?\n\n' +
+            'Esta acción no se puede deshacer.\n' +
+            'Total: ' + total.toLocaleString()
+        );
+        
+        if (!confirmar) {
+            return;
+        }
+        
+        // Segunda confirmación
+        const confirmar2 = confirm(
+            '⚠️ CONFIRMACIÓN FINAL ⚠️\n\n' +
+            'Se eliminarán ' + total.toLocaleString() + ' solicitudes.\n' +
+            '¿Continuar?'
+        );
+        
+        if (!confirmar2) {
+            return;
+        }
+        
+        // Deshabilitar botón
+        const btn = document.getElementById('btn-limpiar-movil');
+        if (btn) {
+            btn.textContent = '⏳ Eliminando...';
+            btn.disabled = true;
+        }
+        
+        // Ejecutar limpieza
+        const response = await fetch('/api/excel/solicitudes', {
+            method: 'DELETE'
+        });
+        
+        const resultado = await response.json();
+        
+        if (response.ok) {
+            alert('✅ ' + resultado.mensaje + '\n\nEliminadas: ' + resultado.eliminadas.toLocaleString());
+            
+            // Recargar datos
+            cargarDatos();
+        } else {
+            alert('Error: ' + resultado.error);
+        }
+        
+        // Restaurar botón
+        if (btn) {
+            btn.textContent = '🧹 Limpiar Todo';
+            btn.disabled = false;
+        }
+        
+    } catch (error) {
+        console.error('Error al limpiar:', error);
+        alert('Error al procesar. Verifica la conexión.');
+        
+        const btn = document.getElementById('btn-limpiar-movil');
+        if (btn) {
+            btn.textContent = '🧹 Limpiar Todo';
+            btn.disabled = false;
+        }
+    }
+}
