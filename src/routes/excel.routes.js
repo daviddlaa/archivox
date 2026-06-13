@@ -111,15 +111,6 @@ router.get(
     excelController.getSolicitud
 );
 
-// ================== LIMPIAR SOLICITUDES ==================
-
-// Eliminar todas las solicitudes del usuario
-router.delete(
-    '/solicitudes',
-    requiresAuth,
-    excelController.limpiarSolicitudes
-);
-
 // Actualizar código plus de una solicitud
 router.put(
     '/solicitudes/:id/codigo-plus',
