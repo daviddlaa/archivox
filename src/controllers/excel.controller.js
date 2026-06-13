@@ -758,9 +758,11 @@ exports.limpiarSolicitudes = async (req, res) => {
         return res.status(401).json({ error: 'No autenticado' });
     }
     
+    const client = await pool.connect();
+    
     try {
         // Contar solicitudes antes de eliminar
-        const countResult = await pool.query(
+        const countResult = await client.query(
             'SELECT COUNT(*) as total FROM solicitudes WHERE usuario_id = $1',
             [usuarioId]
         );
@@ -774,27 +776,33 @@ exports.limpiarSolicitudes = async (req, res) => {
             });
         }
         
+        // Iniciar transacción
+        await client.query('BEGIN');
+        
         // Primero obtener los IDs de las solicitudes del usuario
-        const solicIdsResult = await pool.query(
+        const solicIdsResult = await client.query(
             'SELECT id FROM solicitudes WHERE usuario_id = $1',
             [usuarioId]
         );
         
         const solicIds = solicIdsResult.rows.map(r => r.id);
         
-        // Eliminar gestines asociadas a esas solicitudes
+        // Eliminar gestines asociadas a esas solicitudes (por solicitud_id)
         if (solicIds.length > 0) {
-            await pool.query(
+            await client.query(
                 'DELETE FROM gestines WHERE solicitud_id = ANY($1)',
                 [solicIds]
             );
         }
         
-        // Eliminar solicitudes
-        const result = await pool.query(
+        // Eliminar solicitudes del usuario
+        const result = await client.query(
             'DELETE FROM solicitudes WHERE usuario_id = $1',
             [usuarioId]
         );
+        
+        // Confirmar transacción
+        await client.query('COMMIT');
         
         console.log('DEBUG limpiarSolicitudes - eliminadas:', result.rowCount, 'por usuario:', usuarioId);
         
@@ -804,9 +812,13 @@ exports.limpiarSolicitudes = async (req, res) => {
         });
         
     } catch (err) {
+        // Revertir transacción en caso de error
+        await client.query('ROLLBACK');
         console.error('Error limpiarSolicitudes:', err);
         res.status(500).json({
             error: err.message
         });
+    } finally {
+        client.release();
     }
 };
