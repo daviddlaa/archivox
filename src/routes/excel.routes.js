@@ -148,4 +148,13 @@ router.delete(
     excelController.eliminarGestion
 );
 
+// ================== LIMPIAR SOLICITUDES ==================
+
+// Borrar todas las solicitudes del usuario actual
+router.delete(
+    '/limpiar',
+    requiresAuth,
+    excelController.limpiarSolicitudes
+);
+
 module.exports = router;

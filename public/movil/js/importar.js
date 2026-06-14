@@ -26,7 +26,7 @@ document.getElementById('formExcel')?.addEventListener('submit', async (e) => {
     for (const f of files) formData.append('excelFiles', f);
     
     try {
-        const res = await fetch('/api/excel/upload', { method: 'POST', body: formData });
+const res = await fetch('/api/excel/upload', { method: 'POST', body: formData, credentials: 'include' });
         const data = await res.json();
         
         if (res.ok) {

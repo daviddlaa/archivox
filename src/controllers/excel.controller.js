@@ -1,5 +1,8 @@
- const excelService = require('../services/excel.service');
-const pool = require('../config/database.pg.js');
+const excelService = require('../services/excel.service');
+const db = require('../config/db.js');
+
+// Reemplazar pool por db en todo el archivo
+const pool = db;
 
 exports.uploadExcel = async (req, res) => {
 
@@ -13,7 +16,7 @@ exports.uploadExcel = async (req, res) => {
 
         }
 
-        // Obtener ID del usuario de la sesión
+        // Obtener ID del usuario de la sesiï¿½n
         const usuarioId = req.session.usuario?.id;
         if (!usuarioId) {
             return res.status(401).json({
@@ -36,7 +39,7 @@ exports.uploadExcel = async (req, res) => {
         }
 
         res.json({
-            mensaje: 'Importación exitosa',
+            mensaje: 'Importaciï¿½n exitosa',
             archivos: req.files.length,
             registros: totalRegistros
         });
@@ -66,7 +69,7 @@ exports.listarSolicitudes = async (req, res) => {
         direccion
     } = req.query;
 
-    // Obtener ID del usuario de la sesión
+    // Obtener ID del usuario de la sesiï¿½n
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({
@@ -97,13 +100,13 @@ if (producto) {
         params.push(producto);
     }
 
-    if (nombre) {
-        sql += ' AND nombre ILIKE $' + (params.length + 1);
+if (nombre) {
+        sql += ' AND LOWER(nombre) LIKE LOWER($' + (params.length + 1) + ')';
         params.push('%' + nombre + '%');
     }
 
     if (telefono) {
-        sql += ' AND celular ILIKE $' + (params.length + 1);
+        sql += ' AND LOWER(celular) LIKE LOWER($' + (params.length + 1) + ')';
         params.push('%' + telefono + '%');
     }
 
@@ -133,7 +136,7 @@ if (producto) {
 
 exports.dashboard = async (req, res) => {
 
-    // Obtener ID del usuario de la sesión
+    // Obtener ID del usuario de la sesiï¿½n
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({
@@ -147,7 +150,7 @@ exports.dashboard = async (req, res) => {
             SUM(CASE WHEN estado = 'ACTIVADA' THEN 1 ELSE 0 END) as activadas,
             SUM(CASE WHEN estado = 'RECHAZADA' THEN 1 ELSE 0 END) as rechazadas,
             SUM(CASE WHEN estado = 'DEVUELTA' THEN 1 ELSE 0 END) as devueltas,
-            SUM(CASE WHEN estado = 'APROBADA PARA LIBERACIÓN' THEN 1 ELSE 0 END) as pendientes
+            SUM(CASE WHEN estado = 'APROBADA PARA LIBERACIï¿½N' THEN 1 ELSE 0 END) as pendientes
         FROM solicitudes
         WHERE usuario_id = $1
     `;
@@ -165,7 +168,7 @@ exports.dashboard = async (req, res) => {
 
 exports.dashboardSegmentos = async (req, res) => {
 
-    // Obtener ID del usuario de la sesión
+    // Obtener ID del usuario de la sesiï¿½n
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({
@@ -196,7 +199,7 @@ exports.dashboardSegmentos = async (req, res) => {
 
 exports.dashboardEstados = async (req, res) => {
 
-    // Obtener ID del usuario de la sesión
+    // Obtener ID del usuario de la sesiï¿½n
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({
@@ -229,7 +232,7 @@ exports.dashboardEstados = async (req, res) => {
 exports.dashboardSegmentosFiltrado = async (req, res) => {
     const { estado } = req.query;
     
-    // Obtener ID del usuario de la sesión
+    // Obtener ID del usuario de la sesiï¿½n
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({
@@ -268,7 +271,7 @@ exports.dashboardSegmentosFiltrado = async (req, res) => {
 exports.dashboardEstadosFiltrado = async (req, res) => {
     const { segmento } = req.query;
     
-    // Obtener ID del usuario de la sesión
+    // Obtener ID del usuario de la sesiï¿½n
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({
@@ -303,8 +306,8 @@ exports.dashboardEstadosFiltrado = async (req, res) => {
 
 };
 
-// Promedio de solicitudes por mes (últimos 3 meses)
-// Cálculo: contar solicitudes últimos 90 días y dividir por 3
+// Promedio de solicitudes por mes (ï¿½ltimos 3 meses)
+// Cï¿½lculo: contar solicitudes ï¿½ltimos 90 dï¿½as y dividir por 3
 exports.dashboardPromedioMes = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -314,7 +317,7 @@ exports.dashboardPromedioMes = async (req, res) => {
     }
     
     try {
-        // Contar solicitudes últimos 90 días
+        // Contar solicitudes ï¿½ltimos 90 dï¿½as
         const result = await pool.query(
             `SELECT COUNT(*) as total 
              FROM solicitudes 
@@ -338,8 +341,8 @@ exports.dashboardPromedioMes = async (req, res) => {
     }
 };
 
-// Promedio de solicitudes por semana (últimas 9 semanas)
-// Cálculo: contar solicitudes últimos 63 días y dividir por 9
+// Promedio de solicitudes por semana (ï¿½ltimas 9 semanas)
+// Cï¿½lculo: contar solicitudes ï¿½ltimos 63 dï¿½as y dividir por 9
 exports.dashboardPromedioSemana = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -349,7 +352,7 @@ exports.dashboardPromedioSemana = async (req, res) => {
     }
     
     try {
-        // Contar solicitudes últimos 63 días
+        // Contar solicitudes ï¿½ltimos 63 dï¿½as
         const result = await pool.query(
             `SELECT COUNT(*) as total 
              FROM solicitudes 
@@ -383,7 +386,7 @@ exports.dashboardVentasMensuales = async (req, res) => {
     }
     
     try {
-        // Obtener ventas de los últimos 12 meses (solo estado ACTIVADA)
+        // Obtener ventas de los ï¿½ltimos 12 meses (solo estado ACTIVADA)
         const result = await pool.query(
             `SELECT 
                 TO_CHAR(fecha_solicitud, 'YYYY-MM') as mes,
@@ -488,7 +491,7 @@ exports.deleteVendedor = async (req, res) => {
     }
 };
 
-// Obtener configuración de bonos
+// Obtener configuraciï¿½n de bonos
 exports.getConfigBonos = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -526,7 +529,7 @@ exports.getConfigBonos = async (req, res) => {
     }
 };
 
-// Guardar configuración de bonos
+// Guardar configuraciï¿½n de bonos
 exports.saveConfigBonos = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -554,7 +557,7 @@ exports.saveConfigBonos = async (req, res) => {
             [usuarioId, mes, bono1, bono2, bono3, bono4, bono5, bono6, meta_equipo]
         );
         
-        res.json({ mensaje: 'Configuración guardada', data: result.rows[0] });
+        res.json({ mensaje: 'Configuraciï¿½n guardada', data: result.rows[0] });
 } catch (err) {
         console.error('Error saveConfigBonos:', err);
         res.status(500).json({ error: err.message });
@@ -563,7 +566,7 @@ exports.saveConfigBonos = async (req, res) => {
 
 // ================== GESTIONES ==================
 
-// Crear una nueva gestión
+// Crear una nueva gestiï¿½n
 exports.crearGestion = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -584,7 +587,7 @@ const result = await pool.query(
             [solicitud_id, usuarioId, tipo_gestion, observacion || '']
         );
         
-        res.json({ mensaje: 'Gestión guardada', data: result.rows[0] });
+        res.json({ mensaje: 'Gestiï¿½n guardada', data: result.rows[0] });
     } catch (err) {
         console.error('Error crearGestion:', err);
         res.status(500).json({ error: err.message });
@@ -619,7 +622,7 @@ try {
     }
 };
 
-// Actualizar una gestión existente
+// Actualizar una gestiï¿½n existente
 exports.actualizarGestion = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -630,11 +633,11 @@ exports.actualizarGestion = async (req, res) => {
     const { tipo_gestion, observacion } = req.body;
     
     if (!id) {
-        return res.status(400).json({ error: 'ID de gestión requerido' });
+        return res.status(400).json({ error: 'ID de gestiï¿½n requerido' });
     }
     
     if (!tipo_gestion) {
-        return res.status(400).json({ error: 'Tipo de gestión requerido' });
+        return res.status(400).json({ error: 'Tipo de gestiï¿½n requerido' });
     }
     
 try {
@@ -647,17 +650,17 @@ try {
         );
         
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Gestión no encontrada' });
+            return res.status(404).json({ error: 'Gestiï¿½n no encontrada' });
         }
         
-        res.json({ mensaje: 'Gestión actualizada', data: result.rows[0] });
+        res.json({ mensaje: 'Gestiï¿½n actualizada', data: result.rows[0] });
     } catch (err) {
         console.error('Error actualizarGestion:', err);
         res.status(500).json({ error: err.message });
     }
 };
 
-// Eliminar una gestión
+// Eliminar una gestiï¿½n
 exports.eliminarGestion = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -667,7 +670,7 @@ exports.eliminarGestion = async (req, res) => {
     const { id } = req.params;
     
     if (!id) {
-        return res.status(400).json({ error: 'ID de gestión requerido' });
+        return res.status(400).json({ error: 'ID de gestiï¿½n requerido' });
     }
     
 try {
@@ -677,19 +680,19 @@ try {
         );
         
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Gestión no encontrada' });
+            return res.status(404).json({ error: 'Gestiï¿½n no encontrada' });
         }
         
-        res.json({ mensaje: 'Gestión eliminada' });
+        res.json({ mensaje: 'Gestiï¿½n eliminada' });
     } catch (err) {
         console.error('Error eliminarGestion:', err);
         res.status(500).json({ error: err.message });
     }
 };
 
-// ================== CÓDIGO PLUS ==================
+// ================== Cï¿½DIGO PLUS ==================
 
-// Actualizar código plus de una solicitud
+// Actualizar cï¿½digo plus de una solicitud
 exports.actualizarCodigoPlus = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -716,7 +719,7 @@ exports.actualizarCodigoPlus = async (req, res) => {
             return res.status(404).json({ error: 'Solicitud no encontrada' });
         }
         
-        res.json({ mensaje: 'Código Plus actualizado', data: result.rows[0] });
+        res.json({ mensaje: 'Cï¿½digo Plus actualizado', data: result.rows[0] });
     } catch (err) {
         console.error('Error actualizarCodigoPlus:', err);
         res.status(500).json({ error: err.message });
@@ -752,78 +755,54 @@ exports.getSolicitud = async (req, res) => {
 // ================== LIMPIAR SOLICITUDES ==================
 
 // Limpiar todas las solicitudes del usuario actual
+// Compatible con SQLite y PostgreSQL
 exports.limpiarSolicitudes = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({ error: 'No autenticado' });
     }
-    
-    const client = await pool.connect();
-    
+
     try {
         // Contar solicitudes antes de eliminar
-        const countResult = await client.query(
+        const countResult = await pool.query(
             'SELECT COUNT(*) as total FROM solicitudes WHERE usuario_id = $1',
             [usuarioId]
         );
-        
+
         const total = parseInt(countResult.rows[0]?.total) || 0;
-        
+
         if (total === 0) {
             return res.json({
                 mensaje: 'No hay solicitudes para eliminar',
                 eliminadas: 0
             });
         }
-        
-        // Iniciar transacción
-        await client.query('BEGIN');
-        
-        // Primero obtener los IDs de las solicitudes del usuario
-        const solicIdsResult = await client.query(
-'SELECT id_solicitud FROM solicitudes WHERE usuario_id = $1'
+
+        // Eliminar gestionas primero (foreign key constraint)
+        // Metodo compatible con ambos motores
+        await pool.query(
+            'DELETE FROM gestiones WHERE solicitud_id IN (SELECT id_solicitud FROM solicitudes WHERE usuario_id = $1)',
             [usuarioId]
         );
-        
-const solicIds = solicIdsResult.rows.map(r => r.id_solicitud);
-        
-// IMPORTANTE: Primero eliminar de 'gestiones'
-        // "gestiones_solicitud_id_fkey" impide eliminar de solicitudes antes de eliminar gestiones
-        // Tabla correcta es 'gestiones' (no gestiones)
-        if (solicIds.length > 0) {
-            try {
-                await client.query(
-                    'DELETE FROM gestiones WHERE solicitud_id = ANY($1)',
-                    [solicIds]
-                );
-            } catch (e) { console.log('Error deleting from gestiones:', e.message); }
-        }
-        
-        // Ahora eliminar las solicitudes (parent table)
-        const result = await client.query(
+
+        // Eliminar las solicitudes
+        const result = await pool.query(
             'DELETE FROM solicitudes WHERE usuario_id = $1',
             [usuarioId]
         );
-        
-        // Confirmar transacción
-        await client.query('COMMIT');
-        
+
         console.log('DEBUG limpiarSolicitudes - eliminadas:', result.rowCount, 'por usuario:', usuarioId);
-        
+
         res.json({
             mensaje: 'Solicitudes eliminadas correctamente',
             eliminadas: result.rowCount
         });
-        
+
     } catch (err) {
-        // Revertir transacción en caso de error
-        await client.query('ROLLBACK');
         console.error('Error limpiarSolicitudes:', err);
         res.status(500).json({
             error: err.message
         });
-    } finally {
-        client.release();
     }
 };
 

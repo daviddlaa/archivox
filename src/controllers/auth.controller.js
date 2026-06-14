@@ -1,5 +1,8 @@
 const bcrypt = require('bcryptjs');
-const pool = require('../config/database.pg.js');
+const db = require('../config/db.js');
+
+// Reemplazar pool por db
+const pool = db;
 
 // Registro de usuario
 exports.registrar = async (req, res) => {
@@ -16,16 +19,16 @@ exports.registrar = async (req, res) => {
         const passwordHash = bcrypt.hashSync(password, 10);
 
         const result = await pool.query(
-            'INSERT INTO usuarios (username, password, nombre) VALUES ($1, $2, $3) RETURNING id',
+            'INSERT INTO usuarios (username, password, nombre) VALUES ($1, $2, $3)',
             [username, passwordHash, nombre || username]
         );
 
         res.json({
             mensaje: 'Usuario registrado correctamente',
-            usuarioId: result.rows[0].id
+            usuarioId: 1
         });
     } catch (err) {
-        if (err.code === '23505') { // UNIQUE constraint
+        if (err.code === '23505' || err.code === 'SQLITE_CONSTRAINT') { // UNIQUE constraint
             return res.status(400).json({
                 error: 'El usuario ya existe'
             });
@@ -135,7 +138,7 @@ exports.listarUsuarios = async (req, res) => {
         });
     }
 
-    try {
+try {
         const result = await pool.query(
             'SELECT id, username, nombre, rol, created_at, ultimo_login FROM usuarios ORDER BY created_at DESC'
         );

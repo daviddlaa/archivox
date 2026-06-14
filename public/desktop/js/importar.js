@@ -87,12 +87,13 @@ form.addEventListener('submit', async (e) => {
 
     try {
 
-        const response =
+const response =
             await fetch(
                 '/api/excel/upload',
                 {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    credentials: 'include'
                 }
             );
 

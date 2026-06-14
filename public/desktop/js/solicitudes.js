@@ -1155,6 +1155,58 @@ function actualizarInfoPanel() {
     }
 }
 
+// ================== BORRAR TODAS LAS SOLICITUDES ==================
+
+// Función para borrar todas las solicitudes del usuario actual
+async function borrarTodas() {
+    if (!confirm('¿Está seguro de BORRAR TODAS las solicitudes?\n\nEsta acción NO se puede deshacer.\n\nSe eliminarán todos los registros de la base de datos.')) {
+        return;
+    }
+    
+    // Segunda confirmación
+    if (!confirm('¿REALMENTE quiere eliminar TODAS las solicitudes?\n\nEsta acción es IRREVERSIBLE.')) {
+        return;
+    }
+    
+    try {
+        var btn = document.querySelector('.btn-danger');
+        if (btn) {
+            btn.textContent = '🗑️ Eliminando...';
+            btn.disabled = true;
+        }
+        
+        var response = await fetch('/api/excel/limpiar', {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok) {
+            alert('✅ ' + resultado.mensaje + '\n\nSe eliminaron: ' + resultado.eliminadas + ' registros');
+            // Recargar datos
+            cargarTotales();
+            cargarEstados();
+            cargarSegmentos();
+            cargarSolicitudes();
+            filasSeleccionadas = [];
+            datosFilas = {};
+            actualizarContador();
+        } else {
+            alert('❌ Error: ' + (resultado.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error al borrar:', error);
+        alert('❌ Error al eliminar las solicitudes');
+    } finally {
+        var btn = document.querySelector('.btn-danger');
+        if (btn) {
+            btn.textContent = '🗑️ Borrar Todo';
+            btn.disabled = false;
+        }
+    }
+}
+
 // Inicializar
 cargarTotales();
 cargarEstados();

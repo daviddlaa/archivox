@@ -1,6 +1,8 @@
 const ExcelJS = require('exceljs');
 const fs = require('fs');
-const pool = require('../config/database.pg.js');
+const db = require('../config/db.js');
+
+const pool = db;
 
 exports.procesarExcel = async (filePath, usuarioId) => {
 
@@ -17,51 +19,58 @@ exports.procesarExcel = async (filePath, usuarioId) => {
     });
 
     let procesados = 0;
-    const client = await pool.connect();
 
-    try {
-        // Iniciar transacción
-        await client.query('BEGIN');
+    // Usar db directo para mejor rendimiento
+    const dbDirect = require('../config/database');
 
-        const sql = `
-            INSERT INTO solicitudes
-            (
-                id_solicitud,
-                estado,
-                cedula,
-                nombre,
-                celular,
-                segmento,
-                producto,
-                fecha_solicitud,
-                usuario_id
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
 
-            ON CONFLICT(id_solicitud)
-            DO UPDATE SET
-                estado = EXCLUDED.estado,
-                cedula = EXCLUDED.cedula,
-                nombre = EXCLUDED.nombre,
-                celular = EXCLUDED.celular,
-                segmento = EXCLUDED.segmento,
-                producto = EXCLUDED.producto,
-                fecha_solicitud = EXCLUDED.fecha_solicitud,
-                usuario_id = EXCLUDED.usuario_id,
-                fecha_actualizacion = CURRENT_TIMESTAMP
-        `;
+        const row = worksheet.getRow(rowNumber);
 
-        for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+        const registro = {};
 
-            const row = worksheet.getRow(rowNumber);
+        row.eachCell((cell, colNumber) => {
+            registro[headers[colNumber - 1]] = cell.value;
+        });
 
-            const registro = {};
+        // Upsert para SQLite
+        const existing = dbDirect.prepare(
+            'SELECT id FROM solicitudes WHERE id_solicitud = ?'
+        ).get(registro.IDSOLICITUD);
 
-            row.eachCell((cell, colNumber) => {
-                registro[headers[colNumber - 1]] = cell.value;
-            });
-
-            await client.query(sql, [
+        if (existing) {
+            // Update
+            dbDirect.prepare(`
+                UPDATE solicitudes SET
+                    estado = ?,
+                    cedula = ?,
+                    nombre = ?,
+                    celular = ?,
+                    segmento = ?,
+                    producto = ?,
+                    fecha_solicitud = ?,
+                    usuario_id = ?,
+                    fecha_actualizacion = datetime('now')
+                WHERE id_solicitud = ?
+            `).run(
+                registro.ESTADO,
+                registro.CEDULA,
+                registro.NOMBRE,
+                registro.CELULAR,
+                registro.SEGMENTO,
+                registro.PRODUCTO,
+                registro.FECHASOLICITUD,
+                usuarioId,
+                registro.IDSOLICITUD
+            );
+} else {
+            // Insert
+            dbDirect.prepare(`
+                INSERT INTO solicitudes (
+                    id_solicitud, estado, cedula, nombre, celular,
+                    segmento, producto, fecha_solicitud, usuario_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(
                 registro.IDSOLICITUD,
                 registro.ESTADO,
                 registro.CEDULA,
@@ -71,18 +80,10 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                 registro.PRODUCTO,
                 registro.FECHASOLICITUD,
                 usuarioId
-            ]);
-
-            procesados++;
+            );
         }
 
-        await client.query('COMMIT');
-
-    } catch (err) {
-        await client.query('ROLLBACK');
-        throw err;
-    } finally {
-        client.release();
+        procesados++;
     }
 
     if (fs.existsSync(filePath)) {

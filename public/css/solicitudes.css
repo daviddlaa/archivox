@@ -855,6 +855,18 @@ tr:hover{
     transform: translateX(2px);
 }
 
+/* Botón de peligro - rojo */
+.quick-btn.btn-danger {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+.quick-btn.btn-danger:hover {
+    background: #fee2e2;
+    border-color: #f87171;
+}
+
 /* Panel Derecho: Tabla */
 .table-panel {
     background: white;

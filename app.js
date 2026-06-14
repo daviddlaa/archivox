@@ -6,8 +6,12 @@ const session = require('express-session');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
-// Usar PostgreSQL (Render)
-require('./src/config/initDb.pg');
+// Automático: PostgreSQL en producción (Render), SQLite localmente
+if (process.env.DATABASE_URL) {
+    require('./src/config/initDb.pg');
+} else {
+    require('./src/config/initDb');
+}
 const app = express();
 const PORT = process.env.PORT || 3000;
 
