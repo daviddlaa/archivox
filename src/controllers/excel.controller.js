@@ -155,9 +155,17 @@ exports.dashboard = async (req, res) => {
         WHERE usuario_id = $1
     `;
 
-    try {
+try {
         const result = await pool.query(sql, [usuarioId]);
-        res.json(result.rows[0]);
+        const data = result.rows[0] || {};
+        // Convertir null a 0 para evitar errores en el frontend
+        res.json({
+            total: Number(data.total) || 0,
+            activadas: Number(data.activadas) || 0,
+            rechazadas: Number(data.rechazadas) || 0,
+            devueltas: Number(data.devueltas) || 0,
+            pendientes: Number(data.pendientes) || 0
+        });
     } catch (err) {
         return res.status(500).json({
             error: err.message
