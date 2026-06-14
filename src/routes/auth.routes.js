@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
-// IMPORTANTE: Usar src/config/auth.controller.js que funciona correctamente con SQLite
-const authController = require('../config/auth.controller');
+// IMPORTANTE: Usar src/controllers/auth.controller.js que funciona con SQLite y PostgreSQL
+const authController = require('../controllers/auth.controller');
 
 // Middleware para verificar autenticación
 function requiresAuth(req, res, next) {
