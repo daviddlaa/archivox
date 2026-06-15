@@ -87,7 +87,7 @@ form.addEventListener('submit', async (e) => {
 
     try {
 
-const response =
+        const response =
             await fetch(
                 '/api/excel/upload',
                 {
@@ -100,30 +100,86 @@ const response =
         const data =
             await response.json();
 
-        mensaje.innerHTML = `
-            <div class="success">
+        // Verificar si hay actualizaciones
+        if (data.updates && data.updates > 0) {
+            
+            // Construir tabla de actualizaciones
+            let tablaHTML = `
+                <div class="update-report">
+                    <h3>📝 Informe de Actualización</h3>
+                    <p class="summary">
+                        <strong>${data.updates}</strong> registro(s) actualizado(s)
+                        <br>
+                        <strong>${data.inserts}</strong> registro(s) nuevo(s)
+                    </p>
+                    <div class="table-container">
+                        <table class="update-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Campo</th>
+                                    <th>Anterior</th>
+                                    <th>Nuevo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            // Agregar cada detalle
+            if (data.detalles && data.detalles.length > 0) {
+                for (const detalle of data.detalles) {
+                    tablaHTML += `
+                        <tr>
+                            <td>${detalle.id}</td>
+                            <td>${detalle.campo === 'estado' ? 'Estado' : 'Segmento'}</td>
+                            <td>${detalle.anterior || '-'}</td>
+                            <td>${detalle.nuevo || '-'}</td>
+                        </tr>
+                    `;
+                }
+            }
+            
+            tablaHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+<a href="/solicitudes" class="btn-ver">
+                        📋 Ver Solicitudes →
+                    </a>
+                </div>
+            `;
+            
+            mensaje.innerHTML = tablaHTML;
+            
+        } else {
+            
+            //Primera carga - informe simple
+            mensaje.innerHTML = `
+                <div class="success">
 
-                <h3>✅ Importación completada</h3>
+                    <h3>✅ Importación completada</h3>
 
-                <p>
-                    📂 Archivos procesados:
-                    <strong>${data.archivos}</strong>
-                </p>
+                    <p>
+                        📂 Archivos procesados:
+                        <strong>${data.archivos}</strong>
+                    </p>
 
-                <p>
-                    📊 Registros importados:
-                    <strong>${data.registros}</strong>
-                </p>
+                    <p>
+                        📊 Registros importados:
+                        <strong>${data.registros}</strong>
+                    </p>
 
-                <a
-                    href="solicitudes.html"
-                    class="btn-ver"
-                >
-                    📋 Ver Solicitudes →
-                </a>
+<a
+                        href="/solicitudes"
+                        class="btn-ver"
+                    >
+                        📋 Ver Solicitudes →
+                    </a>
 
-            </div>
-        `;
+                </div>
+            `;
+            
+        }
 
         form.reset();
 

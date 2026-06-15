@@ -25,6 +25,9 @@ exports.uploadExcel = async (req, res) => {
         }
 
         let totalRegistros = 0;
+        let totalInserts = 0;
+        let totalUpdates = 0;
+        const todosDetalles = [];
 
         for (const archivo of req.files) {
 
@@ -35,13 +38,29 @@ exports.uploadExcel = async (req, res) => {
                 );
 
             totalRegistros += resultado.total;
+            totalInserts += resultado.inserts;
+            totalUpdates += resultado.updates;
+            
+            // Agregar detalles de actualizaciones
+            if (resultado.detalles && resultado.detalles.length > 0) {
+                todosDetalles.push(...resultado.detalles);
+            }
 
         }
 
+        // Preparar mensaje seg�n tipo de carga
+        let mensaje = 'Importaci�n exitosa';
+        if (totalUpdates > 0) {
+            mensaje = `Se actualizaron ${totalUpdates} registros`;
+        }
+
         res.json({
-            mensaje: 'Importaci�n exitosa',
+            mensaje: mensaje,
             archivos: req.files.length,
-            registros: totalRegistros
+            registros: totalRegistros,
+            inserts: totalInserts,
+            updates: totalUpdates,
+            detalles: todosDetalles
         });
 
     } catch (error) {
@@ -811,6 +830,84 @@ exports.limpiarSolicitudes = async (req, res) => {
         res.status(500).json({
             error: err.message
         });
+    }
+};
+
+// ================== HISTORIAL DE ACTUALIZACIONES ==================
+
+// Obtener historial de actualizaciones
+exports.getHistorialActualizaciones = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { limite = 50, offset = 0, campo, fechaInicio, fechaFin } = req.query;
+
+    try {
+        let sql = `
+            SELECT h.id, h.solicitud_id, h.campo, h.valor_anterior, h.valor_nuevo, h.fecha_actualizacion
+            FROM historial_actualizaciones h
+            WHERE h.usuario_id = $1
+        `;
+        const params = [usuarioId];
+
+        // Filtros adicionales
+        if (campo) {
+            sql += ` AND h.campo = $${params.length + 1}`;
+            params.push(campo);
+        }
+
+        if (fechaInicio) {
+            sql += ` AND h.fecha_actualizacion >= $${params.length + 1}`;
+            params.push(fechaInicio);
+        }
+
+        if (fechaFin) {
+            sql += ` AND h.fecha_actualizacion <= $${params.length + 1}`;
+            params.push(fechaFin);
+        }
+
+        // Orden y paginación
+        sql += ` ORDER BY h.fecha_actualizacion DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        params.push(parseInt(limite), parseInt(offset));
+
+        const result = await pool.query(sql, params);
+
+        // Contar total para paginación
+        let countSql = `
+            SELECT COUNT(*) as total
+            FROM historial_actualizaciones h
+            WHERE h.usuario_id = $1
+        `;
+        const countParams = [usuarioId];
+
+        if (campo) {
+            countSql += ` AND h.campo = $2`;
+            countParams.push(campo);
+        }
+        if (fechaInicio) {
+            countSql += ` AND h.fecha_actualizacion >= $${countParams.length + 1}`;
+            countParams.push(fechaInicio);
+        }
+        if (fechaFin) {
+            countSql += ` AND h.fecha_actualizacion <= $${countParams.length + 1}`;
+            countParams.push(fechaFin);
+        }
+
+        const countResult = await pool.query(countSql, countParams);
+        const total = parseInt(countResult.rows[0]?.total) || 0;
+
+        res.json({
+            data: result.rows,
+            total: total,
+            limite: parseInt(limite),
+            offset: parseInt(offset)
+        });
+
+    } catch (err) {
+        console.error('Error getHistorialActualizaciones:', err);
+        res.status(500).json({ error: err.message });
     }
 };
 

@@ -41,10 +41,10 @@
         
         .no-data { text-align: center; padding: 30px; color: #6b7280; }
         
-        .nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
-        .nav-bottom a { text-decoration: none; color: #6b7280; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-        .nav-bottom a span { font-size: 22px; }
-.nav-bottom a.active { color: #2563eb; }
+.nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 8px 4px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
+        .nav-bottom a { text-decoration: none; color: #6b7280; font-size: 9px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .nav-bottom a span { font-size: 18px; }
+        .nav-bottom a.active { color: #2563eb; }
         
 .actions-floating { position: fixed; bottom: 80px; right: 15px; display: flex; gap: 10px; z-index: 999; }
         .btn-float { width: 56px; height: 56px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s; }
@@ -93,10 +93,13 @@
         <div class="no-data">Cargando...</div>
     </div>
 
-    <nav class="nav-bottom">
-<a href="/m"><span>📊</span>Dashboard</a>
-        <a href="/m/importar"><span>📤</span>Importar</a>
+<nav class="nav-bottom">
+        <a href="/m"><span>📊</span>Dashboard</a>
         <a href="/m/solicitudes" class="active"><span>📋</span>Solicitudes</a>
+        <a href="/m/importar"><span>📤</span>Importar</a>
+        <a href="/m/equipo-ventas"><span>💰</span>Ventas</a>
+        <a href="/m/historial"><span>🔄</span>Historial</a>
+        <a href="#" id="btnLogout"><span>🚪</span>Salir</a>
     </nav>
 
     <script src="/movil/js/solicitudes.js"></script>

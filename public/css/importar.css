@@ -91,6 +91,7 @@ button:disabled{
 .archivo:last-child{
     border-bottom:none;
 }
+
 .btn-ver{
     display:inline-block;
     margin-top:15px;
@@ -105,6 +106,7 @@ button:disabled{
 .btn-ver:hover{
     background:#1d4ed8;
 }
+
 .topbar{
     max-width:800px;
     margin:20px auto 0;
@@ -123,6 +125,59 @@ button:disabled{
 
 .btn-nav:hover{
     background:#374151;
+}
+
+/* Estilos para informe de actualizaciones */
+.update-report{
+    background:#fef3c7;
+    border-left:4px solid #f59e0b;
+    padding:20px;
+    border-radius:8px;
+}
+
+.update-report h3{
+    margin:0 0 10px;
+    color:#92400e;
+}
+
+.update-report .summary{
+    margin-bottom:15px;
+    color:#78350f;
+}
+
+.update-report .table-container{
+    overflow-x:auto;
+    margin-top:10px;
+}
+
+.update-report .update-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+    background:white;
+    border-radius:8px;
+    overflow:hidden;
+}
+
+.update-report .update-table th{
+    background:#f59e0b;
+    color:white;
+    padding:10px;
+    text-align:left;
+    font-weight:bold;
+}
+
+.update-report .update-table td{
+    padding:8px 10px;
+    border-bottom:1px solid #eee;
+}
+
+.update-report .update-table tr:nth-child(even){
+    background:#f9fafb;
+}
+
+.update-report .update-table tr:hover{
+    background:#fef3c7;
 }
 
 /* Menú Hamburguesa */

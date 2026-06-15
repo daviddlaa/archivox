@@ -193,6 +193,8 @@ var estadoActual = '';
 var segmentoActual = '';
 var ordenActual = 'DESC';
 var columnaOrdenar = 'id_solicitud';
+var todosDatos = []; // Almacenar todos los datos para filtrar localmente
+var filtros = { estado: '', segmento: '', busqueda: '' };
 
 // Cargar los totales
 async function cargarTotales() {
@@ -274,7 +276,7 @@ function configurarEventosBotones() {
             }
             this.classList.add('active');
             estadoActual = this.dataset.value;
-            cargarSolicitudes();
+            aplicarFiltros();
         };
     }
     
@@ -288,7 +290,7 @@ function configurarEventosBotones() {
             }
             this.classList.add('active');
             segmentoActual = this.dataset.value;
-            cargarSolicitudes();
+            aplicarFiltros();
         };
     }
 }
@@ -319,97 +321,105 @@ function actualizarEncabezados() {
     }
 }
 
-// Cargar las solicitudes
-async function cargarSolicitudes() {
+// ================== NUEVO SISTEMA DE BÚSQUEDA LOCAL (COMO MÓVIL) ==================
+
+// Cargar todos los datos al iniciar
+async function init() {
     try {
-        var cedula = document.getElementById('cedula').value;
-        var params = '';
-
-        if (estadoActual) params += 'estado=' + encodeURIComponent(estadoActual) + '&';
-        if (segmentoActual) params += 'segmento=' + encodeURIComponent(segmentoActual) + '&';
-        if (cedula) {
-            // Buscar por nombre, cédula o teléfono
-            params += 'nombre=' + encodeURIComponent(cedula) + '&';
-            params += 'telefono=' + encodeURIComponent(cedula) + '&';
-        }
-        params += 'orden=' + columnaOrdenar + '&direccion=' + ordenActual;
-
-        var response = await fetch('/api/excel/solicitudes?' + params);
-
-        if (!response.ok) throw new Error('Error response');
-
-var datos = await response.json();
-
-        console.log('Datos recibidos:', datos.length);
-        console.log('Primer registro:', datos[0]);
-
-        var tabla = document.getElementById('tabla');
-        var mostrando = document.getElementById('mostrando');
-
-        tabla.innerHTML = '';
-        mostrando.textContent = datos.length ? datos.length : 0;
-
-if (!datos.length) {
-tabla.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;">No se encontraron registros</td></tr>';
-            return;
-        }
-
-var html = '';
-        datosFilas = {}; // Limpiar datos anteriores
-
-        for (var i = 0; i < datos.length; i++) {
-            var item = datos[i];
-            var estadoClase = (item.estado || '').replace(/ /g, '-').toUpperCase();
-            var id = item.id_solicitud || '';
-            var seleccionado = filasSeleccionadas.indexOf(id) > -1 ? 'checked' : '';
-            
-            // Guardar datos para usar después
-            datosFilas[id] = item;
-
-            html += '<tr' + (seleccionado ? ' class="fila-seleccionada"' : '') + '>';
-            html += '<td class="td-checkbox"><input type="checkbox" class="checkbox-fila" value="' + id + '" ' + seleccionado + '></td>';
-            html += '<td>' + id + '</td>';
-            html += '<td><span class="estado estado-' + estadoClase + '">' + (item.estado || '') + '</span></td>';
-            html += '<td>' + (item.cedula || '') + '</td>';
-            html += '<td>' + (item.nombre || '') + '</td>';
-html += '<td>' + (item.celular || '') + '</td>';
-            // Código + Segmento combinados
-            html += '<td><div class="cell-combinado"><span class="codigo-plus-cell">' + (item.codigo_plus || '—') + '</span><span class="segmento-cell">' + (item.segmento || '—') + '</span></div></td>';
-            // Producto + Fecha combinados
-            html += '<td><div class="cell-combinado"><span class="producto-cell">' + (item.producto || '—') + '</span><span class="fecha-cell">' + (item.fecha_solicitud || '—') + '</span></div></td>';
-            html += '<td class="td-acciones">';
-            html += '<button class="btn-accion btn-gestiones" onclick="abrirGestiones(\'' + id + '\')" title="Gestiones">📋</button>';
-            html += '<button class="btn-accion btn-completar" onclick="abrirCompletar(\'' + id + '\')" title="Completar información">✏️</button>';
-            html += '</td>';
-            html += '</tr>';
-        }
-
-tabla.innerHTML = html;
-        actualizarEncabezados();
-        actualizarCheckboxes();
+        var response = await fetch('/api/excel/solicitudes');
+        todosDatos = await response.json();
         
-        // Renderizar cards para móvil
-        renderizarCards(datos);
-
+        document.getElementById('totalRegistros').textContent = todosDatos.length;
+        
+        // renderizarFiltros() - Los segmentos y estados ya se cargan desde el dashboard
+        aplicarFiltros();
+        
+        console.log('Datos cargados:', todosDatos.length);
     } catch (error) {
-        console.error('Error:', error);
-document.getElementById('tabla').innerHTML = '<tr><td colspan="9" style="color:red;text-align:center;padding:20px;">Error al cargar datos</td></tr>';
+        console.error('Error cargando datos:', error);
     }
 }
 
-// Búsqueda en vivo (live search) - busca por nombre, cédula o teléfono
-var debounceTimer;
-document.getElementById('cedula').oninput = function() {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(function() {
-        cargarSolicitudes();
-    }, 300);
-};
+// Aplicar filtros localmente (igual que móvil)
+function aplicarFiltros() {
+    var inputBusqueda = document.getElementById('cedula');
+    var busqueda = inputBusqueda ? inputBusqueda.value.toLowerCase() : '';
+    
+    var filtrados = todosDatos.filter(function(d) {
+        // Filtro por estado
+        if (estadoActual && d.estado !== estadoActual) return false;
+        
+        // Filtro por segmento  
+        if (segmentoActual && d.segmento !== segmentoActual) return false;
+        
+        // Búsqueda por cédula, nombre o celular
+        if (busqueda) {
+            var matchCedula = d.cedula && d.cedula.toString().toLowerCase().includes(busqueda);
+            var matchNombre = d.nombre && d.nombre.toLowerCase().includes(busqueda);
+            var matchCelular = d.celular && d.celular.toString().includes(busqueda);
+            if (!matchCedula && !matchNombre && !matchCelular) return false;
+        }
+        
+        return true;
+    });
+    
+    document.getElementById('mostrando').textContent = filtrados.length;
+    renderizarTabla(filtrados);
+}
 
-// Función para buscar también por teléfono (se envía como parámetro "telefono")
-function buscarPorTelefono() {
-    var cedula = document.getElementById('cedula').value;
-    cargarSolicitudes();
+// Renderizar tabla con los datos filtrados
+function renderizarTabla(datos) {
+    var tabla = document.getElementById('tabla');
+    
+    if (!datos.length) {
+        tabla.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;">No se encontraron registros</td></tr>';
+        return;
+    }
+    
+    var html = '';
+    datosFilas = {}; // Limpiar datos anteriores
+    
+    for (var i = 0; i < datos.length; i++) {
+        var item = datos[i];
+        var estadoClase = (item.estado || '').replace(/ /g, '-').toUpperCase();
+        var id = item.id_solicitud || '';
+        var seleccionado = filasSeleccionadas.indexOf(id) > -1 ? 'checked' : '';
+        
+        // Guardar datos para usar después
+        datosFilas[id] = item;
+        
+        html += '<tr' + (seleccionado ? ' class="fila-seleccionada"' : '') + '>';
+        html += '<td class="td-checkbox"><input type="checkbox" class="checkbox-fila" value="' + id + '" ' + seleccionado + '></td>';
+        html += '<td>' + id + '</td>';
+        html += '<td><span class="estado estado-' + estadoClase + '">' + (item.estado || '') + '</span></td>';
+        html += '<td>' + (item.cedula || '') + '</td>';
+        html += '<td>' + (item.nombre || '') + '</td>';
+        html += '<td>' + (item.celular || '') + '</td>';
+        html += '<td><div class="cell-combinado"><span class="codigo-plus-cell">' + (item.codigo_plus || '—') + '</span><span class="segmento-cell">' + (item.segmento || '—') + '</span></div></td>';
+        html += '<td><div class="cell-combinado"><span class="producto-cell">' + (item.producto || '—') + '</span><span class="fecha-cell">' + (item.fecha_solicitud || '—') + '</span></div></td>';
+        html += '<td class="td-acciones">';
+        html += '<button class="btn-accion btn-gestiones" onclick="abrirGestiones(\'' + id + '\')" title="Gestiones">📋</button>';
+        html += '<button class="btn-accion btn-completar" onclick="abrirCompletar(\'' + id + '\')" title="Completar información">✏️</button>';
+        html += '</td>';
+        html += '</tr>';
+    }
+    
+    tabla.innerHTML = html;
+    actualizarCheckboxes();
+    
+    // Renderizar cards para móvil
+    renderizarCards(datos);
+}
+
+// Búsqueda en vivo (live search) con debounce
+var debounceTimer;
+if (document.getElementById('cedula')) {
+    document.getElementById('cedula').oninput = function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() {
+            aplicarFiltros();
+        }, 300);
+    };
 }
 
 // Evento para ordenar columnas
@@ -1134,8 +1144,8 @@ function limpiarFiltros() {
     // Actualizar info panel
     actualizarInfoPanel();
     
-    // Recargar datos
-    cargarSolicitudes();
+    // Recargar datos con el nuevo sistema
+    init();
 }
 
 // Actualizar info panel con filtros actuales
@@ -1184,11 +1194,11 @@ async function borrarTodas() {
         
         if (response.ok) {
             alert('✅ ' + resultado.mensaje + '\n\nSe eliminaron: ' + resultado.eliminadas + ' registros');
-            // Recargar datos
+// Recargar datos con el nuevo sistema local
             cargarTotales();
             cargarEstados();
             cargarSegmentos();
-            cargarSolicitudes();
+            init();
             filasSeleccionadas = [];
             datosFilas = {};
             actualizarContador();
@@ -1207,11 +1217,21 @@ async function borrarTodas() {
     }
 }
 
-// Inicializar
+// Inicializar - usar el nuevo sistema de búsqueda local
 cargarTotales();
 cargarEstados();
 cargarSegmentos();
-cargarSolicitudes();
+init(); // Cargar todos los datos y aplicar filtros localmente
 configurarEventosCheckboxes();
 configurarEventosCodigoPlus();
 actualizarContador();
+
+// Auto-focus en el input de búsqueda al cargar la página
+window.addEventListener('DOMContentLoaded', function() {
+    var inputBusqueda = document.getElementById('cedula');
+    if (inputBusqueda) {
+        setTimeout(function() {
+            inputBusqueda.focus();
+        }, 100);
+    }
+});

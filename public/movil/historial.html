@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial - Archivox</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/solicitudes.css">
+    <style>
+        body { padding-bottom: 80px; background: #f0f2f5; }
+        
+        /* Stats Cards */
+        .historial-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 16px; }
+        .historial-stat-card { background: white; border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .historial-stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .historial-stat-icon.total { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); }
+        .historial-stat-icon.hoy { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+        .historial-stat-icon.estado { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+        .historial-stat-icon.segmento { background: linear-gradient(135deg, #ede9fe, #ddd6fe); }
+        .historial-stat-content { flex: 1; }
+        .historial-stat-content h3 { margin: 0; font-size: 10px; color: #6b7280; font-weight: 600; text-transform: uppercase; }
+        .historial-stat-value { font-size: 20px; font-weight: bold; color: #1f2937; margin-top: 2px; }
+        
+        /* Filtros */
+        .historial-filtros { background: white; border-radius: 12px; padding: 16px; margin: 0 16px 16px 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+        .historial-filtro-group { margin-bottom: 10px; }
+        .historial-filtro-group label { display: block; font-size: 11px; font-weight: 600; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; }
+        .historial-filtro-group select, .historial-filtro-group input { width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+        .historial-filtro-group select:focus, .historial-filtro-group input:focus { outline: none; border-color: #6366f1; }
+        .btn-buscar-historial { width: 100%; padding: 12px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
+        
+        /* Info Bar */
+        .historial-info-bar { display: flex; justify-content: space-between; padding: 10px 16px; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 8px; margin: 0 16px 12px 16px; font-size: 13px; }
+        .historial-info-bar .registros { color: #6b7280; font-weight: 500; }
+        .historial-info-bar strong { color: #6366f1; }
+        
+        /* Items de Historial */
+        .historial-cards { display: flex; flex-direction: column; gap: 10px; padding: 0 16px; }
+        .historial-card { background: white; border-radius: 12px; padding: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+        .historial-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .historial-card-id { font-weight: 700; color: #6b7280; font-size: 13px; }
+        .historial-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .historial-badge.estado { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
+        .historial-badge.segmento { background: linear-gradient(135deg, #ede9fe, #ddd6fe); color: #6d28d9; }
+        .historial-card-body { margin-bottom: 10px; }
+        .historial-card-values { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .historial-value-anterior { color: #dc2626; background: #fef2f2; padding: 4px 8px; border-radius: 6px; font-weight: 500; font-size: 12px; }
+        .historial-arrow { color: #9ca3af; font-size: 14px; }
+        .historial-value-nuevo { color: #059669; background: #d1fae5; padding: 4px 8px; border-radius: 6px; font-weight: 500; font-size: 12px; }
+        .historial-card-footer { font-size: 11px; color: #9ca3af; padding-top: 8px; border-top: 1px solid #f3f4f6; }
+        
+        /* Empty State */
+        .historial-empty { text-align: center; padding: 40px 20px; color: #9ca3af; }
+        .historial-empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+        
+        /* Paginación */
+        .historial-paginacion { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f8fafc; border-top: 1px solid #e5e7eb; margin-top: 12px; }
+        .historial-paginacion button { padding: 8px 14px; border: 2px solid #e5e7eb; background: white; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; }
+        .historial-paginacion button:hover:not(:disabled) { border-color: #6366f1; color: #6366f1; }
+        .historial-paginacion button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .historial-paginacion .pagina-info { font-size: 13px; color: #6b7280; font-weight: 500; }
+        
+/* Bottom Nav */
+        .nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 8px 4px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
+        .nav-bottom a { text-decoration: none; color: #6b7280; font-size: 9px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .nav-bottom a span { font-size: 18px; }
+        .nav-bottom a.active { color: #2563eb; }
+    </style>
+</head>
+<body>
+    <h1 style="padding: 16px; margin: 0; background: linear-gradient(135deg, #1f2937, #111827); color: white;">🔄 Historial</h1>
+    
+    <!-- Stats Cards -->
+    <div class="historial-stats">
+        <div class="historial-stat-card">
+            <div class="historial-stat-icon total">📊</div>
+            <div class="historial-stat-content">
+                <h3>Total</h3>
+                <span class="historial-stat-value" id="statTotal">0</span>
+            </div>
+        </div>
+        <div class="historial-stat-card">
+            <div class="historial-stat-icon hoy">📅</div>
+            <div class="historial-stat-content">
+                <h3>Hoy</h3>
+                <span class="historial-stat-value" id="statHoy">0</span>
+            </div>
+        </div>
+        <div class="historial-stat-card">
+            <div class="historial-stat-icon estado">⚡</div>
+            <div class="historial-stat-content">
+                <h3>Estado</h3>
+                <span class="historial-stat-value" id="statEstado">0</span>
+            </div>
+        </div>
+        <div class="historial-stat-card">
+            <div class="historial-stat-icon segmento">🎯</div>
+            <div class="historial-stat-content">
+                <h3>Segmento</h3>
+                <span class="historial-stat-value" id="statSegmento">0</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="historial-filtros">
+        <div class="historial-filtro-group">
+            <label>Campo:</label>
+            <select id="filtroCampo">
+                <option value="">Todos</option>
+                <option value="estado">Estado</option>
+                <option value="segmento">Segmento</option>
+            </select>
+        </div>
+        <div class="historial-filtro-group">
+            <label>Desde:</label>
+            <input type="date" id="fechaInicio">
+        </div>
+        <div class="historial-filtro-group">
+            <label>Até:</label>
+            <input type="date" id="fechaFin">
+        </div>
+        <button class="btn-buscar-historial" onclick="cargarHistorial()">🔍 Buscar</button>
+    </div>
+
+    <!-- Info -->
+    <div class="historial-info-bar">
+        <span class="registros" id="totalRegistros">Total: <strong>0</strong></span>
+        <span class="registros" id="infoPagina">Página 1</span>
+    </div>
+
+    <!-- Mobile Cards -->
+    <div class="historial-cards" id="cardsHistorial">
+        <div class="historial-empty">
+            <div class="historial-empty-icon">📭</div>
+            <p>Cargando...</p>
+        </div>
+    </div>
+
+    <!-- Paginación -->
+    <div class="historial-paginacion">
+        <button id="btnAnterior" onclick="paginaAnterior()" disabled>⬅ Anterior</button>
+        <span class="pagina-info" id="paginacionInfo">1</span>
+        <button id="btnSiguiente" onclick="paginaSiguiente()">Siguiente ➡</button>
+    </div>
+
+<nav class="nav-bottom">
+        <a href="/m"><span>📊</span>Dashboard</a>
+        <a href="/m/solicitudes"><span>📋</span>Solicitudes</a>
+        <a href="/m/importar"><span>📤</span>Importar</a>
+        <a href="/m/equipo-ventas"><span>💰</span>Ventas</a>
+        <a href="/m/historial" class="active"><span>🔄</span>Historial</a>
+        <a href="#" id="btnLogout"><span>🚪</span>Salir</a>
+    </nav>
+
+<script>
+    let paginaActual = 1;
+    const limitePorPagina = 50;
+    let totalRegistros = 0;
+    let stats = { total: 0, hoy: 0, estado: 0, segmento: 0 };
+
+    async function cargarHistorial() {
+        const offset = (paginaActual - 1) * limitePorPagina;
+        let url = '/api/excel/historial?limite=' + limitePorPagina + '&offset=' + offset;
+        
+        try {
+            document.getElementById('cardsHistorial').innerHTML = '<div class="historial-empty"><div class="historial-empty-icon">⏳</div><p>Cargando...</p></div>';
+            const response = await fetch(url, { credentials: 'include' });
+            if (!response.ok) throw new Error('Status: ' + response.status);
+            const data = await response.json();
+            totalRegistros = data.total;
+            calcularStats(data.data);
+            renderizarCards(data.data);
+            actualizarPaginacion();
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('cardsHistorial').innerHTML = '<div class="historial-empty"><div class="historial-empty-icon">❌</div><p>Error: ' + error.message + '</p></div>';
+        }
+    }
+
+    function calcularStats(registros) {
+        stats.total = totalRegistros;
+        stats.hoy = 0;
+        stats.estado = 0;
+        stats.segmento = 0;
+        
+        const hoy = new Date().toISOString().split('T')[0];
+        
+        if (registros && registros.length > 0) {
+            for (var i = 0; i < registros.length; i++) {
+                var reg = registros[i];
+                if (reg.fecha_actualizacion && reg.fecha_actualizacion.split('T')[0] === hoy) {
+                    stats.hoy++;
+                }
+                if (reg.campo === 'estado') stats.estado++;
+                if (reg.campo === 'segmento') stats.segmento++;
+            }
+        }
+        
+        document.getElementById('statTotal').textContent = totalRegistros;
+        document.getElementById('statHoy').textContent = stats.hoy;
+        document.getElementById('statEstado').textContent = stats.estado;
+        document.getElementById('statSegmento').textContent = stats.segmento;
+    }
+
+    function renderizarCards(registros) {
+        var container = document.getElementById('cardsHistorial');
+        if (!registros || registros.length === 0) {
+            container.innerHTML = '<div class="historial-empty"><div class="historial-empty-icon">📭</div><h3>Sin actualizaciones</h3><p>No hay registros de cambios</p></div>';
+            return;
+        }
+        var html = '';
+        for (var i = 0; i < registros.length; i++) {
+            var reg = registros[i];
+            var fecha = new Date(reg.fecha_actualizacion).toLocaleString('es-ES', { 
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            var badgeClass = reg.campo === 'estado' ? 'estado' : 'segmento';
+            html += '<div class="historial-card">';
+            html += '<div class="historial-card-header">';
+            html += '<span class="historial-card-id">#' + reg.solicitud_id + '</span>';
+            html += '<span class="historial-badge ' + badgeClass + '">' + reg.campo + '</span>';
+            html += '</div>';
+            html += '<div class="historial-card-body">';
+            html += '<div class="historial-card-values">';
+            html += '<span class="historial-value-anterior">' + (reg.valor_anterior || '-') + '</span>';
+            html += '<span class="historial-arrow">→</span>';
+            html += '<span class="historial-value-nuevo">' + (reg.valor_nuevo || '-') + '</span>';
+            html += '</div>';
+            html += '</div>';
+            html += '<div class="historial-card-footer">📅 ' + fecha + '</div>';
+            html += '</div>';
+        }
+        container.innerHTML = html;
+    }
+
+    function actualizarPaginacion() {
+        var totalPaginas = Math.ceil(totalRegistros / limitePorPagina);
+        if (totalPaginas < 1) totalPaginas = 1;
+        
+        document.getElementById('totalRegistros').innerHTML = 'Total: <strong>' + totalRegistros + '</strong>';
+        document.getElementById('infoPagina').textContent = 'Página ' + paginaActual;
+        document.getElementById('paginacionInfo').textContent = paginaActual + ' / ' + totalPaginas;
+        document.getElementById('btnAnterior').disabled = paginaActual === 1;
+        document.getElementById('btnSiguiente').disabled = paginaActual >= totalPaginas;
+    }
+
+    function paginaAnterior() {
+        if (paginaActual > 1) { paginaActual--; cargarHistorial(); }
+    }
+
+    function paginaSiguiente() {
+        var totalPaginas = Math.ceil(totalRegistros / limitePorPagina);
+        if (paginaActual < totalPaginas) { paginaActual++; cargarHistorial(); }
+    }
+
+    setTimeout(cargarHistorial, 500);
+</script>
+</body>
+</html>

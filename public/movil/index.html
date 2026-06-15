@@ -33,9 +33,9 @@
         .panel h3 { font-size: 16px; color: #1f2937; margin-bottom: 15px; }
         .chart-cont { position: relative; height: 220px; }
         
-        .nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
-        .nav-bottom a { text-decoration: none; color: #6b7280; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-        .nav-bottom a span { font-size: 22px; }
+.nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 8px 4px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
+        .nav-bottom a { text-decoration: none; color: #6b7280; font-size: 9px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .nav-bottom a span { font-size: 18px; }
         .nav-bottom a.active { color: #2563eb; }
     </style>
 </head>
@@ -81,9 +81,10 @@
 
 <nav class="nav-bottom">
         <a href="/m" class="active"><span>📊</span>Dashboard</a>
-        <a href="/m/equipo-ventas"><span>💰</span>Ventas</a>
-        <a href="/m/importar"><span>📤</span>Importar</a>
         <a href="/m/solicitudes"><span>📋</span>Solicitudes</a>
+        <a href="/m/importar"><span>📤</span>Importar</a>
+        <a href="/m/equipo-ventas"><span>💰</span>Ventas</a>
+        <a href="/m/historial"><span>🔄</span>Historial</a>
         <a href="#" id="btnLogout"><span>🚪</span>Salir</a>
     </nav>
 

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Actualizaciones - Archivox</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/solicitudes.css">
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                <h2>📋 Historial</h2>
+            </div>
+            <nav>
+                <a href="/">📊 Dashboard</a>
+                <a href="/importar">📤 Importar Excel</a>
+                <a href="/solicitudes">📋 Solicitudes</a>
+                <a href="/historial" class="active">🔄 Historial Actualizaciones</a>
+                <a href="/equipo-ventas">💰 Control de Ventas</a>
+                <a href="#" id="btnLogout" style="color: #ef4444; margin-top: auto;">🚪 Cerrar Sesión</a>
+            </nav>
+        </aside>
+        <main class="contenido">
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+            <h1>🔄 Historial de Actualizaciones</h1>
+            
+            <!-- Stats Cards -->
+            <div class="historial-stats">
+                <div class="historial-stat-card">
+                    <div class="historial-stat-icon total">📊</div>
+                    <div class="historial-stat-content">
+                        <h3>Total Actualizaciones</h3>
+                        <span class="historial-stat-value" id="statTotal">0</span>
+                    </div>
+                </div>
+                <div class="historial-stat-card">
+                    <div class="historial-stat-icon hoy">📅</div>
+                    <div class="historial-stat-content">
+                        <h3>Hoy</h3>
+                        <span class="historial-stat-value" id="statHoy">0</span>
+                    </div>
+                </div>
+                <div class="historial-stat-card">
+                    <div class="historial-stat-icon estado">⚡</div>
+                    <div class="historial-stat-content">
+                        <h3>Cambios de Estado</h3>
+                        <span class="historial-stat-value" id="statEstado">0</span>
+                    </div>
+                </div>
+                <div class="historial-stat-card">
+                    <div class="historial-stat-icon segmento">🎯</div>
+                    <div class="historial-stat-content">
+                        <h3>Cambios de Segmento</h3>
+                        <span class="historial-stat-value" id="statSegmento">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="historial-filtros">
+                <div class="historial-filtro-group">
+                    <label>Campo:</label>
+                    <select id="filtroCampo">
+                        <option value="">Todos</option>
+                        <option value="estado">Estado</option>
+                        <option value="segmento">Segmento</option>
+                    </select>
+                </div>
+                <div class="historial-filtro-group">
+                    <label>Desde:</label>
+                    <input type="date" id="fechaInicio">
+                </div>
+                <div class="historial-filtro-group">
+                    <label>Até:</label>
+                    <input type="date" id="fechaFin">
+                </div>
+                <button class="btn-buscar-historial" onclick="cargarHistorial()">🔍 Buscar</button>
+            </div>
+
+            <!-- Info -->
+            <div class="historial-info-bar">
+                <span class="registros" id="totalRegistros">Total: <strong>0</strong> actualizaciones</span>
+                <span class="registros" id="infoPagina">Página 1</span>
+            </div>
+
+            <!-- Table -->
+            <div class="historial-table-container">
+                <table class="historial-table">
+                    <thead>
+                        <tr>
+                            <th>ID Solicitud</th>
+                            <th>Campo</th>
+                            <th>Valor Anterior</th>
+                            <th>Valor Nuevo</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaHistorial">
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 40px;">Cargando actualizaciones...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Cards -->
+            <div class="historial-cards" id="cardsHistorial">
+                <div style="text-align: center; padding: 40px; color: #9ca3af;">Cargando...</div>
+            </div>
+
+            <!-- Paginación -->
+            <div class="historial-paginacion">
+                <button id="btnAnterior" onclick="paginaAnterior()" disabled>⬅ Anterior</button>
+                <span class="pagina-info" id="paginacionInfo">Página 1 de 1</span>
+                <button id="btnSiguiente" onclick="paginaSiguiente()">Siguiente ➡</button>
+            </div>
+        </main>
+    </div>
+    <div class="menu-overlay" onclick="toggleMenu()"></div>
+
+<script>
+    // Variables de estado
+    let paginaActual = 1;
+    const limitePorPagina = 50;
+    let totalRegistros = 0;
+    let stats = { total: 0, hoy: 0, estado: 0, segmento: 0 };
+
+    // Cargar stats y historial
+    async function cargarHistorial() {
+        const offset = (paginaActual - 1) * limitePorPagina;
+        let url = '/api/excel/historial?limite=' + limitePorPagina + '&offset=' + offset;
+        
+        try {
+            const response = await fetch(url, { credentials: 'include' });
+            if (!response.ok) throw new Error('Status: ' + response.status);
+            const data = await response.json();
+            totalRegistros = data.total;
+            
+            // Calcular estadísticas
+            calcularStats(data.data);
+            
+            renderizarTabla(data.data);
+            renderizarCards(data.data);
+            actualizarPaginacion();
+        } catch (error) {
+            console.error('Error:', error);
+            var tbody = document.getElementById('tablaHistorial');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;padding:40px;">Error: ' + error.message + '</td></tr>';
+        }
+    }
+
+    function calcularStats(registros) {
+        // Stats básicos
+        stats.total = totalRegistros;
+        stats.hoy = 0;
+        stats.estado = 0;
+        stats.segmento = 0;
+        
+        const hoy = new Date().toISOString().split('T')[0];
+        
+        if (registros && registros.length > 0) {
+            for (var i = 0; i < registros.length; i++) {
+                var reg = registros[i];
+                if (reg.fecha_actualizacion && reg.fecha_actualizacion.split('T')[0] === hoy) {
+                    stats.hoy++;
+                }
+                if (reg.campo === 'estado') {
+                    stats.estado++;
+                }
+                if (reg.campo === 'segmento') {
+                    stats.segmento++;
+                }
+            }
+        }
+        
+        // Actualizar UI de stats
+        document.getElementById('statTotal').textContent = totalRegistros;
+        document.getElementById('statHoy').textContent = stats.hoy;
+        document.getElementById('statEstado').textContent = stats.estado;
+        document.getElementById('statSegmento').textContent = stats.segmento;
+    }
+
+    function renderizarTabla(registros) {
+        var tbody = document.getElementById('tablaHistorial');
+        if (!registros || registros.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#9ca3af;">No hay actualizaciones registradas</td></tr>';
+            return;
+        }
+        var html = '';
+        for (var i = 0; i < registros.length; i++) {
+            var reg = registros[i];
+            var fecha = new Date(reg.fecha_actualizacion).toLocaleString('es-ES', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            var badgeClass = reg.campo === 'estado' ? 'estado' : 'segmento';
+            html += '<tr>';
+            html += '<td class="col-id">#' + reg.solicitud_id + '</td>';
+            html += '<td><span class="historial-badge ' + badgeClass + '">' + reg.campo + '</span></td>';
+            html += '<td><span class="historial-value-anterior">' + (reg.valor_anterior || '-') + '</span></td>';
+            html += '<td><span class="historial-value-nuevo">' + (reg.valor_nuevo || '-') + '</span></td>';
+            html += '<td class="col-fecha">' + fecha + '</td>';
+            html += '</tr>';
+        }
+        tbody.innerHTML = html;
+    }
+
+    function renderizarCards(registros) {
+        var container = document.getElementById('cardsHistorial');
+        if (!registros || registros.length === 0) {
+            container.innerHTML = '<div class="historial-empty"><div class="historial-empty-icon">📭</div><h3>Sin actualizaciones</h3><p>No hay registros de cambios en el sistema</p></div>';
+            return;
+        }
+        var html = '';
+        for (var i = 0; i < registros.length; i++) {
+            var reg = registros[i];
+            var fecha = new Date(reg.fecha_actualizacion).toLocaleString('es-ES', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            var badgeClass = reg.campo === 'estado' ? 'estado' : 'segmento';
+            html += '<div class="historial-card">';
+            html += '<div class="historial-card-header">';
+            html += '<span class="historial-card-id">#' + reg.solicitud_id + '</span>';
+            html += '<span class="historial-badge ' + badgeClass + '">' + reg.campo + '</span>';
+            html += '</div>';
+            html += '<div class="historial-card-body">';
+            html += '<div class="historial-card-values">';
+            html += '<span class="historial-value-anterior">' + (reg.valor_anterior || '-') + '</span>';
+            html += '<span class="historial-arrow">→</span>';
+            html += '<span class="historial-value-nuevo">' + (reg.valor_nuevo || '-') + '</span>';
+            html += '</div>';
+            html += '</div>';
+            html += '<div class="historial-card-footer">📅 ' + fecha + '</div>';
+            html += '</div>';
+        }
+        container.innerHTML = html;
+    }
+
+    function actualizarPaginacion() {
+        var totalPaginas = Math.ceil(totalRegistros / limitePorPagina);
+        if (totalPaginas < 1) totalPaginas = 1;
+        
+        document.getElementById('totalRegistros').innerHTML = 'Total: <strong>' + totalRegistros + '</strong> actualizaciones';
+        document.getElementById('infoPagina').textContent = 'Página ' + paginaActual;
+        document.getElementById('paginacionInfo').textContent = 'Página ' + paginaActual + ' de ' + totalPaginas;
+        document.getElementById('btnAnterior').disabled = paginaActual === 1;
+        document.getElementById('btnSiguiente').disabled = paginaActual >= totalPaginas;
+    }
+
+    function paginaAnterior() {
+        if (paginaActual > 1) { paginaActual--; cargarHistorial(); }
+    }
+
+    function paginaSiguiente() {
+        var totalPaginas = Math.ceil(totalRegistros / limitePorPagina);
+        if (paginaActual < totalPaginas) { paginaActual++; cargarHistorial(); }
+    }
+
+    function toggleMenu() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.querySelector('.menu-overlay');
+        if (sidebar && overlay) {
+            sidebar.classList.toggle('movil');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+    }
+
+    // Load on start
+    setTimeout(cargarHistorial, 500);
+</script>
+</body>
+</html>

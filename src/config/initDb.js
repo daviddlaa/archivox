@@ -78,4 +78,18 @@ db.exec(`
     )
 `);
 
+// Tabla de auditoría de actualizaciones de solicitudes
+db.exec(`
+    CREATE TABLE IF NOT EXISTS historial_actualizaciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        solicitud_id INTEGER NOT NULL,
+        usuario_id INTEGER NOT NULL,
+        campo TEXT NOT NULL,
+        valor_anterior TEXT,
+        valor_nuevo TEXT,
+        fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    )
+`);
+
 module.exports = db;

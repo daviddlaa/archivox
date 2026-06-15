@@ -157,4 +157,13 @@ router.delete(
     excelController.limpiarSolicitudes
 );
 
+// ================== HISTORIAL DE ACTUALIZACIONES ==================
+
+// Obtener historial de actualizaciones
+router.get(
+    '/historial',
+    requiresAuth,
+    excelController.getHistorialActualizaciones
+);
+
 module.exports = router;

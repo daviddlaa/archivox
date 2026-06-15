@@ -17,7 +17,7 @@ const initTables = async () => {
             )
         `);
         
-// Tabla de solicitudes
+        // Tabla de solicitudes
         await client.query(`
             CREATE TABLE IF NOT EXISTS solicitudes (
                 id SERIAL PRIMARY KEY,
@@ -53,7 +53,7 @@ const initTables = async () => {
             )
         `);
         
-// Tabla de configuración de bonos por mes
+        // Tabla de configuración de bonos por mes
         await client.query(`
             CREATE TABLE IF NOT EXISTS config_bonos (
                 id SERIAL PRIMARY KEY,
@@ -71,7 +71,7 @@ const initTables = async () => {
             )
         `);
         
-// Tabla de gestes
+        // Tabla de gestiones
         await client.query(`
             CREATE TABLE IF NOT EXISTS gestiones (
                 id SERIAL PRIMARY KEY,
@@ -82,6 +82,20 @@ const initTables = async () => {
                 fecha_gestion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        // Tabla de auditoría de actualizaciones de solicitudes
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS historial_actualizaciones (
+                id SERIAL PRIMARY KEY,
+                solicitud_id INTEGER NOT NULL,
+                usuario_id INTEGER NOT NULL,
+                campo TEXT NOT NULL,
+                valor_anterior TEXT,
+                valor_nuevo TEXT,
+                fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
             )
         `);
         
@@ -96,4 +110,3 @@ const initTables = async () => {
 initTables();
 
 module.exports = pool;
-

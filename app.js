@@ -134,6 +134,20 @@ app.get('/m/equipo-ventas', requiresAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/ventas.html'));
 });
 
+// Rutas de Historial de Actualizaciones
+app.get('/historial', requiresAuth, (req, res) => {
+    const isMobile = isMobileDevice(req.headers['user-agent']);
+    if (isMobile) {
+        res.sendFile(path.join(__dirname, 'public/movil/historial.html'));
+    } else {
+        res.sendFile(path.join(__dirname, 'public/desktop/historial.html'));
+    }
+});
+
+app.get('/m/historial', requiresAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/movil/historial.html'));
+});
+
 // Rutas de login (públicas)
 app.get('/login', (req, res) => {
     const isMobile = isMobileDevice(req.headers['user-agent']);

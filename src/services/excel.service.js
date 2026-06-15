@@ -7,6 +7,27 @@ const pool = db;
 // Determinar si es PostgreSQL (producción) o SQLite (local)
 const isPostgres = !!process.env.DATABASE_URL;
 
+// Función para guardar auditoría
+const guardarAuditoria = async (solicitudId, usuarioId, campo, valorAnterior, valorNuevo) => {
+    try {
+        if (isPostgres) {
+            await pool.query(
+                `INSERT INTO historial_actualizaciones (solicitud_id, usuario_id, campo, valor_anterior, valor_nuevo)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [solicitudId, usuarioId, campo, valorAnterior, valorNuevo]
+            );
+        } else {
+            const dbDirect = require('../config/database');
+            dbDirect.prepare(
+                `INSERT INTO historial_actualizaciones (solicitud_id, usuario_id, campo, valor_anterior, valor_nuevo)
+                 VALUES (?, ?, ?, ?, ?)`
+            ).run(solicitudId, usuarioId, campo, valorAnterior, valorNuevo);
+        }
+    } catch (err) {
+        console.error('Error guardando auditoría:', err.message);
+    }
+};
+
 exports.procesarExcel = async (filePath, usuarioId) => {
 
     const workbook = new ExcelJS.Workbook();
@@ -22,6 +43,9 @@ exports.procesarExcel = async (filePath, usuarioId) => {
     });
 
     let procesados = 0;
+    let inserts = 0;
+    let updates = 0;
+    const detalles = [];
 
     for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
 
@@ -38,12 +62,17 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                 // PostgreSQL: Usar pool.query async
                 // Verificar si existe
                 const existing = await pool.query(
-                    'SELECT id FROM solicitudes WHERE id_solicitud = $1',
+                    'SELECT id, estado, segmento FROM solicitudes WHERE id_solicitud = $1',
                     [registro.IDSOLICITUD]
                 );
 
                 if (existing.rows.length > 0) {
-                    // Update
+                    // Update - capturar valores anteriores
+                    const oldData = existing.rows[0];
+                    const oldEstado = oldData.estado;
+                    const oldSegmento = oldData.segmento;
+                    
+                    // Ejecutar update
                     await pool.query(
                         `UPDATE solicitudes SET
                             estado = $1,
@@ -68,6 +97,28 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                             registro.IDSOLICITUD
                         ]
                     );
+                    
+                    // Guardar auditoría si cambió estado o segmento
+                    if (oldEstado !== registro.ESTADO) {
+                        await guardarAuditoria(registro.IDSOLICITUD, usuarioId, 'estado', oldEstado, registro.ESTADO);
+                        detalles.push({
+                            id: registro.IDSOLICITUD,
+                            campo: 'estado',
+                            anterior: oldEstado,
+                            nuevo: registro.ESTADO
+                        });
+                    }
+                    if (oldSegmento !== registro.SEGMENTO) {
+                        await guardarAuditoria(registro.IDSOLICITUD, usuarioId, 'segmento', oldSegmento, registro.SEGMENTO);
+                        detalles.push({
+                            id: registro.IDSOLICITUD,
+                            campo: 'segmento',
+                            anterior: oldSegmento,
+                            nuevo: registro.SEGMENTO
+                        });
+                    }
+                    
+                    updates++;
                 } else {
                     // Insert
                     await pool.query(
@@ -87,17 +138,22 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                             usuarioId
                         ]
                     );
+                    inserts++;
                 }
             } else {
                 // SQLite: Usar módulo directo
                 const dbDirect = require('../config/database');
                 
                 const existing = dbDirect.prepare(
-                    'SELECT id FROM solicitudes WHERE id_solicitud = ?'
+                    'SELECT id, estado, segmento FROM solicitudes WHERE id_solicitud = ?'
                 ).get(registro.IDSOLICITUD);
 
                 if (existing) {
-                    // Update
+                    // Update - capturar valores anteriores
+                    const oldEstado = existing.estado;
+                    const oldSegmento = existing.segmento;
+                    
+                    // Ejecutar update
                     dbDirect.prepare(`
                         UPDATE solicitudes SET
                             estado = ?,
@@ -121,6 +177,28 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                         usuarioId,
                         registro.IDSOLICITUD
                     );
+                    
+                    // Guardar auditoría si cambió estado o segmento
+                    if (oldEstado !== registro.ESTADO) {
+                        await guardarAuditoria(registro.IDSOLICITUD, usuarioId, 'estado', oldEstado, registro.ESTADO);
+                        detalles.push({
+                            id: registro.IDSOLICITUD,
+                            campo: 'estado',
+                            anterior: oldEstado,
+                            nuevo: registro.ESTADO
+                        });
+                    }
+                    if (oldSegmento !== registro.SEGMENTO) {
+                        await guardarAuditoria(registro.IDSOLICITUD, usuarioId, 'segmento', oldSegmento, registro.SEGMENTO);
+                        detalles.push({
+                            id: registro.IDSOLICITUD,
+                            campo: 'segmento',
+                            anterior: oldSegmento,
+                            nuevo: registro.SEGMENTO
+                        });
+                    }
+                    
+                    updates++;
                 } else {
                     // Insert
                     dbDirect.prepare(`
@@ -139,6 +217,7 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                         registro.FECHASOLICITUD,
                         usuarioId
                     );
+                    inserts++;
                 }
             }
 
@@ -153,6 +232,9 @@ exports.procesarExcel = async (filePath, usuarioId) => {
     }
 
     return {
-        total: procesados
+        total: procesados,
+        inserts: inserts,
+        updates: updates,
+        detalles: detalles
     };
 };
