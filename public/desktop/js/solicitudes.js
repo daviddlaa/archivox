@@ -429,7 +429,7 @@ function actualizarEncabezados() {
 
 // ================== NUEVO SISTEMA DE BÚSQUEDA LOCAL (COMO MÓVIL) ==================
 
-// Cargar todos los datos al iniciar
+// Cargar todos los datos al iniciar - OPTIMIZADO
 async function init() {
     try {
         var response = await fetch('/api/excel/solicitudes');
@@ -440,16 +440,56 @@ async function init() {
         
         document.getElementById('totalRegistros').textContent = todosDatos.length;
         
-        // Cargar últimas gestiones para todas las solicitudes
-        var ids = todosDatos.map(function(d) { return d.id_solicitud; });
-        await cargarUltimasGestiones(ids);
-        
-        // renderizarFiltros() - Los segmentos y estados ya se cargan desde el dashboard
+        // RENDERIZAR PRIMERO las cards SIN esperar las gestionessolo
         aplicarFiltros();
+        
+        // Luego cargar las gestionessolo en background (solo primeras 50 para evitar overload)
+        var idsPrimeros = todosDatos.slice(0, 50).map(function(d) { return d.id_solicitud; });
+        cargarUltimasGestionesBatch(idsPrimeros);
         
         console.log('Datos cargados:', todosDatos.length);
     } catch (error) {
         console.error('Error cargando datos:', error);
+    }
+}
+
+// Cargar gestionessolo en batches pequeños para evitar rate limits
+async function cargarUltimasGestionesBatch(ids) {
+    if (!ids || ids.length === 0) return;
+    
+    ultimasGestiones = {};
+    
+    // Dividir en grupos de 25 para evitar errores
+    var TAMANO_LOTE = 25;
+    for (var i = 0; i < ids.length; i += TAMANO_LOTE) {
+        var lote = ids.slice(i, i + TAMANO_LOTE);
+        
+        try {
+            var idsString = lote.join(',');
+            var response = await fetch('/api/excel/gestiones/ultimas?ids=' + encodeURIComponent(idsString));
+            
+            if (response.ok) {
+                var gestionessObj = await response.json();
+                // Merge con las existentes
+                for (var key in gestionessObj) {
+                    ultimasGestiones[key] = gestionessObj[key];
+                }
+            }
+        } catch (e) {
+            console.warn('Error lote batch:', e);
+        }
+        
+        // Delay pequeño entre petitiones para evitar rate limit
+        if (i + TAMANO_LOTE < ids.length) {
+            await new Promise(function(r) { setTimeout(r, 200); });
+        }
+    }
+    
+    console.log('Gestines cargadas:', Object.keys(ultimasGestiones).length);
+    
+    // Re-renderizar cards con las gestionessolo
+    if (typeof aplicarFiltros === 'function') {
+        aplicarFiltros();
     }
 }
 
