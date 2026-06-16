@@ -456,92 +456,250 @@ tr:hover{
         font-size:16px;
     }
     
-    /* ===== En MÓVIL: mostrar cards, ocultar tabla ===== */
+/* ===== MOSTRAR CARDS (tabla siempre oculta) ===== */
     .table-container{
         display:none !important;
     }
     
     .cards-container{
-        display:flex !important;
-        flex-direction:column;
-        gap:12px;
+        display:grid !important;
+        grid-template-columns: 1fr;
+        gap: 12px;
     }
     
-    /* Estilo de las cards */
+    /* Estilo de las cards para móvil */
     .cliente-card{
-        background:white;
-        border-radius:12px;
-        padding:16px;
-        box-shadow:0 2px 8px rgba(0,0,0,0.08);
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
     
     .cliente-header{
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        margin-bottom:10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
     }
     
     .cliente-id{
-        font-size:14px;
-        font-weight:600;
-        color:#6b7280;
+        font-size: 14px;
+        font-weight: 600;
+        color: #6b7280;
     }
     
     .cliente-estado{
-        padding:4px 10px;
-        border-radius:12px;
-        font-size:12px;
-        font-weight:600;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
     }
     
     .cliente-nombre{
-        font-size:16px;
-        font-weight:600;
-        color:#1f2937;
-        margin-bottom:6px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 6px;
     }
     
-    .cliente-cedula{
-        font-size:14px;
-        color:#6b7280;
-        margin-bottom:10px;
+    .cliente-info-row{
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 14px;
+        color: #6b7280;
     }
     
     .cliente-detalle{
-        display:flex;
-        flex-wrap:wrap;
-        gap:8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
     }
     
     .cliente-tag{
-        background:#f3f4f6;
-        padding:4px 10px;
-        border-radius:8px;
-        font-size:12px;
-        color:#374151;
+        background: #f3f4f6;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        color: #374151;
+    }
+    
+    /* Botones de acciones en card */
+    .card-actions{
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        justify-content: flex-end;
+    }
+    
+    .card-action-btn{
+        padding: 8px 14px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    
+    .card-gestiones-btn{
+        background: #fef3c7;
+        border: 2px solid #f59e0b;
+    }
+    
+    .card-gestiones-btn:hover{
+        background: #fde68a;
+    }
+    
+    .card-completar-btn{
+        background: #d1fae5;
+        border: 2px solid #10b981;
+    }
+    
+    .card-completar-btn:hover{
+        background: #a7f3d0;
     }
 }
 
-/* ===== En DESKTOP: mostrar tabla, ocultar cards ===== */
+/* ===== En DESKTOP: mostrar cards en 3 columnas ===== */
 @media (min-width: 769px){
+    /* Cards grid en 3 columnas */
     .cards-container{
-        display:none !important;
+        display:grid !important;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
     }
     
+    /* Cards más completas en desktop */
+    .cliente-card{
+        background: white;
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        transition: all 0.25s ease;
+        border: 2px solid transparent;
+    }
+    
+    .cliente-card:hover{
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+    
+    .cliente-card.fila-seleccionada{
+        background: #e0f2fe;
+        border-color: #2563eb;
+    }
+    
+    /* Header con checkbox */
+    .cliente-header{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    
+    .cliente-checkbox{
+        width: 22px;
+        height: 22px;
+        cursor: pointer;
+    }
+    
+    .cliente-id{
+        font-size: 13px;
+        font-weight: 700;
+        color: #6b7280;
+    }
+    
+    .cliente-estado{
+        padding: 5px 12px;
+        border-radius: 14px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    
+    /* Nombre más grande */
+    .cliente-nombre{
+        font-size: 16px;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 8px;
+    }
+    
+    /* Info row */
+    .cliente-info-row{
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 13px;
+        color: #6b7280;
+    }
+    
+    /* Detalles */
+    .cliente-detalle{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .cliente-tag{
+        background: #f3f4f6;
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        color: #374151;
+        font-weight: 500;
+    }
+    
+    /* Botones de acciones en card */
+    .card-actions{
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+        justify-content: flex-end;
+    }
+    
+    .card-action-btn{
+        padding: 10px 16px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 700;
+        transition: all 0.2s ease;
+    }
+    
+    .card-gestiones-btn{
+        background: #fef3c7;
+        border: 2px solid #f59e0b;
+    }
+    
+    .card-gestiones-btn:hover{
+        background: #fde68a;
+        transform: scale(1.05);
+    }
+    
+    .card-completar-btn{
+        background: #d1fae5;
+        border: 2px solid #10b981;
+    }
+    
+    .card-completar-btn:hover{
+        background: #a7f3d0;
+        transform: scale(1.05);
+    }
+    
+    /* Ocultar tabla */
     .table-container{
-        display:block !important;
+        display:none !important;
     }
     
     .menu-toggle,
     .menu-overlay,
     .sidebar.movil{
         display:none !important;
-    }
-    
-    .th-checkbox,
-    .td-checkbox{
-        display:table-cell !important;
     }
 }
 

@@ -147,13 +147,39 @@ function copiarDatos() {
     });
 }
 
-// Renderizar cards para móvil
+// Variable para almacenar últimas gestiones
+var ultimasGestiones = {};
+
+// Cargar últimas gestiones para todas las solicitudes
+async function cargarUltimasGestiones(ids) {
+    if (!ids || ids.length === 0) return;
+    
+    ultimasGestiones = {};
+    
+    try {
+        for (var i = 0; i < ids.length; i++) {
+            var id = ids[i];
+            var response = await fetch('/api/excel/gestiones/' + id);
+            if (response.ok) {
+                var gestines = await response.json();
+                if (gestines && gestines.length > 0) {
+                    // Guardar solo la última gestión (la más reciente)
+                    ultimasGestiones[id] = gestines[gestines.length - 1];
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error cargando gestiones:', error);
+    }
+}
+
+// Renderizar cards para móvil y escritorio - versión completa con última gestión
 function renderizarCards(datos) {
     var container = document.getElementById('cards-container');
     if (!container) return;
     
     if (!datos.length) {
-        container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b7280;">No se encontraron registros</div>';
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280;font-size:16px;grid-column:1/-1;">No se encontraron registros</div>';
         return;
     }
     
@@ -165,23 +191,71 @@ function renderizarCards(datos) {
         'APROBADA PARA LIBERACIÓN': '#d1fae5'
     };
     
+    var coloresTipo = {
+        'Seguimiento': '#dbeafe',
+        'Cobranza': '#fee2e2',
+        'Llamada': '#d1fae5',
+        'WhatsApp': '#dcfce7',
+        'Reclamo': '#fef3c7',
+        'Cita': '#e0e7ff',
+        'Otro': '#f3f4f6'
+    };
+    
     for (var i = 0; i < datos.length; i++) {
         var item = datos[i];
         var estadoClase = (item.estado || '').replace(/ /g, '-').toUpperCase();
         var colorEstado = coloresEstado[item.estado] || '#f3f4f6';
+        var id = item.id_solicitud || '';
+        var seleccionado = filasSeleccionadas.indexOf(id) > -1 ? 'fila-seleccionada' : '';
         
-        html += '<div class="cliente-card">';
+        // Obtener última gestión
+        var ultGestion = ultimasGestiones[id];
+        var colorGestion = ultGestion ? (coloresTipo[ultGestion.tipo_gestion] || '#f3f4f6') : '#f3f4f6';
+        
+        html += '<div class="cliente-card ' + seleccionado + '" data-id="' + id + '">';
+        
+        // Header con checkbox y estado
         html += '  <div class="cliente-header">';
-        html += '    <span class="cliente-id">#' + (item.id_solicitud || '') + '</span>';
+        html += '    <input type="checkbox" class="cliente-checkbox checkbox-fila" value="' + id + '" ' + (seleccionado ? 'checked' : '') + '>';
+        html += '    <span class="cliente-id">#' + id + '</span>';
         html += '    <span class="cliente-estado" style="background:' + colorEstado + ';">' + (item.estado || '') + '</span>';
         html += '  </div>';
+        
+        // Nombre del cliente
         html += '  <div class="cliente-nombre">' + (item.nombre || '') + '</div>';
-        html += '  <div class="cliente-cedula">Cédula: ' + (item.cedula || '') + '</div>';
-        html += '  <div class="cliente-detalle">';
-        html += '    <span class="cliente-tag">📍 ' + (item.segmento || '') + '</span>';
-        html += '    <span class="cliente-tag">📦 ' + (item.producto || '') + '</span>';
-        html += '    <span class="cliente-tag">📅 ' + (item.fecha_solicitud || '') + '</span>';
+        
+        // Info row: Cédula y Celular
+        html += '  <div class="cliente-info-row">';
+        html += '    <span>📍 ' + (item.cedula || '—') + '</span>';
+        html += '    <span>📱 ' + (item.celular || '—') + '</span>';
         html += '  </div>';
+        
+        // Detalles
+        html += '  <div class="cliente-detalle">';
+        html += '    <span class="cliente-tag">🏷️ ' + (item.segmento || '—') + '</span>';
+        html += '    <span class="cliente-tag">📦 ' + (item.producto || '—') + '</span>';
+        html += '    <span class="cliente-tag">📅 ' + (item.fecha_solicitud || '—') + '</span>';
+        html += '  </div>';
+        
+        // Última gestión (si existe)
+        if (ultGestion) {
+            html += '  <div class="cliente-ultima-gestion" style="background:' + colorGestion + '; padding: 10px; border-radius: 8px; margin-top: 8px;">';
+            html += '    <div style="font-size: 11px; font-weight: 700; color: #1f2937; margin-bottom: 4px;">📋 Última Gestión: ' + (ultGestion.tipo_gestion || '') + '</div>';
+            html += '    <div style="font-size: 12px; color: #374151; line-height: 1.3;">' + (ultGestion.observacion || '') + '</div>';
+            html += '    <div style="font-size: 10px; color: #6b7280; margin-top: 4px;">📅 ' + formatFechaGestion(ultGestion.fecha_gestion) + '</div>';
+            html += '  </div>';
+        } else {
+            html += '  <div class="cliente-ultima-gestion" style="background:#f3f4f6; padding: 10px; border-radius: 8px; margin-top: 8px;">';
+            html += '    <div style="font-size: 12px; color: #6b7280; font-style: italic;">Sin gestiones registradas</div>';
+            html += '  </div>';
+        }
+        
+        // Botones de acciones
+        html += '  <div class="card-actions">';
+        html += '    <button class="card-action-btn card-gestiones-btn" onclick="abrirGestiones(\'' + id + '\')">📋 Gestiones</button>';
+        html += '    <button class="card-action-btn card-completar-btn" onclick="abrirCompletar(\'' + id + '\')">✏️ Completar</button>';
+        html += '  </div>';
+        
         html += '</div>';
     }
     
@@ -330,6 +404,10 @@ async function init() {
         todosDatos = await response.json();
         
         document.getElementById('totalRegistros').textContent = todosDatos.length;
+        
+        // Cargar últimas gestiones para todas las solicitudes
+        var ids = todosDatos.map(function(d) { return d.id_solicitud; });
+        await cargarUltimasGestiones(ids);
         
         // renderizarFiltros() - Los segmentos y estados ya se cargan desde el dashboard
         aplicarFiltros();
@@ -1225,6 +1303,29 @@ init(); // Cargar todos los datos y aplicar filtros localmente
 configurarEventosCheckboxes();
 configurarEventosCodigoPlus();
 actualizarContador();
+
+// Agregar eventos para checkboxes en las cards
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('checkbox-fila') && e.target.closest('.cliente-card')) {
+        var checkbox = e.target;
+        var id = checkbox.value;
+        
+        if (checkbox.checked) {
+            if (filasSeleccionadas.indexOf(id) === -1) {
+                filasSeleccionadas.push(id);
+            }
+            checkbox.closest('.cliente-card').classList.add('fila-seleccionada');
+        } else {
+            var index = filasSeleccionadas.indexOf(id);
+            if (index > -1) {
+                filasSeleccionadas.splice(index, 1);
+            }
+            checkbox.closest('.cliente-card').classList.remove('fila-seleccionada');
+        }
+        
+        actualizarContador();
+    }
+});
 
 // Auto-focus en el input de búsqueda al cargar la página
 window.addEventListener('DOMContentLoaded', function() {

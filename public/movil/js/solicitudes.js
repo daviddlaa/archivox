@@ -3,6 +3,7 @@ let todosDatos = [];
 let datosFilas = {};
 let filasSeleccionadas = [];
 let filtros = { estado: '', segmento: '', busqueda: '' };
+let ultimasGestiones = {}; // Almacenar última gestión de cada solicitud
 
 // Toggle selección de card
 function toggleCard(id) {
@@ -83,10 +84,46 @@ async function init() {
         todosDatos = await res.json();
         
         document.getElementById('totalRegistros').textContent = todosDatos.length;
+        
+        // Cargar últimas gestines de cada solicitud
+        await cargarUltimasGestiones();
+        
         renderizarFiltros();
         aplicarFiltros();
     } catch (e) {
         console.error('Error cargando:', e);
+    }
+}
+
+// Cargar últimas gestines de cada solicitud
+async function cargarUltimasGestiones() {
+    try {
+        // Obtener IDs únicos de las solicitudes
+        const ids = todosDatos.map(d => d.id_solicitud).filter(Boolean);
+        
+        if (ids.length === 0) return;
+        
+        // Cargar gestines solo de las solicitudes visibles (máximo 50 para evitar sobrecarga)
+        const idsLimitados = ids.slice(0, 50);
+        
+        for (const id of idsLimitados) {
+            try {
+                const res = await fetch('/api/excel/gestiones/' + id);
+                if (res.ok) {
+                    const gestines = await res.json();
+                    // Tomar la última gestión
+                    if (gestines && gestines.length > 0) {
+                        ultimasGestiones[id] = gestines[gestines.length - 1];
+                    }
+                }
+            } catch (e) {
+                console.error('Error cargando gestión:', id, e);
+            }
+        }
+        
+        console.log('Últimas gestines cargadas:', Object.keys(ultimasGestiones).length);
+    } catch (e) {
+        console.error('Error en cargarUltimasGestiones:', e);
     }
 }
 
@@ -178,6 +215,22 @@ function renderizarCards(datos) {
         
         const seleccionado = filasSeleccionadas.indexOf(d.id_solicitud) > -1 ? 'seleccionada' : '';
         
+        // Obtener última gestión si existe
+        const ultimaGestion = ultimasGestiones[d.id_solicitud];
+        let gestionHTML = '';
+        
+        if (ultimaGestion) {
+            const fechaCorta = formatFechaGestion(ultimaGestion.fecha_gestion);
+            const obsCorta = ultimaGestion.observacion ? (ultimaGestion.observacion.length > 50 ? ultimaGestion.observacion.substring(0, 50) + '...' : ultimaGestion.observacion) : 'Sin observación';
+            gestionHTML = `
+            <div class="ultima-gestion" style="margin: 10px 0; padding: 10px; background: #f8fafc; border-radius: 8px; border-left: 3px solid #2563eb;">
+                <div style="font-size: 11px; color: #6b7280; font-weight: 600;">📋 ${ultimaGestion.tipo_gestion || 'N/A'}</div>
+                <div style="font-size: 12px; color: #374151; margin-top: 4px;">${obsCorta}</div>
+                <div style="font-size: 10px; color: #9ca3af; margin-top: 4px;">${fechaCorta}</div>
+            </div>
+            `;
+        }
+        
 return `
         <div class="client-card ${seleccionado}" id="card-${d.id_solicitud}" onclick="toggleCard('${d.id_solicitud}')">
             <div class="card-head">
@@ -187,6 +240,10 @@ return `
             <div class="client-name">${d.nombre || 'Sin nombre'}</div>
             <div class="client-cedula">Cédula: ${d.cedula || 'N/A'}</div>
             <div class="client-celular">📱 ${d.celular || 'N/A'}</div>
+            
+            <!-- Última Gestión -->
+            ${gestionHTML}
+            
             <div class="input-codigo-plus-container" style="margin: 8px 0;">
                 <input type="text" class="input-codigo-plus" value="${d.codigo_plus || ''}" data-id="${d.id_solicitud}" placeholder="Código Plus" autocomplete="off" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px;" onblur="guardarCodigoPlus(this)">
             </div>
