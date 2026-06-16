@@ -433,7 +433,10 @@ function actualizarEncabezados() {
 async function init() {
     try {
         var response = await fetch('/api/excel/solicitudes');
-        todosDatos = await response.json();
+        var result = await response.json();
+        
+        // Compatibilidad: el backend ahora devuelve { data, total, limite, offset } o array directo
+        todosDatos = Array.isArray(result) ? result : (result.data || []);
         
         document.getElementById('totalRegistros').textContent = todosDatos.length;
         
