@@ -109,17 +109,17 @@ exports.listarSolicitudes = async (req, res) => {
         params.push(segmento);
     }
 
-    if (cedula) {
+if (cedula) {
         sql += ' AND cedula = $' + (params.length + 1);
         params.push(cedula);
     }
 
-if (producto) {
+    if (producto) {
         sql += ' AND producto = $' + (params.length + 1);
         params.push(producto);
     }
 
-if (nombre) {
+    if (nombre) {
         sql += ' AND LOWER(nombre) LIKE LOWER($' + (params.length + 1) + ')';
         params.push('%' + nombre + '%');
     }
@@ -142,9 +142,35 @@ if (nombre) {
     let direccionOrden = direccion === 'ASC' ? 'ASC' : 'DESC';
     sql = sql + ' ORDER BY ' + columnaOrden + ' ' + direccionOrden;
 
+    // Agregar paginación para optimizar carga en producción
+    const limit = parseInt(limite) || 50;
+    const offsetVal = parseInt(offset) || 0;
+    sql += ' LIMIT ' + limit + ' OFFSET ' + offsetVal;
+
     try {
         const result = await pool.query(sql, params);
-        res.json(result.rows);
+        
+        // Contar total para paginación
+        let countSql = 'SELECT COUNT(*) as total FROM solicitudes WHERE usuario_id = $1';
+        const countParams = [usuarioId];
+        if (estado) {
+            countSql += ' AND estado = $2';
+            countParams.push(estado);
+        }
+        if (segmento) {
+            countSql += ' AND segmento = $' + countParams.length + 1;
+            countParams.push(segmento);
+        }
+        
+        const countResult = await pool.query(countSql, countParams);
+        const total = parseInt(countResult.rows[0]?.total) || 0;
+        
+        res.json({
+            data: result.rows,
+            total: total,
+            limite: limit,
+            offset: offsetVal
+        });
     } catch (err) {
         return res.status(500).json({
             error: err.message
