@@ -703,18 +703,25 @@ exports.getGestionesUltimas = async (req, res) => {
     
     console.log('DEBUG getGestionesUltimas - ids count:', solicitudIds.length, 'first few:', solicitudIds.slice(0, 3));
 
-try {
-// Query más simple y robusta: usar DISTINCT ON (PostgreSQL) o subquery con MAX
-        // Primero intentar con PostgreSQL DISTINCT ON
+    try {
+        // Usar método compatible con SQLite: subquery con MAX en lugar de DISTINCT ON
+        // NO usar ANY() ya que no funciona en SQLite - usar IN en su lugar
+        const placeholders = solicitudIds.map((_, i) => '$' + (i + 1)).join(',');
+        
         const sql = `
-            SELECT DISTINCT ON (solicitud_id) 
-                id, solicitud_id, tipo_gestion, observacion, fecha_gestion, usuario_id
-            FROM gestiones
-            WHERE solicitud_id = ANY($1) AND usuario_id = $2
-            ORDER BY solicitud_id, fecha_gestion DESC
+            SELECT g.id, g.solicitud_id, g.tipo_gestion, g.observacion, g.fecha_gestion, g.usuario_id
+            FROM gestiones g
+            INNER JOIN (
+                SELECT solicitud_id, MAX(fecha_gestion) as max_fecha
+                FROM gestiones
+                WHERE solicitud_id IN (${placeholders}) AND usuario_id = $${solicitudIds.length + 1}
+                GROUP BY solicitud_id
+            ) m ON g.solicitud_id = m.solicitud_id AND g.fecha_gestion = m.max_fecha
+            WHERE g.usuario_id = $${solicitudIds.length + 1}
         `;
         
-        const result = await pool.query(sql, [solicitudIds, usuarioId]);
+        const params = [...solicitudIds, usuarioId];
+        const result = await pool.query(sql, params);
         
         // Convertir array a objeto: { "170617": {...}, "171014": {...} }
         const gestionessObj = {};
@@ -731,38 +738,7 @@ try {
         res.json(gestionessObj);
     } catch (err) {
         console.error('Error getGestionesUltimas:', err);
-        // Si falla, intentar con método alternativo (sin DISTINCT ON)
-        try {
-            const sqlAlt = `
-                SELECT g.id, g.solicitud_id, g.tipo_gestion, g.observacion, g.fecha_gestion, g.usuario_id
-                FROM gestiones g
-                INNER JOIN (
-                    SELECT solicitud_id, MAX(fecha_gestion) as max_fecha
-                    FROM gestiones
-                    WHERE solicitud_id = ANY($1) AND usuario_id = $2
-                    GROUP BY solicitud_id
-                ) m ON g.solicitud_id = m.solicitud_id AND g.fecha_gestion = m.max_fecha
-                WHERE g.usuario_id = $2
-            `;
-            
-            const resultAlt = await pool.query(sqlAlt, [solicitudIds, usuarioId]);
-            
-            const gestionessObj = {};
-            for (const row of resultAlt.rows) {
-                gestionessObj[row.solicitud_id] = {
-                    id: row.id,
-                    tipo_gestion: row.tipo_gestion,
-                    observacion: row.observacion,
-                    fecha_gestion: row.fecha_gestion
-                };
-            }
-            
-            console.log('DEBUG getGestionesUltimas - retornando con fallback:', Object.keys(gestionessObj).length, 'gestiones');
-            res.json(gestionessObj);
-        } catch (err2) {
-            console.error('Error getGestionesUltimas fallback:', err2);
-            res.status(500).json({ error: err2.message });
-        }
+        res.status(500).json({ error: err.message });
     }
 };
 
