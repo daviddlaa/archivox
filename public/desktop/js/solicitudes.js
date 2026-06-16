@@ -147,65 +147,7 @@ function copiarDatos() {
     });
 }
 
-// Variable para almacenar últimas gestiones
-var ultimasGestiones = {};
-
-// Cargar últimas gestienes para todas las solicitudes - SIN LÍMITE
-async function cargarUltimasGestiones(ids) {
-    if (!ids || ids.length === 0) return;
-    
-    ultimasGestiones = {};
-    
-    // Ya no limitamos a 50 - ahora cargamos todas las gestines de una sola vez
-    var idsLimitados = ids;
-    
-    console.log('Cargando gestinesÚltimas para:', idsLimitados.length, 'solicitudes');
-    
-    try {
-        // UNA SOLA PETICIÓN con máximo 50 IDs
-        var idsString = idsLimitados.join(',');
-        var response = await fetch('/api/excel/gestiones/ultimas?ids=' + encodeURIComponent(idsString));
-        
-        if (response.ok) {
-            var gestionessObj = await response.json();
-            ultimasGestiones = gestionessObj;
-            console.log('Gestines cargadas:', Object.keys(ultimasGestiones).length);
-        } else {
-            // FALLBACK: Si falla el batch, intentar uno por uno
-            console.warn('Endpoint batch falló, usando fallback...');
-            await cargarGestionesIndividualmente(idsLimitados);
-        }
-    } catch (error) {
-        console.error('Error cargando gestines:', error);
-        // FALLBACK en caso de error de red
-        await cargarGestionesIndividualmente(idsLimitados);
-    }
-}
-
-// Función fallback: cargar gestines individualmente si el batch falla
-async function cargarGestionesIndividualmente(ids) {
-    console.log('Cargando gestines individualmente:', ids.length, 'solicitudes');
-    
-    for (var i = 0; i < ids.length; i++) {
-        var id = ids[i];
-        try {
-            var response = await fetch('/api/excel/gestiones/' + id);
-            if (response.ok) {
-                var gestins = await response.json();
-                if (gestins && gestins.length > 0) {
-                    // Tomar la primera (más reciente)
-                    ultimasGestiones[id] = gestins[0];
-                }
-            }
-        } catch (e) {
-            // Silenciar errores individuales
-        }
-    }
-    
-    console.log('Gestines cargadas con fallback:', Object.keys(ultimasGestiones).length);
-}
-
-// Renderizar cards para móvil y escritorio - versión completa con última gestión
+// Renderizar cards para móvil y escritorio
 function renderizarCards(datos) {
     var container = document.getElementById('cards-container');
     if (!container) return;
@@ -223,26 +165,12 @@ function renderizarCards(datos) {
         'APROBADA PARA LIBERACIÓN': '#d1fae5'
     };
     
-    var coloresTipo = {
-        'Seguimiento': '#dbeafe',
-        'Cobranza': '#fee2e2',
-        'Llamada': '#d1fae5',
-        'WhatsApp': '#dcfce7',
-        'Reclamo': '#fef3c7',
-        'Cita': '#e0e7ff',
-        'Otro': '#f3f4f6'
-    };
-    
-    for (var i = 0; i < datos.length; i++) {
+for (var i = 0; i < datos.length; i++) {
         var item = datos[i];
         var estadoClase = (item.estado || '').replace(/ /g, '-').toUpperCase();
         var colorEstado = coloresEstado[item.estado] || '#f3f4f6';
         var id = item.id_solicitud || '';
         var seleccionado = filasSeleccionadas.indexOf(id) > -1 ? 'fila-seleccionada' : '';
-        
-// Obtener última gestión - convertir id a string para buscar en objeto
-        var ultGestion = ultimasGestiones[String(id)];
-        var colorGestion = ultGestion ? (coloresTipo[ultGestion.tipo_gestion] || '#f3f4f6') : '#f3f4f6';
         
         html += '<div class="cliente-card ' + seleccionado + '" data-id="' + id + '">';
         
@@ -268,19 +196,6 @@ function renderizarCards(datos) {
         html += '    <span class="cliente-tag">📦 ' + (item.producto || '—') + '</span>';
         html += '    <span class="cliente-tag">📅 ' + (item.fecha_solicitud || '—') + '</span>';
         html += '  </div>';
-        
-        // Última gestión (si existe)
-        if (ultGestion) {
-            html += '  <div class="cliente-ultima-gestion" style="background:' + colorGestion + '; padding: 10px; border-radius: 8px; margin-top: 8px;">';
-            html += '    <div style="font-size: 11px; font-weight: 700; color: #1f2937; margin-bottom: 4px;">📋 Última Gestión: ' + (ultGestion.tipo_gestion || '') + '</div>';
-            html += '    <div style="font-size: 12px; color: #374151; line-height: 1.3;">' + (ultGestion.observacion || '') + '</div>';
-            html += '    <div style="font-size: 10px; color: #6b7280; margin-top: 4px;">📅 ' + formatFechaGestion(ultGestion.fecha_gestion) + '</div>';
-            html += '  </div>';
-        } else {
-            html += '  <div class="cliente-ultima-gestion" style="background:#f3f4f6; padding: 10px; border-radius: 8px; margin-top: 8px;">';
-            html += '    <div style="font-size: 12px; color: #6b7280; font-style: italic;">Sin gestiones registradas</div>';
-            html += '  </div>';
-        }
         
         // Botones de acciones
         html += '  <div class="card-actions">';
@@ -488,16 +403,10 @@ async function init() {
         var total = Array.isArray(result) ? result.length : (result.total || 0);
         hasMoreData = datosRecibidos.length < total;
         
-        document.getElementById('totalRegistros').textContent = total;
+document.getElementById('totalRegistros').textContent = total;
         
-        // RENDERIZAR PRIMERO las cards SIN esperar las gestionessolo
+        // Renderizar las cards
         aplicarFiltros();
-        
-        // Cargar gestines de los datos actuales
-        var todosIds = datosRecibidos.map(function(d) { return d.id_solicitud; });
-        if (todosIds.length > 0) {
-            cargarUltimasGestionesBatch(todosIds);
-        }
         
         // Inicializar infinite scroll
         initInfiniteScroll();
@@ -539,12 +448,8 @@ async function cargarMas() {
             var total = Array.isArray(result) ? result.length : (result.total || 0);
             hasMoreData = currentOffset < total;
             
-            // Actualizar visualización
+// Actualizar visualización
             aplicarFiltros();
-            
-            // Cargar gestines de los nuevos datos
-            var nuevosIds = nuevosDatos.map(function(d) { return d.id_solicitud; });
-            cargarUltimasGestionesBatch(nuevosIds);
             
             console.log('Más datos cargados:', nuevosDatos.length, 'total en memoria:', todosDatos.length);
         } else {
@@ -564,48 +469,6 @@ async function cargarMas() {
                 sentinel.innerHTML = '<span class="loader-text">✅ No hay más registros</span>';
             }
         }
-    }
-}
-
-// Cargar gestionessolo en batches pequeños para evitar rate limits
-// FIX: Ya NO reinicializamos ultimasGestiones para preservar los datos previously loaded
-async function cargarUltimasGestionesBatch(ids) {
-    if (!ids || ids.length === 0) return;
-    
-    // Ya NO hacemos esto: ultimasGestiones = {};
-    // En su lugar, mantenemos los datos existentes y agregamos los nuevos
-    
-    // Dividir en grupos de 25 para evitar errores
-    var TAMANO_LOTE = 25;
-    for (var i = 0; i < ids.length; i += TAMANO_LOTE) {
-        var lote = ids.slice(i, i + TAMANO_LOTE);
-        
-        try {
-            var idsString = lote.join(',');
-            var response = await fetch('/api/excel/gestiones/ultimas?ids=' + encodeURIComponent(idsString));
-            
-            if (response.ok) {
-                var gestionessObj = await response.json();
-                // Merge con las existentes - NO sobrescribir, agregar
-                for (var key in gestionessObj) {
-                    ultimasGestiones[key] = gestionessObj[key];
-                }
-            }
-        } catch (e) {
-            console.warn('Error lote batch:', e);
-        }
-        
-        // Delay pequeño entre petitiones para evitar rate limit
-        if (i + TAMANO_LOTE < ids.length) {
-            await new Promise(function(r) { setTimeout(r, 200); });
-        }
-    }
-    
-    console.log('Gestines cargadas:', Object.keys(ultimasGestiones).length);
-    
-    // Re-renderizar cards UNA SOLA VEZ después de TODOS los lotes
-    if (typeof aplicarFiltros === 'function') {
-        aplicarFiltros();
     }
 }
 

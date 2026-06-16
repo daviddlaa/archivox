@@ -3,7 +3,6 @@ let todosDatos = [];
 let datosFilas = {};
 let filasSeleccionadas = [];
 let filtros = { estado: '', segmento: '', busqueda: '' };
-let ultimasGestiones = {}; // Almacenar última gestión de cada solicitud
 
 // Toggle selección de card
 function toggleCard(id) {
@@ -137,10 +136,7 @@ async function init() {
         var total = Array.isArray(result) ? result.length : (result.total || 0);
         hasMoreData = datosRecibidos.length < total;
         
-        document.getElementById('totalRegistros').textContent = total;
-        
-        // Cargar últimas gestines de cada solicitud
-        await cargarUltimasGestiones();
+document.getElementById('totalRegistros').textContent = total;
         
         renderizarFiltros();
         aplicarFiltros();
@@ -209,74 +205,7 @@ async function cargarMas() {
     }
 }
 
-// Cargar últimas gestines de cada solicitud - EN LOTES PEQUEÑOS
-async function cargarUltimasGestiones() {
-    try {
-        // Obtener IDs únicos de las solicitudes
-        const ids = todosDatos.map(d => d.id_solicitud).filter(Boolean);
-        
-        if (ids.length === 0) return;
-        
-        // Cargar en lotes de 25 para evitar errores
-        const TAMANO_LOTE = 25;
-        
-        for (let i = 0; i < ids.length; i += TAMANO_LOTE) {
-            const lote = ids.slice(i, i + TAMANO_LOTE);
-            
-            try {
-                const idsString = lote.join(',');
-                const res = await fetch('/api/excel/gestiones/ultimas?ids=' + encodeURIComponent(idsString));
-                
-                if (res.ok) {
-                    const gestionsObj = await res.json();
-                    // Merge con las existentes
-                    for (const id in gestionsObj) {
-                        ultimasGestiones[id] = gestionsObj[id];
-                    }
-                } else {
-                    // Fallback para este lote: cargar una por una
-                    for (const id of lote) {
-                        try {
-                            const res2 = await fetch('/api/excel/gestiones/' + id);
-                            if (res2.ok) {
-                                const gestines = await res2.json();
-                                if (gestines && gestines.length > 0) {
-                                    ultimasGestiones[id] = gestines[0];
-                                }
-                            }
-                        } catch (e) {
-                            // Silenciar errores
-                        }
-                    }
-                }
-            } catch (e) {
-                // Fallback para este lote
-                for (const id of lote) {
-                    try {
-                        const res2 = await fetch('/api/excel/gestiones/' + id);
-                        if (res2.ok) {
-                            const gestines = await res2.json();
-                            if (gestines && gestines.length > 0) {
-                                ultimasGestiones[id] = gestines[0];
-                            }
-                        }
-                    } catch (e2) {
-                        // Silenciar
-                    }
-                }
-            }
-            
-            // Delay pequeño entre lotes para evitar rate limit
-            if (i + TAMANO_LOTE < ids.length) {
-                await new Promise(r => setTimeout(r, 150));
-            }
-        }
-        
-        console.log('Últimas gestines cargadas:', Object.keys(ultimasGestiones).length);
-    } catch (e) {
-        console.error('Error en cargarUltimasGestiones:', e);
-    }
-}
+
 
 // Renderizar botones de filtros dinámicos
 function renderizarFiltros() {
@@ -367,23 +296,7 @@ function renderizarCards(datos) {
         // Guardar datos para usar después
         datosFilas[d.id_solicitud] = d;
         
-        const seleccionado = filasSeleccionadas.indexOf(d.id_solicitud) > -1 ? 'seleccionada' : '';
-        
-        // Obtener última gestión si existe
-        const ultimaGestion = ultimasGestiones[d.id_solicitud];
-        let gestionHTML = '';
-        
-        if (ultimaGestion) {
-            const fechaCorta = formatFechaGestion(ultimaGestion.fecha_gestion);
-            const obsCorta = ultimaGestion.observacion ? (ultimaGestion.observacion.length > 50 ? ultimaGestion.observacion.substring(0, 50) + '...' : ultimaGestion.observacion) : 'Sin observación';
-            gestionHTML = `
-            <div class="ultima-gestion" style="margin: 10px 0; padding: 10px; background: #f8fafc; border-radius: 8px; border-left: 3px solid #2563eb;">
-                <div style="font-size: 11px; color: #6b7280; font-weight: 600;">📋 ${ultimaGestion.tipo_gestion || 'N/A'}</div>
-                <div style="font-size: 12px; color: #374151; margin-top: 4px;">${obsCorta}</div>
-                <div style="font-size: 10px; color: #9ca3af; margin-top: 4px;">${fechaCorta}</div>
-            </div>
-            `;
-        }
+const seleccionado = filasSeleccionadas.indexOf(d.id_solicitud) > -1 ? 'seleccionada' : '';
         
 return `
         <div class="client-card ${seleccionado}" id="card-${d.id_solicitud}" onclick="toggleCard('${d.id_solicitud}')">
@@ -394,9 +307,6 @@ return `
             <div class="client-name">${d.nombre || 'Sin nombre'}</div>
             <div class="client-cedula">Cédula: ${d.cedula || 'N/A'}</div>
             <div class="client-celular">📱 ${d.celular || 'N/A'}</div>
-            
-            <!-- Última Gestión -->
-            ${gestionHTML}
             
             <div class="input-codigo-plus-container" style="margin: 8px 0;">
                 <input type="text" class="input-codigo-plus" value="${d.codigo_plus || ''}" data-id="${d.id_solicitud}" placeholder="Código Plus" autocomplete="off" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px;" onblur="guardarCodigoPlus(this)">
