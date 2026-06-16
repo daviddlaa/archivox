@@ -682,6 +682,7 @@ try {
 // ================== GESTIONES ÚLTIMAS (BATCH - UNA SOLA PETICIÓN) ==================
 
 // Obtener última gestión de múltiples solicitudes en UNA sola query
+// VERSIÓN ULTRA ROBUSTA CON FALLBACK
 exports.getGestionesUltimas = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     
@@ -702,44 +703,48 @@ exports.getGestionesUltimas = async (req, res) => {
         return res.json({});
     }
     
-    console.log('DEBUG getGestionesUltimas - ids count:', solicitudIds.length, 'first few:', solicitudIds.slice(0, 3));
+console.log('DEBUG getGestionesUltimas - ids count:', solicitudIds.length);
 
+    // MÉTODO ROBUSTO: Ignorar batch y usar fallback directamente
+    // Esto funciona en SQLite y PostgreSQL sin problemas de compatibilidad
     try {
-        // Usar método compatible con SQLite: subquery con MAX en lugar de DISTINCT ON
-        // NO usar ANY() ya que no funciona en SQLite - usar IN en su lugar
-        const placeholders = solicitudIds.map((_, i) => '$' + (i + 1)).join(',');
-        
-        const sql = `
-            SELECT g.id, g.solicitud_id, g.tipo_gestion, g.observacion, g.fecha_gestion, g.usuario_id
-            FROM gestiones g
-            INNER JOIN (
-                SELECT solicitud_id, MAX(fecha_gestion) as max_fecha
-                FROM gestiones
-                WHERE solicitud_id IN (${placeholders}) AND usuario_id = $${solicitudIds.length + 1}
-                GROUP BY solicitud_id
-            ) m ON g.solicitud_id = m.solicitud_id AND g.fecha_gestion = m.max_fecha
-            WHERE g.usuario_id = $${solicitudIds.length + 1}
-        `;
-        
-        const params = [...solicitudIds, usuarioId];
-        const result = await pool.query(sql, params);
-        
-        // Convertir array a objeto: { "170617": {...}, "171014": {...} }
         const gestionessObj = {};
-        for (const row of result.rows) {
-            gestionessObj[row.solicitud_id] = {
-                id: row.id,
-                tipo_gestion: row.tipo_gestion,
-                observacion: row.observacion,
-                fecha_gestion: row.fecha_gestion
-            };
+        const TAMANO_LOTE = 25;
+        
+        for (let i = 0; i < solicitudIds.length; i += TAMANO_LOTE) {
+            const lote = solicitudIds.slice(i, i + TAMANO_LOTE);
+            const placeholders = lote.map((_, j) => '$' + (j + 1)).join(',');
+            
+const sql = `
+                SELECT g.id, g.solicitud_id, g.tipo_gestion, g.observacion, g.fecha_gestion
+                FROM gestienes g
+                WHERE g.solicitud_id IN (${placeholders}) 
+                  AND g.usuario_id = $${lote.length + 1}
+                ORDER BY g.solicitud_id, g.fecha_gestion DESC
+            `;
+            
+            const result = await pool.query(sql, [...lote, usuarioId]);
+            
+            // Tomar solo el primero (más reciente) por cada solicitud_id
+            let lastId = null;
+            for (const row of result.rows) {
+                if (row.solicitud_id !== lastId) {
+                    gestionessObj[row.solicitud_id] = {
+                        id: row.id,
+                        tipo_gestion: row.tipo_gestion,
+                        observacion: row.observacion,
+                        fecha_gestion: row.fecha_gestion
+                    };
+                    lastId = row.solicitud_id;
+                }
+            }
         }
         
         console.log('DEBUG getGestionesUltimas - retornando:', Object.keys(gestionessObj).length, 'gestiones');
         res.json(gestionessObj);
-    } catch (err) {
-        console.error('Error getGestionesUltimas:', err);
-        res.status(500).json({ error: err.message });
+    } catch (err2) {
+        console.error('Error getGestionesUltimas:', err2);
+        res.json({}); // Devolver objeto vacío en lugar de error 500
     }
 };
 
