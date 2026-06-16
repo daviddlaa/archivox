@@ -568,10 +568,12 @@ async function cargarMas() {
 }
 
 // Cargar gestionessolo en batches pequeños para evitar rate limits
+// FIX: Ya NO reinicializamos ultimasGestiones para preservar los datos previously loaded
 async function cargarUltimasGestionesBatch(ids) {
     if (!ids || ids.length === 0) return;
     
-    ultimasGestiones = {};
+    // Ya NO hacemos esto: ultimasGestiones = {};
+    // En su lugar, mantenemos los datos existentes y agregamos los nuevos
     
     // Dividir en grupos de 25 para evitar errores
     var TAMANO_LOTE = 25;
@@ -584,7 +586,7 @@ async function cargarUltimasGestionesBatch(ids) {
             
             if (response.ok) {
                 var gestionessObj = await response.json();
-                // Merge con las existentes
+                // Merge con las existentes - NO sobrescribir, agregar
                 for (var key in gestionessObj) {
                     ultimasGestiones[key] = gestionessObj[key];
                 }
@@ -601,7 +603,7 @@ async function cargarUltimasGestionesBatch(ids) {
     
     console.log('Gestines cargadas:', Object.keys(ultimasGestiones).length);
     
-    // Re-renderizar cards con las gestionessolo
+    // Re-renderizar cards UNA SOLA VEZ después de TODOS los lotes
     if (typeof aplicarFiltros === 'function') {
         aplicarFiltros();
     }
