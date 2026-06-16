@@ -1,0 +1,11 @@
+try {
+        // Query optimizada usando DISTINCT ON - más eficiente
+        const sql = `
+            SELECT DISTINCT ON (solicitud_id) 
+                id, solicitud_id, tipo_gestion, observacion, fecha_gestion, usuario_id
+            FROM gestioness
+            WHERE solicitud_id = ANY($1) AND usuario_id = $2
+            ORDER BY solicitud_id, fecha_gestion DESC
+        `;
+
+        const result = await pool.query(sql, [solicitudIds, usuarioId]);

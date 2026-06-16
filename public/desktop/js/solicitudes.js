@@ -150,13 +150,13 @@ function copiarDatos() {
 // Variable para almacenar últimas gestiones
 var ultimasGestiones = {};
 
-// Cargar últimas gestiones para todas las solicitudes -VERSION LIMITADA (50 MAX)
+// Cargar últimas gestiones para todas las solicitudes -VERSION CON FALLBACK A PETICIONES INDIVIDUALES
 async function cargarUltimasGestiones(ids) {
     if (!ids || ids.length === 0) return;
     
     ultimasGestiones = {};
     
-    // Limitar a 50 para evitar error 500 por query muy larga
+    // Limitar a 50 para éviter error 500 por query muy larga
     var idsLimitados = ids.slice(0, 50);
     
     console.log('Cargando gestinesÚltimas para:', idsLimitados.length, 'solicitudes (de', ids.length, ')');
@@ -171,11 +171,38 @@ async function cargarUltimasGestiones(ids) {
             ultimasGestiones = gestionessObj;
             console.log('Gestines cargadas:', Object.keys(ultimasGestiones).length);
         } else {
-            console.error('Error en endpoint batch:', response.status);
+            // FALLBACK: Si falla el batch, intentar uno por uno
+            console.warn('Endpoint batch falló, usando fallback...');
+            await cargarGestionesIndividualmente(idsLimitados);
         }
     } catch (error) {
         console.error('Error cargando gestines:', error);
+        // FALLBACK en caso de error de red
+        await cargarGestionesIndividualmente(idsLimitados);
     }
+}
+
+// Función fallback: cargar gestines individualmente si el batch falla
+async function cargarGestionesIndividualmente(ids) {
+    console.log('Cargando gestines individualmente:', ids.length, 'solicitudes');
+    
+    for (var i = 0; i < ids.length; i++) {
+        var id = ids[i];
+        try {
+            var response = await fetch('/api/excel/gestiones/' + id);
+            if (response.ok) {
+                var gestins = await response.json();
+                if (gestins && gestins.length > 0) {
+                    // Tomar la primera (más reciente)
+                    ultimasGestiones[id] = gestins[0];
+                }
+            }
+        } catch (e) {
+            // Silenciar errores individuales
+        }
+    }
+    
+    console.log('Gestines cargadas con fallback:', Object.keys(ultimasGestiones).length);
 }
 
 // Renderizar cards para móvil y escritorio - versión completa con última gestión
