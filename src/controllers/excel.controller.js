@@ -77,7 +77,7 @@ exports.uploadExcel = async (req, res) => {
 
 exports.listarSolicitudes = async (req, res) => {
 
-    const {
+const {
         estado,
         segmento,
         cedula,
@@ -85,7 +85,9 @@ exports.listarSolicitudes = async (req, res) => {
         nombre,
         telefono,
         orden,
-        direccion
+        direccion,
+        limite = 50,
+        offset = 0
     } = req.query;
 
     // Obtener ID del usuario de la sesi�n
@@ -139,12 +141,39 @@ if (nombre) {
     else if (orden === 'producto') columnaOrden = 'producto';
     else if (orden === 'fecha_solicitud') columnaOrden = 'fecha_solicitud';
     
-    let direccionOrden = direccion === 'ASC' ? 'ASC' : 'DESC';
+let direccionOrden = direccion === 'ASC' ? 'ASC' : 'DESC';
     sql = sql + ' ORDER BY ' + columnaOrden + ' ' + direccionOrden;
+
+    // Agregar paginación por defecto 50
+    const limit = parseInt(limite) || 50;
+    const offsetVal = parseInt(offset) || 0;
+    sql += ' LIMIT ' + limit + ' OFFSET ' + offsetVal;
 
     try {
         const result = await pool.query(sql, params);
-        res.json(result.rows);
+        
+        // Contar total para paginación
+        let countSql = 'SELECT COUNT(*) as total FROM solicitudes WHERE usuario_id = $1';
+        const countParams = [usuarioId];
+        
+        if (estado) {
+            countSql += ' AND estado = $2';
+            countParams.push(estado);
+        }
+        if (segmento) {
+            countSql += ' AND segmento = $' + countParams.length + 1;
+            countParams.push(segmento);
+        }
+        
+        const countResult = await pool.query(countSql, countParams);
+        const total = parseInt(countResult.rows[0]?.total) || 0;
+        
+        res.json({
+            data: result.rows,
+            total: total,
+            limite: limit,
+            offset: offsetVal
+        });
     } catch (err) {
         return res.status(500).json({
             error: err.message
@@ -680,7 +709,7 @@ try {
         const sql = `
             SELECT DISTINCT ON (solicitud_id) 
                 id, solicitud_id, tipo_gestion, observacion, fecha_gestion, usuario_id
-            FROM gestioness
+            FROM gestiones
             WHERE solicitud_id = ANY($1) AND usuario_id = $2
             ORDER BY solicitud_id, fecha_gestion DESC
         `;
@@ -698,7 +727,7 @@ try {
             };
         }
         
-        console.log('DEBUG getGestionesUltimas - retornando:', Object.keys(gestionessObj).length, 'gestioness');
+        console.log('DEBUG getGestionesUltimas - retornando:', Object.keys(gestionessObj).length, 'gestiones');
         res.json(gestionessObj);
     } catch (err) {
         console.error('Error getGestionesUltimas:', err);
@@ -706,10 +735,10 @@ try {
         try {
             const sqlAlt = `
                 SELECT g.id, g.solicitud_id, g.tipo_gestion, g.observacion, g.fecha_gestion, g.usuario_id
-                FROM gestioness g
+                FROM gestiones g
                 INNER JOIN (
                     SELECT solicitud_id, MAX(fecha_gestion) as max_fecha
-                    FROM gestioness
+                    FROM gestiones
                     WHERE solicitud_id = ANY($1) AND usuario_id = $2
                     GROUP BY solicitud_id
                 ) m ON g.solicitud_id = m.solicitud_id AND g.fecha_gestion = m.max_fecha
@@ -728,7 +757,7 @@ try {
                 };
             }
             
-            console.log('DEBUG getGestionesUltimas - retornando con fallback:', Object.keys(gestionessObj).length, 'gestioness');
+            console.log('DEBUG getGestionesUltimas - retornando con fallback:', Object.keys(gestionessObj).length, 'gestiones');
             res.json(gestionessObj);
         } catch (err2) {
             console.error('Error getGestionesUltimas fallback:', err2);
