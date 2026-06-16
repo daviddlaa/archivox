@@ -682,7 +682,7 @@ try {
 // ================== GESTIONES ÚLTIMAS (BATCH - UNA SOLA PETICIÓN) ==================
 
 // Obtener última gestión de múltiples solicitudes en UNA sola query
-// VERSIÓN ULTRA ROBUSTA CON FALLBACK
+// VERSIÓN SIMPLE Y ROBUSTA - Similar a getGestiones individual
 exports.getGestionesUltimas = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     
@@ -698,45 +698,43 @@ exports.getGestionesUltimas = async (req, res) => {
     
     // Convertir string "1,2,3" a array de enteros para evitar problemas de tipo
     const solicitudIds = ids.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
-    
     if (solicitudIds.length === 0) {
         return res.json({});
     }
     
-console.log('DEBUG getGestionesUltimas - ids count:', solicitudIds.length);
+    console.log('DEBUG getGestionesUltimas - ids count:', solicitudIds.length);
 
-    // MÉTODO ROBUSTO: Ignorar batch y usar fallback directamente
-    // Esto funciona en SQLite y PostgreSQL sin problemas de compatibilidad
+    // MÉTODO SIMPLE: Una sola query con IN clause
+    // Usar la misma estructura que getGestiones pero para múltiples IDs
     try {
         const gestionessObj = {};
-        const TAMANO_LOTE = 25;
+        const placeholders = solicitudIds.map((_, i) => '$' + (i + 1)).join(',');
         
-        for (let i = 0; i < solicitudIds.length; i += TAMANO_LOTE) {
-            const lote = solicitudIds.slice(i, i + TAMANO_LOTE);
-            const placeholders = lote.map((_, j) => '$' + (j + 1)).join(',');
-            
-const sql = `
-                SELECT g.id, g.solicitud_id, g.tipo_gestion, g.observacion, g.fecha_gestion
-                FROM gestienes g
-                WHERE g.solicitud_id IN (${placeholders}) 
-                  AND g.usuario_id = $${lote.length + 1}
-                ORDER BY g.solicitud_id, g.fecha_gestion DESC
-            `;
-            
-            const result = await pool.query(sql, [...lote, usuarioId]);
-            
-            // Tomar solo el primero (más reciente) por cada solicitud_id
-            let lastId = null;
-            for (const row of result.rows) {
-                if (row.solicitud_id !== lastId) {
-                    gestionessObj[row.solicitud_id] = {
-                        id: row.id,
-                        tipo_gestion: row.tipo_gestion,
-                        observacion: row.observacion,
-                        fecha_gestion: row.fecha_gestion
-                    };
-                    lastId = row.solicitud_id;
-                }
+        // Query simple: obtener todas las gestionessolo para los IDs dados, luego filtrar en memoria
+        const sql = `
+            SELECT g.id, g.solicitud_id, g.tipo_gestion, g.observacion, g.fecha_gestion
+            FROM gestienes g
+            WHERE g.solicitud_id IN (${placeholders}) 
+              AND g.usuario_id = $${solicitudIds.length + 1}
+            ORDER BY g.solicitud_id, g.fecha_gestion DESC
+        `;
+        
+        const params = [...solicitudIds, usuarioId];
+        console.log('DEBUG getGestionesUltimas - SQL params:', params.length);
+        
+        const result = await pool.query(sql, params);
+        
+        // Tomar solo el primero (más reciente) por cada solicitud_id
+        let lastId = null;
+        for (const row of result.rows) {
+            if (row.solicitud_id !== lastId) {
+                gestionessObj[row.solicitud_id] = {
+                    id: row.id,
+                    tipo_gestion: row.tipo_gestion,
+                    observacion: row.observacion,
+                    fecha_gestion: row.fecha_gestion
+                };
+                lastId = row.solicitud_id;
             }
         }
         
@@ -744,7 +742,7 @@ const sql = `
         res.json(gestionessObj);
     } catch (err2) {
         console.error('Error getGestionesUltimas:', err2);
-        res.json({}); // Devolver objeto vacío en lugar de error 500
+        res.status(500).json({ error: err2.message });
     }
 };
 
