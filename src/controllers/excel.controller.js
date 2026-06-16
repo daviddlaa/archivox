@@ -675,12 +675,12 @@ exports.getGestionesUltimas = async (req, res) => {
     console.log('DEBUG getGestionesUltimas - ids count:', solicitudIds.length, 'first few:', solicitudIds.slice(0, 3));
 
 try {
-        // Query más simple y robusta: usar DISTINCT ON (PostgreSQL) o subquery con MAX
+// Query más simple y robusta: usar DISTINCT ON (PostgreSQL) o subquery con MAX
         // Primero intentar con PostgreSQL DISTINCT ON
         const sql = `
             SELECT DISTINCT ON (solicitud_id) 
                 id, solicitud_id, tipo_gestion, observacion, fecha_gestion, usuario_id
-            FROM gestines
+            FROM gestioness
             WHERE solicitud_id = ANY($1) AND usuario_id = $2
             ORDER BY solicitud_id, fecha_gestion DESC
         `;
@@ -698,7 +698,7 @@ try {
             };
         }
         
-        console.log('DEBUG getGestionesUltimas - retornando:', Object.keys(gestionessObj).length, 'gestines');
+        console.log('DEBUG getGestionesUltimas - retornando:', Object.keys(gestionessObj).length, 'gestioness');
         res.json(gestionessObj);
     } catch (err) {
         console.error('Error getGestionesUltimas:', err);
@@ -706,10 +706,10 @@ try {
         try {
             const sqlAlt = `
                 SELECT g.id, g.solicitud_id, g.tipo_gestion, g.observacion, g.fecha_gestion, g.usuario_id
-                FROM gestines g
+                FROM gestioness g
                 INNER JOIN (
                     SELECT solicitud_id, MAX(fecha_gestion) as max_fecha
-                    FROM gestines
+                    FROM gestioness
                     WHERE solicitud_id = ANY($1) AND usuario_id = $2
                     GROUP BY solicitud_id
                 ) m ON g.solicitud_id = m.solicitud_id AND g.fecha_gestion = m.max_fecha
@@ -728,7 +728,7 @@ try {
                 };
             }
             
-            console.log('DEBUG getGestionesUltimas - retornando con fallback:', Object.keys(gestionessObj).length, 'gestines');
+            console.log('DEBUG getGestionesUltimas - retornando con fallback:', Object.keys(gestionessObj).length, 'gestioness');
             res.json(gestionessObj);
         } catch (err2) {
             console.error('Error getGestionesUltimas fallback:', err2);
