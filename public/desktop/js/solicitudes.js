@@ -150,16 +150,16 @@ function copiarDatos() {
 // Variable para almacenar últimas gestiones
 var ultimasGestiones = {};
 
-// Cargar últimas gestiones para todas las solicitudes -VERSION CON FALLBACK A PETICIONES INDIVIDUALES
+// Cargar últimas gestienes para todas las solicitudes - SIN LÍMITE
 async function cargarUltimasGestiones(ids) {
     if (!ids || ids.length === 0) return;
     
     ultimasGestiones = {};
     
-    // Limitar a 50 para éviter error 500 por query muy larga
-    var idsLimitados = ids.slice(0, 50);
+    // Ya no limitamos a 50 - ahora cargamos todas las gestines de una sola vez
+    var idsLimitados = ids;
     
-    console.log('Cargando gestinesÚltimas para:', idsLimitados.length, 'solicitudes (de', ids.length, ')');
+    console.log('Cargando gestinesÚltimas para:', idsLimitados.length, 'solicitudes');
     
     try {
         // UNA SOLA PETICIÓN con máximo 50 IDs

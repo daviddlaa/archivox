@@ -86,7 +86,7 @@ const {
         telefono,
         orden,
         direccion,
-        limite = 50,
+limite = 10000,
         offset = 0
     } = req.query;
 
