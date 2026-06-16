@@ -150,22 +150,39 @@ function copiarDatos() {
 // Variable para almacenar últimas gestiones
 var ultimasGestiones = {};
 
-// Cargar últimas gestiones para todas las solicitudes
+// Cargar últimas gestiones para todas las solicitudes - OPTIMIZADO para evitar 429
 async function cargarUltimasGestiones(ids) {
     if (!ids || ids.length === 0) return;
     
     ultimasGestiones = {};
     
+    // LIMITAR a 50 solicitudes máx para evitar rate limiting (429)
+    var idsLimitados = ids.slice(0, 50);
+    
+    console.log('Cargando gestioness para:', idsLimitados.length, 'solicitudes (máx 50)');
+    
     try {
-        for (var i = 0; i < ids.length; i++) {
-            var id = ids[i];
-            var response = await fetch('/api/excel/gestiones/' + id);
-            if (response.ok) {
-                var gestines = await response.json();
-                if (gestines && gestines.length > 0) {
-                    // Guardar solo la última gestión (la más reciente)
-                    ultimasGestiones[id] = gestines[gestines.length - 1];
+        for (var i = 0; i < idsLimitados.length; i++) {
+            var id = idsLimitados[i];
+            
+            // Debounce para evitar bursts - 50ms entre cada request
+            await new Promise(function(resolve) {
+                setTimeout(resolve, 50);
+            });
+            
+            try {
+                var response = await fetch('/api/excel/gestiones/' + id);
+                if (response.ok) {
+                    var gestines = await response.json();
+                    if (gestines && gestines.length > 0) {
+                        ultimasGestiones[id] = gestines[gestines.length - 1];
+                    }
+                } else if (response.status === 429) {
+                    console.warn('Rate limit detectado, deteniendo carga');
+                    break;
                 }
+            } catch (e) {
+                console.error('Error gestión:', id, e);
             }
         }
     } catch (error) {
