@@ -150,17 +150,20 @@ function copiarDatos() {
 // Variable para almacenar últimas gestiones
 var ultimasGestiones = {};
 
-// Cargar últimas gestiones para todas las solicitudes - NUEVO ENDPOINT BATCH (UNA SOLA PETICIÓN)
+// Cargar últimas gestiones para todas las solicitudes -VERSION LIMITADA (50 MAX)
 async function cargarUltimasGestiones(ids) {
     if (!ids || ids.length === 0) return;
     
     ultimasGestiones = {};
     
-    console.log('Cargando gestinesÚltimas para:', ids.length, 'solicitudes...');
+    // Limitar a 50 para evitar error 500 por query muy larga
+    var idsLimitados = ids.slice(0, 50);
+    
+    console.log('Cargando gestinesÚltimas para:', idsLimitados.length, 'solicitudes (de', ids.length, ')');
     
     try {
-        // NUEVO: UNA SOLA PETICIÓN con todos los IDs
-        var idsString = ids.join(',');
+        // UNA SOLA PETICIÓN con máximo 50 IDs
+        var idsString = idsLimitados.join(',');
         var response = await fetch('/api/excel/gestiones/ultimas?ids=' + encodeURIComponent(idsString));
         
         if (response.ok) {
