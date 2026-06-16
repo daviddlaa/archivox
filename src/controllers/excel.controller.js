@@ -713,7 +713,7 @@ exports.getGestionesUltimas = async (req, res) => {
         // Query simple: obtener todas las gestionessolo para los IDs dados, luego filtrar en memoria
         const sql = `
             SELECT g.id, g.solicitud_id, g.tipo_gestion, g.observacion, g.fecha_gestion
-            FROM gestienes g
+            FROM gestiones g
             WHERE g.solicitud_id IN (${placeholders}) 
               AND g.usuario_id = $${solicitudIds.length + 1}
             ORDER BY g.solicitud_id, g.fecha_gestion DESC
