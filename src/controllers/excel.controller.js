@@ -665,13 +665,15 @@ exports.getGestionesUltimas = async (req, res) => {
         return res.status(400).json({ error: 'IDs de solicitudes requeridos' });
     }
     
-    // Convertir string "1,2,3" a array
-    const solicitudIds = ids.split(',').map(id => id.trim()).filter(Boolean);
+// Convertir string "1,2,3" a array de enteros para evitar problemas de tipo
+    const solicitudIds = ids.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
     
-    if (solicitudIds.length === 0) {
+if (solicitudIds.length === 0) {
         return res.json({});
     }
     
+    console.log('DEBUG getGestionesUltimas - ids count:', solicitudIds.length, 'first few:', solicitudIds.slice(0, 3));
+
     try {
         // Query optimizada: obtener última gestión por cada solicitud
         // Usando window function ROW_NUMBER() para cada grupo
