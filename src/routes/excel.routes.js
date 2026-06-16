@@ -134,6 +134,13 @@ router.get(
     excelController.getGestiones
 );
 
+// Obtener últimas gestines de múltiples solicitudes (_batch - una sola petición)
+router.get(
+    '/gestiones/ultimas',
+    requiresAuth,
+    excelController.getGestionesUltimas
+);
+
 // Actualizar una gestión
 router.put(
     '/gestiones/:id',

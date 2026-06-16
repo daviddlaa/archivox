@@ -150,43 +150,28 @@ function copiarDatos() {
 // Variable para almacenar últimas gestiones
 var ultimasGestiones = {};
 
-// Cargar últimas gestiones para todas las solicitudes - OPTIMIZADO para evitar 429
+// Cargar últimas gestiones para todas las solicitudes - NUEVO ENDPOINT BATCH (UNA SOLA PETICIÓN)
 async function cargarUltimasGestiones(ids) {
     if (!ids || ids.length === 0) return;
     
     ultimasGestiones = {};
     
-    // LIMITAR a 50 solicitudes máx para evitar rate limiting (429)
-    var idsLimitados = ids.slice(0, 50);
-    
-    console.log('Cargando gestioness para:', idsLimitados.length, 'solicitudes (máx 50)');
+    console.log('Cargando gestinesÚltimas para:', ids.length, 'solicitudes...');
     
     try {
-        for (var i = 0; i < idsLimitados.length; i++) {
-            var id = idsLimitados[i];
-            
-            // Debounce para evitar bursts - 50ms entre cada request
-            await new Promise(function(resolve) {
-                setTimeout(resolve, 50);
-            });
-            
-            try {
-                var response = await fetch('/api/excel/gestiones/' + id);
-                if (response.ok) {
-                    var gestines = await response.json();
-                    if (gestines && gestines.length > 0) {
-                        ultimasGestiones[id] = gestines[gestines.length - 1];
-                    }
-                } else if (response.status === 429) {
-                    console.warn('Rate limit detectado, deteniendo carga');
-                    break;
-                }
-            } catch (e) {
-                console.error('Error gestión:', id, e);
-            }
+        // NUEVO: UNA SOLA PETICIÓN con todos los IDs
+        var idsString = ids.join(',');
+        var response = await fetch('/api/excel/gestiones/ultimas?ids=' + encodeURIComponent(idsString));
+        
+        if (response.ok) {
+            var gestionessObj = await response.json();
+            ultimasGestiones = gestionessObj;
+            console.log('Gestines cargadas:', Object.keys(ultimasGestiones).length);
+        } else {
+            console.error('Error en endpoint batch:', response.status);
         }
     } catch (error) {
-        console.error('Error cargando gestiones:', error);
+        console.error('Error cargando gestines:', error);
     }
 }
 

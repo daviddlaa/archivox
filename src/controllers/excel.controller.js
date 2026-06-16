@@ -649,6 +649,65 @@ try {
     }
 };
 
+// ================== GESTIONES ÚLTIMAS (BATCH - UNA SOLA PETICIÓN) ==================
+
+// Obtener última gestión de múltiples solicitudes en UNA sola query
+exports.getGestionesUltimas = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { ids } = req.query;
+    
+    if (!ids) {
+        return res.status(400).json({ error: 'IDs de solicitudes requeridos' });
+    }
+    
+    // Convertir string "1,2,3" a array
+    const solicitudIds = ids.split(',').map(id => id.trim()).filter(Boolean);
+    
+    if (solicitudIds.length === 0) {
+        return res.json({});
+    }
+    
+    try {
+        // Query optimizada: obtener última gestión por cada solicitud
+        // Usando window function ROW_NUMBER() para cada grupo
+        const sql = `
+            SELECT g.id, g.solicitud_id, g.tipo_gestion, g.observacion, g.fecha_gestion, g.usuario_id
+            FROM (
+                SELECT 
+                    *,
+                    ROW_NUMBER() OVER (PARTITION BY solicitud_id ORDER BY fecha_gestion DESC) as rn
+                FROM gestiones
+                WHERE solicitud_id = ANY($1) AND usuario_id = $2
+            ) g
+            WHERE g.rn = 1
+        `;
+        
+        const result = await pool.query(sql, [solicitudIds, usuarioId]);
+        
+        // Convertir array a objeto: { "170617": {...}, "171014": {...} }
+        const gestionessObj = {};
+        for (const row of result.rows) {
+            gestionessObj[row.solicitud_id] = {
+                id: row.id,
+                tipo_gestion: row.tipo_gestion,
+                observacion: row.observacion,
+                fecha_gestion: row.fecha_gestion
+            };
+        }
+        
+        console.log('DEBUG getGestionesUltimas - retornando:', Object.keys(gestionessObj).length, 'gestioness');
+        res.json(gestionessObj);
+    } catch (err) {
+        console.error('Error getGestionesUltimas:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // Actualizar una gesti�n existente
 exports.actualizarGestion = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
