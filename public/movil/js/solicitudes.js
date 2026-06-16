@@ -360,6 +360,9 @@ function renderizarCards(datos) {
     // Limpiar datosFilas al renderizar
     datosFilas = {};
     
+    // Guardar sentinel existente antes de reemplazar
+    var sentinelExistente = document.getElementById('infinite-scroll-sentinel');
+    
     container.innerHTML = datos.map(d => {
         // Guardar datos para usar después
         datosFilas[d.id_solicitud] = d;
@@ -408,8 +411,53 @@ return `
                 <span class="tag">${d.fecha_solicitud || 'N/A'}</span>
             </div>
         </div>
-        `;
+`;
     }).join('');
+    
+    // Recrear el sentinel para infinite scroll
+    recrearSentinel();
+}
+
+// Recrear el sentinel para infinite scroll
+function recrearSentinel() {
+    var container = document.getElementById('cards-container');
+    if (!container) return;
+    
+    // Verificar si ya existe
+    var sentinel = document.getElementById('infinite-scroll-sentinel');
+    if (sentinel) {
+        // Actualizar texto según estado
+        if (isLoading) {
+            sentinel.innerHTML = '<span class="loader-text">⏳ Cargando más...</span>';
+        } else if (hasMoreData) {
+            sentinel.innerHTML = '<span class="loader-text">📜 Desliza para cargar más...</span>';
+        } else {
+            sentinel.innerHTML = '<span class="loader-text">✅ No hay más registros</span>';
+        }
+        return;
+    }
+    
+    // Crear nuevo sentinel
+    sentinel = document.createElement('div');
+    sentinel.id = 'infinite-scroll-sentinel';
+    sentinel.style.cssText = 'height: 60px; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 14px; padding: 15px;';
+    sentinel.innerHTML = hasMoreData ? '<span class="loader-text">📜 Desliza para cargar más...</span>' : '<span class="loader-text">✅ No hay más registros</span>';
+    container.appendChild(sentinel);
+    
+    // Configurar Intersection Observer si no existe
+    if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function(entries) {
+            var entry = entries[0];
+            if (entry.isIntersecting && hasMoreData && !isLoading) {
+                console.log('Infinite scroll: Detectado - cargando más...');
+                cargarMas();
+            }
+        }, {
+            rootMargin: '200px'
+        });
+        
+        observer.observe(sentinel);
+    }
 }
 
 // ================== CÓDIGO PLUS ==================
