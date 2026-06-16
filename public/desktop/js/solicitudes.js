@@ -210,8 +210,8 @@ function renderizarCards(datos) {
         var id = item.id_solicitud || '';
         var seleccionado = filasSeleccionadas.indexOf(id) > -1 ? 'fila-seleccionada' : '';
         
-        // Obtener última gestión
-        var ultGestion = ultimasGestiones[id];
+// Obtener última gestión - convertir id a string para buscar en objeto
+        var ultGestion = ultimasGestiones[String(id)];
         var colorGestion = ultGestion ? (coloresTipo[ultGestion.tipo_gestion] || '#f3f4f6') : '#f3f4f6';
         
         html += '<div class="cliente-card ' + seleccionado + '" data-id="' + id + '">';
