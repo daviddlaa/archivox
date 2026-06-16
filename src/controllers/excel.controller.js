@@ -77,7 +77,7 @@ exports.uploadExcel = async (req, res) => {
 
 exports.listarSolicitudes = async (req, res) => {
 
-const {
+    const {
         estado,
         segmento,
         cedula,
@@ -86,8 +86,9 @@ const {
         telefono,
         orden,
         direccion,
-limite = 10000,
-        offset = 0
+        limite = 50,
+        offset = 0,
+        cargarMas = 'false'
     } = req.query;
 
     // Obtener ID del usuario de la sesi�n

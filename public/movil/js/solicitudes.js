@@ -77,25 +77,139 @@ function copiarDatos() {
     });
 }
 
-// Cargar datos al iniciar
+// ================== INFINITE SCROLL (COMO TIKTOK) ==================
+
+// Variables para infinite scroll
+var currentOffset = 0;
+var isLoading = false;
+var hasMoreData = true;
+var TAMANO_LOTE = 100;
+
+// Inicializar infinite scroll
+function initInfiniteScroll() {
+    // Crear elemento sentinel para Intersection Observer
+    var sentinel = document.getElementById('infinite-scroll-sentinel');
+    if (!sentinel) {
+        sentinel = document.createElement('div');
+        sentinel.id = 'infinite-scroll-sentinel';
+        sentinel.style.cssText = 'height: 60px; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 14px; padding: 15px;';
+        sentinel.innerHTML = '<span class="loader-text">📜 Scroll para cargar más...</span>';
+        
+        var container = document.getElementById('cards-container');
+        if (container) {
+            container.appendChild(sentinel);
+        }
+    }
+    
+    // Configurar Intersection Observer
+    if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function(entries) {
+            var entry = entries[0];
+            if (entry.isIntersecting && hasMoreData && !isLoading) {
+                cargarMas();
+            }
+        }, {
+            rootMargin: '100px'
+        });
+        
+        observer.observe(sentinel);
+    }
+}
+
+// Cargar datos iniciales
 async function init() {
     try {
-        const res = await fetch('/api/excel/solicitudes');
-        todosDatos = await res.json();
+        // resetear variables
+        currentOffset = 0;
+        todosDatos = [];
         
-        document.getElementById('totalRegistros').textContent = todosDatos.length;
+        const res = await fetch('/api/excel/solicitudes?limite=50&offset=0');
+        var result = await res.json();
+        
+        // Compatibilidad: el backend ahora devuelve { data, total, limite, offset } o array directo
+        var datosRecibidos = Array.isArray(result) ? result : (result.data || []);
+        
+        // Guardar datos
+        todosDatos = datosRecibidos;
+        currentOffset = datosRecibidos.length;
+        
+        // Verificar si hay más datos
+        var total = Array.isArray(result) ? result.length : (result.total || 0);
+        hasMoreData = datosRecibidos.length < total;
+        
+        document.getElementById('totalRegistros').textContent = total;
         
         // Cargar últimas gestines de cada solicitud
         await cargarUltimasGestiones();
         
         renderizarFiltros();
         aplicarFiltros();
+        
+        // Inicializar infinite scroll
+        initInfiniteScroll();
+        
+        console.log('Datos cargados:', todosDatos.length, 'total:', total);
     } catch (e) {
         console.error('Error cargando:', e);
     }
 }
 
-// Cargar últimas gestines de cada solicitud
+// Cargar más datos (para infinite scroll)
+async function cargarMas() {
+    if (isLoading || !hasMoreData) return;
+    
+    isLoading = true;
+    
+    // Mostrar indicador de carga
+    var sentinel = document.getElementById('infinite-scroll-sentinel');
+    if (sentinel) {
+        sentinel.innerHTML = '<span class="loader-text">⏳ Cargando más...</span>';
+    }
+    
+    try {
+        var nuevoOffset = currentOffset;
+        var res = await fetch('/api/excel/solicitudes?limite=' + TAMANO_LOTE + '&offset=' + nuevoOffset);
+        var result = await res.json();
+        
+        var nuevosDatos = Array.isArray(result) ? result : (result.data || []);
+        
+        if (nuevosDatos.length > 0) {
+            // Agregar nuevos datos a la lista
+            for (var i = 0; i < nuevosDatos.length; i++) {
+                todosDatos.push(nuevosDatos[i]);
+            }
+            
+            currentOffset += nuevosDatos.length;
+            
+            // Verificar si hay más datos
+            var total = Array.isArray(result) ? result.length : (result.total || 0);
+            hasMoreData = currentOffset < total;
+            
+// Actualizar visualización
+            aplicarFiltros();
+            
+            console.log('Más datos cargados:', nuevosDatos.length, 'total en memoria:', todosDatos.length);
+        } else {
+            hasMoreData = false;
+        }
+        
+    } catch (error) {
+        console.error('Error cargando más datos:', error);
+    } finally {
+        isLoading = false;
+        
+        // Actualizar indicador
+        if (sentinel) {
+            if (hasMoreData) {
+                sentinel.innerHTML = '<span class="loader-text">📜 Scroll para cargar más...</span>';
+            } else {
+                sentinel.innerHTML = '<span class="loader-text">✅ No hay más registros</span>';
+            }
+        }
+    }
+}
+
+// Cargar últimas gestines de cada solicitud - EN LOTES PEQUEÑOS
 async function cargarUltimasGestiones() {
     try {
         // Obtener IDs únicos de las solicitudes
@@ -103,21 +217,58 @@ async function cargarUltimasGestiones() {
         
         if (ids.length === 0) return;
         
-        // Cargar gestines solo de las solicitudes visibles (máximo 50 para evitar sobrecarga)
-        const idsLimitados = ids.slice(0, 50);
+        // Cargar en lotes de 25 para evitar errores
+        const TAMANO_LOTE = 25;
         
-        for (const id of idsLimitados) {
+        for (let i = 0; i < ids.length; i += TAMANO_LOTE) {
+            const lote = ids.slice(i, i + TAMANO_LOTE);
+            
             try {
-                const res = await fetch('/api/excel/gestiones/' + id);
+                const idsString = lote.join(',');
+                const res = await fetch('/api/excel/gestiones/ultimas?ids=' + encodeURIComponent(idsString));
+                
                 if (res.ok) {
-                    const gestines = await res.json();
-                    // Tomar la última gestión
-                    if (gestines && gestines.length > 0) {
-                        ultimasGestiones[id] = gestines[gestines.length - 1];
+                    const gestionsObj = await res.json();
+                    // Merge con las existentes
+                    for (const id in gestionsObj) {
+                        ultimasGestiones[id] = gestionsObj[id];
+                    }
+                } else {
+                    // Fallback para este lote: cargar una por una
+                    for (const id of lote) {
+                        try {
+                            const res2 = await fetch('/api/excel/gestiones/' + id);
+                            if (res2.ok) {
+                                const gestines = await res2.json();
+                                if (gestines && gestines.length > 0) {
+                                    ultimasGestiones[id] = gestines[0];
+                                }
+                            }
+                        } catch (e) {
+                            // Silenciar errores
+                        }
                     }
                 }
             } catch (e) {
-                console.error('Error cargando gestión:', id, e);
+                // Fallback para este lote
+                for (const id of lote) {
+                    try {
+                        const res2 = await fetch('/api/excel/gestiones/' + id);
+                        if (res2.ok) {
+                            const gestines = await res2.json();
+                            if (gestines && gestines.length > 0) {
+                                ultimasGestiones[id] = gestines[0];
+                            }
+                        }
+                    } catch (e2) {
+                        // Silenciar
+                    }
+                }
+            }
+            
+            // Delay pequeño entre lotes para evitar rate limit
+            if (i + TAMANO_LOTE < ids.length) {
+                await new Promise(r => setTimeout(r, 150));
             }
         }
         

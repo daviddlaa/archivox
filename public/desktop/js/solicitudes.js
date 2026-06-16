@@ -427,29 +427,143 @@ function actualizarEncabezados() {
     }
 }
 
-// ================== NUEVO SISTEMA DE BÚSQUEDA LOCAL (COMO MÓVIL) ==================
+// ================== INFINITE SCROLL (COMO TIKTOK) ==================
 
-// Cargar todos los datos al iniciar - OPTIMIZADO
+// Variables para infinite scroll
+var currentOffset = 0;
+var currentLimit = 50;
+var isLoading = false;
+var hasMoreData = true;
+var TAMANO_LOTE = 100;
+
+// Inicializar infinite scroll
+function initInfiniteScroll() {
+    // Crear elemento sentinel para Intersection Observer
+    var sentinel = document.getElementById('infinite-scroll-sentinel');
+    if (!sentinel) {
+        sentinel = document.createElement('div');
+        sentinel.id = 'infinite-scroll-sentinel';
+        sentinel.style.cssText = 'height: 60px; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 14px;';
+        sentinel.innerHTML = '<span class="loader-text">📜 Scroll para cargar más...</span>';
+        
+        var container = document.getElementById('cards-container');
+        if (container) {
+            container.appendChild(sentinel);
+        }
+    }
+    
+    // Configurar Intersection Observer
+    if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function(entries) {
+            var entry = entries[0];
+            if (entry.isIntersecting && hasMoreData && !isLoading) {
+                cargarMas();
+            }
+        }, {
+            rootMargin: '100px'
+        });
+        
+        observer.observe(sentinel);
+    }
+}
+
+// Cargar datos iniciales
 async function init() {
     try {
-        var response = await fetch('/api/excel/solicitudes');
+        // resetear variables
+        currentOffset = 0;
+        todosDatos = [];
+        
+        var response = await fetch('/api/excel/solicitudes?limite=' + currentLimit + '&offset=0');
         var result = await response.json();
         
         // Compatibilidad: el backend ahora devuelve { data, total, limite, offset } o array directo
-        todosDatos = Array.isArray(result) ? result : (result.data || []);
+        var datosRecibidos = Array.isArray(result) ? result : (result.data || []);
         
-        document.getElementById('totalRegistros').textContent = todosDatos.length;
+        // Guardar datos
+        todosDatos = datosRecibidos;
+        currentOffset = datosRecibidos.length;
+        
+        // Verificar si hay más datos
+        var total = Array.isArray(result) ? result.length : (result.total || 0);
+        hasMoreData = datosRecibidos.length < total;
+        
+        document.getElementById('totalRegistros').textContent = total;
         
         // RENDERIZAR PRIMERO las cards SIN esperar las gestionessolo
         aplicarFiltros();
         
-        // Luego cargar las gestionessolo en background (solo primeras 50 para evitar overload)
-        var idsPrimeros = todosDatos.slice(0, 50).map(function(d) { return d.id_solicitud; });
-        cargarUltimasGestionesBatch(idsPrimeros);
+        // Cargar gestines de los datos actuales
+        var todosIds = datosRecibidos.map(function(d) { return d.id_solicitud; });
+        if (todosIds.length > 0) {
+            cargarUltimasGestionesBatch(todosIds);
+        }
         
-        console.log('Datos cargados:', todosDatos.length);
+        // Inicializar infinite scroll
+        initInfiniteScroll();
+        
+        console.log('Datos cargados:', todosDatos.length, 'total:', total);
     } catch (error) {
         console.error('Error cargando datos:', error);
+    }
+}
+
+// Cargar más datos (para infinite scroll)
+async function cargarMas() {
+    if (isLoading || !hasMoreData) return;
+    
+    isLoading = true;
+    
+    // Mostrar indicador de carga
+    var sentinel = document.getElementById('infinite-scroll-sentinel');
+    if (sentinel) {
+        sentinel.innerHTML = '<span class="loader-text">⏳ Cargando más...</span>';
+    }
+    
+    try {
+        var nuevoOffset = currentOffset;
+        var response = await fetch('/api/excel/solicitudes?limite=' + TAMANO_LOTE + '&offset=' + nuevoOffset);
+        var result = await response.json();
+        
+        var nuevosDatos = Array.isArray(result) ? result : (result.data || []);
+        
+        if (nuevosDatos.length > 0) {
+            // Agregar nuevos datos a la lista
+            for (var i = 0; i < nuevosDatos.length; i++) {
+                todosDatos.push(nuevosDatos[i]);
+            }
+            
+            currentOffset += nuevosDatos.length;
+            
+            // Verificar si hay más datos
+            var total = Array.isArray(result) ? result.length : (result.total || 0);
+            hasMoreData = currentOffset < total;
+            
+            // Actualizar visualización
+            aplicarFiltros();
+            
+            // Cargar gestines de los nuevos datos
+            var nuevosIds = nuevosDatos.map(function(d) { return d.id_solicitud; });
+            cargarUltimasGestionesBatch(nuevosIds);
+            
+            console.log('Más datos cargados:', nuevosDatos.length, 'total en memoria:', todosDatos.length);
+        } else {
+            hasMoreData = false;
+        }
+        
+    } catch (error) {
+        console.error('Error cargando más datos:', error);
+    } finally {
+        isLoading = false;
+        
+        // Actualizar indicador
+        if (sentinel) {
+            if (hasMoreData) {
+                sentinel.innerHTML = '<span class="loader-text">📜 Scroll para cargar más...</span>';
+            } else {
+                sentinel.innerHTML = '<span class="loader-text">✅ No hay más registros</span>';
+            }
+        }
     }
 }
 
