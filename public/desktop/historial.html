@@ -8,22 +8,28 @@
     <link rel="stylesheet" href="/css/solicitudes.css">
 </head>
 <body>
+    <!-- Drawer Toggle -->
+    <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
+    <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
+    
+    <!-- Drawer -->
+    <aside id="drawer" class="drawer">
+        <div class="drawer-header">
+            <div class="drawer-logo"><h2>📊 Archivox</h2></div>
+            <button class="drawer-close" onclick="Drawer.close()">✕</button>
+        </div>
+        <nav class="drawer-nav">
+            <a href="/" class="drawer-link">📊 Dashboard</a>
+            <a href="/equipo-ventas" class="drawer-link">💰 Control de Ventas</a>
+            <a href="/importar" class="drawer-link">📤 Importar Excel</a>
+            <a href="/solicitudes" class="drawer-link">📋 Solicitudes</a>
+            <a href="/historial" class="drawer-link">🔄 Historial</a>
+            <a href="#" class="drawer-link drawer-link-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
     <div class="layout">
-        <aside class="sidebar" id="sidebar">
-            <div class="logo">
-                <h2>📋 Historial</h2>
-            </div>
-            <nav>
-                <a href="/">📊 Dashboard</a>
-                <a href="/importar">📤 Importar Excel</a>
-                <a href="/solicitudes">📋 Solicitudes</a>
-                <a href="/historial" class="active">🔄 Historial Actualizaciones</a>
-                <a href="/equipo-ventas">💰 Control de Ventas</a>
-                <a href="#" id="btnLogout" style="color: #ef4444; margin-top: auto;">🚪 Cerrar Sesión</a>
-            </nav>
-        </aside>
         <main class="contenido">
-            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
             <h1>🔄 Historial de Actualizaciones</h1>
             
             <!-- Stats Cards -->
@@ -116,10 +122,10 @@
                 <span class="pagina-info" id="paginacionInfo">Página 1 de 1</span>
                 <button id="btnSiguiente" onclick="paginaSiguiente()">Siguiente ➡</button>
             </div>
-        </main>
+</main>
     </div>
-    <div class="menu-overlay" onclick="toggleMenu()"></div>
 
+<script src="/desktop/js/drawer.js"></script>
 <script>
     // Variables de estado
     let paginaActual = 1;

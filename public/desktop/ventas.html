@@ -76,19 +76,27 @@
     </style>
 </head>
 <body>
+    <!-- Drawer Toggle -->
+    <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
+    <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
+    
+    <!-- Drawer -->
+    <aside id="drawer" class="drawer">
+        <div class="drawer-header">
+            <div class="drawer-logo"><h2>📊 Archivox</h2></div>
+            <button class="drawer-close" onclick="Drawer.close()">✕</button>
+        </div>
+        <nav class="drawer-nav">
+            <a href="/" class="drawer-link">📊 Dashboard</a>
+            <a href="/equipo-ventas" class="drawer-link">💰 Control de Ventas</a>
+            <a href="/importar" class="drawer-link">📤 Importar Excel</a>
+            <a href="/solicitudes" class="drawer-link">📋 Solicitudes</a>
+            <a href="/historial" class="drawer-link">🔄 Historial</a>
+            <a href="#" class="drawer-link drawer-link-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
     <div class="layout">
-        <aside class="sidebar">
-            <div class="logo">
-                <h2>📊 Archivox</h2>
-            </div>
-            <nav>
-                <a href="/">📊 Dashboard</a>
-                <a href="/ventas">💰 Ventas Equipo</a>
-                <a href="/importar">📤 Importar Excel</a>
-                <a href="/solicitudes">📋 Solicitudes</a>
-                <a href="#" id="btnLogout" style="color: #ef4444; margin-top: auto;">🚪 Cerrar Sesión</a>
-            </nav>
-</aside>
         <main class="contenido">
             <h1>💰 Control de Ventas del Equipo</h1>
             
@@ -155,6 +163,7 @@
         </main>
     </div>
     
-    <script src="/desktop/js/ventas.js"></script>
+<script src="/desktop/js/ventas.js"></script>
+<script src="/desktop/js/drawer.js"></script>
 </body>
 </html>

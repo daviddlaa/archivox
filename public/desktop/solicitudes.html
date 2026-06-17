@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitudes - Archivox</title>
-<link rel="stylesheet" href="/css/solicitudes.css">
+<link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/solicitudes.css">
     <style>
         body {
             margin: 0;
@@ -60,120 +61,145 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header-actions">
-            <div>
-                <h1>📋 Solicitudes</h1>
-                <p class="subtitulo">Consulta y filtra los registros importados</p>
-            </div>
-            <div>
-                <a href="/" class="btn-secundario">🏠 Dashboard</a>
-                <a href="/importar" class="btn-principal">📤 Importar Excel</a>
-            </div>
+    <!-- Drawer Toggle -->
+    <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
+    <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
+    
+    <!-- Drawer -->
+    <aside id="drawer" class="drawer">
+        <div class="drawer-header">
+            <div class="drawer-logo"><h2>📊 Archivox</h2></div>
+            <button class="drawer-close" onclick="Drawer.close()">✕</button>
         </div>
-        
-<!-- Fila Superior: Stats + Filtros en 3 columnas -->
-        <div class="stats-grid">
-            <!-- Columna 1: Stats -->
-            <div class="stats-column">
-                <div class="stats-row">
-                    <div class="stat-card stat-total">
-                        <span class="stat-value" id="totalRegistros">0</span>
-                        <span class="stat-label">Total Registros</span>
-                    </div>
-                    <div class="stat-card stat-showing">
-                        <span class="stat-value" id="mostrando">0</span>
-                        <span class="stat-label">Mostrando</span>
-                    </div>
-                    <div class="stat-card stat-selected">
-                        <span class="stat-value" id="seleccionadas-count">0</span>
-                        <span class="stat-label">Seleccionadas</span>
-                    </div>
-                </div>
-                <div class="actions-mini">
-                    <button class="btn-action btn-whatsapp" id="btn-whatsapp" title="Enviar a WhatsApp" style="display:none;">📱 WhatsApp</button>
-                </div>
-            </div>
-            
-            <!-- Columna 2: Filtros Estado -->
-            <div class="filter-column">
-                <label class="filter-label">📌 Estado</label>
-                <div class="filter-buttons" id="filtro-estado">
-                    <button class="filter-btn active" data-value="">Todos</button>
-                </div>
-            </div>
-            
-            <!-- Columna 3: Filtros Segmento -->
-            <div class="filter-column">
-                <label class="filter-label">🏷️ Segmento</label>
-                <div class="filter-buttons" id="filtro-segmento">
-                    <button class="filter-btn active" data-value="">Todos</button>
-                </div>
-            </div>
-        </div>
+        <nav class="drawer-nav">
+            <a href="/" class="drawer-link">📊 Dashboard</a>
+            <a href="/equipo-ventas" class="drawer-link">💰 Control de Ventas</a>
+            <a href="/importar" class="drawer-link">📤 Importar Excel</a>
+            <a href="/solicitudes" class="drawer-link">📋 Solicitudes</a>
+            <a href="/historial" class="drawer-link">🔄 Historial</a>
+            <a href="#" class="drawer-link drawer-link-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
 
-        <!-- Fila de Búsqueda -->
-        <div class="search-row">
-            <input type="text" id="cedula" placeholder="🔍 Buscar por cédula, nombres, apellidos o teléfono...">
-        </div>
+    <div class="layout">
+        <main class="contenido">
+            <div class="container">
+                <div class="header-actions">
+                    <div>
+                        <h1>📋 Solicitudes</h1>
+                        <p class="subtitulo">Consulta y filtra los registros importados ok</p>
+                    </div>
+                    <div>
+                        <a href="/" class="btn-secundario">🏠 Dashboard</a>
+                        <a href="/importar" class="btn-principal">📤 Importar Excel</a>
+                    </div>
+                </div>
+                
+                <!-- Fila Superior: Stats + Filtros en 3 columnas -->
+                <div class="stats-grid">
+                    <!-- Columna 1: Stats -->
+                    <div class="stats-column">
+                        <div class="stats-row">
+                            <div class="stat-card stat-total">
+                                <span class="stat-value" id="totalRegistros">0</span>
+                                <span class="stat-label">Total Registros</span>
+                            </div>
+                            <div class="stat-card stat-showing">
+                                <span class="stat-value" id="mostrando">0</span>
+                                <span class="stat-label">Mostrando</span>
+                            </div>
+                            <div class="stat-card stat-selected">
+                                <span class="stat-value" id="seleccionadas-count">0</span>
+                                <span class="stat-label">Seleccionadas</span>
+                            </div>
+                        </div>
+                        <div class="actions-mini">
+                            <button class="btn-action btn-whatsapp" id="btn-whatsapp" title="Enviar a WhatsApp" style="display:none;">📱 WhatsApp</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Columna 2: Filtros Estado -->
+                    <div class="filter-column">
+                        <label class="filter-label">📌 Estado</label>
+                        <div class="filter-buttons" id="filtro-estado">
+                            <button class="filter-btn active" data-value="">Todos</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Columna 3: Filtros Segmento -->
+                    <div class="filter-column">
+                        <label class="filter-label">🏷️ Segmento</label>
+                        <div class="filter-buttons" id="filtro-segmento">
+                            <button class="filter-btn active" data-value="">Todos</button>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- Contenido Principal: Panel Izquierdo + Tabla -->
-        <div class="main-content-grid">
-            <!-- Panel Izquierdo: Info Rápida -->
-            <aside class="info-panel">
-                <h3>📊 Resumen</h3>
-                <div class="info-stats">
-                    <div class="info-stat">
-                        <span class="info-label">Estado Actual</span>
-                        <span class="info-value">Todos</span>
-                    </div>
-                    <div class="info-stat">
-                        <span class="info-label">Segmento</span>
-                        <span class="info-value">Todos</span>
-                    </div>
-                    <div class="info-stat">
-                        <span class="info-label">Última Actualización</span>
-                        <span class="info-value" id="ultima-actualizacion">-</span>
+                <!-- Fila de Búsqueda -->
+                <div class="search-row">
+                    <input type="text" id="cedula" placeholder="🔍 Buscar por cédula, nombres, apellidos o teléfono...">
+                </div>
+
+                <!-- Contenido Principal: Panel Izquierdo + Tabla -->
+                <div class="main-content-grid">
+                    <!-- Panel Izquierdo: Info Rápida -->
+                    <aside class="info-panel">
+                        <h3>📊 Resumen</h3>
+                        <div class="info-stats">
+                            <div class="info-stat">
+                                <span class="info-label">Estado Actual</span>
+                                <span class="info-value">Todos</span>
+                            </div>
+                            <div class="info-stat">
+                                <span class="info-label">Segmento</span>
+                                <span class="info-value">Todos</span>
+                            </div>
+                            <div class="info-stat">
+                                <span class="info-label">Última Actualización</span>
+                                <span class="info-value" id="ultima-actualizacion">-</span>
+                            </div>
+                        </div>
+                        <div class="quick-actions">
+                            <h4>⚡ Acciones Rápidas</h4>
+                            <button class="quick-btn" onclick="exportarSeleccionadas()">📥 Exportar</button>
+                            <button class="quick-btn" onclick="marcarSeleccionadas()">✓ Marcar Todas</button>
+                            <button class="quick-btn" onclick="limpiarFiltros()">🧹 Limpiar</button>
+                            <button class="quick-btn btn-danger" onclick="borrarTodas()">🗑️ Borrar Todo</button>
+                        </div>
+                    </aside>
+                    
+                    <!-- Panel Derecho: Cards o Tabla -->
+                    <div class="table-panel">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th class="th-checkbox">
+                                            <input type="checkbox" id="seleccionar-todos" title="Seleccionar todos">
+                                        </th>
+                                        <th class="sortable" data-columna="id_solicitud">Solicitud</th>
+                                        <th class="sortable" data-columna="estado">Estado</th>
+                                        <th class="sortable" data-columna="cedula">Cédula</th>
+                                        <th class="sortable" data-columna="nombre">Nombre</th>
+                                        <th class="sortable" data-columna="celular">Celular</th>
+                                        <th class="sortable" data-columna="codigo_plus">Código / Segmento</th>
+                                        <th class="sortable" data-columna="producto">Producto / Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla">
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Contenedor de Cards para escritorio -->
+                        <div id="cards-container" class="cards-container"></div>
                     </div>
                 </div>
-<div class="quick-actions">
-                    <h4>⚡ Acciones Rápidas</h4>
-                    <button class="quick-btn" onclick="exportarSeleccionadas()">📥 Exportar</button>
-                    <button class="quick-btn" onclick="marcarSeleccionadas()">✓ Marcar Todas</button>
-                    <button class="quick-btn" onclick="limpiarFiltros()">🧹 Limpiar</button>
-                    <button class="quick-btn btn-danger" onclick="borrarTodas()">🗑️ Borrar Todo</button>
-                </div>
-            </aside>
-            
-<!-- Panel Derecho: Cards o Tabla -->
-            <div class="table-panel">
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="th-checkbox">
-                                    <input type="checkbox" id="seleccionar-todos" title="Seleccionar todos">
-                                </th>
-                                <th class="sortable" data-columna="id_solicitud">Solicitud</th>
-                                <th class="sortable" data-columna="estado">Estado</th>
-                                <th class="sortable" data-columna="cedula">Cédula</th>
-                                <th class="sortable" data-columna="nombre">Nombre</th>
-                                <th class="sortable" data-columna="celular">Celular</th>
-<th class="sortable" data-columna="codigo_plus">Código / Segmento</th>
-                                <th class="sortable" data-columna="producto">Producto / Fecha</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla">
-                        </tbody>
-                    </table>
-                </div>
-                <!-- Contenedor de Cards para escritorio -->
-                <div id="cards-container" class="cards-container"></div>
             </div>
-        </div>
+        </main>
     </div>
 
 <script src="/desktop/js/solicitudes.js"></script>
+<script src="/desktop/js/drawer.js"></script>
 </body>
 </html>
