@@ -930,6 +930,82 @@ exports.limpiarSolicitudes = async (req, res) => {
     }
 };
 
+// ================== BÚSQUEDA DIRECTA EN SERVIDOR ==================
+
+// Buscar solicitudes directamente en el servidor
+// Esta función evita el infinite scroll cuando el usuario busca
+exports.buscarSolicitudes = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const {
+        q = '',           // Término de búsqueda (cedula, nombre, celular)
+        estado = '',       // Filtro por estado
+        segmento = '',    // Filtro por segmento
+        limite = 100,     // Límite de resultados
+        offset = 0        // Offset para paginación
+    } = req.query;
+
+    try {
+        let sql = 'SELECT * FROM solicitudes WHERE usuario_id = $1';
+        const params = [usuarioId];
+        let paramIndex = 2;
+
+        // Filtro por búsqueda (cedula, nombre o celular)
+        if (q && q.trim()) {
+            const termino = '%' + q.trim() + '%';
+            sql += ` AND (
+                cedula LIKE $${paramIndex} 
+                OR LOWER(nombre) LIKE LOWER($${paramIndex}) 
+                OR celular LIKE $${paramIndex}
+            )`;
+            params.push(termino);
+            paramIndex++;
+        }
+
+        // Filtro por estado
+        if (estado) {
+            sql += ` AND estado = $${paramIndex}`;
+            params.push(estado);
+            paramIndex++;
+        }
+
+        // Filtro por segmento
+        if (segmento) {
+            sql += ` AND segmento = $${paramIndex}`;
+            params.push(segmento);
+            paramIndex++;
+        }
+
+        // Contar total para paginación
+        let countSql = sql.replace('SELECT *', 'SELECT COUNT(*) as total');
+        
+        // Agregar orden y paginación
+        sql += ' ORDER BY id DESC';
+        sql += ' LIMIT ' + parseInt(limite) + ' OFFSET ' + parseInt(offset);
+
+        // Ejecutar query principal
+        const result = await pool.query(sql, params);
+        
+        // Ejecutar query de conteo
+        const countParams = params.slice(0, -2); // Quitar LIMIT y OFFSET del count
+        const countResult = await pool.query(countSql, params.slice(0, paramIndex - 1));
+        const total = parseInt(countResult.rows[0]?.total) || 0;
+
+        res.json({
+            data: result.rows,
+            total: total,
+            limite: parseInt(limite),
+            offset: parseInt(offset)
+        });
+    } catch (err) {
+        console.error('Error buscarSolicitudes:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // ================== HISTORIAL DE ACTUALIZACIONES ==================
 
 // Obtener historial de actualizaciones

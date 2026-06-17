@@ -217,6 +217,70 @@ var columnaOrdenar = 'id_solicitud';
 var todosDatos = []; // Almacenar todos los datos para filtrar localmente
 var filtros = { estado: '', segmento: '', busqueda: '' };
 
+// ================== BÚSQUEDA EN SERVIDOR ==================
+// Nueva implementación: buscar directamente en el servidor
+var busquedaActiva = false;
+var debounceBusqueda;
+
+// Función para buscar en el servidor
+async function buscarEnServidor(termino) {
+    try {
+        // Construir URL con parámetros
+        var url = '/api/excel/solicitudes/buscar?q=' + encodeURIComponent(termino);
+        
+        // Agregar filtros activos
+        if (estadoActual) {
+            url += '&estado=' + encodeURIComponent(estadoActual);
+        }
+        if (segmentoActual) {
+            url += '&segmento=' + encodeURIComponent(segmentoActual);
+        }
+        
+        var response = await fetch(url);
+        var result = await response.json();
+        
+        var datosRecibidos = Array.isArray(result) ? result : (result.data || []);
+        
+        // Guardar datos
+        todosDatos = datosRecibidos;
+        
+        // Actualizar total
+        var total = Array.isArray(result) ? result.length : (result.total || 0);
+        document.getElementById('totalRegistros').textContent = total;
+        document.getElementById('mostrando').textContent = datosRecibidos.length;
+        
+        // Renderizar
+        renderizarTabla(datosRecibidos);
+        
+        console.log('Búsqueda en servidor:', datosRecibidos.length, 'resultados para:', termino);
+    } catch (error) {
+        console.error('Error en búsqueda:', error);
+    }
+}
+
+// Función para buscar con debounce
+function buscarConDebounce() {
+    clearTimeout(debounceBusqueda);
+    
+    var inputBusqueda = document.getElementById('cedula');
+    var termino = inputBusqueda ? inputBusqueda.value.trim() : '';
+    
+    // Si no hay término, cargar datos normales
+    if (!termino) {
+        busquedaActiva = false;
+        init(); // Volver al modo normal con infinite scroll
+        return;
+    }
+    
+    // Activar modo búsqueda
+    busquedaActiva = true;
+    
+    // Debounce de 300ms
+    debounceBusqueda = setTimeout(function() {
+        buscarEnServidor(termino);
+    }, 300);
+}
+
 // Cargar los totales
 async function cargarTotales() {
     try {
@@ -588,14 +652,10 @@ function recrearSentinel() {
     }
 }
 
-// Búsqueda en vivo (live search) con debounce
-var debounceTimer;
+// Búsqueda en vivo (live search) con debounce - NUEVA VERSIÓN: buscar en servidor
 if (document.getElementById('cedula')) {
     document.getElementById('cedula').oninput = function() {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(function() {
-            aplicarFiltros();
-        }, 300);
+        buscarConDebounce(); // Nueva función que busca directamente en el servidor
     };
 }
 

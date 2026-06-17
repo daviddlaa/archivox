@@ -23,6 +23,14 @@ router.post(
 );
 
 router.get('/solicitudes', excelController.listarSolicitudes);
+
+// Búsqueda directa en servidor (evita infinite scroll)
+router.get(
+    '/solicitudes/buscar',
+    requiresAuth,
+    excelController.buscarSolicitudes
+);
+
 router.get(
     '/dashboard',
     excelController.dashboard
