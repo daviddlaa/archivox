@@ -1,15 +1,25 @@
-actuañ# TODO - Implementar búsqueda directa en servidor
+# TODO: Filtrado directo en servidor (Estado y Segmento)
 
-## Backend
-- [x] Agregar función `buscarSolicitudes` en `src/controllers/excel.controller.js`
-- [x] Agregar ruta `/api/excel/solicitudes/buscar` en `src/routes/excel.routes.js`
+## Objetivo
+Hacer que los filtros de estado y segmento filtren directamente del servidor de base de datos, no del cache del navegador.
 
-## Frontend Desktop
-- [x] Modificar evento oninput para buscar en servidor
-- [x] Desactivar infinite scroll cuando hay búsqueda activa
+## Pasos completados:
 
-## Frontend Móvil
-- [x] Modificar evento oninput para buscar en servidor
-- [x] Desactivar infinite scroll cuando hay búsqueda activa
+- [x] 1. Análisis del código actual
+- [x] 2. Plan de acción aprobado por el usuario
+- [x] 3. Modificar `public/desktop/js/solicitudes.js`
+      - Crear función `filtrarEnServidor()` 
+      - Modificar `configurarEventosBotones()` para llamar al servidor
 
-## ✅ ESTADO: COMPLETADO
+- [x] 4. Modificar `public/movil/js/solicitudes.js`
+      - Ya tenía la función `filtrarEnServidor()` implementada
+      - Funcionalidad verificada en `adjuntarEventos()`
+
+## Pendiente:
+
+- [ ] 5. Probar en escritorio y móvil
+
+## Notas:
+- La carga inicial de 50 resultados NO se ve afectada
+- Infinite scroll sigue funcionando normalmente
+- El buscador de texto ya usa el servidor

@@ -222,6 +222,50 @@ var filtros = { estado: '', segmento: '', busqueda: '' };
 var busquedaActiva = false;
 var debounceBusqueda;
 
+// ================== FILTRAR EN SERVIDOR (NUEVO) ==================
+// Filtra estado y segmento directamente del servidor (no del cache local)
+var filtrosActivos = false;
+
+async function filtrarEnServidor() {
+    try {
+        // Construir URL con parámetros de filtro (solo estado y/o segmento)
+        var url = '/api/excel/solicitudes/buscar?q=%'; // % = comodín para incluir todos
+        
+        // Agregar filtros activos
+        if (estadoActual) {
+            url += '&estado=' + encodeURIComponent(estadoActual);
+        }
+        if (segmentoActual) {
+            url += '&segmento=' + encodeURIComponent(segmentoActual);
+        }
+        
+        var response = await fetch(url);
+        var result = await response.json();
+        
+        var datosRecibidos = Array.isArray(result) ? result : (result.data || []);
+        
+        // Guardar datos
+        todosDatos = datosRecibidos;
+        
+        // Actualizar total
+        var total = Array.isArray(result) ? result.length : (result.total || 0);
+        
+        // Activar bandera de filtros
+        filtrosActivos = true;
+        hasMoreData = false; // Deshabilitar infinite scroll cuando hay filtros
+        
+        // Actualizar el panel de total
+        document.getElementById('mostrando').textContent = datosRecibidos.length;
+        
+        // Renderizar tabla y cards
+        renderizarTabla(datosRecibidos);
+        
+        console.log('Filtro en servidor:', datosRecibidos.length, 'resultados - Estado:', estadoActual, 'Segmento:', segmentoActual);
+    } catch (error) {
+        console.error('Error en filtrarEnServidor:', error);
+    }
+}
+
 // Función para buscar en el servidor
 async function buscarEnServidor(termino) {
     try {
@@ -349,7 +393,7 @@ async function cargarEstados() {
     }
 }
 
-// Configurar eventos de los botones
+// Configurar eventos de los botones - NUEVO: filtra directamente del servidor
 function configurarEventosBotones() {
     // Botones de estado
     var botonesEstado = document.querySelectorAll('#filtro-estado .filter-btn');
@@ -361,7 +405,8 @@ function configurarEventosBotones() {
             }
             this.classList.add('active');
             estadoActual = this.dataset.value;
-            aplicarFiltros();
+            // NUEVO: Llamar al servidor directamente para filtrar
+            filtrarEnServidor();
         };
     }
     
@@ -375,7 +420,8 @@ function configurarEventosBotones() {
             }
             this.classList.add('active');
             segmentoActual = this.dataset.value;
-            aplicarFiltros();
+            // NUEVO: Llamar al servidor directamente para filtrar
+            filtrarEnServidor();
         };
     }
 }
