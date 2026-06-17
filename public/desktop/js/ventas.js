@@ -243,12 +243,32 @@ function agregarVendedor() {
     renderizarCards();
 }
 
-// Actualizar vendedor
-function actualizarVendedor(index, campo, valor) {
+// Actualizar vendedor - CON AUTO-GUARDADO
+async function actualizarVendedor(index, campo, valor) {
     vendedores[index][campo] = valor;
     renderizarCards();
     actualizarResumen();
     actualizarGrafico();
+    
+    // Auto-guardar inmediatamente en la base de datos
+    const v = vendedores[index];
+    if (v.vendedor && v.vendedor.trim() !== '') {
+        try {
+            await fetch('/api/excel/ventas-equipo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    mes: currentMes,
+                    vendedor: v.vendedor,
+                    periodo1: parseFloat(v.periodo1) || 0,
+                    periodo2: parseFloat(v.periodo2) || 0
+                })
+            });
+            console.log(`💾 Auto-guardado: ${v.vendedor} - ${campo} = ${valor}`);
+        } catch (err) {
+            console.error('Error auto-guardando:', err);
+        }
+    }
 }
 
 // Eliminar vendedor

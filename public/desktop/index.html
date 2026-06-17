@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Archivox</title>
-<link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/main.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -12,48 +12,68 @@
     <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
     <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
     
-    
-    </aside>
-    
     <div class="layout">
         <main class="contenido">
-            <h1>Dashboard</h1>
-<div class="cards">
-                <div class="card card-total">
-                    <div class="card-icon">📄</div>
-                    <div class="card-content">
-                        <h3>Total Solicitudes</h3>
+<!-- Header Simple -->
+            <div class="dashboard-header">
+                <h1>📊 Dashboard</h1>
+            </div>
+            
+            <!-- Quick Links - Debajo del header -->
+            <div class="dashboard-quick-links">
+                <a href="/importar" class="btn-import">📤 Importar</a>
+                <a href="/solicitudes" class="btn-solicitudes">📋 Solicitudes</a>
+                <a href="/equipo-ventas" class="btn-ventas">💰 Ventas</a>
+                <a href="/historial" class="btn-historial">🔄 Historial</a>
+            </div>
+            
+            <!-- Stats Row -->
+            <div class="dashboard-stats">
+                <div class="dashboard-stat-card stat-total">
+                    <div class="dashboard-stat-icon">📄</div>
+                    <div class="dashboard-stat-info">
+                        <h3>Total</h3>
                         <span id="totalSolicitudes">0</span>
                     </div>
                 </div>
-                <div class="card card-verde">
-                    <div class="card-icon">✅</div>
-                    <div class="card-content">
+                <div class="dashboard-stat-card stat-verde">
+                    <div class="dashboard-stat-icon">✅</div>
+                    <div class="dashboard-stat-info">
                         <h3>Activadas</h3>
                         <span id="totalActivadas">0</span>
                     </div>
                 </div>
-                <div class="card card-rojo">
-                    <div class="card-icon">❌</div>
-                    <div class="card-content">
+                <div class="dashboard-stat-card stat-rojo">
+                    <div class="dashboard-stat-icon">❌</div>
+                    <div class="dashboard-stat-info">
                         <h3>Rechazadas</h3>
                         <span id="totalRechazadas">0</span>
                     </div>
                 </div>
-                <div class="card card-amarillo">
-                    <div class="card-icon">⏳</div>
-                    <div class="card-content">
+                <div class="dashboard-stat-card stat-amarillo">
+                    <div class="dashboard-stat-icon">⏳</div>
+                    <div class="dashboard-stat-info">
                         <h3>Pendientes</h3>
                         <span id="totalPendientes">0</span>
                     </div>
                 </div>
-
             </div>
-<div class="bienvenida">
-                <h2>Bienvenido al sistema</h2>
-                <p>Desde aquí podrás importar Excel, consultar solicitudes y monitorear el estado de los créditos.</p>
+            
+            <!-- Welcome + Actions -->
+            <div class="dashboard-welcome">
+                <div class="dashboard-welcome-text">
+                    <h2>Bienvenido al sistema</h2>
+                    <p>Desde aquí podrás importar Excel, consultar solicitudes y monitorear el estado de los créditos.</p>
+                </div>
+                <div class="dashboard-welcome-actions">
+                    <a href="/importar" class="btn-welcome btn-welcome-primary">📤 Importar Excel</a>
+                    <a href="/solicitudes" class="btn-welcome">📋 Solicitudes</a>
+                    <a href="/equipo-ventas" class="btn-welcome">💰 Ventas</a>
+                </div>
             </div>
-            <div class="dashboard-grid">
+            
+            <!-- Charts Grid -->
+            <div class="dashboard-panels">
                 <div class="panel">
                     <h3>📊 Estados</h3>
                     <div class="chart-container">
@@ -69,7 +89,8 @@
             </div>
         </main>
     </div>
-<script src="/desktop/js/dashboard.js"></script>
-<script src="/desktop/js/drawer.js"></script>
+    
+    <script src="/desktop/js/dashboard.js"></script>
+    <script src="/desktop/js/drawer.js"></script>
 </body>
 </html>

@@ -1,0 +1,159 @@
+/**
+ * Drawer Unificado para Móvil
+ * Se incluye en todas las páginas móviles
+ * 
+ * Funciones:
+ * - abrirDrawer() / cerrarDrawer()
+ * - toggleDrawer()
+ * - Manejo de eventos (Escape, click outside)
+ */
+
+console.log('Drawer.js móvil cargado');
+
+// Verificar si ya existe el drawer en el DOM
+function initDrawer() {
+    console.log('Inicializando drawer móvil...');
+    
+    var existingDrawer = document.getElementById('drawer');
+    var existingOverlay = document.getElementById('drawer-overlay');
+    
+    if (existingDrawer && existingOverlay) {
+        console.log('Drawer ya existe en el DOM');
+        return;
+    }
+    
+    console.log('Creando drawer dinámicamente...');
+    crearDrawer();
+}
+
+// Crear el drawer dinámicamente
+function crearDrawer() {
+    // Overlay
+    var overlay = document.createElement('div');
+    overlay.id = 'drawer-overlay';
+    overlay.className = 'drawer-overlay';
+    overlay.onclick = cerrarDrawer;
+    
+    // Drawer
+    var drawer = document.createElement('aside');
+    drawer.id = 'drawer';
+    drawer.className = 'drawer';
+    
+    // HTML del drawer
+    drawer.innerHTML = `
+        <div class="drawer-header">
+            <span class="drawer-header-title">📋 Archivox</span>
+            <button class="drawer-close" onclick="cerrarDrawer()">✕</button>
+        </div>
+        <ul class="drawer-menu">
+            <li>
+                <a href="/m">
+                    <span class="drawer-menu-icon">📊</span>
+                    Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="/m/solicitudes">
+                    <span class="drawer-menu-icon">📋</span>
+                    Solicitudes
+                </a>
+            </li>
+            <li>
+                <a href="/m/importar">
+                    <span class="drawer-menu-icon">📤</span>
+                    Importar
+                </a>
+            </li>
+            <li>
+                <a href="/m/equipo-ventas">
+                    <span class="drawer-menu-icon">💰</span>
+                    Ventas
+                </a>
+            </li>
+            <li>
+                <a href="/m/historial">
+                    <span class="drawer-menu-icon">🔄</span>
+                    Historial
+                </a>
+            </li>
+            <li class="drawer-menu-logout">
+                <a href="#" onclick="cerrarSesion()">
+                    <span class="drawer-menu-icon">🚪</span>
+                    Cerrar Sesión
+                </a>
+            </li>
+        </ul>
+    `;
+    
+    // Insertar en el body
+    document.body.appendChild(overlay);
+    document.body.appendChild(drawer);
+}
+
+// Funciones globales
+
+function abrirDrawer() {
+    var drawer = document.getElementById('drawer');
+    var overlay = document.getElementById('drawer-overlay');
+    
+    if (drawer && overlay) {
+        drawer.classList.add('open');
+        overlay.classList.add('open');
+        console.log('Drawer abierto');
+    } else {
+        console.error('Elementos del drawer no encontrados');
+    }
+}
+
+function cerrarDrawer() {
+    var drawer = document.getElementById('drawer');
+    var overlay = document.getElementById('drawer-overlay');
+    
+    if (drawer && overlay) {
+        drawer.classList.remove('open');
+        overlay.classList.remove('open');
+        console.log('Drawer cerrado');
+    }
+}
+
+function toggleDrawer() {
+    var drawer = document.getElementById('drawer');
+    
+    if (drawer && drawer.classList.contains('open')) {
+        cerrarDrawer();
+    } else {
+        abrirDrawer();
+    }
+}
+
+// Cerrar sesión
+function cerrarSesion() {
+    if (confirm('¿Estás seguro de cerrar sesión?')) {
+        fetch('/auth/logout', { 
+            method: 'POST', 
+            credentials: 'include' 
+        })
+        .then(function() { 
+            window.location.href = '/login'; 
+        })
+        .catch(function() { 
+            window.location.href = '/login'; 
+        });
+    }
+    return false;
+}
+
+// Event listeners
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarDrawer();
+    }
+});
+
+// Inicializar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDrawer);
+} else {
+    // Si ya está listo, ejecutar después de un pequeño delay
+    setTimeout(initDrawer, 0);
+}

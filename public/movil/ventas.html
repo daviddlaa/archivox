@@ -3,16 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Equipo de Ventas - Archivox</title>
+    <title>Equipo de Ventas - Archivox</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="/movil/css/estilos.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding-bottom: 70px; }
-        
-        .header { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: white; padding: 20px; position: sticky; top: 0; z-index: 100; }
-        .header h1 { font-size: 20px; margin-bottom: 5px; }
-        
         .selector-mes { background: white; padding: 15px; margin: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
         .selector-mes label { font-size: 14px; color: #6b7280; display: block; margin-bottom: 8px; }
         .selector-mes select { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; }
@@ -23,8 +18,7 @@
         .resumen-card .valor { font-size: 22px; font-weight: bold; color: #1f2937; }
         .resumen-card .meta { font-size: 11px; color: #6b7280; }
         
-/* Tabla */
-/* Cards para móvil - MÁS GRANDES */
+        /* Cards para móvil */
         .cards-container { padding: 0 15px; padding-bottom: 100px; display: flex; flex-direction: column; gap: 16px; }
         .vendedor-card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .vendedor-card .nombre { font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 12px; }
@@ -37,12 +31,12 @@
         .vendedor-card .inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
         .vendedor-card .inputs input { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; }
         .vendedor-card .meta-badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-top: 8px; }
-.vendedor-card .meta-badge.alcanzado { background: #d1fae5; color: #065f46; }
+        .vendedor-card .meta-badge.alcanzado { background: #d1fae5; color: #065f46; }
         .vendedor-card .meta-badge.faltante { background: #fef3c7; color: #92400e; }
         .vendedor-card .meta-badge.sin-meta { background: #f3f4f6; color: #6b7280; }
         .vendedor-card .btn-accion { display: flex; gap: 8px; margin-top: 12px; }
         
-        /* Botones flotantes (FAB) - FLOATING ACTION BUTTONS */
+        /* Botones flotantes */
         .fab-container { position: fixed; bottom: 80px; right: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 999; }
         .fab-btn { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: transform 0.2s; }
         .fab-btn:active { transform: scale(0.9); }
@@ -50,37 +44,32 @@
         .fab-guardar { background: #3b82f6; color: white; }
         .fab-config { background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: white; }
         
-        /* Ocultar botones originales */
         .btn-config-meta, .btn-agregar, .btn-guardar { display: none; }
-        
-        /* Tabla (oculta, se usa en escritorio) */
         .tabla-ventas { display: none; }
         
         .btn-eliminar { background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
         
-        /* Estado */
         .estado-bono { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
         .estado-bono.alcanzado { background: #d1fae5; color: #065f46; }
         .estado-bono.faltante { background: #fef3c7; color: #92400e; }
         
-        /* Config */
         .config-bonos { background: white; margin: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
         .config-bonos h3 { font-size: 16px; color: #1f2937; margin-bottom: 15px; }
         .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .config-grid label { font-size: 12px; color: #6b7280; }
         .config-grid input { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; }
-        
-.nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 8px 4px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
-        .nav-bottom a { text-decoration: none; color: #6b7280; font-size: 9px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-        .nav-bottom a span { font-size: 18px; }
-        .nav-bottom a.active { color: #2563eb; }
     </style>
 </head>
 <body>
+    <!-- Header -->
     <div class="header">
-        <h1>💰 Control de Ventas</h1>
+        <div class="header-title">
+            <h1>💰 Control de Ventas</h1>
+        </div>
+        <button class="btn-menu" onclick="abrirDrawer()">☰</button>
     </div>
     
+    <!-- Selector Mes -->
     <div class="selector-mes">
         <label>Seleccionar Mes:</label>
         <select id="selectorMes">
@@ -88,6 +77,7 @@
         </select>
     </div>
     
+    <!-- Resumen -->
     <div class="resumen">
         <div class="resumen-card">
             <h3>Total Equipo</h3>
@@ -101,17 +91,12 @@
         </div>
     </div>
     
+    <!-- Tabla (oculta) -->
     <div class="tabla-ventas">
         <table>
             <thead>
                 <tr>
-                    <th>Vendedor</th>
-                    <th>P1</th>
-                    <th>P2</th>
-                    <th>Suma</th>
-<th>Meta</th>
-                    <th>Falta</th>
-                    <th></th>
+                    <th>Vendedor</th><th>P1</th><th>P2</th><th>Suma</th><th>Meta</th><th>Falta</th><th></th>
                 </tr>
             </thead>
             <tbody id="tablaVendedores">
@@ -120,20 +105,21 @@
         </table>
     </div>
     
-<button class="btn-config-meta" onclick="mostrarConfigMetas()">⚙️ Configurar Metas</button>
+    <button class="btn-config-meta" onclick="mostrarConfigMetas()">⚙️ Configurar Metas</button>
     <button class="btn-agregar" onclick="agregarVendedor()">+ Agregar Vendedor</button>
     <button class="btn-guardar" onclick="guardarTodo()">💾 Guardar Todo</button>
     
-    <!-- Cards container for móvil -->
+    <!-- Cards container -->
     <div class="cards-container" id="cardsVendedores"></div>
     
-    <!-- Botones flotantes (FAB) -->
+    <!-- Botones flotantes -->
     <div class="fab-container">
         <button class="fab-btn fab-agregar" onclick="agregarVendedor()" title="Agregar Vendedor">+</button>
         <button class="fab-btn fab-guardar" onclick="guardarTodo()" title="Guardar Todo">💾</button>
         <button class="fab-btn fab-config" onclick="mostrarConfigMetas()" title="Configurar Metas">⚙️</button>
     </div>
     
+    <!-- Config Bonos -->
     <div class="config-bonos" style="display: none;">
         <h3>⚙️ Configurar Bonos</h3>
         <div class="config-grid">
@@ -147,15 +133,31 @@
         <button class="btn-guardar" onclick="guardarConfigBonos()" style="margin-top: 15px;">Guardar Config</button>
     </div>
     
-<nav class="nav-bottom">
-        <a href="/m"><span>📊</span>Dashboard</a>
-        <a href="/m/solicitudes"><span>📋</span>Solicitudes</a>
-        <a href="/m/importar"><span>📤</span>Importar</a>
-        <a href="/m/equipo-ventas" class="active"><span>💰</span>Ventas</a>
-        <a href="/m/historial"><span>🔄</span>Historial</a>
-        <a href="#" id="btnLogout"><span>🚪</span>Salir</a>
+    <!-- Footer -->
+    <nav class="nav-bottom">
+        <a href="/m">
+            <span class="nav-bottom-icon">📊</span>
+            Dashboard
+        </a>
+        <a href="/m/solicitudes">
+            <span class="nav-bottom-icon">📋</span>
+            Solicitudes
+        </a>
+        <a href="/m/importar">
+            <span class="nav-bottom-icon">📤</span>
+            Importar
+        </a>
+        <a href="/m/equipo-ventas" class="active">
+            <span class="nav-bottom-icon">💰</span>
+            Ventas
+        </a>
+        <a href="/m/historial">
+            <span class="nav-bottom-icon">🔄</span>
+            Historial
+        </a>
     </nav>
     
+    <script src="/movil/js/drawer.js"></script>
     <script src="/movil/js/ventas.js"></script>
 </body>
 </html>

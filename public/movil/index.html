@@ -5,128 +5,94 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Archivox - Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding-bottom: 70px; }
-        
-        .header { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: white; padding: 20px; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; }
-        .header h1 { font-size: 22px; }
-        .header p { font-size: 13px; opacity: 0.8; }
-        .btn-menu { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 5px; }
-        
-        /* Drawer Menu */
-        .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 199; display: none; }
-        .drawer-overlay.open { display: block; }
-        .drawer { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: white; z-index: 200; transition: left 0.3s ease; box-shadow: 4px 0 15px rgba(0,0,0,0.2); }
-        .drawer.open { left: 0; }
-        .drawer-header { background: linear-gradient(135deg, #1f2937, #111827); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .drawer-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
-        .drawer-menu { list-style: none; padding: 0; margin: 0; }
-        .drawer-menu li { border-bottom: 1px solid #f3f4f6; }
-        .drawer-menu a { display: flex; align-items: center; gap: 12px; padding: 16px 20px; text-decoration: none; color: #1f2937; font-size: 16px; font-weight: 500; transition: background 0.2s; }
-        .drawer-menu a:hover { background: #f3f4f6; }
-        .drawer-menu a span { font-size: 20px; }
-        
-        .bienvenida { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 15px; padding: 20px; border-radius: 12px; color: white; }
-        .bienvenida h2 { font-size: 18px; margin-bottom: 5px; }
-        .bienvenida p { font-size: 14px; opacity: 0.9; }
-        
-        .cards-cont { display: flex; flex-direction: column; gap: 12px; padding: 0 15px; }
-        .card { background: white; border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .icono { font-size: 28px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
-        .card-total .icono { background: #e0e7ff; }
-        .card-verde .icono { background: #d1fae5; }
-        .card-rojo .icono { background: #fee2e2; }
-.card-amarillo .icono { background: #fef3c7; }
-        .card-azul .icono { background: #dbeafe; }
-        .card-morado .icono { background: #ede9fe; }
-        .info h3 { font-size: 12px; color: #6b7280; text-transform: uppercase; }
-        .info span { font-size: 24px; font-weight: bold; color: #1f2937; }
-        
-        .panel { background: white; margin: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .panel h3 { font-size: 16px; color: #1f2937; margin-bottom: 15px; }
-        .chart-cont { position: relative; height: 220px; }
-        
-.nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 8px 4px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
-        .nav-bottom a { text-decoration: none; color: #6b7280; font-size: 9px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-        .nav-bottom a span { font-size: 18px; }
-        .nav-bottom a.active { color: #2563eb; }
-    </style>
+    <link rel="stylesheet" href="/movil/css/estilos.css">
 </head>
 <body>
-<div class="header">
-        <div>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-title">
             <h1>📊 Archivox</h1>
             <p>Dashboard</p>
         </div>
         <button class="btn-menu" onclick="abrirDrawer()">☰</button>
     </div>
 
-<div class="bienvenida">
+    <!-- Contenido -->
+    <div class="bienvenida">
         <h2>Bienvenido al sistema</h2>
         <p>Consulta el estado de tus solicitudes</p>
     </div>
 
-    <div class="cards-cont">
-        <div class="card card-total">
-            <div class="icono">📄</div>
-            <div class="info"><h3>Total</h3><span id="totalSolicitudes">0</span></div>
+    <div class="cards-container">
+        <div class="card">
+            <div class="card-icon" style="background: #e0e7ff;">📄</div>
+            <div class="card-info">
+                <h3>Total</h3>
+                <span id="totalSolicitudes">0</span>
+            </div>
         </div>
-        <div class="card card-verde">
-            <div class="icono">✅</div>
-            <div class="info"><h3>Activadas</h3><span id="totalActivadas">0</span></div>
+        <div class="card">
+            <div class="card-icon" style="background: #d1fae5;">✅</div>
+            <div class="card-info">
+                <h3>Activadas</h3>
+                <span id="totalActivadas">0</span>
+            </div>
         </div>
-        <div class="card card-rojo">
-            <div class="icono">❌</div>
-            <div class="info"><h3>Rechazadas</h3><span id="totalRechazadas">0</span></div>
+        <div class="card">
+            <div class="card-icon" style="background: #fee2e2;">❌</div>
+            <div class="card-info">
+                <h3>Rechazadas</h3>
+                <span id="totalRechazadas">0</span>
+            </div>
         </div>
-        <div class="card card-amarillo">
-            <div class="icono">⏳</div>
-            <div class="info"><h3>Pendientes</h3><span id="totalPendientes">0</span></div>
+        <div class="card">
+            <div class="card-icon" style="background: #fef3c7;">⏳</div>
+            <div class="card-info">
+                <h3>Pendientes</h3>
+                <span id="totalPendientes">0</span>
+            </div>
         </div>
     </div>
 
     <div class="panel">
         <h3>📊 Estados</h3>
-        <div class="chart-cont"><canvas id="chartEstados"></canvas></div>
+        <div style="position: relative; height: 220px;">
+            <canvas id="chartEstados"></canvas>
+        </div>
     </div>
 
     <div class="panel">
         <h3>🎯 Segmentos</h3>
-        <div class="chart-cont"><canvas id="chartSegmentos"></canvas></div>
+        <div style="position: relative; height: 220px;">
+            <canvas id="chartSegmentos"></canvas>
+        </div>
     </div>
 
-<nav class="nav-bottom">
-        <a href="/m" class="active"><span>📊</span>Dashboard</a>
-        <a href="/m/solicitudes"><span>📋</span>Solicitudes</a>
-        <a href="/m/importar"><span>📤</span>Importar</a>
-        <a href="#" id="btnLogout"><span>🚪</span>Salir</a>
+    <!-- Footer -->
+    <nav class="nav-bottom">
+        <a href="/m" class="active">
+            <span class="nav-bottom-icon">📊</span>
+            Dashboard
+        </a>
+        <a href="/m/solicitudes">
+            <span class="nav-bottom-icon">📋</span>
+            Solicitudes
+        </a>
+        <a href="/m/importar">
+            <span class="nav-bottom-icon">📤</span>
+            Importar
+        </a>
+        <a href="/m/equipo-ventas">
+            <span class="nav-bottom-icon">💰</span>
+            Ventas
+        </a>
+        <a href="/m/historial">
+            <span class="nav-bottom-icon">🔄</span>
+            Historial
+        </a>
     </nav>
 
-<!-- Drawer Menu -->
-<div class="drawer-overlay" id="drawerOverlay" onclick="cerrarDrawer()"></div>
-<div class="drawer" id="drawer">
-    <div class="drawer-header">
-        <span>📋 Menú</span>
-        <button class="drawer-close" onclick="cerrarDrawer()">✕</button>
-    </div>
-    <ul class="drawer-menu">
-        <li><a href="/m/equipo-ventas"><span>💰</span>Ventas</a></li>
-        <li><a href="/m/historial"><span>🔄</span>Historial</a></li>
-    </ul>
-</div>
-
-<script>
-function abrirDrawer() {
-    document.getElementById('drawerOverlay').classList.add('open');
-    document.getElementById('drawer').classList.add('open');
-}
-function cerrarDrawer() {
-    document.getElementById('drawerOverlay').classList.remove('open');
-    document.getElementById('drawer').classList.remove('open');
-}
-</script>
-
-<script src="/movil/js/dashboard.js"></script>
+    <script src="/movil/js/drawer.js"></script>
+    <script src="/movil/js/dashboard.js"></script>
 </body>
 </html>

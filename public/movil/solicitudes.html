@@ -4,13 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitudes - Archivox</title>
+    <link rel="stylesheet" href="/movil/css/estilos.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding-bottom: 70px; }
-        
-        .header { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: white; padding: 20px; position: sticky; top: 0; z-index: 100; }
-        .header h1 { font-size: 20px; margin-bottom: 3px; }
-        
         .stats { display: flex; gap: 10px; padding: 15px; background: white; }
         .stat { flex: 1; background: #f8fafc; padding: 12px; border-radius: 10px; text-align: center; }
         .stat span { display: block; font-size: 18px; font-weight: bold; color: #1f2937; }
@@ -25,14 +20,11 @@
         .search { padding: 0 15px; margin-bottom: 15px; }
         .search input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; }
         
-        .cards-list { padding: 0 15px; display: flex; flex-direction: column; gap: 10px; }
+        .cards-list { padding: 0 15px; display: flex; flex-direction: column; gap: 10px; padding-bottom: 80px; }
         .client-card { background: white; border-radius: 12px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
         .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .client-id { font-size: 12px; font-weight: 600; color: #6b7280; }
         .badge { padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
-        .estado-ACTIVADA { background: #dcfce7; }
-        .estado-RECHAZADA { background: #fee2e2; }
-        .estado-DEVUELTA { background: #fef3c7; }
         
         .client-name { font-size: 15px; font-weight: 600; color: #1f2937; margin-bottom: 3px; }
         .client-cedula { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
@@ -41,12 +33,7 @@
         
         .no-data { text-align: center; padding: 30px; color: #6b7280; }
         
-.nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 8px 4px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
-        .nav-bottom a { text-decoration: none; color: #6b7280; font-size: 9px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-        .nav-bottom a span { font-size: 18px; }
-        .nav-bottom a.active { color: #2563eb; }
-        
-.actions-floating { position: fixed; bottom: 80px; right: 15px; display: flex; gap: 10px; z-index: 999; }
+        .actions-floating { position: fixed; bottom: 80px; right: 15px; display: flex; gap: 10px; z-index: 999; }
         .btn-float { width: 56px; height: 56px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s; }
         .btn-float:hover { transform: scale(1.1); }
         .btn-float.btn-whatsapp { background: #25d366; color: white; }
@@ -54,26 +41,31 @@
         
         .client-card.seleccionada { border: 2px solid #2563eb; background: #eff6ff; }
         .card-checkbox { width: 20px; height: 20px; margin-right: 8px; }
-        
-        body { padding-bottom: 70px; }
     </style>
 </head>
 <body>
+    <!-- Header -->
     <div class="header">
-        <h1>📋 Solicitudes</h1>
+        <div class="header-title">
+            <h1>📋 Solicitudes</h1>
+        </div>
+        <button class="btn-menu" onclick="abrirDrawer()">☰</button>
     </div>
 
-<div class="stats">
+    <!-- Stats -->
+    <div class="stats">
         <div class="stat"><span id="totalRegistros">0</span><small>Total</small></div>
         <div class="stat"><span id="mostrando">0</span><small>Mostrando</small></div>
         <div class="stat"><span id="seleccionadas-count">0</span><small>Seleccionadas</small></div>
     </div>
     
-<div class="actions-floating" id="actions-floating" style="display:none;">
+    <!-- Actions Floating -->
+    <div class="actions-floating" id="actions-floating" style="display:none;">
         <button class="btn-float btn-copy" id="btn-copy" onclick="copiarDatos()" title="Copiar">📋</button>
         <button class="btn-float btn-whatsapp" id="btn-whatsapp" onclick="enviarWhatsApp()" title="WhatsApp">📱</button>
     </div>
 
+    <!-- Filters -->
     <div class="filters">
         <div style="margin-bottom:10px;">
             <span class="filtro-label">Estado</span>
@@ -85,23 +77,41 @@
         </div>
     </div>
 
-<div class="search">
+    <!-- Search -->
+    <div class="search">
         <input type="text" id="cedula" placeholder="🔍 Buscar por nombre, cédula o teléfono">
     </div>
 
+    <!-- Cards List -->
     <div class="cards-list" id="cards-container">
         <div class="no-data">Cargando...</div>
     </div>
 
-<nav class="nav-bottom">
-        <a href="/m"><span>📊</span>Dashboard</a>
-        <a href="/m/solicitudes" class="active"><span>📋</span>Solicitudes</a>
-        <a href="/m/importar"><span>📤</span>Importar</a>
-        <a href="/m/equipo-ventas"><span>💰</span>Ventas</a>
-        <a href="/m/historial"><span>🔄</span>Historial</a>
-        <a href="#" id="btnLogout"><span>🚪</span>Salir</a>
+    <!-- Footer -->
+    <nav class="nav-bottom">
+        <a href="/m">
+            <span class="nav-bottom-icon">📊</span>
+            Dashboard
+        </a>
+        <a href="/m/solicitudes" class="active">
+            <span class="nav-bottom-icon">📋</span>
+            Solicitudes
+        </a>
+        <a href="/m/importar">
+            <span class="nav-bottom-icon">📤</span>
+            Importar
+        </a>
+        <a href="/m/equipo-ventas">
+            <span class="nav-bottom-icon">💰</span>
+            Ventas
+        </a>
+        <a href="/m/historial">
+            <span class="nav-bottom-icon">🔄</span>
+            Historial
+        </a>
     </nav>
 
+    <script src="/movil/js/drawer.js"></script>
     <script src="/movil/js/solicitudes.js"></script>
 </body>
 </html>
