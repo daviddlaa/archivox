@@ -5,13 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Archivox - Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
+<style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding-bottom: 70px; }
         
-        .header { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: white; padding: 20px; position: sticky; top: 0; z-index: 100; }
+        .header { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: white; padding: 20px; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; }
         .header h1 { font-size: 22px; }
         .header p { font-size: 13px; opacity: 0.8; }
+        .btn-menu { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 5px; }
+        
+        /* Drawer Menu */
+        .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 199; display: none; }
+        .drawer-overlay.open { display: block; }
+        .drawer { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: white; z-index: 200; transition: left 0.3s ease; box-shadow: 4px 0 15px rgba(0,0,0,0.2); }
+        .drawer.open { left: 0; }
+        .drawer-header { background: linear-gradient(135deg, #1f2937, #111827); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .drawer-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+        .drawer-menu { list-style: none; padding: 0; margin: 0; }
+        .drawer-menu li { border-bottom: 1px solid #f3f4f6; }
+        .drawer-menu a { display: flex; align-items: center; gap: 12px; padding: 16px 20px; text-decoration: none; color: #1f2937; font-size: 16px; font-weight: 500; transition: background 0.2s; }
+        .drawer-menu a:hover { background: #f3f4f6; }
+        .drawer-menu a span { font-size: 20px; }
         
         .bienvenida { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 15px; padding: 20px; border-radius: 12px; color: white; }
         .bienvenida h2 { font-size: 18px; margin-bottom: 5px; }
@@ -40,9 +54,12 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>📊 Archivox</h1>
-        <p>Dashboard</p>
+<div class="header">
+        <div>
+            <h1>📊 Archivox</h1>
+            <p>Dashboard</p>
+        </div>
+        <button class="btn-menu" onclick="abrirDrawer()">☰</button>
     </div>
 
 <div class="bienvenida">
@@ -83,10 +100,32 @@
         <a href="/m" class="active"><span>📊</span>Dashboard</a>
         <a href="/m/solicitudes"><span>📋</span>Solicitudes</a>
         <a href="/m/importar"><span>📤</span>Importar</a>
-        <a href="/m/equipo-ventas"><span>💰</span>Ventas</a>
-        <a href="/m/historial"><span>🔄</span>Historial</a>
         <a href="#" id="btnLogout"><span>🚪</span>Salir</a>
     </nav>
+
+<!-- Drawer Menu -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="cerrarDrawer()"></div>
+<div class="drawer" id="drawer">
+    <div class="drawer-header">
+        <span>📋 Menú</span>
+        <button class="drawer-close" onclick="cerrarDrawer()">✕</button>
+    </div>
+    <ul class="drawer-menu">
+        <li><a href="/m/equipo-ventas"><span>💰</span>Ventas</a></li>
+        <li><a href="/m/historial"><span>🔄</span>Historial</a></li>
+    </ul>
+</div>
+
+<script>
+function abrirDrawer() {
+    document.getElementById('drawerOverlay').classList.add('open');
+    document.getElementById('drawer').classList.add('open');
+}
+function cerrarDrawer() {
+    document.getElementById('drawerOverlay').classList.remove('open');
+    document.getElementById('drawer').classList.remove('open');
+}
+</script>
 
 <script src="/movil/js/dashboard.js"></script>
 </body>
