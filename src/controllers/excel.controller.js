@@ -940,11 +940,11 @@ exports.buscarSolicitudes = async (req, res) => {
         return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const {
+const {
         q = '',           // Término de búsqueda (cedula, nombre, celular)
         estado = '',       // Filtro por estado
         segmento = '',    // Filtro por segmento
-        limite = 100,     // Límite de resultados
+        limite = 1000,    // Límite de resultados aumentado a 1000 para filtros
         offset = 0        // Offset para paginación
     } = req.query;
 
