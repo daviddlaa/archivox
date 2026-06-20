@@ -125,6 +125,15 @@ app.get('/ventas', requiresAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/desktop/ventas.html'));
 });
 
+// Rutas de Gestiones
+app.get('/gestiones', requiresAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/desktop/gestiones.html'));
+});
+
+app.get('/m/gestiones', requiresAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/desktop/gestiones.html'));
+});
+
 // Rutas de Control de Ventas del Equipo
 app.get('/equipo-ventas', requiresAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/desktop/ventas.html'));

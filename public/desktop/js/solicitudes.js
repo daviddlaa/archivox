@@ -43,12 +43,15 @@ function seleccionarTodos() {
         filasSeleccionadas = [];
         checkboxes.forEach(function(cb) {
             cb.checked = true;
-            var fila = cb.closest('tr');
             var id = cb.value;
             if (filasSeleccionadas.indexOf(id) === -1) {
                 filasSeleccionadas.push(id);
             }
-            fila.classList.add('fila-seleccionada');
+            // Buscar fila o card padre - funciona para tabla Y cards
+            var fila = cb.closest('tr') || cb.closest('.cliente-card');
+            if (fila) {
+                fila.classList.add('fila-seleccionada');
+            }
         });
     } else {
         checkboxes.forEach(function(cb) {
@@ -56,8 +59,11 @@ function seleccionarTodos() {
         });
         filasSeleccionadas = [];
         checkboxes.forEach(function(cb) {
-            var fila = cb.closest('tr');
-            fila.classList.remove('fila-seleccionada');
+            // Buscar fila o card padre - funciona para tabla Y cards
+            var fila = cb.closest('tr') || cb.closest('.cliente-card');
+            if (fila) {
+                fila.classList.remove('fila-seleccionada');
+            }
         });
     }
     
@@ -79,6 +85,7 @@ function actualizarCheckboxes() {
 function actualizarContador() {
     var contador = document.getElementById('seleccionadas-count');
     var btnWhatsApp = document.getElementById('btn-whatsapp');
+    var btnExcel = document.getElementById('btn-excel');
     
     if (contador) {
         contador.textContent = filasSeleccionadas.length;
@@ -92,6 +99,78 @@ function actualizarContador() {
             btnWhatsApp.style.display = 'none';
         }
     }
+    
+    // Mostrar/ocultar botón de Excel según selección
+    if (btnExcel) {
+        if (filasSeleccionadas.length > 0) {
+            btnExcel.style.display = 'inline-flex';
+        } else {
+            btnExcel.style.display = 'none';
+        }
+    }
+}
+
+// ================== EXPORTAR A EXCEL ==================
+
+// Función para exportar las filas seleccionadas a Excel real (.xlsx)
+function exportarExcel() {
+    if (filasSeleccionadas.length === 0) {
+        alert('Selecciona al menos una fila primero');
+        return;
+    }
+    
+    // Crear datos para exportar
+    var datosAExportar = [];
+    filasSeleccionadas.forEach(function(id) {
+        var datos = datosFilas[id];
+        if (datos) {
+            datosAExportar.push({
+                'Solicitud': datos.id_solicitud,
+                'Estado': datos.estado,
+                'Cédula': datos.cedula,
+                'Nombre': datos.nombre,
+                'Celular': datos.celular,
+                'Código Plus': datos.codigo_plus,
+                'Segmento': datos.segmento,
+                'Producto': datos.producto,
+                'Fecha Solicitud': datos.fecha_solicitud
+            });
+        }
+    });
+    
+    if (datosAExportar.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+    }
+    
+    // Crear libro de trabajo con SheetJS
+    var wb = XLSX.utils.book_new();
+    var ws = XLSX.utils.json_to_sheet(datosAExportar);
+    
+    // Agregar columna con ancho automático
+    var wscols = [
+        {wch: 10}, // Solicitud
+        {wch: 15}, // Estado
+        {wch: 12}, // Cédula
+        {wch: 30}, // Nombre
+        {wch: 12}, // Celular
+        {wch: 15}, // Código Plus
+        {wch: 15}, // Segmento
+        {wch: 20}, // Producto
+        {wch: 15}  // Fecha
+    ];
+    ws['!cols'] = wscols;
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Solicitudes');
+    
+    // Generar nombre de archivo con fecha
+    var fecha = getFechaHoraActual().replace(/[\s:]/g, '-');
+    var nombreArchivo = 'solicitudes_seleccionadas_' + fecha + '.xlsx';
+    
+    // Descargar archivo Excel
+    XLSX.writeFile(wb, nombreArchivo);
+    
+    alert('Se exportaron ' + datosAExportar.length + ' registros a Excel');
 }
 
 function obtenerFilasSeleccionadas() {
@@ -1375,8 +1454,11 @@ function marcarSeleccionadas() {
         // Si ya están todas, desmarcar todas
         checkboxes.forEach(function(cb) {
             cb.checked = false;
-            var fila = cb.closest('tr');
-            fila.classList.remove('fila-seleccionada');
+            // Buscar fila o card padre - funciona para tabla Y cards
+            var fila = cb.closest('tr') || cb.closest('.cliente-card');
+            if (fila) {
+                fila.classList.remove('fila-seleccionada');
+            }
         });
         filasSeleccionadas = [];
     } else {
@@ -1384,12 +1466,15 @@ function marcarSeleccionadas() {
         filasSeleccionadas = [];
         checkboxes.forEach(function(cb) {
             cb.checked = true;
-            var fila = cb.closest('tr');
             var id = cb.value;
             if (filasSeleccionadas.indexOf(id) === -1) {
                 filasSeleccionadas.push(id);
             }
-            fila.classList.add('fila-seleccionada');
+            // Buscar fila o card padre - funciona para tabla Y cards
+            var fila = cb.closest('tr') || cb.closest('.cliente-card');
+            if (fila) {
+                fila.classList.add('fila-seleccionada');
+            }
         });
     }
     

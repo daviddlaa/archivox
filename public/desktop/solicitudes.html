@@ -113,9 +113,14 @@
                                 <span class="stat-label">Seleccionadas</span>
                             </div>
                         </div>
-                        <div class="actions-mini">
-                            <button class="btn-action btn-whatsapp" id="btn-whatsapp" title="Enviar a WhatsApp" style="display:none;">📱 WhatsApp</button>
+<div class="actions-mini">
+                            <button class="btn-action btn-excel" id="btn-excel" title="Exportar a Excel" style="display:none;" onclick="exportarExcel()">📊 Excel</button>
+                            <button class="btn-action btn-whatsapp" id="btn-whatsapp" title="Enviar a WhatsApp" style="display:none;" onclick="enviarWhatsApp()">📱 WhatsApp</button>
                         </div>
+                        <style>
+                            .btn-excel { background: #22c55e !important; color: white !important; margin-right: 8px; }
+                            .btn-excel:hover { background: #16a34a !important; }
+                        </style>
                     </div>
                     
                     <!-- Columna 2: Filtros Estado -->
@@ -198,6 +203,9 @@
             </div>
         </main>
     </div>
+
+<!-- Librería SheetJS para exportar Excel -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
 <script src="/desktop/js/solicitudes.js"></script>
 <script src="/desktop/js/drawer.js"></script>

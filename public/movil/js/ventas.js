@@ -385,7 +385,21 @@ async function guardarConfigBonos() {
 }
 
 // Inicializar
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+// Verificar sesión antes de cargar datos
+    try {
+        const res = await fetch('/api/auth/sesion');
+        const data = await res.json();
+        if (!data.usuario) {
+            window.location.href = '/m/login';
+            return;
+        }
+        console.log('DEBUG: Usuario autenticado:', data.usuario?.nombre, 'ID:', data.usuario?.id);
+        alert('Usuario: ' + data.usuario?.nombre + ' (ID: ' + data.usuario?.id + ')');
+    } catch (err) {
+        console.error('Error verificando sesión:', err);
+    }
+    
     generarMeses();
     
     const selector = document.getElementById('selectorMes');

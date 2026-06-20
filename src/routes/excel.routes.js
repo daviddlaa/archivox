@@ -36,6 +36,14 @@ router.get(
     excelController.dashboard
 );
 
+// ================== GESTIONES GLOBAL ==================
+// Obtener todas las gestinesglobalmente con filtros
+router.get(
+    '/gestiones/todas',
+    requiresAuth,
+    excelController.getTodasGestiones
+);
+
 router.get(
     '/dashboard/segmentos',
     excelController.dashboardSegmentos

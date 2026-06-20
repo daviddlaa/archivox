@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestiones - Archivox</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/solicitudes.css">
+    <style>
+        /* Estilos específicos para Gestiones */
+        .gestion-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .gestion-badge.seguimiento { background: #dbeafe; color: #1e40af; }
+        .gestion-badge.cobranza { background: #fee2e2; color: #991b1b; }
+        .gestion-badge.llamada { background: #d1fae5; color: #065f46; }
+        .gestion-badge.whatsapp { background: #dcfce7; color: #166534; }
+        .gestion-badge.reclamo { background: #fef3c7; color: #92400e; }
+        .gestion-badge.cita { background: #e0e7ff; color: #3730a3; }
+        .gestion-badge.otro { background: #f3f4f6; color: #374151; }
+        
+        .gestion-fecha {
+            font-size: 13px;
+            color: #6b7280;
+        }
+        
+        .gestion-observacion {
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block;
+        }
+        
+        .btn-accion {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            background: #f3f4f6;
+            color: #374151;
+            transition: all 0.2s;
+        }
+        .btn-accion:hover { background: #e5e7eb; }
+        .btn-accion.primary { background: #2563eb; color: white; }
+        .btn-accion.primary:hover { background: #1d4ed8; }
+        .btn-accion.danger { background: #fee2e2; color: #991b1b; }
+        .btn-accion.danger:hover { background: #fecaca; }
+    </style>
+</head>
+<body>
+    <!-- Drawer Toggle -->
+    <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
+    <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
+    
+    <!-- Drawer -->
+    <aside id="drawer" class="drawer">
+        <div class="drawer-header">
+            <div class="drawer-logo"><h2>📊 Archivox</h2></div>
+            <button class="drawer-close" onclick="Drawer.close()">✕</button>
+        </div>
+        <nav class="drawer-nav">
+            <a href="/" class="drawer-link">📊 Dashboard</a>
+            <a href="/equipo-ventas" class="drawer-link">💰 Control de Ventas</a>
+            <a href="/importar" class="drawer-link">📤 Importar Excel</a>
+            <a href="/solicitudes" class="drawer-link">📋 Solicitudes</a>
+            <a href="/gestiones" class="drawer-link">📝 Gestiones</a>
+            <a href="/historial" class="drawer-link">🔄 Historial</a>
+            <a href="#" class="drawer-link drawer-link-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
+    <div class="layout">
+        <main class="contenido">
+            <div class="container">
+                <!-- Header Actions -->
+                <div class="header-actions">
+                    <div>
+                        <h1>📝 Gestiones</h1>
+                        <p class="subtitulo">Controla y sigue todas las gestines de tus solicitudes</p>
+                    </div>
+                    <div>
+                        <button class="btn-principal" onclick="abrirNuevaGestion()">➕ Nueva Gestión</button>
+                    </div>
+                </div>
+                
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card stat-total">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-content">
+                            <h3>Total Gestiones</h3>
+                            <span id="total-registros">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-verde">
+                        <div class="stat-icon">👁️</div>
+                        <div class="stat-content">
+                            <h3>Mostrando</h3>
+                            <span id="mostrando">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-azul">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-content">
+                            <h3>Última Gestión</h3>
+                            <span id="ultima-gestion">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Filtros Panel -->
+                <div class="filtros-panel">
+                    <div class="filtros-row">
+                        <div class="filtro-group">
+                            <label>🔍Buscar por Cédula</label>
+                            <input type="text" id="cedula-buscar" placeholder="Ingrese número de cédula">
+                        </div>
+                        <div class="filtro-group">
+                            <label>📅Fecha Desde</label>
+                            <input type="date" id="fecha-desde">
+                        </div>
+                        <div class="filtro-group">
+                            <label>📅Fecha Hasta</label>
+                            <input type="date" id="fecha-hasta">
+                        </div>
+                        <div class="filtro-group">
+                            <label>📋Tipo de Gestión</label>
+                            <select id="tipo-gestion">
+                                <option value="">Todos</option>
+                                <option value="Seguimiento">Seguimiento</option>
+                                <option value="Cobranza">Cobranza</option>
+                                <option value="Llamada">Llamada</option>
+                                <option value="WhatsApp">WhatsApp</option>
+                                <option value="Reclamo">Reclamo</option>
+                                <option value="Cita">Cita</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="filtro-actions">
+                            <button class="btn btn-primary" onclick="buscarGestiones()">🔍 Buscar</button>
+                            <button class="btn btn-secondary" onclick="limpiarFiltros()">🧹 Limpiar</button>
+                            <button class="btn btn-success" onclick="exportarExcel()">📥 Exportar</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabla Container -->
+                <div class="tabla-container">
+                    <table class="tabla">
+                        <thead>
+                            <tr>
+                                <th># Solicitud</th>
+                                <th>Cédula</th>
+                                <th>Nombre</th>
+                                <th>Tipo Gestión</th>
+                                <th>Observación</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-gestiones">
+                            <tr>
+                                <td colspan="7" class="loading">Cargando gestines...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div id="infinite-scroll-sentinel"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/desktop/js/drawer.js"></script>
+    <script src="/desktop/js/gestiones.js"></script>
+</body>
+</html>

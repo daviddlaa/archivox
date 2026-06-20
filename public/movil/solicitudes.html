@@ -57,10 +57,11 @@
         <div class="stat"><span id="totalRegistros">0</span><small>Total</small></div>
         <div class="stat"><span id="mostrando">0</span><small>Mostrando</small></div>
         <div class="stat"><span id="seleccionadas-count">0</span><small>Seleccionadas</small></div>
-    </div>
+</div>
     
     <!-- Actions Floating -->
     <div class="actions-floating" id="actions-floating" style="display:none;">
+        <button class="btn-float btn-excel" id="btn-excel" onclick="exportarExcel()" title="Exportar Excel" style="background:#22c55e;">📊</button>
         <button class="btn-float btn-copy" id="btn-copy" onclick="copiarDatos()" title="Copiar">📋</button>
         <button class="btn-float btn-whatsapp" id="btn-whatsapp" onclick="enviarWhatsApp()" title="WhatsApp">📱</button>
     </div>
@@ -111,7 +112,10 @@
         </a>
     </nav>
 
-    <script src="/movil/js/drawer.js"></script>
-    <script src="/movil/js/solicitudes.js"></script>
+<!-- Librería SheetJS para exportar Excel -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+<script src="/movil/js/drawer.js"></script>
+<script src="/movil/js/solicitudes.js"></script>
 </body>
 </html>

@@ -933,5 +933,61 @@ function guardarCompletarMovil(id) {
     cerrarModal();
 }
 
+// ================== EXPORTAR A EXCEL ==================
+
+// Función para exportar las filas seleccionadas a Excel real (.xlsx)
+function exportarExcel() {
+    if (filasSeleccionadas.length === 0) {
+        alert('Selecciona al menos una card primero');
+        return;
+    }
+    
+    // Crear datos para exportar
+    var datosAExportar = [];
+    filasSeleccionadas.forEach(function(id) {
+        var datos = datosFilas[id];
+        if (datos) {
+            datosAExportar.push({
+                'Solicitud': datos.id_solicitud,
+                'Estado': datos.estado,
+                'Cédula': datos.cedula,
+                'Nombre': datos.nombre,
+                'Celular': datos.celular,
+                'Código Plus': datos.codigo_plus,
+                'Segmento': datos.segmento,
+                'Producto': datos.producto,
+                'Fecha Solicitud': datos.fecha_solicitud
+            });
+        }
+    });
+    
+    if (datosAExportar.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+    }
+    
+    // Crear libro de trabajo con SheetJS
+    var wb = XLSX.utils.book_new();
+    var ws = XLSX.utils.json_to_sheet(datosAExportar);
+    
+    // Agregar columna con ancho automático
+    var wscols = [
+        {wch: 10}, {wch: 15}, {wch: 12}, {wch: 30}, {wch: 12}, 
+        {wch: 15}, {wch: 15}, {wch: 20}, {wch: 15}
+    ];
+    ws['!cols'] = wscols;
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Solicitudes');
+    
+    // Generar nombre de archivo con fecha
+    var fecha = getFechaHoraActual().replace(/[\s:]/g, '-');
+    var nombreArchivo = 'solicitudes_seleccionadas_' + fecha + '.xlsx';
+    
+    // Descargar archivo Excel
+    XLSX.writeFile(wb, nombreArchivo);
+    
+    alert('Se exportaron ' + datosAExportar.length + ' registros a Excel');
+}
+
 // Iniciar al cargar página
 window.addEventListener('DOMContentLoaded', init);

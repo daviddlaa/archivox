@@ -59,13 +59,19 @@ function crearDrawer() {
                 </a>
             </li>
             <li>
+                <a href="/m/gestiones">
+                    <span class="drawer-menu-icon">📝</span>
+                    Gestiones
+                </a>
+            </li>
+            <li>
                 <a href="/m/importar">
                     <span class="drawer-menu-icon">📤</span>
                     Importar
                 </a>
             </li>
             <li>
-                <a href="/m/equipo-ventas">
+                <a href="/m/ventas">
                     <span class="drawer-menu-icon">💰</span>
                     Ventas
                 </a>
