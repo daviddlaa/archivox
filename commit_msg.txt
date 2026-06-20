@@ -1,0 +1,1 @@
+Fix table headers in historial desktop and show gestines as cards in mobile

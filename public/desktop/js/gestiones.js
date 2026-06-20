@@ -189,7 +189,7 @@ function renderizarTabla(datos) {
         html += '<td><span style="background:' + color + ';padding:4px 8px;border-radius:4px;font-size:12px;">' + (g.tipo_gestion || '') + '</span></td>';
         html += '<td>' + (g.observacion || '') + '</td>';
         html += '<td>' + fechaFormateada + '</td>';
-html += '<td>';
+        html += '<td>';
         html += '<button class="btn-accion" onclick="agregarSeguimiento(\'' + g.solicitud_id + '\')" title="Agregar seguimiento">➕</button> ';
         html += '<button class="btn-accion" onclick="verGestion(\'' + g.id + '\')" title="Ver">👁️</button> ';
         html += '<button class="btn-accion" onclick="eliminarGestion(\'' + g.id + '\')" title="Eliminar">🗑️</button>';
@@ -198,6 +198,62 @@ html += '<td>';
     }
     
     tabla.innerHTML = html;
+    
+    // Renderizar cards para móvil
+    renderizarCards(datos);
+}
+
+// Función para renderizar cards en móvil
+function renderizarCards(datos) {
+    var container = document.getElementById('cardsGestiones');
+    
+    if (!container) {
+        return;
+    }
+    
+    if (!datos.length) {
+        container.innerHTML = '<div class="gestiones-empty"><div class="gestiones-empty-icon">📭</div><p>No se encontraron gestines</p></div>';
+        return;
+    }
+    
+    var coloresTipo = {
+        'Seguimiento': '#dbeafe',
+        'Cobranza': '#fee2e2',
+        'Llamada': '#d1fae5',
+        'WhatsApp': '#dcfce7',
+        'Reclamo': '#fef3c7',
+        'Cita': '#e0e7ff',
+        'Otro': '#f3f4f6'
+    };
+    
+    var html = '';
+    
+    for (var i = 0; i < datos.length; i++) {
+        var g = datos[i];
+        var color = coloresTipo[g.tipo_gestion] || '#f3f4f6';
+        var fechaFormateada = formatFechaGestion(g.fecha_gestion);
+        
+        html += '<div class="gestion-card">';
+        html += '<div class="gestion-card-header">';
+        html += '<span class="gestion-card-id">#' + (g.solicitud_id || '') + '</span>';
+        html += '<span class="gestion-badge" style="background:' + color + ';">' + (g.tipo_gestion || '') + '</span>';
+        html += '</div>';
+        html += '<div class="gestion-card-body">';
+        html += '<p><strong>Nombre:</strong> ' + (g.nombre || '-') + '</p>';
+        html += '<p><strong>Cédula:</strong> ' + (g.cedula || '-') + '</p>';
+        html += '<p><strong>Obs:</strong> ' + (g.observacion || '-') + '</p>';
+        html += '</div>';
+        html += '<div class="gestion-card-footer">';
+        html += '<span>📅 ' + fechaFormateada + '</span>';
+        html += '<div class="gestion-card-acciones">';
+        html += '<button class="btn-accion primary" onclick="agregarSeguimiento(\'' + g.solicitud_id + '\')" title="Agregar">➕</button>';
+        html += '<button class="btn-accion" onclick="verGestion(\'' + g.id + '\')" title="Ver">👁️</button>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+    }
+    
+    container.innerHTML = html;
 }
 
 function verGestion(id) {

@@ -311,26 +311,31 @@ h1{
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    position: relative;
 }
 
 .historial-table {
     width: 100%;
     border-collapse: collapse;
+    display: table;
 }
 
 .historial-table thead {
-    background: linear-gradient(135deg, #1f2937, #111827);
+    background: linear-gradient(135deg, #1f2937, #111827) !important;
+    display: table-header-group;
 }
 
 .historial-table thead th {
     padding: 14px 16px;
     text-align: left;
-    color: white;
+    color: white !important;
     font-weight: 600;
     font-size: 13px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border: none;
+    border: none !important;
+    background: transparent;
+    display: table-cell;
 }
 
 .historial-table tbody tr {
@@ -358,6 +363,68 @@ h1{
 .historial-table .col-fecha {
     font-size: 13px;
     color: #9ca3af;
+}
+
+/* ===== GESTIONES CARDS (MÓVIL) ===== */
+.gestiones-cards {
+    display: none;
+}
+
+.gestion-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+
+.gestion-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.gestion-card-id {
+    font-weight: 700;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.gestion-card-body {
+    margin-bottom: 12px;
+}
+
+.gestion-card-body p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: #374151;
+}
+
+.gestion-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid #f3f4f6;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.gestion-card-acciones {
+    display: flex;
+    gap: 8px;
+}
+
+.gestiones-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9ca3af;
+}
+
+.gestiones-empty-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
 }
 
 /* Enhanced badges for historial */
@@ -999,11 +1066,84 @@ h1{
     }
     
     .tabla-container {
-        overflow-x: auto;
+        display: none;
     }
     
-    .tabla {
-        min-width: 800px;
+    /* Mobile Cards - Gestiones */
+    .gestiones-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    /* Gestion Card */
+    .gestion-card {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .gestion-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    
+    .gestion-card-id {
+        font-weight: 700;
+        color: #6b7280;
+        font-size: 13px;
+    }
+    
+    .gestion-card-body {
+        margin-bottom: 12px;
+    }
+    
+    .gestion-card-body p {
+        margin: 6px 0;
+        font-size: 14px;
+        color: #374151;
+    }
+    
+    .gestion-card-body strong {
+        color: #6b7280;
+        font-size: 12px;
+    }
+    
+    .gestion-card-footer {
+        font-size: 12px;
+        color: #9ca3af;
+        padding-top: 8px;
+        border-top: 1px solid #f3f4f6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .gestion-card-acciones {
+        display: flex;
+        gap: 8px;
+    }
+    
+    /* Empty state */
+    .gestiones-empty {
+        text-align: center;
+        padding: 40px 20px;
+        color: #9ca3af;
+    }
+    
+    .gestiones-empty-icon {
+        font-size: 40px;
+        margin-bottom: 12px;
+    }
+}
+
+/* Desktop: hide cards, show table */
+@media (min-width: 769px) {
+    .gestiones-cards {
+        display: none;
     }
 }
 
