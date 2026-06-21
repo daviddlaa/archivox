@@ -958,13 +958,14 @@ const {
         const params = [usuarioId];
         let paramIndex = 2;
 
-        // Filtro por búsqueda (cedula, nombre o celular)
+// Filtro por búsqueda (cedula, nombre, celular o id_solicitud)
         if (q && q.trim()) {
             const termino = '%' + q.trim() + '%';
             sql += ` AND (
                 cedula LIKE $${paramIndex} 
                 OR LOWER(nombre) LIKE LOWER($${paramIndex}) 
                 OR celular LIKE $${paramIndex}
+                OR CAST(id_solicitud AS TEXT) LIKE $${paramIndex}
             )`;
             params.push(termino);
             paramIndex++;
@@ -1116,6 +1117,7 @@ exports.getTodasGestiones = async (req, res) => {
 // ================== HISTORIAL DE ACTUALIZACIONES ==================
 
 // Obtener historial de actualizaciones
+// INCLUYE: cedula, nombre, telefono desde la tabla solicitudes (JOIN)
 exports.getHistorialActualizaciones = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -1125,9 +1127,14 @@ exports.getHistorialActualizaciones = async (req, res) => {
     const { limite = 50, offset = 0, campo, fechaInicio, fechaFin } = req.query;
 
     try {
+        // JOIN con solicitudes para obtener cedula, nombre, celular
         let sql = `
-            SELECT h.id, h.solicitud_id, h.campo, h.valor_anterior, h.valor_nuevo, h.fecha_actualizacion
+            SELECT h.id, h.solicitud_id, h.campo, h.valor_anterior, h.valor_nuevo, h.fecha_actualizacion,
+                   COALESCE(s.cedula, '') as cedula, 
+                   COALESCE(s.nombre, '') as nombre, 
+                   COALESCE(s.celular, '') as telefono
             FROM historial_actualizaciones h
+            LEFT JOIN solicitudes s ON h.solicitud_id = s.id_solicitud AND h.usuario_id = s.usuario_id
             WHERE h.usuario_id = $1
         `;
         const params = [usuarioId];
