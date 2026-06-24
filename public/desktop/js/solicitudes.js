@@ -979,13 +979,10 @@ function abrirGestiones(id) {
     contenido += '<button class="btn-cerrar" onclick="cerrarModal()">✕</button>';
     contenido += '</div>';
     
-    // Layout de dos columnas
+// Layout de 3 columnas independientes
     contenido += '<div class="gestion-layout">';
     
-    // Columna Izquierda: Info + Nueva Gestión
-    contenido += '<div class="gestion-izquierda">';
-    
-    // Panel Info Cliente
+    // === COLUMNA 1: Info Cliente ===
     contenido += '<div class="info-cliente">';
     contenido += '<h3>👤 Información del Cliente</h3>';
     contenido += '<div class="info-grid">';
@@ -998,7 +995,7 @@ function abrirGestiones(id) {
     contenido += '</div>';
     contenido += '</div>';
     
-    // Sección de Nueva Gestión
+    // === COLUMNA 2: Nueva Gestion ===
     contenido += '<div class="nueva-gestion">';
     contenido += '<h3>➕ Nueva Gestión</h3>';
     
@@ -1024,9 +1021,7 @@ function abrirGestiones(id) {
     contenido += '<button onclick="guardarGestion(\'' + id + '\')" class="btn-guardar">💾 Guardar Gestión</button>';
     contenido += '</div>';
     
-    contenido += '</div>'; // Fin columna izquierda
-    
-    // Columna Derecha: Historial
+    // === COLUMNA 3: Historial ===
     contenido += '<div class="gestion-derecha">';
     contenido += '<h3>📜 Historial de Gestiones</h3>';
     contenido += '<div id="lista-historial" class="historial-container">Cargando...</div>';
@@ -1081,10 +1076,10 @@ function crearModal(contenido) {
     overlay.id = 'modal-generico';
     overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
     
-    var modal = document.createElement('div');
-    // Modal más grande para pantallas grandes: 950px
-    modal.style.cssText = 'background: white; border-radius: 16px; max-width: 950px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4);';
-    modal.innerHTML = contenido;
+var modal = document.createElement('div');
+// Modal más grande: 1400px para 3 columnas sin scroll - MAS ALTO (98vh) - REORGANIZADO
+modal.style.cssText = 'background: white; border-radius: 16px; max-width: 1400px; width: 98%; max-height: 98vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4);';
+modal.innerHTML = contenido;
     
     // Cerrar al hacer click en el overlay
     overlay.onclick = function(e) {

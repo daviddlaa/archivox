@@ -414,17 +414,28 @@ return `
                 <span class="badge estado-${d.estado}">${d.estado || 'N/A'}</span>
             </div>
             <div class="client-name">${d.nombre || 'Sin nombre'}</div>
-            <div class="client-cedula">Cédula: ${d.cedula || 'N/A'}</div>
-            <div class="client-celular">📱 ${d.celular || 'N/A'}</div>
             
+            <!-- OPCIÓN A: Compacto - Teléfono + Cédula en misma línea -->
+            <div class="client-info-compact" style="display: flex; gap: 10px; margin: 4px 0; font-size: 12px; color: #6b7280;">
+                <span>📱 ${d.celular || 'N/A'}</span>
+                <span>|</span>
+                <span>Céd: ${d.cedula || 'N/A'}</span>
+            </div>
+            
+            <!-- OPCIÓN A: Compacto - 3 botones en fila -->
+            <div class="botones-contacto" style="display: flex; gap: 6px; margin: 8px 0;">
+                <button onclick="event.stopPropagation(); llamarCliente('${d.celular}')" style="flex:1; padding: 8px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📞</button>
+                <button onclick="event.stopPropagation(); whatsAppCliente('${d.celular}', '${d.nombre}')" style="flex:1; padding: 8px; background: #25D366; color: white; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">💬</button>
+                <button onclick="event.stopPropagation(); abrirGestionesMovil('${d.id_solicitud}')" style="flex:1; padding: 8px; background: #fef3c7; border: none; border-radius: 6px; font-size: 11px; cursor: pointer;">📋</button>
+            </div>
+            
+            <!-- Código Plus -->
             <div class="input-codigo-plus-container" style="margin: 8px 0;">
                 <input type="text" class="input-codigo-plus" value="${d.codigo_plus || ''}" data-id="${d.id_solicitud}" placeholder="Código Plus" autocomplete="off" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px;" onblur="guardarCodigoPlus(this)">
             </div>
-            <div class="card-acciones" style="margin: 8px 0; display: flex; gap: 8px;">
-                <button class="btn-accion-movil btn-gestiones-movil" onclick="event.stopPropagation(); abrirGestionesMovil('${d.id_solicitud}')" style="flex:1; padding: 8px; background: #fef3c7; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">📋 Gestiones</button>
-                <button class="btn-accion-movil btn-completar-movil" onclick="event.stopPropagation(); abrirCompletarMovil('${d.id_solicitud}')" style="flex:1; padding: 8px; background: #d1fae5; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">✏️ Completar</button>
-            </div>
-            <div class="tags">
+            
+            <!-- Tags compactos -->
+            <div class="tags" style="display: flex; gap: 5px; flex-wrap: wrap;">
                 <span class="tag">${d.segmento || 'N/A'}</span>
                 <span class="tag">${d.producto || 'N/A'}</span>
                 <span class="tag">${d.fecha_solicitud || 'N/A'}</span>
@@ -477,6 +488,36 @@ function recrearSentinel() {
         
         observer.observe(sentinel);
     }
+}
+
+// ================== LLAMADA Y WHATSAPP ==================
+
+// Función para llamar al cliente
+function llamarCliente(celular) {
+    if (!celular) {
+        alert('No hay número de celular');
+        return;
+    }
+    // Limpiar el número - remover cualquier carácter que no sea dígito
+    var numeroLimpio = celular.replace(/\D/g, '');
+    window.location.href = 'tel:' + numeroLimpio;
+}
+
+// Función para enviar WhatsApp al cliente
+function whatsAppCliente(celular, nombre) {
+    if (!celular) {
+        alert('No hay número de celular');
+        return;
+    }
+    // Limpiar el número - remover cualquier carácter que no sea dígito
+    var numeroLimpio = celular.replace(/\D/g, '');
+    
+    // Mensaje predeterminado
+    var mensaje = encodeURIComponent('Hola ' + (nombre || '') + ', te contactamos de Archivox. ¿En qué podemos ayudarte?');
+    
+    // Abrir WhatsApp
+    var urlWhatsApp = 'https://wa.me/' + numeroLimpio + '?text=' + mensaje;
+    window.open(urlWhatsApp, '_blank');
 }
 
 // ================== CÓDIGO PLUS ==================
@@ -571,13 +612,21 @@ function abrirGestionesMovil(id) {
         opcionesDropdown += '<option value="' + opcionesTipoGestion[i] + '">' + opcionesTipoGestion[i] + '</option>';
     }
     
-    let contenido = '';
+let contenido = '';
     contenido += '<div style="padding: 20px; background: white; min-height: 100vh;">';
     contenido += '<h2 style="margin-top: 0; color: #1f2937; font-size: 18px;">📋 Gestiones - Solicitud #' + id + '</h2>';
     contenido += '<div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px;">';
     contenido += '<p><strong>Nombre:</strong> ' + (datos.nombre || 'N/A') + '</p>';
     contenido += '<p><strong>Cédula:</strong> ' + (datos.cedula || 'N/A') + '</p>';
-    contenido += '<p><strong>Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
+contenido += '<p><strong>Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
+    // Botones de Llamar y WhatsApp en el modal de Gestiones
+    contenido += '<div style="display: flex; gap: 8px; margin: 10px 0;">';
+    contenido += '<button onclick="llamarCliente(\'' + (datos.celular || '') + '\')" style="flex:1; padding: 10px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;">📞 Llamar</button>';
+    contenido += '<button onclick="whatsAppCliente(\'' + (datos.celular || '') + '\', \'' + (datos.nombre || '') + '\')" style="flex:1; padding: 10px; background: #25D366; color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;">💬 WhatsApp</button>';
+    contenido += '</div>';
+    contenido += '<p><strong>Estado:</strong> <span style="background:#dcfce7;padding:2px 8px;border-radius:10px;font-size:12px;">' + (datos.estado || 'N/A') + '</span></p>';
+    contenido += '<p><strong>Segmento:</strong> ' + (datos.segmento || 'N/A') + '</p>';
+    contenido += '<p><strong>Fecha Ingreso:</strong> ' + (datos.fecha_solicitud || 'N/A') + '</p>';
     contenido += '</div>';
     
     // Sección de nueva gestión

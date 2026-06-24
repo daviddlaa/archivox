@@ -1119,55 +1119,55 @@ tr:hover{
     color: #dc2626;
 }
 
-/* Layout de dos columnas */
+/* ===== LAYOUT DE 3 COLUMNAS - REORGANIZADO CON SCROLL ===== */
 .gestion-layout {
     display: grid;
-    grid-template-columns: 380px 1fr;
-    gap: 25px;
-    padding: 25px;
-    max-height: 70vh;
+    grid-template-columns: 1fr 1.3fr 2fr;
+    gap: 20px;
+    padding: 20px;
+    max-height: 90vh;
     overflow-y: auto;
 }
 
-/* Columna Izquierda */
-.gestion-izquierda {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
+/* Cada columna es independiente - directamente en el grid */
+/* Los elementos info-cliente, nueva-gestion, gestion-derecha son hijos directos del grid */
 
-/* Panel Info Cliente */
+/* Panel Info Cliente - MUY Compacto */
 .info-cliente {
     background: white;
     border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .info-cliente h3 {
-    margin: 0 0 15px 0;
+    margin: 0 0 10px 0;
     color: #1f2937;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 600;
 }
 
 .info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 8px;
+    flex: 1;
 }
 
 .info-item {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 10px;
+    gap: 2px;
+    padding: 8px;
     background: #f8fafc;
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
 .info-item .info-label {
-    font-size: 11px;
+    font-size: 10px;
     color: #6b7280;
     text-transform: uppercase;
     font-weight: 600;
@@ -1175,57 +1175,62 @@ tr:hover{
 }
 
 .info-item .info-value {
-    font-size: 14px;
+    font-size: 13px;
     color: #1f2937;
     font-weight: 600;
+    word-break: break-word;
 }
 
 .info-item .estado-badge {
     display: inline-block;
-    padding: 4px 10px;
+    padding: 3px 8px;
     background: #dcfce7;
     color: #065f46;
     border-radius: 20px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
 }
 
-/* Panel Nueva Gestión */
+/* Panel Nueva Gestión - MUY Compacto */
 .nueva-gestion {
     background: linear-gradient(135deg, #eff6ff, #dbeafe);
     border: 2px solid #2563eb;
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .nueva-gestion h3 {
-    margin: 0 0 15px 0;
+    margin: 0 0 10px 0;
     color: #1e40af;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 600;
 }
 
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 8px;
 }
 
 .form-group label {
     display: block;
     font-weight: 600;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     color: #374151;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .input-readonly,
 .input-select,
 .input-textarea {
     width: 100%;
-    padding: 12px;
+    padding: 12px 14px;
     border: 1px solid #d1d5db;
     border-radius: 8px;
     font-size: 14px;
     transition: all 0.2s ease;
+    box-sizing: border-box;
 }
 
 .input-readonly {
@@ -1242,68 +1247,75 @@ tr:hover{
 .input-select:focus {
     outline: none;
     border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 
 .input-textarea {
     resize: vertical;
-    min-height: 100px;
+    min-height: 120px;
+    max-height: 180px;
     font-family: inherit;
 }
 
 .input-textarea:focus {
     outline: none;
     border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 
 .btn-guardar {
     width: 100%;
-    padding: 14px 20px;
+    padding: 10px 16px;
     background: linear-gradient(135deg, #2563eb, #1d4ed8);
     color: white;
     border: none;
-    border-radius: 8px;
-    font-size: 15px;
+    border-radius: 6px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    margin-top: 10px;
+    margin-top: auto;
 }
 
 .btn-guardar:hover {
     background: linear-gradient(135deg, #1d4ed8, #1e40af);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
 .btn-guardar:active {
     transform: translateY(0);
 }
 
-/* Columna Derecha - Historial */
+/* Columna Derecha - Historial - MUY Compacto */
 .gestion-derecha {
     background: white;
     border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
 }
 
 .gestion-derecha h3 {
-    margin: 0 0 15px 0;
+    margin: 0 0 10px 0;
     color: #1f2937;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 600;
+    flex-shrink: 0;
 }
 
 .historial-container {
-    max-height: 500px;
+    flex: 1;
     overflow-y: auto;
+    padding-right: 5px;
 }
 
 /* Tarjetas de historial - mejoradas */
 .historial-card {
-    padding: 16px;
+    padding: 18px;
     border-radius: 10px;
     margin-bottom: 12px;
     border-left: 4px solid;
@@ -1313,23 +1325,23 @@ tr:hover{
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .historial-card .historial-tipo {
     font-weight: 700;
-    font-size: 15px;
+    font-size: 16px;
     color: #1f2937;
 }
 
 .historial-card .historial-fecha {
-    font-size: 12px;
+    font-size: 13px;
     color: #6b7280;
     font-weight: 500;
 }
 
 .historial-card .historial-obs {
-    font-size: 14px;
+    font-size: 15px;
     color: #374151;
     line-height: 1.5;
     margin-bottom: 10px;
