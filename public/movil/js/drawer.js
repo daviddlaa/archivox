@@ -135,14 +135,25 @@ function toggleDrawer() {
 // Cerrar sesión
 function cerrarSesion() {
     if (confirm('¿Estás seguro de cerrar sesión?')) {
+        // Marcar que se está cerrando sesión (para evitar re-entrada automática)
+        sessionStorage.setItem('justLoggedOut', Date.now().toString());
+        
+        // Fetch con credentials para enviar la cookie y esperar respuesta
         fetch('/auth/logout', { 
             method: 'POST', 
             credentials: 'include' 
         })
-        .then(function() { 
-            window.location.href = '/login'; 
+        .then(function(response) { 
+            // Verificar que el logout fue exitoso
+            if (response.ok) {
+                window.location.href = '/login';
+            } else {
+                // Si hay error, igual redirigir forzando logout
+                window.location.href = '/login';
+            }
         })
         .catch(function() { 
+            // En caso de error, igual redirigir al login
             window.location.href = '/login'; 
         });
     }

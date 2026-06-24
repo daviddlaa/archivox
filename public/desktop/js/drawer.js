@@ -102,9 +102,27 @@ var Drawer = {
 // Función global para cerrar sesión
 function cerrarSesion() {
     if (confirm('¿Estás seguro de cerrar sesión?')) {
-        fetch('/auth/logout', { method: 'POST', credentials: 'include' })
-            .then(function() { window.location.href = '/login'; })
-            .catch(function() { window.location.href = '/login'; });
+        // Marcar que se está cerrando sesión (para evitar re-entrada automática)
+        sessionStorage.setItem('justLoggedOut', Date.now().toString());
+        
+        // Fetch con credentials para enviar la cookie y esperar respuesta
+        fetch('/auth/logout', { 
+            method: 'POST', 
+            credentials: 'include' 
+        })
+        .then(function(response) { 
+            // Verificar que el logout fue exitoso
+            if (response.ok) {
+                window.location.href = '/login';
+            } else {
+                // Si hay error, igual redirigir pero forcing logout
+                window.location.href = '/login';
+            }
+        })
+        .catch(function() { 
+            // En caso de error, igual redirigir al login
+            window.location.href = '/login'; 
+        });
     }
     return false;
 }

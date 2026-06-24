@@ -7,6 +7,17 @@ const mensajeDiv = document.getElementById('mensaje');
 // Verificar si ya está logueado al cargar
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // Verificar si viene de un logout reciente (evitar re-entrada automática)
+        const justLoggedOut = sessionStorage.getItem('justLoggedOut');
+        const now = Date.now();
+        
+        // Si viene de logout hace menos de 2 segundos, no verificar automáticamente
+        if (justLoggedOut && (now - parseInt(justLoggedOut)) < 2000) {
+            console.log('Logout reciente, no auto-redirigir');
+            sessionStorage.removeItem('justLoggedOut');
+            return;
+        }
+        
         const response = await fetch('/api/auth/sesion');
         const data = await response.json();
         
