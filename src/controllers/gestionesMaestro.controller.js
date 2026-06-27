@@ -1,4 +1,6 @@
-const db = require('../config/database');
+// Dynamic database - SQLite for local, PostgreSQL for production
+const db = require('../config/db');
+const isPostgreSQL = !!process.env.DATABASE_URL;
 
 // Obtener usuario actual (del middleware de auth)
 function getUsuarioId(req) {
