@@ -1276,27 +1276,36 @@ exports.getHistorialActualizaciones = async (req, res) => {
 
 // Subir imagen para gestión por WhatsApp
 exports.subirImagenGestion = async (req, res) => {
-    const usuarioId = req.session.usuario?.id;
-    if (!usuarioId) {
-        return res.status(401).json({ error: 'No autenticado' });
+    try {
+        const usuarioId = req.session.usuario?.id;
+        console.log('DEBUG subirImagenGestion: usuarioId=', usuarioId, 'req.session=', !!req.session);
+
+        if (!usuarioId) {
+            console.log('ERROR subirImagenGestion: No hay usuarioId en sesión');
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+
+        if (!req.file) {
+            console.log('ERROR subirImagenGestion: No se envió ningún archivo');
+            return res.status(400).json({ error: 'No se envió ninguna imagen' });
+        }
+
+        // Retornar URL de la imagen
+        const imagenUrl = '/uploads/' + req.file.filename;
+        const nombreOriginal = req.file.originalname;
+
+        console.log('DEBUG: Imagen subida:', imagenUrl, 'por usuario:', usuarioId);
+
+        res.json({
+            success: true,
+            url: imagenUrl,
+            nombre: nombreOriginal,
+            filename: req.file.filename
+        });
+    } catch (error) {
+        console.error('ERROR subirImagenGestion:', error);
+        res.status(500).json({ error: 'Error al subir imagen: ' + error.message });
     }
-
-    if (!req.file) {
-        return res.status(400).json({ error: 'No se envió ninguna imagen' });
-    }
-
-    // Retornar URL de la imagen
-    const imagenUrl = '/uploads/' + req.file.filename;
-    const nombreOriginal = req.file.originalname;
-
-    console.log('DEBUG: Imagen subida:', imagenUrl, 'por usuario:', usuarioId);
-
-    res.json({
-        success: true,
-        url: imagenUrl,
-        nombre: nombreOriginal,
-        filename: req.file.filename
-    });
 };
 
 // Eliminar imagen temporal

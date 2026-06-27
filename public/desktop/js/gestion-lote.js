@@ -613,7 +613,7 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
     btn.disabled = true;
     
     try {
-        // 1. Subir imagen si existe
+// 1. Subir imagen si existe
         var imagenUrl = null;
         if (file) {
             var formData = new FormData();
@@ -623,6 +623,13 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
                 method: 'POST',
                 body: formData
             });
+            
+            // Verificar que la respuesta es OK antes de parsear JSON
+            if (!uploadResponse.ok) {
+                var errorText = await uploadResponse.text();
+                console.error('ERROR upload-imagen:', errorText);
+                throw new Error('Error al subir imagen: ' + uploadResponse.status);
+            }
             
             var uploadResult = await uploadResponse.json();
             if (!uploadResult.success) {
@@ -849,7 +856,7 @@ async function ejecutarWhatsAppMasivo() {
     var errores = 0;
     
     try {
-        // Si hay imagen, primero subirla
+// Si hay imagen, primero subirla
         var imagenUrl = null;
         if (file) {
             var formData = new FormData();
@@ -859,6 +866,13 @@ async function ejecutarWhatsAppMasivo() {
                 method: 'POST',
                 body: formData
             });
+            
+            // Verificar que la respuesta es OK antes de parsear JSON
+            if (!uploadResponse.ok) {
+                var errorText = await uploadResponse.text();
+                console.error('ERROR upload-imagen WhatsApp Masivo:', errorText);
+                throw new Error('Error al subir imagen: ' + uploadResponse.status);
+            }
             
             var uploadResult = await uploadResponse.json();
             if (!uploadResult.success) {
