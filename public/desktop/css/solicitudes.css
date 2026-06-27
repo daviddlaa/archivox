@@ -530,7 +530,6 @@ td .cell-combinado {
 .table-container tbody td:nth-child(7),
 .table-container tbody td:nth-child(8) {
     display: block !important;
-    vertical-align: top !important;
     padding-top: 12px !important;
     padding-bottom: 12px !important;
 }

@@ -1,4 +1,4 @@
-console.log('Cargando gestines.js...');
+console.log('Cargando gestiones.js...');
 
 var todosDatos = [];
 var currentOffset = 0;
@@ -33,10 +33,6 @@ function formatFechaGestion(fecha) {
 
 async function buscarGestiones() {
     var q = document.getElementById('busqueda-general')?.value || '';
-    var cedula = q;
-    var nombre = q;
-    var telefono = q;
-    var observacion = q;
     var tipo = document.getElementById('tipo-gestion')?.value || '';
     
     currentOffset = 0;
@@ -44,10 +40,8 @@ async function buscarGestiones() {
     
 try {
         var url = '/api/excel/gestiones/todas?limite=' + currentLimit + '&offset=0';
-        if (cedula) url += '&cedula=' + encodeURIComponent(cedula);
-        if (nombre) url += '&nombre=' + encodeURIComponent(nombre);
-        if (telefono) url += '&telefono=' + encodeURIComponent(telefono);
-        if (observacion) url += '&observacion=' + encodeURIComponent(observacion);
+        // Búsqueda unificada - el backend maneja la búsqueda en múltiples campos
+        if (q) url += '&q=' + encodeURIComponent(q);
         if (tipo) url += '&tipo_gestion=' + encodeURIComponent(tipo);
         
         var response = await fetch(url);
@@ -59,7 +53,7 @@ try {
                 alert('Sesión expirada. Por favor inicie sesión nuevamente.');
                 window.location.href = '/desktop/login.html';
             } else {
-                alert('Error al buscar gestines: ' + response.status);
+                alert('Error al buscar gestiones: ' + response.status);
             }
             return;
         }
@@ -90,12 +84,12 @@ try {
         
         renderizarTabla(datosRecibidos);
         
-        console.log('Búsqueda de gestines:', datosRecibidos.length, 'resultados');
+        console.log('Búsqueda de gestiones:', datosRecibidos.length, 'resultados');
 } catch (error) {
         console.error('Error en búsqueda:', error);
         
         // Better error handling for different error types
-        var errorMessage = 'Error al buscar gestines';
+        var errorMessage = 'Error al buscar gestiones';
         
         if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
             errorMessage = 'No se puede conectar al servidor. Asegúrese de que el servidor esté iniciado.';
@@ -116,20 +110,13 @@ async function cargarMas() {
     if (sentinel) sentinel.innerHTML = '⏳ Cargando más...';
     
     var q = document.getElementById('busqueda-general')?.value || '';
-    var cedula = q;
-    var nombre = q;
-    var telefono = q;
-    var observacion = q;
     var tipo = document.getElementById('tipo-gestion')?.value || '';
     
     var offset = currentOffset;
     
     try {
         var url = '/api/excel/gestiones/todas?limite=' + currentLimit + '&offset=' + offset;
-        if (cedula) url += '&cedula=' + encodeURIComponent(cedula);
-        if (nombre) url += '&nombre=' + encodeURIComponent(nombre);
-        if (telefono) url += '&telefono=' + encodeURIComponent(telefono);
-        if (observacion) url += '&observacion=' + encodeURIComponent(observacion);
+        if (q) url += '&q=' + encodeURIComponent(q);
         if (tipo) url += '&tipo_gestion=' + encodeURIComponent(tipo);
         
         var response = await fetch(url);
@@ -172,7 +159,7 @@ function renderizarTabla(datos) {
     }
     
     if (!datos.length) {
-        tabla.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">No se encontraron gestines</td></tr>';
+        tabla.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">No se encontraron gestiones</td></tr>';
         return;
     }
     
@@ -222,7 +209,7 @@ function renderizarCards(datos) {
     }
     
     if (!datos.length) {
-        container.innerHTML = '<div class="gestiones-empty"><div class="gestiones-empty-icon">📭</div><p>No se encontraron gestines</p></div>';
+        container.innerHTML = '<div class="gestiones-empty"><div class="gestiones-empty-icon">📭</div><p>No se encontraron gestiones</p></div>';
         return;
     }
     

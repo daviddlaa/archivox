@@ -1187,7 +1187,7 @@ function cerrarModal() {
     }
 }
 
-// Función para cargar historial de gestines
+// Función para cargar historial de gestiones
 async function cargarHistorialGestiones(id) {
     console.log('DEBUG cargarHistorialGestiones - iniando con id:', id);
     
@@ -1197,7 +1197,7 @@ async function cargarHistorialGestiones(id) {
         return;
     }
     
-    container.innerHTML = '<div style="padding:15px;text-align:center;color:#6b7280;">Cargando gestines...</div>';
+    container.innerHTML = '<div style="padding:15px;text-align:center;color:#6b7280;">Cargando gestiones...</div>';
     console.log('DEBUG cargarHistorialGestiones - fetchingAPI...');
     
     try {
@@ -1209,12 +1209,12 @@ async function cargarHistorialGestiones(id) {
             return;
         }
         
-var gestines = await response.json();
-        console.log('DEBUG cargarHistorialGestiones - gestines:', gestines);
-        console.log('DEBUG cargarHistorialGestiones - gestines.length:', gestines ? gestines.length : 'undefined');
+var gestiones = await response.json();
+        console.log('DEBUG cargarHistorialGestiones - gestiones:', gestiones);
+        console.log('DEBUG cargarHistorialGestiones - gestiones.length:', gestiones ? gestiones.length : 'undefined');
         
-        if (!gestines || gestines.length === 0) {
-            container.innerHTML = '<div style="padding: 15px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 8px;">No hay gestines registradas</div>';
+        if (!gestiones || gestiones.length === 0) {
+            container.innerHTML = '<div style="padding: 15px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 8px;">No hay gestiones registradas</div>';
             return;
         }
         
@@ -1229,8 +1229,8 @@ var gestines = await response.json();
             'Otro': '#f3f4f6'
         };
         
-        for (var i = 0; i < gestines.length; i++) {
-            var g = gestines[i];
+        for (var i = 0; i < gestiones.length; i++) {
+            var g = gestiones[i];
             var color = coloresTipo[g.tipo_gestion] || '#f3f4f6';
             var fechaFormateada = formatFechaGestion(g.fecha_gestion);
             
@@ -1265,8 +1265,8 @@ function editarGestion(gestionId, solicitudId) {
     // Primero obtener los datos de la gestión
     fetch('/api/excel/gestiones/' + solicitudId)
         .then(function(res) { return res.json(); })
-        .then(function(gestines) {
-            var gestion = gestines.find(function(g) { return g.id == gestionId; });
+        .then(function(gestiones) {
+            var gestion = gestiones.find(function(g) { return g.id == gestionId; });
             if (!gestion) {
                 alert('Gestión no encontrada');
                 return;

@@ -38,7 +38,7 @@ router.get(
 );
 
 // ================== GESTIONES GLOBAL ==================
-// Obtener todas las gestinesglobalmente con filtros
+// Obtener todas las gestionesglobalmente con filtros
 router.get(
     '/gestiones/todas',
     requiresAuth,
@@ -144,14 +144,14 @@ router.post(
     excelController.crearGestion
 );
 
-// Obtener gestines de una solicitud
+// Obtener gestiones de una solicitud
 router.get(
     '/gestiones/:solicitud_id',
     requiresAuth,
     excelController.getGestiones
 );
 
-// Obtener últimas gestines de múltiples solicitudes (_batch - una sola petición)
+// Obtener últimas gestiones de múltiples solicitudes (_batch - una sola petición)
 router.get(
     '/gestiones/ultimas',
     requiresAuth,

@@ -29,10 +29,6 @@ function formatFechaGestion(fecha) {
 
 async function buscarGestiones() {
     var q = document.getElementById('busqueda-general')?.value || '';
-    var cedula = q;
-    var nombre = q;
-    var telefono = q;
-    var observacion = q;
     var tipo = document.getElementById('tipo-gestion')?.value || '';
     
     currentOffset = 0;
@@ -40,10 +36,8 @@ async function buscarGestiones() {
     
     try {
         var url = '/api/excel/gestiones/todas?limite=' + currentLimit + '&offset=0';
-        if (cedula) url += '&cedula=' + encodeURIComponent(cedula);
-        if (nombre) url += '&nombre=' + encodeURIComponent(nombre);
-        if (telefono) url += '&telefono=' + encodeURIComponent(telefono);
-        if (observacion) url += '&observacion=' + encodeURIComponent(observacion);
+        // Búsqueda unificada - el backend maneja la búsqueda en múltiples campos
+        if (q) url += '&q=' + encodeURIComponent(q);
         if (tipo) url += '&tipo_gestion=' + encodeURIComponent(tipo);
         
         var response = await fetch(url);
@@ -343,20 +337,13 @@ async function cargarMas() {
     if (sentinel) sentinel.innerHTML = '⏳ Cargando...';
     
     var q = document.getElementById('busqueda-general')?.value || '';
-    var cedula = q;
-    var nombre = q;
-    var telefono = q;
-    var observacion = q;
     var tipo = document.getElementById('tipo-gestion')?.value || '';
     
     currentOffset += currentLimit;
     
     try {
         var url = '/api/excel/gestiones/todas?limite=' + currentLimit + '&offset=' + currentOffset;
-        if (cedula) url += '&cedula=' + encodeURIComponent(cedula);
-        if (nombre) url += '&nombre=' + encodeURIComponent(nombre);
-        if (telefono) url += '&telefono=' + encodeURIComponent(telefono);
-        if (observacion) url += '&observacion=' + encodeURIComponent(observacion);
+        if (q) url += '&q=' + encodeURIComponent(q);
         if (tipo) url += '&tipo_gestion=' + encodeURIComponent(tipo);
         
         var response = await fetch(url);

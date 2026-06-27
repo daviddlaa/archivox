@@ -1029,15 +1029,16 @@ const {
 
 // ================== GESTIONES TOTALES (PÁGINA COMPLETA) ==================
 
-// Obtener todas las gestinesglobalmente con filtros (fecha desde, fecha hasta, cédula, tipo, nombre, teléfono, observación)
-// VERSIÓN COMPLETA para la página de gestines
+// Obtener todas las gestionesglobalmente con filtros (fecha desde, fecha hasta, cédula, tipo, nombre, teléfono, observación)
+// VERSIÓN COMPLETA para la página de gestiones
 exports.getTodasGestiones = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const {
+const {
+        q = '',              // Búsqueda unificada
         cedula = '',
         nombre = '',
         telefono = '',
@@ -1049,6 +1050,10 @@ exports.getTodasGestiones = async (req, res) => {
         limite = 50,
         offset = 0
     } = req.query;
+
+    // Si hay búsqueda unificada (q), distribuirla a los filtros correspondientes
+    // para mantener compatibilidad
+    const busqueda = q.trim();
 
     try {
         // LEFT JOIN para obtener campos de solicitudes (cedula, nombre, celular)
@@ -1066,28 +1071,41 @@ exports.getTodasGestiones = async (req, res) => {
         const params = [usuarioId];
         let paramIndex = 2;
 
-        if (cedula) {
-            sql += ` AND s.cedula LIKE $${paramIndex}`;
-            params.push('%' + cedula + '%');
+        // Si hay búsqueda unificada, aplicarla a todos los campos
+        if (busqueda) {
+            sql += ` AND (
+                s.cedula LIKE $${paramIndex}
+                OR LOWER(s.nombre) LIKE LOWER($${paramIndex})
+                OR LOWER(s.celular) LIKE LOWER($${paramIndex})
+                OR LOWER(g.observacion) LIKE LOWER($${paramIndex})
+            )`;
+            params.push('%' + busqueda + '%');
             paramIndex++;
-        }
+        } else {
+            // Búsqueda individual (para compatibilidad hacia atrás)
+            if (cedula) {
+                sql += ` AND s.cedula LIKE $${paramIndex}`;
+                params.push('%' + cedula + '%');
+                paramIndex++;
+            }
 
-        if (nombre) {
-            sql += ` AND LOWER(s.nombre) LIKE LOWER($${paramIndex})`;
-            params.push('%' + nombre + '%');
-            paramIndex++;
-        }
+            if (nombre) {
+                sql += ` AND LOWER(s.nombre) LIKE LOWER($${paramIndex})`;
+                params.push('%' + nombre + '%');
+                paramIndex++;
+            }
 
-        if (telefono) {
-            sql += ` AND LOWER(s.celular) LIKE LOWER($${paramIndex})`;
-            params.push('%' + telefono + '%');
-            paramIndex++;
-        }
+            if (telefono) {
+                sql += ` AND LOWER(s.celular) LIKE LOWER($${paramIndex})`;
+                params.push('%' + telefono + '%');
+                paramIndex++;
+            }
 
-        if (observacion) {
-            sql += ` AND LOWER(g.observacion) LIKE LOWER($${paramIndex})`;
-            params.push('%' + observacion + '%');
-            paramIndex++;
+            if (observacion) {
+                sql += ` AND LOWER(g.observacion) LIKE LOWER($${paramIndex})`;
+                params.push('%' + observacion + '%');
+                paramIndex++;
+            }
         }
 
         if (fecha_desde) {
@@ -1114,7 +1132,7 @@ exports.getTodasGestiones = async (req, res) => {
             paramIndex++;
         }
 
-        // Preparar query de conteo con el mismo JOIN y filtros
+// Preparar query de conteo con el mismo JOIN y filtros
         let countSql = `
             SELECT COUNT(*) as total
             FROM gestiones g
@@ -1124,10 +1142,23 @@ exports.getTodasGestiones = async (req, res) => {
         const countParams = [usuarioId];
         let countIndex = 2;
 
-        if (cedula) { countSql += ` AND s.cedula LIKE $${countIndex}`; countParams.push('%' + cedula + '%'); countIndex++; }
-        if (nombre) { countSql += ` AND LOWER(s.nombre) LIKE LOWER($${countIndex})`; countParams.push('%' + nombre + '%'); countIndex++; }
-        if (telefono) { countSql += ` AND LOWER(s.celular) LIKE LOWER($${countIndex})`; countParams.push('%' + telefono + '%'); countIndex++; }
-        if (observacion) { countSql += ` AND LOWER(g.observacion) LIKE LOWER($${countIndex})`; countParams.push('%' + observacion + '%'); countIndex++; }
+        // Aplicar los mismos filtros de búsqueda al conteo
+        if (busqueda) {
+            countSql += ` AND (
+                s.cedula LIKE $${countIndex}
+                OR LOWER(s.nombre) LIKE LOWER($${countIndex})
+                OR LOWER(s.celular) LIKE LOWER($${countIndex})
+                OR LOWER(g.observacion) LIKE LOWER($${countIndex})
+            )`;
+            countParams.push('%' + busqueda + '%');
+            countIndex++;
+        } else {
+            // Búsqueda individual para compatibilidad
+            if (cedula) { countSql += ` AND s.cedula LIKE $${countIndex}`; countParams.push('%' + cedula + '%'); countIndex++; }
+            if (nombre) { countSql += ` AND LOWER(s.nombre) LIKE LOWER($${countIndex})`; countParams.push('%' + nombre + '%'); countIndex++; }
+            if (telefono) { countSql += ` AND LOWER(s.celular) LIKE LOWER($${countIndex})`; countParams.push('%' + telefono + '%'); countIndex++; }
+            if (observacion) { countSql += ` AND LOWER(g.observacion) LIKE LOWER($${countIndex})`; countParams.push('%' + observacion + '%'); countIndex++; }
+        }
         if (fecha_desde) { countSql += ` AND g.fecha_gestion >= $${countIndex}`; countParams.push(fecha_desde); countIndex++; }
         if (fecha_hasta) { countSql += ` AND g.fecha_gestion <= $${countIndex}`; countParams.push(fecha_hasta); countIndex++; }
         if (tipo_gestion) { countSql += ` AND g.tipo_gestion = $${countIndex}`; countParams.push(tipo_gestion); countIndex++; }
