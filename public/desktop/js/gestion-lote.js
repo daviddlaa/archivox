@@ -314,12 +314,13 @@ function renderizarSolicitudes(lista) {
             html += '<div class="sol-observacion-vacia">Sin observación registrada</div>';
         }
         
-        // Acciones
+// Acciones
         html += '<div class="sol-acciones">';
         
         if (!gestionada) {
             html += '<button class="btn-accion btn-llamar" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Llamada\')">📞 Llamada</button>';
             html += '<button class="btn-accion btn-whatsapp" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'WhatsApp\')">💬 WhatsApp</button>';
+            html += '<button class="btn-accion btn-whatsapp-img" onclick="abrirGestionWhatsApp(\'' + sol.id_solicitud + '\', \'' + (sol.celular || '') + '\')">📷 WhatsApp c/Imagen</button>';
             html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
             html += '<button class="btn-accion btn-cobranza" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Cobranza\')">💰 Cobranza</button>';
             html += '<button class="btn-accion btn-completar" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Completada\')">✅ Completar</button>';
@@ -495,6 +496,201 @@ document.getElementById('filtro-estado').addEventListener('change', function() {
 
 // Iniciar
 init();
+
+// ================== WHATSAPP CON IMAGEN INDIVIDUAL ==================
+
+// Abrir modal de WhatsApp con imagen para una solicitud específica
+function abrirGestionWhatsApp(solicitudId, celular) {
+    var sol = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
+    
+    if (!sol) {
+        alert('Solicitud no encontrada');
+        return;
+    }
+    
+    // Validar que tenga celular
+    if (!celular || celular === '') {
+        alert('Esta solicitud no tiene número de celular');
+        return;
+    }
+    
+    var contenido = '';
+    
+    contenido += '<div class="modal-gestion">';
+    contenido += '<h2>📷 WhatsApp c/Imagen - Solicitud #' + solicitudId + '</h2>';
+    
+    // Info del cliente
+    contenido += '<div class="modal-info">';
+    contenido += '<p><strong>Nombre:</strong> ' + (sol.nombre || '—') + '</p>';
+    contenido += '<p><strong>Celular:</strong> ' + celular + '</p>';
+    contenido += '</div>';
+    
+    // Formulario
+    contenido += '<div class="modal-form">';
+    contenido += '<label>📝 Mensaje:</label>';
+    contenido += '<textarea id="whatsapp-img-mensaje" rows="3" placeholder="Escriba su mensaje..."></textarea>';
+    
+    contenido += '<label>📎 Seleccionar Imagen:</label>';
+    contenido += '<input type="file" id="whatsapp-img-input" accept="image/jpeg,image/png,image/webp" onchange="previsualizarWhatsAppImg(event)">';
+    contenido += '<div id="whatsapp-img-preview-container" style="display: none; margin-top: 12px; text-align: center;">';
+    contenido += '<img id="whatsapp-img-preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #e2e8f0;">';
+    contenido += '<div style="margin-top: 8px;"><button type="button" onclick="quitarWhatsAppImg()" style="padding: 6px 12px; background: #fee2e2; border: none; border-radius: 4px; cursor: pointer;">Quitar Imagen</button></div>';
+    contenido += '</div>';
+    
+    // Nuevo check para abrir WhatsApp Web
+    contenido += '<div style="margin-top: 16px; padding: 12px; background: #f0fdf4; border-radius: 8px;">';
+    contenido += '<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">';
+    contenido += '<input type="checkbox" id="whatsapp-abrir-web" checked style="width: 20px; height: 20px;">';
+    contenido += '<span>📱 Abrir WhatsApp Web automáticamente</span>';
+    contenido += '</label>';
+    contenido += '</div>';
+    
+    contenido += '<div class="modal-botones">';
+    contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>';
+    contenido += '<button class="btn-guardar" id="btn-whatsapp-img" onclick="enviarWhatsAppImagen(\'' + solicitudId + '\', \'' + celular + '\')">📤 Enviar</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    crearModal(contenido);
+}
+
+// Previsualizar imagen para WhatsApp individual
+function previsualizarWhatsAppImg(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    
+    // Validar tipo
+    var tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!tiposPermitidos.includes(file.type)) {
+        alert('Solo se permiten imágenes JPG, PNG o WebP');
+        event.target.value = '';
+        return;
+    }
+    
+    // Validar tamaño (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen no puede superar 5MB');
+        event.target.value = '';
+        return;
+    }
+    
+    // Preview
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var container = document.getElementById('whatsapp-img-preview-container');
+        var img = document.getElementById('whatsapp-img-preview');
+        if (container && img) {
+            container.style.display = 'block';
+            img.src = e.target.result;
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+// Quitar imagen de WhatsApp individual
+function quitarWhatsAppImg() {
+    var input = document.getElementById('whatsapp-img-input');
+    var container = document.getElementById('whatsapp-img-preview-container');
+    if (input) input.value = '';
+    if (container) container.style.display = 'none';
+}
+
+// Enviar WhatsApp con imagen
+async function enviarWhatsAppImagen(solicitudId, celular) {
+    var mensaje = document.getElementById('whatsapp-img-mensaje').value.trim();
+    var fileInput = document.getElementById('whatsapp-img-input');
+    var file = fileInput ? fileInput.files[0] : null;
+    var abrirWeb = document.getElementById('whatsapp-abrir-web').checked;
+    
+    if (!mensaje && !file) {
+        alert('Escriba un mensaje o seleccione una imagen');
+        return;
+    }
+    
+    var btn = document.getElementById('btn-whatsapp-img');
+    btn.textContent = '⏳ Procesando...';
+    btn.disabled = true;
+    
+    try {
+        // 1. Subir imagen si existe
+        var imagenUrl = null;
+        if (file) {
+            var formData = new FormData();
+            formData.append('imagen', file);
+            
+            var uploadResponse = await fetch('/api/excel/upload-imagen', {
+                method: 'POST',
+                body: formData
+            });
+            
+            var uploadResult = await uploadResponse.json();
+            if (!uploadResult.success) {
+                throw new Error(uploadResult.error || 'Error al subir imagen');
+            }
+            imagenUrl = uploadResult.url;
+            console.log('DEBUG: Imagen subida:', imagenUrl);
+        }
+        
+        // 2. Guardar gestión en la base de datos
+        var observacion = mensaje;
+        if (imagenUrl) {
+            observacion = (mensaje ? mensaje + '\n\n' : '') + '[Imagen: ' + imagenUrl + ']';
+        }
+        
+        var response = await fetch('/api/excel/gestiones', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                solicitud_id: solicitudId,
+                tipo_gestion: 'WhatsApp',
+                observacion: observacion,
+                gestion_maestro_id: gestionId
+            })
+        });
+        
+        var resultado = await response.json();
+        
+        if (!response.ok || resultado.error) {
+            throw new Error(resultado.error || 'Error al guardar gestión');
+        }
+        
+        // 3. Abrir WhatsApp Web si está marcado
+        if (abrirWeb) {
+            // Limpiar y formatear número
+            var numeroLimpio = celular.replace(/[^0-9]/g, '');
+            
+            // Si no tiene código de país, agregar 505 (Nicaragua)
+            if (numeroLimpio.length === 8) {
+                numeroLimpio = '505' + numeroLimpio;
+            }
+            
+            // Construir URL de WhatsApp Web con mensaje
+            var urlWhatsApp = 'https://web.whatsapp.com/send?phone=' + numeroLimpio;
+            
+            if (mensaje) {
+                urlWhatsApp += '&text=' + encodeURIComponent(mensaje);
+            }
+            
+            console.log('DEBUG: Abriendo WhatsApp Web:', urlWhatsApp);
+            
+            // Abrir en nueva pestaña
+            window.open(urlWhatsApp, '_blank');
+        }
+        
+        alert('✅ Gestión guardada y WhatsApp abierto');
+        
+        cerrarModal();
+        cargarSolicitudes();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error: ' + error.message);
+    } finally {
+        btn.textContent = '📤 Enviar';
+        btn.disabled = false;
+    }
+}
 
 // ================== WHATSAPP MASIVO ==================
 

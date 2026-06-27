@@ -430,6 +430,16 @@ body {
     background: #16a34a;
 }
 
+/* Botón WhatsApp con Imagen */
+.btn-accion.btn-whatsapp-img {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.btn-accion.btn-whatsapp-img:hover {
+    background: #bbf7d0;
+}
+
 /* ===== SIDEBAR DE CAMPAÑAS ===== */
 .sidebar-campañas {
     position: fixed;
