@@ -172,6 +172,8 @@ async function crearGestionLote() {
     var descripcion = document.getElementById('descripcion-gestion').value.trim();
     var fecha_limite = document.getElementById('fecha-limite-gestion').value;
     
+    console.log('[crearGestionLote] Iniciando con', filasSeleccionadas.length, 'solicitudes');
+    
     if (!nombre) {
         alert('Por favor ingresa un nombre para la gestión');
         return;
@@ -184,9 +186,12 @@ async function crearGestionLote() {
     }
     
     try {
+        console.log('[crearGestionLote] Enviando request al servidor...');
+        
         var response = await fetch('/api/gestiones-maestro', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
                 nombre: nombre,
                 descripcion: descripcion,
@@ -195,7 +200,10 @@ async function crearGestionLote() {
             })
         });
         
+        console.log('[crearGestionLote] Response status:', response.status);
+        
         var resultado = await response.json();
+        console.log('[crearGestionLote] Resultado:', resultado);
         
         if (response.ok && resultado.id) {
             alert('Gestión creada correctamente');
@@ -203,11 +211,14 @@ async function crearGestionLote() {
             // Ir a la página de gestión por lotes
             window.location.href = '/gestion-lote?id=' + resultado.id;
         } else {
-            alert('Error: ' + (resultado.error || 'Error desconocido'));
+            var msg = resultado.error || 'Error desconocido';
+            if (resultado.detalle) msg += '\nDetalle: ' + resultado.detalle;
+            alert('Error: ' + msg);
+            console.error('[crearGestionLote] Error:', resultado);
         }
     } catch (error) {
-        console.error('Error creando gestión:', error);
-        alert('Error al crear la gestión');
+        console.error('[crearGestionLote] Error completa:', error);
+        alert('Error al crear la gestión: ' + error.message);
     } finally {
         if (btn) {
             btn.textContent = '🚀 Crear Gestión';

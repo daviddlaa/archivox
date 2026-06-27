@@ -76,11 +76,16 @@ function getGestionMaestroById(req, res) {
 function createGestionMaestro(req, res) {
     try {
         const usuario_id = getUsuarioId(req);
+        console.log('[gestiones-maestro] Usuario ID:', usuario_id);
+        console.log('[gestiones-maestro] Session:', req.session);
+        
         if (!usuario_id) {
-            return res.status(401).json({ error: 'No autenticado' });
+            console.error('[gestiones-maestro] Error: No autenticado - session:', req.session);
+            return res.status(401).json({ error: 'No autenticado', detalle: 'Sesión no válida' });
         }
         
         const { nombre, descripcion, fecha_limite, solicitudes_ids } = req.body;
+        console.log('[gestiones-maestro] Datos recibidos:', { nombre, descripcion, fecha_limite, solicitudes_ids: solicitudes_ids?.length });
         
         if (!nombre) {
             return res.status(400).json({ error: 'El nombre es requerido' });
@@ -90,14 +95,23 @@ function createGestionMaestro(req, res) {
             return res.status(400).json({ error: 'Se requiere al menos una solicitud' });
         }
         
+        // Verificar que las solicitudes existen y pertenecen al usuario
+        const stmtCheck = db.prepare(`
+            SELECT id_solicitud FROM solicitudes 
+            WHERE id_solicitud = ? AND usuario_id = ?
+        `);
+        
         // Crear gestión maestro
         const stmtInsert = db.prepare(`
             INSERT INTO gestiones_maestro (nombre, descripcion, usuario_id, total_solicitudes, gestionadas, fecha_limite)
             VALUES (?, ?, ?, ?, 0, ?)
         `);
         
+        console.log('[gestiones-maestro] Insertando en gestiones_maestro:', { nombre, descripcion, usuario_id, total: solicitudes_ids.length });
+        
         const result = stmtInsert.run(nombre, descripcion || '', usuario_id, solicitudes_ids.length, fecha_limite || null);
         const gestion_id = result.lastInsertRowid;
+        console.log('[gestiones-maestro] Gestion ID creada:', gestion_id);
         
         // Insertar cada gestión individual vinculada al maestro
         const stmtGestion = db.prepare(`
@@ -109,14 +123,17 @@ function createGestionMaestro(req, res) {
             stmtGestion.run(sol_id, usuario_id, gestion_id);
         }
         
+        console.log('[gestiones-maestro] Gestion creada exitosamente, ID:', gestion_id);
+        
         res.json({ 
             id: gestion_id, 
             mensaje: 'Gestión creada correctamente',
             total_solicitudes: solicitudes_ids.length
         });
     } catch (error) {
-        console.error('Error en createGestionMaestro:', error);
-        res.status(500).json({ error: 'Error al crear gestión' });
+        console.error('[gestiones-maestro] Error completo:', error);
+        console.error('[gestiones-maestro] Stack:', error.stack);
+        res.status(500).json({ error: 'Error al crear gestión', detalle: error.message });
     }
 }
 
