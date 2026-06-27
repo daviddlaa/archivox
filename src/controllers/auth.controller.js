@@ -1,8 +1,6 @@
 const bcrypt = require('bcryptjs');
 const db = require('../config/db.js');
-
-// Reemplazar pool por db
-const pool = db;
+const pool = db.pool || db;
 
 // Registro de usuario
 exports.registrar = async (req, res) => {

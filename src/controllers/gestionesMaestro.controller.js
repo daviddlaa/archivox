@@ -1,6 +1,6 @@
 // Dynamic database - SQLite for local, PostgreSQL for production
 const db = require('../config/db');
-const isPostgreSQL = !!process.env.DATABASE_URL;
+const pool = db.pool || db;
 
 // Obtener usuario actual (del middleware de auth)
 function getUsuarioId(req) {
@@ -8,21 +8,19 @@ function getUsuarioId(req) {
 }
 
 // GET /api/gestiones-maestro - Listar todas las gestione maestro
-function getGestionesMaestro(req, res) {
+async function getGestionesMaestro(req, res) {
     try {
         const usuario_id = getUsuarioId(req);
         if (!usuario_id) {
             return res.status(401).json({ error: 'No autenticado' });
         }
         
-        const stmt = db.prepare(`
-            SELECT * FROM gestiones_maestro 
-            WHERE usuario_id = ?
-            ORDER BY created_at DESC
-        `);
+        const result = await pool.query(
+            'SELECT * FROMgestiones_maestro WHERE usuario_id = $1 ORDER BY created_at DESC',
+            [usuario_id]
+        );
         
-        const gestiones = stmt.all(usuario_id);
-        res.json(gestiones);
+        res.json(result.rows || result);
     } catch (error) {
         console.error('Error en getGestionesMaestro:', error);
         res.status(500).json({ error: 'Error al buscar gestiones' });
@@ -30,7 +28,7 @@ function getGestionesMaestro(req, res) {
 }
 
 // GET /api/gestiones-maestro/:id - Ver una gestión específica con sus solicitudes
-function getGestionMaestroById(req, res) {
+async function getGestionMaestroById(req, res) {
     try {
         const usuario_id = getUsuarioId(req);
         if (!usuario_id) {
@@ -40,29 +38,29 @@ function getGestionMaestroById(req, res) {
         const { id } = req.params;
         
         // Obtener gestión maestro
-        const stmtGM = db.prepare(`
-            SELECT * FROM gestiones_maestro 
-            WHERE id = ? AND usuario_id = ?
-        `);
+        const resultGM = await pool.query(
+            'SELECT * FROMgestiones_maestro WHERE id = $1 AND usuario_id = $2',
+            [id, usuario_id]
+        );
         
-        const gestion = stmtGM.get(id, usuario_id);
+        const gestion = resultGM.rows ? resultGM.rows[0] : resultGM[0];
         
         if (!gestion) {
             return res.status(404).json({ error: 'Gestión no encontrada' });
         }
         
         // Obtener solicitudes asociadas a esta gestión
-        const stmtSol = db.prepare(`
+        const resultSol = await pool.query(`
             SELECT s.*, g.id as gestion_id, g.tipo_gestion, g.observacion as gestion_obs, g.fecha_gestion
             FROM solicitudes s
-            LEFT JOIN gestiones g ON s.id_solicitud = g.solicitud_id AND g.gestion_maestro_id = ?
+            LEFT JOIN gestioneg ON s.id_solicitud = g.solicitud_id AND g.gestion_maestro_id = $1
             WHERE s.id_solicitud IN (
-                SELECT solicitud_id FROM gestiones WHERE gestion_maestro_id = ?
+                SELECT solicitud_id FROMgestioneg WHERE gestion_maestro_id = $1
             )
             ORDER BY g.fecha_gestion DESC NULLS LAST
-        `);
+        `, [id]);
         
-        const solicitudes = stmtSol.all(id, id);
+        const solicitudes = resultSol.rows || resultSol;
         
         res.json({
             ...gestion,
