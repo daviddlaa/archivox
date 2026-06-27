@@ -180,16 +180,37 @@ gestion-lote.js:919 Error en WhatsApp Masivo: SyntaxError: Unexpected token '<',
 3. [x] Mejorar manejo de errores en el frontend - COMPLETADO
 4. [x] Implementar botón WhatsApp c/Imagen - COMPLETADO en código
 5. [x] Implementar función WhatsApp Web - COMPLETADO en código
+6. [x] Crear carpeta uploads/ automáticamente - COMPLETADO
 
 ---
 
-### Correcciones Aplicadas
+## CORRECCIONES APLICADAS
 
-1. **excel.controller.js**: Agregado try-catch y logs en `subirImagenGestion()`
-2. **gestion-lote.js**: Agregado check `response.ok` antes de `json()` en:
-   - `enviarWhatsAppImagen()` (WhatsApp individual)
-   - `ejecutarWhatsAppMasivo()` (WhatsApp Masivo)
+### 1. multer.config.js (CORREGIDO)
+```javascript
+const fs = require('fs');
 
-### Cómo Probar
+// Crear carpeta uploads/ si no existe
+const uploadsDir = 'uploads/';
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log('DEBUG: Carpeta uploads/ creada automáticamente');
+}
+```
+**Problema resuelto:** La carpeta uploads/ ahora se crea automáticamente si no existe, evitando el error ENOENT en servidores como Render.
 
-Reiniciar el servidor y probar el flujo de WhatsApp con imagen. Los logs del servidor mostrarán el error exacto si falla.
+### 2. excel.controller.js
+- Agregado try-catch y logs en `subirImagenGestion()`
+
+### 3. gestion-lote.js
+- Agregado check `response.ok` antes de `json()` en:
+  - `enviarWhatsAppImagen()` (WhatsApp individual)
+  - `ejecutarWhatsAppMasivo()` (WhatsApp Masivo)
+
+---
+
+## CÓMO PROBAR
+
+1. Commit y push los cambios a producción
+2. Reiniciar el servidor (en Render, puede requerirse restart)
+3. Probar el flujo de WhatsApp con imagen
