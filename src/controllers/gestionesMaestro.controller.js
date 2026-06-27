@@ -2,6 +2,17 @@
 const db = require('../config/db');
 const pool = db.pool || db;
 
+// Helper para obtener resultado de queries (compatible con SQLite y PostgreSQL)
+function getRows(result) {
+    return result.rows || result;
+}
+
+function getFirstRow(result) {
+    if (result.rows && result.rows.length > 0) return result.rows[0];
+    if (Array.isArray(result) && result.length > 0) return result[0];
+    return null;
+}
+
 // Obtener usuario actual (del middleware de auth)
 function getUsuarioId(req) {
     return req.session && req.session.usuario ? req.session.usuario.id : null;
@@ -15,12 +26,12 @@ async function getGestionesMaestro(req, res) {
             return res.status(401).json({ error: 'No autenticado' });
         }
         
-        const result = await pool.query(
-            'SELECT * FROMgestiones_maestro WHERE usuario_id = $1 ORDER BY created_at DESC',
+const result = await pool.query(
+            'SELECT * FROM g3 WHERE usuario_id = $1 ORDER BY created_at DESC',
             [usuario_id]
         );
         
-        res.json(result.rows || result);
+        res.json(getRows(result));
     } catch (error) {
         console.error('Error en getGestionesMaestro:', error);
         res.status(500).json({ error: 'Error al buscar gestiones' });
@@ -39,11 +50,11 @@ async function getGestionMaestroById(req, res) {
         
         // Obtener gestión maestro
         const resultGM = await pool.query(
-            'SELECT * FROMgestiones_maestro WHERE id = $1 AND usuario_id = $2',
+            'SELECT * FROM gestiones_maestro WHERE id = $1 AND usuario_id = $2',
             [id, usuario_id]
         );
         
-        const gestion = resultGM.rows ? resultGM.rows[0] : resultGM[0];
+        const gestion = getFirstRow(resultGM);
         
         if (!gestion) {
             return res.status(404).json({ error: 'Gestión no encontrada' });
@@ -53,14 +64,14 @@ async function getGestionMaestroById(req, res) {
         const resultSol = await pool.query(`
             SELECT s.*, g.id as gestion_id, g.tipo_gestion, g.observacion as gestion_obs, g.fecha_gestion
             FROM solicitudes s
-            LEFT JOIN gestioneg ON s.id_solicitud = g.solicitud_id AND g.gestion_maestro_id = $1
+            LEFT JOIN gestiones ON s.id_solicitud = g.solicitud_id AND g.gestion_maestro_id = $1
             WHERE s.id_solicitud IN (
-                SELECT solicitud_id FROMgestioneg WHERE gestion_maestro_id = $1
+                SELECT solicitud_id FROM gestioes WHERE gestion_maestro_id = $1
             )
             ORDER BY g.fecha_gestion DESC NULLS LAST
         `, [id]);
         
-        const solicitudes = resultSol.rows || resultSol;
+        const solicitudes = getRows(resultSol);
         
         res.json({
             ...gestion,
@@ -73,7 +84,8 @@ async function getGestionMaestroById(req, res) {
 }
 
 // POST /api/gestiones-maestro - Crear nueva gestión por lotes
-function createGestionMaestro(req, res) {
+async function createGestionMaestro(req, res) {
+    const client = await pool.connect();
     try {
         const usuario_id = getUsuarioId(req);
         console.log('[gestiones-maestro] Usuario ID:', usuario_id);
@@ -95,33 +107,28 @@ function createGestionMaestro(req, res) {
             return res.status(400).json({ error: 'Se requiere al menos una solicitud' });
         }
         
-        // Verificar que las solicitudes existen y pertenecen al usuario
-        const stmtCheck = db.prepare(`
-            SELECT id_solicitud FROM solicitudes 
-            WHERE id_solicitud = ? AND usuario_id = ?
-        `);
+        // Iniciar transacción
+        await client.query('BEGIN');
         
-        // Crear gestión maestro
-        const stmtInsert = db.prepare(`
+        // Crear gestión maestro con RETURNING id
+        const resultGM = await client.query(`
             INSERT INTO gestiones_maestro (nombre, descripcion, usuario_id, total_solicitudes, gestionadas, fecha_limite)
-            VALUES (?, ?, ?, ?, 0, ?)
-        `);
+            VALUES ($1, $2, $3, $4, 0, $5)
+            RETURNING id
+        `, [nombre, descripcion || '', usuario_id, solicitudes_ids.length, fecha_limite || null]);
         
-        console.log('[gestiones-maestro] Insertando en gestiones_maestro:', { nombre, descripcion, usuario_id, total: solicitudes_ids.length });
-        
-        const result = stmtInsert.run(nombre, descripcion || '', usuario_id, solicitudes_ids.length, fecha_limite || null);
-        const gestion_id = result.lastInsertRowid;
+        const gestion_id = resultGM.rows[0].id;
         console.log('[gestiones-maestro] Gestion ID creada:', gestion_id);
         
         // Insertar cada gestión individual vinculada al maestro
-        const stmtGestion = db.prepare(`
-            INSERT INTO gestiones (solicitud_id, usuario_id, tipo_gestion, observacion, gestion_maestro_id)
-            VALUES (?, ?, 'Pendiente', 'Por gestionar', ?)
-        `);
-        
         for (const sol_id of solicitudes_ids) {
-            stmtGestion.run(sol_id, usuario_id, gestion_id);
+            await client.query(`
+                INSERT INTO gestiones (solicitud_id, usuario_id, tipo_gestion, observacion, gestion_maestro_id)
+                VALUES ($1, $2, 'Pendiente', 'Por gestionar', $3)
+            `, [sol_id, usuario_id, gestion_id]);
         }
+        
+        await client.query('COMMIT');
         
         console.log('[gestiones-maestro] Gestion creada exitosamente, ID:', gestion_id);
         
@@ -131,14 +138,17 @@ function createGestionMaestro(req, res) {
             total_solicitudes: solicitudes_ids.length
         });
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('[gestiones-maestro] Error completo:', error);
         console.error('[gestiones-maestro] Stack:', error.stack);
         res.status(500).json({ error: 'Error al crear gestión', detalle: error.message });
+    } finally {
+        client.release();
     }
 }
 
 // PUT /api/gestiones-maestro/:id - Actualizar gestión maestro
-function updateGestionMaestro(req, res) {
+async function updateGestionMaestro(req, res) {
     try {
         const usuario_id = getUsuarioId(req);
         if (!usuario_id) {
@@ -149,28 +159,26 @@ function updateGestionMaestro(req, res) {
         const { nombre, descripcion, fecha_limite, estado } = req.body;
         
         // Verificar que existe y pertenece al usuario
-        const stmtCheck = db.prepare(`
-            SELECT id FROM gestiones_maestro WHERE id = ? AND usuario_id = ?
-        `);
+        const resultCheck = await pool.query(`
+            SELECT id FROM gestiones_maestro WHERE id = $1 AND usuario_id = $2
+        `, [id, usuario_id]);
         
-        const existing = stmtCheck.get(id, usuario_id);
+        const existing = getFirstRow(resultCheck);
         
         if (!existing) {
             return res.status(404).json({ error: 'Gestión no encontrada' });
         }
         
         // Actualizar
-        const stmtUpdate = db.prepare(`
+        await pool.query(`
             UPDATE gestiones_maestro 
-            SET nombre = COALESCE(?, nombre),
-                descripcion = COALESCE(?, descripcion),
-                fecha_limite = COALESCE(?, fecha_limite),
-                estado = COALESCE(?, estado),
+            SET nombre = COALESCE($1, nombre),
+                descripcion = COALESCE($2, descripcion),
+                fecha_limite = COALESCE($3, fecha_limite),
+                estado = COALESCE($4, estado),
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = ? AND usuario_id = ?
-        `);
-        
-        stmtUpdate.run(nombre, descripcion, fecha_limite, estado, id, usuario_id);
+            WHERE id = $5 AND usuario_id = $6
+        `, [nombre, descripcion, fecha_limite, estado, id, usuario_id]);
         
         res.json({ mensaje: 'Gestión actualizada correctamente' });
     } catch (error) {
@@ -180,7 +188,8 @@ function updateGestionMaestro(req, res) {
 }
 
 // DELETE /api/gestiones-maestro/:id - Eliminar gestión maestro
-function deleteGestionMaestro(req, res) {
+async function deleteGestionMaestro(req, res) {
+    const client = await pool.connect();
     try {
         const usuario_id = getUsuarioId(req);
         if (!usuario_id) {
@@ -190,37 +199,43 @@ function deleteGestionMaestro(req, res) {
         const { id } = req.params;
         
         // Verificar que existe y pertenece al usuario
-        const stmtCheck = db.prepare(`
-            SELECT id FROM gestiones_maestro WHERE id = ? AND usuario_id = ?
-        `);
+        const resultCheck = await pool.query(`
+            SELECT id FROM gestiones_maestro WHERE id = $1 AND usuario_id = $2
+        `, [id, usuario_id]);
         
-        const existing = stmtCheck.get(id, usuario_id);
+        const existing = getFirstRow(resultCheck);
         
         if (!existing) {
             return res.status(404).json({ error: 'Gestión no encontrada' });
         }
         
+        // Iniciar transacción
+        await client.query('BEGIN');
+        
         // Eliminar primero las gestione individuales
-        const stmtDelGestion = db.prepare(`
-            DELETE FROM gestiones WHERE gestion_maestro_id = ?
-        `);
-        stmtDelGestion.run(id);
+        await client.query(`
+            DELETE FROM gestiones WHERE gestion_maestro_id = $1
+        `, [id]);
         
         // Eliminar el maestro
-        const stmtDelMaestro = db.prepare(`
-            DELETE FROM gestiones_maestro WHERE id = ? AND usuario_id = ?
-        `);
-        stmtDelMaestro.run(id, usuario_id);
+        await client.query(`
+            DELETE FROM gestiones_maestro WHERE id = $1 AND usuario_id = $2
+        `, [id, usuario_id]);
+        
+        await client.query('COMMIT');
         
         res.json({ mensaje: 'Gestión eliminada correctamente' });
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('Error en deleteGestionMaestro:', error);
         res.status(500).json({ error: 'Error al eliminar gestión' });
+    } finally {
+        client.release();
     }
 }
 
 // POST /api/gestiones - Guardar gestión individual (modificado para aceptar gestion_maestro_id)
-function createGestion(req, res) {
+async function createGestion(req, res) {
     try {
         const usuario_id = getUsuarioId(req);
         if (!usuario_id) {
@@ -237,26 +252,26 @@ function createGestion(req, res) {
             return res.status(400).json({ error: 'tipo_gestion es requerido' });
         }
         
-        const stmt = db.prepare(`
+        const result = await pool.query(`
             INSERT INTO gestiones (solicitud_id, usuario_id, tipo_gestion, observacion, gestion_maestro_id)
-            VALUES (?, ?, ?, ?, ?)
-        `);
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id
+        `, [solicitud_id, usuario_id, tipo_gestion, observacion || '', gestion_maestro_id || null]);
         
-        const result = stmt.run(solicitud_id, usuario_id, tipo_gestion, observacion || '', gestion_maestro_id || null);
+        const gestion_id = result.rows[0].id;
         
         // Si tiene gestion_maestro_id, actualizar contador
         if (gestion_maestro_id) {
-            const stmtUpdateCount = db.prepare(`
+            await pool.query(`
                 UPDATE gestiones_maestro 
                 SET gestionadas = gestionadas + 1,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            `);
-            stmtUpdateCount.run(gestion_maestro_id);
+                WHERE id = $1
+            `, [gestion_maestro_id]);
         }
         
         res.json({ 
-            id: result.lastInsertRowid, 
+            id: gestion_id, 
             mensaje: 'Gestión guardada correctamente' 
         });
     } catch (error) {
@@ -266,7 +281,7 @@ function createGestion(req, res) {
 }
 
 // GET /api/gestiones-maestro/:id/progreso - Obtener progreso de gestión
-function obtenerProgresoGestion(req, res) {
+async function obtenerProgresoGestion(req, res) {
     try {
         const usuario_id = getUsuarioId(req);
         if (!usuario_id) {
@@ -276,26 +291,26 @@ function obtenerProgresoGestion(req, res) {
         const { id } = req.params;
         
         // Obtener gestión maestro
-        const stmtGM = db.prepare(`
+        const resultGM = await pool.query(`
             SELECT * FROM gestiones_maestro 
-            WHERE id = ? AND usuario_id = ?
-        `);
+            WHERE id = $1 AND usuario_id = $2
+        `, [id, usuario_id]);
         
-        const gestion = stmtGM.get(id, usuario_id);
+        const gestion = getFirstRow(resultGM);
         
         if (!gestion) {
             return res.status(404).json({ error: 'Gestión no encontrada' });
         }
         
         // Contar gestións por estado
-        const stmtCount = db.prepare(`
+        const resultCount = await pool.query(`
             SELECT tipo_gestion, COUNT(*) as count
             FROM gestiones 
-            WHERE gestion_maestro_id = ?
+            WHERE gestion_maestro_id = $1
             GROUP BY tipo_gestion
-        `);
+        `, [id]);
         
-        const conteo = stmtCount.all(id);
+        const conteo = getRows(resultCount);
         
         // Calcular progreso
         const porEstado = {};
@@ -304,7 +319,7 @@ function obtenerProgresoGestion(req, res) {
         for (const c of conteo) {
             porEstado[c.tipo_gestion] = c.count;
             if (c.tipo_gestion !== 'Pendiente') {
-                gestionadas += c.count;
+                gestionadas += parseInt(c.count);
             }
         }
         
