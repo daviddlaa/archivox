@@ -596,12 +596,40 @@ function quitarWhatsAppImg() {
     if (container) container.style.display = 'none';
 }
 
+// Abrir WhatsApp Web directamente (sin esperar upload)
+function abrirWhatsAppWeb(celular, mensaje) {
+    // Limpiar y formatear número
+    var numeroLimpio = String(celular).replace(/[^0-9]/g, '');
+    
+    // Si no tiene código de país, agregar 505 (Nicaragua)
+    if (numeroLimpio.length === 8) {
+        numeroLimpio = '505' + numeroLimpio;
+    }
+    
+    // Construir URL de WhatsApp Web
+    var urlWhatsApp = 'https://web.whatsapp.com/send?phone=' + numeroLimpio;
+    
+    if (mensaje) {
+        urlWhatsApp += '&text=' + encodeURIComponent(mensaje);
+    }
+    
+    console.log('DEBUG: Abriendo WhatsApp Web:', urlWhatsApp);
+    
+    // Abrir en nueva pestaña
+    var win = window.open(urlWhatsApp, '_blank');
+    if (!win) {
+        // Si fue bloqueado, intentar con wa.me
+        window.open('https://wa.me/' + numeroLimpio + '?text=' + encodeURIComponent(mensaje || ''), '_blank');
+    }
+}
+
 // Enviar WhatsApp con imagen
 async function enviarWhatsAppImagen(solicitudId, celular) {
     var mensaje = document.getElementById('whatsapp-img-mensaje').value.trim();
     var fileInput = document.getElementById('whatsapp-img-input');
     var file = fileInput ? fileInput.files[0] : null;
-    var abrirWeb = document.getElementById('whatsapp-abrir-web').checked;
+    var checkboxAbrirWeb = document.getElementById('whatsapp-abrir-web');
+    var abrirWeb = checkboxAbrirWeb ? checkboxAbrirWeb.checked : true;
     
     if (!mensaje && !file) {
         alert('Escriba un mensaje o seleccione una imagen');
@@ -613,7 +641,13 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
     btn.disabled = true;
     
     try {
-// 1. Subir imagen si existe
+        // 0. ABRIR WHATSAPP WEB PRIMERO (antes de operaciones async)
+        // Esto evita que el navegador bloquee la ventana emergente
+        if (abrirWeb) {
+            abrirWhatsAppWeb(celular, mensaje);
+        }
+        
+        // 1. Subir imagen si existe
         var imagenUrl = null;
         if (file) {
             var formData = new FormData();
@@ -658,34 +692,11 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
         
         var resultado = await response.json();
         
-        if (!response.ok || resultado.error) {
+if (!response.ok || resultado.error) {
             throw new Error(resultado.error || 'Error al guardar gestión');
         }
         
-        // 3. Abrir WhatsApp Web si está marcado
-        if (abrirWeb) {
-            // Limpiar y formatear número
-            var numeroLimpio = celular.replace(/[^0-9]/g, '');
-            
-            // Si no tiene código de país, agregar 505 (Nicaragua)
-            if (numeroLimpio.length === 8) {
-                numeroLimpio = '505' + numeroLimpio;
-            }
-            
-            // Construir URL de WhatsApp Web con mensaje
-            var urlWhatsApp = 'https://web.whatsapp.com/send?phone=' + numeroLimpio;
-            
-            if (mensaje) {
-                urlWhatsApp += '&text=' + encodeURIComponent(mensaje);
-            }
-            
-            console.log('DEBUG: Abriendo WhatsApp Web:', urlWhatsApp);
-            
-            // Abrir en nueva pestaña
-            window.open(urlWhatsApp, '_blank');
-        }
-        
-        alert('✅ Gestión guardada y WhatsApp abierto');
+        alert('✅ Gestión guardada');
         
         cerrarModal();
         cargarSolicitudes();

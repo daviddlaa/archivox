@@ -214,3 +214,19 @@ if (!fs.existsSync(uploadsDir)) {
 1. Commit y push los cambios a producción
 2. Reiniciar el servidor (en Render, puede requerirse restart)
 3. Probar el flujo de WhatsApp con imagen
+
+---
+
+## RESUMEN DE ESTADO FINAL
+
+### ✅ Completado:
+- Botón WhatsApp c/Imagen en cada tarjeta
+- Funciones de WhatsApp individual y Masivo
+- Manejo de errores mejorado en frontend
+- Creación automática de carpeta uploads/
+- Apertura de WhatsApp Web primero (evita bloqueos del navegador)
+
+### ⚠️ Pendiente:
+- Error 500 en /api/excel/upload-imagen requiere investigación en producción
+- Verificar que la sesión está activa antes de llamar al endpoint
+- Revisar logs del servidor para el error exacto
