@@ -1,23 +1,48 @@
-# TODO - WhatsApp Country Code Issue - RESOLVED ✅
+# TODO - WhatsApp con Imagen en Gestión por Lote (Escritorio)
 
-## Issue: WhatsApp button says "number not found" on mobile solicitudes
+## Objetivo:
+Agregar botón global de WhatsApp en la página de gestión por lote que permita subir imagen y enviarla a través de WhatsApp Web.
 
-### Root Cause:
-- The `wa.me` API requires country code (e.g., +593 for Ecuador)
-- Phone numbers in database may be missing country code
+---
 
-### Solution Applied:
+## Estado: ✅ COMPLETADO
 
-- [x] 1. Modify mobile `whatsAppCliente()` to add +593 country code
-- [x] 2. Add `formatearWhatsApp()` helper to desktop for future use
-- [x] 3. Both mobile and desktop now work with Ecuador country code (+593)
+### 1. Configurar Multer para Imágenes
+- [x] Modificar `src/config/multer.config.js` para aceptar imágenes (jpg, png, webp)
+- [x] Máximo 5MB por imagen
 
-### Changes Made:
+### 2. Nueva Ruta API para Subir Imágenes
+- [x] Crear ruta `POST /api/excel/upload-imagen` en `src/routes/excel.routes.js`
+- [x] Guardar imagen en carpeta `uploads/` y retornar URL
 
-1. **Mobile (`public/movil/js/solicitudes.js`):**
-   - Modified `whatsAppCliente()` function to prepend +593 if not present
-   
-2. **Desktop (`public/desktop/js/solicitudes.js`):**
-   - Added `formatearWhatsApp()` helper function
+### 3. Actualizar Controlador de Gestión
+- [x] Modificar `crearGestion` en `src/controllers/excel.controller.js` para guardar `imagen_url`
 
-### Country Code: +593 (Ecuador)
+### 4. Modificar UI de Gestión por Lote
+- [x] **gestion-lote.html**: Agregar botón global de WhatsApp arriba de la lista
+- [x] **gestion-lote.js**: 
+  - ✅ Botón global de WhatsApp Masivo agregado
+  - ✅ Modal para subir imagen + escribir mensaje
+  - ✅ Preview de imagen antes de enviar
+  - ✅ Envío masivo a todas las solicitudes pendientes
+
+### 5. Bug Corregido
+- [x] **PROBLEMA**: La función `mostrarFilaWhatsApp()` no se estaba llamando
+- [x] **SOLUCIÓN**: Agregada llamada en `cargarGestion()` después de mostrar panel de progreso
+
+---
+
+## Flujo de Usuario:
+
+1. ✅ Usuario entra a Gestión por Lote → ve botón "💬 WhatsApp Masivo" arriba
+2. ✅ Toca botón → modal pide: seleccionar imagen + escribir mensaje
+3. ✅ Preview de imagen se muestra antes de enviar
+4. ✅ Al enviar → crea gestión para TODAS las solicitudes pendientes
+5. ✅ La URL de la imagen se guarda en la observación
+
+---
+
+## Notas:
+- WhatsApp Web no permite envío programático de imágenes
+- El agente debe arrastrar la imagen manualmente a WhatsApp Web
+- Solo versión de escritorio (no móvil)

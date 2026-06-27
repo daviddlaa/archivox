@@ -77,6 +77,18 @@
                     </div>
                 </div>
 
+<!-- Botón Global de WhatsApp -->
+                <div class="whatsapp-global-row" id="whatsapp-global-row" style="display: none;">
+                    <button class="btn-whatsapp-global" onclick="abrirModalWhatsApp()">
+                        💬 WhatsApp Masivo
+                    </button>
+                    <div class="whatsapp-preview" id="whatsapp-preview" style="display: none;">
+                        <img id="whatsapp-img-preview" src="" alt="Preview">
+                        <span id="whatsapp-img-name"></span>
+                        <button class="btn-quitar" onclick="quitarImagenWhatsApp()">✕</button>
+                    </div>
+                </div>
+
                 <!-- Filtros y Búsqueda -->
                 <div class="filtros-row" id="filtros-row" style="display: none;">
                     <input type="text" id="busqueda" placeholder="🔍 Buscar por id, cédula, nombre o teléfono...">

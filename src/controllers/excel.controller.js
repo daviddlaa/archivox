@@ -1,6 +1,8 @@
 
 const excelService = require('../services/excel.service');
 const db = require('../config/db.js');
+const fs = require('fs');
+const path = require('path');
 
 // Reemplazar pool por db en todo el archivo
 const pool = db;
@@ -1264,8 +1266,65 @@ exports.getHistorialActualizaciones = async (req, res) => {
             offset: parseInt(offset)
         });
 
-    } catch (err) {
+} catch (err) {
         console.error('Error getHistorialActualizaciones:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// ================== IMÁGENES PARA GESTIÓN WHATSAPP ==================
+
+// Subir imagen para gestión por WhatsApp
+exports.subirImagenGestion = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    if (!req.file) {
+        return res.status(400).json({ error: 'No se envió ninguna imagen' });
+    }
+
+    // Retornar URL de la imagen
+    const imagenUrl = '/uploads/' + req.file.filename;
+    const nombreOriginal = req.file.originalname;
+
+    console.log('DEBUG: Imagen subida:', imagenUrl, 'por usuario:', usuarioId);
+
+    res.json({
+        success: true,
+        url: imagenUrl,
+        nombre: nombreOriginal,
+        filename: req.file.filename
+    });
+};
+
+// Eliminar imagen temporal
+exports.eliminarImagenGestion = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { nombre } = req.params;
+
+    if (!nombre) {
+        return res.status(400).json({ error: 'Nombre de archivo requerido' });
+    }
+
+    try {
+        const filePath = path.join(__dirname, '../../uploads/', nombre);
+        
+        // Verificar que el archivo existe
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log('DEBUG: Imagen eliminada:', nombre);
+            res.json({ success: true, mensaje: 'Imagen eliminada' });
+        } else {
+            res.status(404).json({ error: 'Archivo no encontrado' });
+        }
+    } catch (err) {
+        console.error('Error eliminando imagen:', err);
         res.status(500).json({ error: err.message });
     }
 };

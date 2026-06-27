@@ -23,6 +23,21 @@ router.post(
     excelController.uploadExcel
 );
 
+// Subir imagen para gestión por WhatsApp
+router.post(
+    '/upload-imagen',
+    requiresAuth,
+    upload.single('imagen'),
+    excelController.subirImagenGestion
+);
+
+// Eliminar imagen temporal
+router.delete(
+    '/upload-imagen/:nombre',
+    requiresAuth,
+    excelController.eliminarImagenGestion
+);
+
 router.get('/solicitudes', excelController.listarSolicitudes);
 
 // Búsqueda directa en servidor (evita infinite scroll)
