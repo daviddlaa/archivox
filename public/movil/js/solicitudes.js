@@ -517,6 +517,12 @@ function whatsAppCliente(celular, nombre) {
     // Limpiar el número - remover cualquier carácter que no sea dígito
     var numeroLimpio = celular.replace(/\D/g, '');
     
+    // Agregar código de país si no existe (+593 para Ecuador)
+    // Verificar si ya tiene código de país (empieza con 593) o código largo internacional
+    if (!numeroLimpio.startsWith('593') && numeroLimpio.length <= 10) {
+        numeroLimpio = '593' + numeroLimpio;
+    }
+    
     // Mensaje predeterminado
     var mensaje = encodeURIComponent('Hola ' + (nombre || '') + ', te contactamos de Archivox. ¿En qué podemos ayudarte?');
     

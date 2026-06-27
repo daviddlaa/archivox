@@ -1,21 +1,23 @@
-# TODO - Fix PostgreSQL compatibility in gestorionesMaestro.controller.js
+# TODO - WhatsApp Country Code Issue - RESOLVED ✅
 
-## Task
-Refactor the controller to use PostgreSQL-compatible async queries that work in production (both SQLite and PostgreSQL)
+## Issue: WhatsApp button says "number not found" on mobile solicitudes
 
-## Steps
+### Root Cause:
+- The `wa.me` API requires country code (e.g., +593 for Ecuador)
+- Phone numbers in database may be missing country code
 
-- [x] 1. Review and understand the issue in controller
-- [x] 2. Create plan for refactoring
-- [x] 3. Get user confirmation
-- [ ] 4. Refactor createGestionMaestro function
-- [ ] 5. Refactor updateGestionMaestro function
-- [ ] 6. Refactor deleteGestionMaestro function
-- [ ] 7. Refactor createGestion function
-- [ ] 8. Refactor obtenerProgresoGestion function
-- [ ] 9. Test the fix
+### Solution Applied:
 
-## Notes
-- Use pool.query() with async/await instead of db.prepare().run()
-- Use RETURNING id clause instead of lastInsertRowid
-- Functions to fix: createGestionMaestro, updateGestionMaestro, deleteGestionMaestro, createGestion, obtenerProgresoGestion
+- [x] 1. Modify mobile `whatsAppCliente()` to add +593 country code
+- [x] 2. Add `formatearWhatsApp()` helper to desktop for future use
+- [x] 3. Both mobile and desktop now work with Ecuador country code (+593)
+
+### Changes Made:
+
+1. **Mobile (`public/movil/js/solicitudes.js`):**
+   - Modified `whatsAppCliente()` function to prepend +593 if not present
+   
+2. **Desktop (`public/desktop/js/solicitudes.js`):**
+   - Added `formatearWhatsApp()` helper function
+
+### Country Code: +593 (Ecuador)

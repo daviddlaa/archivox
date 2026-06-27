@@ -294,6 +294,20 @@ function obtenerFilasSeleccionadas() {
     return filasSeleccionadas;
 }
 
+// Función para formatear número WhatsApp con código de país (+593 para Ecuador)
+function formatearWhatsApp(celular) {
+    if (!celular) return '';
+    // Limpiar el número - remover cualquier carácter que no sea dígito
+    var numeroLimpio = celular.replace(/\D/g, '');
+    
+    // Agregar código de país si no existe (+593 para Ecuador)
+    if (!numeroLimpio.startsWith('593') && numeroLimpio.length <= 10) {
+        numeroLimpio = '593' + numeroLimpio;
+    }
+    
+    return numeroLimpio;
+}
+
 // Función para enviar a WhatsApp
 function enviarWhatsApp() {
     if (filasSeleccionadas.length === 0) {
