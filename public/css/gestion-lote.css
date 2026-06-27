@@ -220,9 +220,43 @@ body {
     background: #fecaca;
 }
 
-/* Input archivo oculto */
+/* Input archivo - visible como botón */
 #whatsapp-file-input {
-    display: none;
+    display: inline-block;
+    padding: 10px 16px;
+    background: #f1f5f9;
+    border: 2px dashed #cbd5e1;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 14px;
+    color: #475569;
+    margin-bottom: 12px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#whatsapp-file-input:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+}
+
+#whatsapp-preview-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 12px;
+    background: #f0fdf4;
+    border-radius: var(--radius-sm);
+    border: 1px solid #bbf7d0;
+}
+
+#whatsapp-preview-img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 2px solid #e2e8f0;
 }
 
 /* ===== FILTROS ROW ===== */

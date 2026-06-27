@@ -1,48 +1,54 @@
 # TODO - WhatsApp con Imagen en Gestión por Lote (Escritorio)
 
 ## Objetivo:
-Agregar botón global de WhatsApp en la página de gestión por lote que permita subir imagen y enviarla a través de WhatsApp Web.
+Agregar botón global de WhatsApp en la página de gestión por lote que permita subir imagen y enviarla.
 
 ---
 
-## Estado: ✅ COMPLETADO
+## Estado: 🟡 EN PROGRESO
 
-### 1. Configurar Multer para Imágenes
-- [x] Modificar `src/config/multer.config.js` para aceptar imágenes (jpg, png, webp)
-- [x] Máximo 5MB por imagen
+### Historico (Ya Implementado):
+- [x] Multer configurado para imágenes (5MB, jpg/png/webp)
+- [x] Ruta API `/api/excel/upload-imagen`
+- [x] Botón WhatsApp Masivo en UI
+- [x] Modal de WhatsApp Masivo
+- [x] Input de archivo ahora visible (antes oculto con display:none)
 
-### 2. Nueva Ruta API para Subir Imágenes
-- [x] Crear ruta `POST /api/excel/upload-imagen` en `src/routes/excel.routes.js`
-- [x] Guardar imagen en carpeta `uploads/` y retornar URL
+### Ahora: Bugfix - Input de imagen no era visible
 
-### 3. Actualizar Controlador de Gestión
-- [x] Modificar `crearGestion` en `src/controllers/excel.controller.js` para guardar `imagen_url`
+**PROBLEMA ENCONTRADO:**
+- El CSS tenía `#whatsapp-file-input { display: none; }` lo cual ocultaba el botón de subir imagen
+- El usuario no podía ver ni hacer clic para seleccionar una imagen
 
-### 4. Modificar UI de Gestión por Lote
-- [x] **gestion-lote.html**: Agregar botón global de WhatsApp arriba de la lista
-- [x] **gestion-lote.js**: 
-  - ✅ Botón global de WhatsApp Masivo agregado
-  - ✅ Modal para subir imagen + escribir mensaje
-  - ✅ Preview de imagen antes de enviar
-  - ✅ Envío masivo a todas las solicitudes pendientes
-
-### 5. Bug Corregido
-- [x] **PROBLEMA**: La función `mostrarFilaWhatsApp()` no se estaba llamando
-- [x] **SOLUCIÓN**: Agregada llamada en `cargarGestion()` después de mostrar panel de progreso
+**SOLUCIÓN APLICADA:**
+- Actualizado el CSS para mostrar el input como un botón visible con estilo de frontera punteada
+- Ahora el usuario puede:
+  1. Ver el botón "Seleccionar archivo"
+  2. Hacer clic para elegir imagen
+  3. Ver la previsualización después de seleccionar
 
 ---
 
-## Flujo de Usuario:
+## Flujo de Usuario (Ahora funciona):
 
-1. ✅ Usuario entra a Gestión por Lote → ve botón "💬 WhatsApp Masivo" arriba
-2. ✅ Toca botón → modal pide: seleccionar imagen + escribir mensaje
-3. ✅ Preview de imagen se muestra antes de enviar
-4. ✅ Al enviar → crea gestión para TODAS las solicitudes pendientes
-5. ✅ La URL de la imagen se guarda en la observación
+1. ✅ Usuario entra a Gestión por Lote → ve botón "💬 WhatsApp Masivo"
+2. ✅ Hace clic en el botón → se abre el modal
+3. ✅ Ve el botón de "Adjuntar Imagen" visible y puede hacer clic
+4. ✅ Selecciona una imagen → ve la previsualización
+5. ✅ Escribe mensaje y hace clic en "Enviar"
+6. ✅ La imagen se sube al servidor y se guarda en la gestión
+
+---
+
+## Pendiente / Futuras Mejoras:
+
+- [ ] Integración con WhatsApp API real (whatsapp-web.js o Twilio)
+  - Por ahora, la imagen se guarda como URL en la observación
+  - El usuario debe abrir WhatsApp manualmente paraenviar
 
 ---
 
 ## Notas:
-- WhatsApp Web no permite envío programático de imágenes
-- El agente debe arrastrar la imagen manualmente a WhatsApp Web
-- Solo versión de escritorio (no móvil)
+- El servidor debe estar corriendo para probar
+- La imagen se guarda en la carpeta `/uploads/`
+- La URL de la imagen se guarda en la observación de cada gestión
