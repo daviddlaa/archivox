@@ -635,7 +635,7 @@ exports.crearGestion = async (req, res) => {
         return res.status(401).json({ error: 'No autenticado' });
     }
     
-    const { solicitud_id, tipo_gestion, observacion } = req.body;
+    const { solicitud_id, tipo_gestion, observacion, gestion_maestro_id } = req.body;
     
     if (!solicitud_id || !tipo_gestion) {
         return res.status(400).json({ error: 'solicitud_id y tipo_gestion son requeridos' });
@@ -643,11 +643,26 @@ exports.crearGestion = async (req, res) => {
     
     try {
 const result = await pool.query(
-            `INSERT INTO gestiones (solicitud_id, usuario_id, tipo_gestion, observacion)
-             VALUES ($1, $2, $3, $4)
+            `INSERT INTO gestiones (solicitud_id, usuario_id, tipo_gestion, observacion, gestion_maestro_id)
+             VALUES ($1, $2, $3, $4, $5)
              RETURNING *`,
-            [solicitud_id, usuarioId, tipo_gestion, observacion || '']
+            [solicitud_id, usuarioId, tipo_gestion, observacion || '', gestion_maestro_id || null]
         );
+
+        // Si tiene gestion_maestro_id, actualizar contador de progreso
+        if (gestion_maestro_id) {
+            try {
+                await pool.query(
+                    `UPDATE gestiones_maestro 
+                     SET gestionadas = gestionadas + 1, updated_at = CURRENT_TIMESTAMP
+                     WHERE id = $1`,
+                    [gestion_maestro_id]
+                );
+                console.log('DEBUG: Contador actualizado para campaña:', gestion_maestro_id);
+            } catch (e) {
+                console.error('Error actualizando contador:', e);
+            }
+        }
         
         res.json({ mensaje: 'Gesti�n guardada', data: result.rows[0] });
     } catch (err) {
@@ -1014,8 +1029,8 @@ const {
 
 // ================== GESTIONES TOTALES (PÁGINA COMPLETA) ==================
 
-// Obtener todas las gestinesglobalmente con filtros (fecha desde, fecha hasta, cédula, tipo)
-// VERSIÓN SIMPLE Y COMPLETA para la página de gestines
+// Obtener todas las gestinesglobalmente con filtros (fecha desde, fecha hasta, cédula, tipo, nombre, teléfono, observación)
+// VERSIÓN COMPLETA para la página de gestines
 exports.getTodasGestiones = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -1024,16 +1039,19 @@ exports.getTodasGestiones = async (req, res) => {
 
     const {
         cedula = '',
+        nombre = '',
+        telefono = '',
+        observacion = '',
         fecha_desde = '',
         fecha_hasta = '',
         tipo_gestion = '',
+        gestion_maestro_id = '',
         limite = 50,
         offset = 0
     } = req.query;
 
     try {
-        // LEFT JOIN para obtener todas las gestines, aunque no tengan solicitud relacionada
-        // IMPORTANTE: El campo usuario_id debe ser el mismo en ambas tablas
+        // LEFT JOIN para obtener campos de solicitudes (cedula, nombre, celular)
         let sql = `
             SELECT g.id, g.solicitud_id, g.tipo_gestion, g.observacion, g.fecha_gestion,
                    COALESCE(s.cedula, '') as cedula, 
@@ -1044,60 +1062,83 @@ exports.getTodasGestiones = async (req, res) => {
             LEFT JOIN solicitudes s ON g.solicitud_id = s.id_solicitud AND g.usuario_id = s.usuario_id
             WHERE g.usuario_id = $1
         `;
+
         const params = [usuarioId];
         let paramIndex = 2;
 
-        // Filtro por cédula (solo si hay coincidencia en solicitudes)
         if (cedula) {
-            sql += ` AND (s.cedula LIKE $${paramIndex} OR (s.cedula IS NULL AND 1=0))`;
+            sql += ` AND s.cedula LIKE $${paramIndex}`;
             params.push('%' + cedula + '%');
             paramIndex++;
         }
 
-        // Filtro por fecha desde
+        if (nombre) {
+            sql += ` AND LOWER(s.nombre) LIKE LOWER($${paramIndex})`;
+            params.push('%' + nombre + '%');
+            paramIndex++;
+        }
+
+        if (telefono) {
+            sql += ` AND LOWER(s.celular) LIKE LOWER($${paramIndex})`;
+            params.push('%' + telefono + '%');
+            paramIndex++;
+        }
+
+        if (observacion) {
+            sql += ` AND LOWER(g.observacion) LIKE LOWER($${paramIndex})`;
+            params.push('%' + observacion + '%');
+            paramIndex++;
+        }
+
         if (fecha_desde) {
             sql += ` AND g.fecha_gestion >= $${paramIndex}`;
             params.push(fecha_desde);
             paramIndex++;
         }
 
-        // Filtro por fecha hasta
         if (fecha_hasta) {
             sql += ` AND g.fecha_gestion <= $${paramIndex}`;
             params.push(fecha_hasta);
             paramIndex++;
         }
 
-        // Filtro por tipo de gestión
         if (tipo_gestion) {
             sql += ` AND g.tipo_gestion = $${paramIndex}`;
             params.push(tipo_gestion);
             paramIndex++;
         }
 
-        // Contar total - simple sin JOIN complejo
-        let countSql = `SELECT COUNT(*) as total FROM gestiones WHERE usuario_id = $1`;
-        
-        // Agregar filtros al count si existen
-        if (fecha_desde) {
-            countSql += ` AND fecha_gestion >= $${paramIndex}`;
+        if (gestion_maestro_id) {
+            sql += ` AND g.gestion_maestro_id = $${paramIndex}`;
+            params.push(gestion_maestro_id);
+            paramIndex++;
         }
-        if (fecha_hasta) {
-            countSql += ` AND fecha_gestion <= $${paramIndex}`;
-        }
-        if (tipo_gestion) {
-            countSql += ` AND tipo_gestion = $${paramIndex}`;
-        }
+
+        // Preparar query de conteo con el mismo JOIN y filtros
+        let countSql = `
+            SELECT COUNT(*) as total
+            FROM gestiones g
+            LEFT JOIN solicitudes s ON g.solicitud_id = s.id_solicitud AND g.usuario_id = s.usuario_id
+            WHERE g.usuario_id = $1
+        `;
+        const countParams = [usuarioId];
+        let countIndex = 2;
+
+        if (cedula) { countSql += ` AND s.cedula LIKE $${countIndex}`; countParams.push('%' + cedula + '%'); countIndex++; }
+        if (nombre) { countSql += ` AND LOWER(s.nombre) LIKE LOWER($${countIndex})`; countParams.push('%' + nombre + '%'); countIndex++; }
+        if (telefono) { countSql += ` AND LOWER(s.celular) LIKE LOWER($${countIndex})`; countParams.push('%' + telefono + '%'); countIndex++; }
+        if (observacion) { countSql += ` AND LOWER(g.observacion) LIKE LOWER($${countIndex})`; countParams.push('%' + observacion + '%'); countIndex++; }
+        if (fecha_desde) { countSql += ` AND g.fecha_gestion >= $${countIndex}`; countParams.push(fecha_desde); countIndex++; }
+        if (fecha_hasta) { countSql += ` AND g.fecha_gestion <= $${countIndex}`; countParams.push(fecha_hasta); countIndex++; }
+        if (tipo_gestion) { countSql += ` AND g.tipo_gestion = $${countIndex}`; countParams.push(tipo_gestion); countIndex++; }
+        if (gestion_maestro_id) { countSql += ` AND g.gestion_maestro_id = $${countIndex}`; countParams.push(gestion_maestro_id); countIndex++; }
 
         // Ordenar y paginar
         sql += ` ORDER BY g.fecha_gestion DESC`;
         sql += ` LIMIT ${parseInt(limite)} OFFSET ${parseInt(offset)}`;
 
-        // Query principal
+        // Ejecutar consultas
         const result = await pool.query(sql, params);
-
-        // Query de conteo
-        const countParams = params.slice(0, paramIndex - 1);
         const countResult = await pool.query(countSql, countParams);
         const total = parseInt(countResult.rows[0]?.total) || 0;
 

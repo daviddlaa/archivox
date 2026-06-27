@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión por Lotes - Archivox</title>
+    <link rel="stylesheet" href="/movil/css/estilos.css">
+    <link rel="stylesheet" href="/movil/css/gestion-lote.css">
+    <style>
+/* ===== CAMPAGNAS HORIZONTAL (SCROLL) ===== */
+        .campañas-scroll {
+            display: flex;
+            gap: 10px;
+            padding: 12px 15px;
+            overflow-x: auto;
+            background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .campañas-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .campaña-chip {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 8px 14px;
+            min-width: max-content;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .campaña-chip:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .campaña-chip.active {
+            background: rgba(255,255,255,0.25);
+            border-color: #60a5fa;
+        }
+        .campaña-chip-nombre {
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .campaña-chip-stats {
+            display: flex;
+            gap: 8px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.7);
+        }
+        
+        /* ===== PROGRESSO MOBILE ===== */
+        .progreso-mobile {
+            background: white !important;
+            padding: 10px 15px !important;
+            display: flex !important;
+            justify-content: space-around !important;
+            align-items: center !important;
+            border-bottom: 1px solid #e5e7eb;
+            gap: 8px !important;
+            flex-wrap: nowrap !important;
+            overflow: visible !important;
+        }
+        .progreso-mobile-item {
+            text-align: center;
+            flex: 1 0 auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-width: 60px !important;
+            max-width: none !important;
+        }
+        .progreso-mobile-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1f2937;
+            display: block !important;
+        }
+        .progreso-mobile-label {
+            font-size: 8px;
+            color: #6b7280;
+            text-transform: uppercase;
+            white-space: nowrap;
+            display: block !important;
+        }
+        .progreso-mobile-barra {
+            width: 100%;
+            height: 4px;
+            background: #f3f4f6;
+            margin-top: 8px;
+            border-radius: 2px;
+        }
+        .progreso-mobile-relleno {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        /* ===== FILTROS Y BUSQUEDA ===== */
+        .filtros-mobile {
+            background: white;
+            padding: 12px 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .filtros-mobile input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .filtros-mobile select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        /* ===== SOLICITUDES LIST ===== */
+        .sol-list {
+            padding: 0 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-bottom: 80px;
+        }
+        
+        .sol-card {
+            background: white;
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 3px solid #f59e0b;
+        }
+        .sol-card.gestionada {
+            border-left: 3px solid #22c55e;
+        }
+        
+        .sol-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .sol-id {
+            font-weight: 600;
+            font-size: 13px;
+            color: #6b7280;
+        }
+        .sol-badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        .sol-nombre {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        
+        .sol-datos {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 8px;
+            display: flex;
+            gap: 12px;
+        }
+        
+        .sol-obs {
+            font-size: 12px;
+            color: #374151;
+            padding: 8px;
+            background: #f0fdf4;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 2px solid #22c55e;
+        }
+        
+        .sol-botones {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-sol {
+            padding: 8px 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            min-width: 70px;
+            text-align: center;
+        }
+        
+        .btn-sol-call { background: #10b981; color: white; }
+        .btn-sol-whatsapp { background: #25D366; color: white; }
+        .btn-sol-seguimiento { background: #3b82f6; color: white; }
+        .btn-sol-cobranza { background: #ef4444; color: white; }
+        .btn-sol-completar { background: #22c55e; color: white; }
+        .btn-sol-ver { background: #6b7280; color: white; }
+        
+        .btn-sol:hover { opacity: 0.9; transform: scale(1.02); }
+        
+        /* ===== ESTADO COLORES ===== */
+        .estado-Pendiente { background: #fef3c7; color: #92400e; }
+        .estado-Llamada { background: #d1fae5; color: #065f46; }
+        .estado-WhatsApp { background: #dcfce7; color: #166534; }
+        .estado-Seguimiento { background: #dbeafe; color: #1e40af; }
+        .estado-Cobranza { background: #fee2e2; color: #991b1b; }
+        .estado-Cita { background: #e0e7ff; color: #3730a3; }
+        .estado-Completada { background: #bbf7d0; color: #166534; }
+        
+        /* ===== SIN CAMPANA ===== */
+        .sin-campana {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+        .sin-campana-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-title">
+            <h1>🚀 Gestión por Lotes</h1>
+            <p id="gestion-titulo">Selecciona una campaña</p>
+        </div>
+    </div>
+
+    <!-- Campañas Scroll -->
+    <div class="campañas-scroll" id="lista-campañas">
+        <div style="color: white; font-size: 12px; padding: 8px;">Cargando...</div>
+    </div>
+
+    <!-- Progreso Panel -->
+    <div class="progreso-mobile" id="panel-progreso" style="display: none;">
+        <div class="progreso-mobile-item">
+            <div class="progreso-mobile-value" id="total-solicitudes">0</div>
+            <div class="progreso-mobile-label">Total</div>
+        </div>
+        <div class="progreso-mobile-item">
+            <div class="progreso-mobile-value" id="gestionadas">0</div>
+            <div class="progreso-mobile-label">Gestionados</div>
+        </div>
+        <div class="progreso-mobile-item">
+            <div class="progreso-mobile-value" id="pendientes">0</div>
+            <div class="progreso-mobile-label">Pendientes</div>
+        </div>
+        <div class="progreso-mobile-item">
+            <div class="progreso-mobile-value" id="progreso-porcentaje">0%</div>
+            <div class="progreso-mobile-label">Progreso</div>
+        </div>
+    </div>
+    <div class="progreso-mobile-barra" id="progreso-barra-container" style="display: none; background: white; padding: 0 15px 12px;">
+        <div class="progreso-mobile-barra">
+            <div class="progreso-mobile-relleno" id="barra-progreso" style="width: 0%;"></div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filtros-mobile" id="filtros-row" style="display: none;">
+        <input type="text" id="busqueda" placeholder="🔍 Buscar por id, cédula, nombre o teléfono...">
+        <select id="filtro-estado">
+            <option value="">Todos los estados</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Llamada">Llamada</option>
+            <option value="WhatsApp">WhatsApp</option>
+            <option value="Seguimiento">Seguimiento</option>
+            <option value="Cobranza">Cobranza</option>
+            <option value="Cita">Cita</option>
+            <option value="Completada">Completada</option>
+        </select>
+    </div>
+
+    <!-- Lista de Solicitudes -->
+    <div class="sol-list" id="lista-solicitudes">
+        <div class="sin-campana">
+            <div class="sin-campana-icon">📋</div>
+            <p>Selecciona una campaña de arriba para ver las solicitudes.</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <nav class="nav-bottom">
+        <a href="/m" class="active">
+            <span class="nav-bottom-icon">📊</span>
+            Inicio
+        </a>
+        <a href="/m/solicitudes">
+            <span class="nav-bottom-icon">📋</span>
+            Solicitudes
+        </a>
+        <a href="#" onclick="abrirDrawer(); return false;">
+            <span class="nav-bottom-icon">☰</span>
+            Menú
+        </a>
+    </nav>
+
+<script src="/movil/js/drawer.js"></script>
+<script src="/movil/js/gestion-lote.js"></script>
+</body>
+</html>

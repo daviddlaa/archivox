@@ -28,7 +28,11 @@ function formatFechaGestion(fecha) {
 }
 
 async function buscarGestiones() {
-    var cedula = document.getElementById('cedula-buscar')?.value || '';
+    var q = document.getElementById('busqueda-general')?.value || '';
+    var cedula = q;
+    var nombre = q;
+    var telefono = q;
+    var observacion = q;
     var tipo = document.getElementById('tipo-gestion')?.value || '';
     
     currentOffset = 0;
@@ -37,6 +41,9 @@ async function buscarGestiones() {
     try {
         var url = '/api/excel/gestiones/todas?limite=' + currentLimit + '&offset=0';
         if (cedula) url += '&cedula=' + encodeURIComponent(cedula);
+        if (nombre) url += '&nombre=' + encodeURIComponent(nombre);
+        if (telefono) url += '&telefono=' + encodeURIComponent(telefono);
+        if (observacion) url += '&observacion=' + encodeURIComponent(observacion);
         if (tipo) url += '&tipo_gestion=' + encodeURIComponent(tipo);
         
         var response = await fetch(url);
@@ -206,7 +213,8 @@ function guardarSeguimiento(solicitudId) {
         body: JSON.stringify({
             solicitud_id: solicitudId,
             tipo_gestion: tipo_gestion,
-            observacion: observacion
+            observacion: observacion,
+            gestion_maestro_id: campanhaAtual && campanhaAtual !== 0 ? campanhaAtual : null
         })
     })
     .then(function(res) { return res.json(); })
@@ -269,108 +277,12 @@ function cerrarModal() {
 }
 
 function limpiarFiltros() {
-    document.getElementById('cedula-buscar').value = '';
+    var el = document.getElementById('busqueda-general');
+    if (el) el.value = '';
     document.getElementById('tipo-gestion').selectedIndex = 0;
     buscarGestiones();
 }
 
-function abrirNuevaGestion() {
-    // Similar a desktop, buscar solicitudes primero
-    fetch('/api/excel/solicitudes?limite=500&offset=0')
-        .then(function(res) { return res.json(); })
-        .then(function(resultado) {
-            var solicitudes = Array.isArray(resultado) ? resultado : (resultado.data || []);
-            
-            if (solicitudes.length === 0) {
-                alert('No hay solicitudes. Importe un archivo primero.');
-                return;
-            }
-            
-            var opcionesSolicitudes = '';
-            for (var i = 0; i < solicitudes.length; i++) {
-                var s = solicitudes[i];
-                opcionesSolicitudes += '<option value="' + s.id_solicitud + '">' + s.id_solicitud + ' - ' + (s.nombre || 'Sin nombre') + '</option>';
-            }
-            
-            var opcionesTipo = '';
-            var tipos = ['Seguimiento', 'Cobranza', 'Llamada', 'WhatsApp', 'Reclamo', 'Cita', 'Otro'];
-            for (var j = 0; j < tipos.length; j++) {
-                opcionesTipo += '<option value="' + tipos[j] + '">' + tipos[j] + '</option>';
-            }
-            
-            var contenido = '';
-            contenido += '<div class="modal-content">';
-            contenido += '<h2>➕ Nueva Gestión</h2>';
-            contenido += '<div class="modal-body">';
-            contenido += '<label>Solicitud:</label>';
-            contenido += '<select id="nueva-gestion-solicitud" class="form-select">' + opcionesSolicitudes + '</select>';
-            contenido += '<label>Tipo:</label>';
-            contenido += '<select id="nueva-gestion-tipo" class="form-select">' + opcionesTipo + '</select>';
-            contenido += '<label>Observación:</label>';
-            contenido += '<textarea id="nueva-gestion-observacion" class="form-textarea" rows="4" placeholder="Escriba su observación..."></textarea>';
-            contenido += '</div>';
-            contenido += '<div class="modal-footer">';
-            contenido += '<button onclick="cerrarModal()" class="btn btn-secondary">Cancelar</button>';
-            contenido += '<button onclick="guardarNuevaGestion()" class="btn btn-primary">Guardar</button>';
-            contenido += '</div>';
-            contenido += '</div>';
-            
-            crearModal(contenido);
-        })
-        .catch(function(err) {
-            console.error('Error:', err);
-            alert('Error al cargar solicitudes');
-        });
-}
-
-function guardarNuevaGestion() {
-    var solicitudSelect = document.getElementById('nueva-gestion-solicitud');
-    var tipoSelect = document.getElementById('nueva-gestion-tipo');
-    var observacionInput = document.getElementById('nueva-gestion-observacion');
-    
-    var solicitud_id = solicitudSelect ? solicitudSelect.value : '';
-    var tipo_gestion = tipoSelect ? tipoSelect.value : '';
-    var observacion = observacionInput ? observacionInput.value.trim() : '';
-    
-    if (!solicitud_id) {
-        alert('Seleccione una solicitud');
-        return;
-    }
-    
-    if (!tipo_gestion) {
-        alert('Seleccione un tipo');
-        return;
-    }
-    
-    if (!observacion) {
-        alert('Escriba una observación');
-        return;
-    }
-    
-    fetch('/api/excel/gestiones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            solicitud_id: solicitud_id,
-            tipo_gestion: tipo_gestion,
-            observacion: observacion
-        })
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(resultado) {
-        if (resultado && !resultado.error) {
-            alert('Gestión guardada');
-            cerrarModal();
-            buscarGestiones();
-        } else {
-            alert('Error: ' + (resultado.error || 'Error desconocido'));
-        }
-    })
-    .catch(function(err) {
-        console.error('Error:', err);
-        alert('Error al guardar');
-    });
-}
 
 // Infinite scroll
 function initInfiniteScroll() {
@@ -395,6 +307,34 @@ function initInfiniteScroll() {
     }
 }
 
+// Debounce helper
+function debounce(fn, wait) {
+    var timeout;
+    return function() {
+        var ctx = this, args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(function() { fn.apply(ctx, args); }, wait);
+    };
+}
+
+function initSearchListeners() {
+    var input = document.getElementById('busqueda-general');
+    if (input) {
+        input.addEventListener('input', debounce(function() {
+            currentOffset = 0; // reset paging for new query
+            buscarGestiones();
+        }, 400));
+    }
+
+    var tipo = document.getElementById('tipo-gestion');
+    if (tipo) {
+        tipo.addEventListener('change', function() {
+            currentOffset = 0;
+            buscarGestiones();
+        });
+    }
+}
+
 async function cargarMas() {
     if (isLoading || !hasMoreData) return;
     
@@ -402,7 +342,11 @@ async function cargarMas() {
     var sentinel = document.getElementById('infinite-scroll-sentinel');
     if (sentinel) sentinel.innerHTML = '⏳ Cargando...';
     
-    var cedula = document.getElementById('cedula-buscar')?.value || '';
+    var q = document.getElementById('busqueda-general')?.value || '';
+    var cedula = q;
+    var nombre = q;
+    var telefono = q;
+    var observacion = q;
     var tipo = document.getElementById('tipo-gestion')?.value || '';
     
     currentOffset += currentLimit;
@@ -410,6 +354,9 @@ async function cargarMas() {
     try {
         var url = '/api/excel/gestiones/todas?limite=' + currentLimit + '&offset=' + currentOffset;
         if (cedula) url += '&cedula=' + encodeURIComponent(cedula);
+        if (nombre) url += '&nombre=' + encodeURIComponent(nombre);
+        if (telefono) url += '&telefono=' + encodeURIComponent(telefono);
+        if (observacion) url += '&observacion=' + encodeURIComponent(observacion);
         if (tipo) url += '&tipo_gestion=' + encodeURIComponent(tipo);
         
         var response = await fetch(url);
@@ -443,3 +390,4 @@ async function cargarMas() {
 // Initialize
 buscarGestiones();
 initInfiniteScroll();
+initSearchListeners();

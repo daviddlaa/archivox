@@ -24,9 +24,14 @@ function actualizarContador() {
     const contador = document.getElementById('seleccionadas-count');
     const actionsFloating = document.getElementById('actions-floating');
     
+    const btnGestion = document.getElementById('btn-gestion');
     if (contador) contador.textContent = filasSeleccionadas.length;
     if (actionsFloating) {
         actionsFloating.style.display = filasSeleccionadas.length > 0 ? 'flex' : 'none';
+    }
+    // Mostrar/ocultar botón de campañas junto a los otros botones flotantes
+    if (btnGestion) {
+        btnGestion.style.display = filasSeleccionadas.length > 0 ? 'inline-flex' : 'none';
     }
 }
 
@@ -779,6 +784,79 @@ async function cargarHistorialGestionesMovil(id) {
     } catch (error) {
         console.error('Error cargando historial:', error);
         container.innerHTML = '<div style="color: red;">Error al cargar historial</div>';
+    }
+}
+
+// ================== GESTIÓN POR LOTES (MÓVIL) ==================
+
+// Abrir modal para crear nueva gestión por lotes en móvil
+function abrirModalNuevaGestionMovil() {
+    if (filasSeleccionadas.length === 0) {
+        alert('Selecciona al menos una card primero');
+        return;
+    }
+
+    var contenido = '';
+    contenido += '<div style="padding: 20px; background: white; min-height: 100vh;">';
+    contenido += '<h2 style="margin-top:0; color:#1f2937; font-size:18px;">🚀 Nueva Gestión por Lotes</h2>';
+    contenido += '<div style="background:#f3f4f6; padding:12px; border-radius:8px; margin-bottom:12px;">';
+    contenido += '<p><strong>Solicitudes seleccionadas:</strong> ' + filasSeleccionadas.length + '</p>';
+    contenido += '</div>';
+    contenido += '<label style="display:block; font-weight:600; margin-bottom:6px;">📝 Nombre de la Gestión:</label>';
+    contenido += '<input type="text" id="nombre-gestion-movil" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; margin-bottom:12px;">';
+    contenido += '<label style="display:block; font-weight:600; margin-bottom:6px;">📝 Descripción (opcional):</label>';
+    contenido += '<textarea id="descripcion-gestion-movil" rows="3" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; margin-bottom:12px;"></textarea>';
+    contenido += '<label style="display:block; font-weight:600; margin-bottom:6px;">📅 Fecha Límite (opcional):</label>';
+    contenido += '<input type="date" id="fecha-limite-gestion-movil" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; margin-bottom:16px;">';
+    contenido += '<div style="display:flex; gap:10px;">';
+    contenido += '<button onclick="cerrarModal()" style="flex:1; padding:12px; background:#f3f4f6; border:none; border-radius:8px;">Cancelar</button>';
+    contenido += '<button onclick="crearGestionLoteMovil()" id="btn-crear-gestion-movil" style="flex:1; padding:12px; background:#2563eb; color:white; border:none; border-radius:8px;">🚀 Crear Gestión</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+
+    crearModalMovil(contenido);
+}
+
+// Enviar petición para crear gestión por lotes desde móvil
+async function crearGestionLoteMovil() {
+    var nombre = document.getElementById('nombre-gestion-movil').value.trim();
+    var descripcion = document.getElementById('descripcion-gestion-movil').value.trim();
+    var fecha_limite = document.getElementById('fecha-limite-gestion-movil').value || null;
+
+    if (!nombre) {
+        alert('Por favor ingresa un nombre para la gestión');
+        return;
+    }
+
+    var btn = document.getElementById('btn-crear-gestion-movil');
+    if (btn) { btn.textContent = '⏳ Creando...'; btn.disabled = true; }
+
+    try {
+        var response = await fetch('/api/gestiones-maestro', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nombre: nombre,
+                descripcion: descripcion,
+                fecha_limite: fecha_limite,
+                solicitudes_ids: filasSeleccionadas
+            })
+        });
+
+        var resultado = await response.json();
+        if (response.ok && resultado.id) {
+            alert('Gestión creada correctamente');
+            cerrarModal();
+            // Navegar a la vista de gestión por lotes (intentar ruta móvil primero)
+            try { window.location.href = '/m/gestion-lote?id=' + resultado.id; } catch (e) { window.location.href = '/gestion-lote?id=' + resultado.id; }
+        } else {
+            alert('Error: ' + (resultado.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error creando gestión móvil:', error);
+        alert('Error al crear gestión');
+    } finally {
+        if (btn) { btn.textContent = '🚀 Crear Gestión'; btn.disabled = false; }
     }
 }
 

@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestiones - Archivox</title>
-    <link rel="stylesheet" href="/css/main.css">
-    <link rel="stylesheet" href="/css/solicitudes.css">
+<link rel="stylesheet" href="/desktop/css/base.css">
+    <link rel="stylesheet" href="/desktop/css/gestiones.css">
     <style>
         /* Estilos específicos para Gestiones */
         .gestion-badge {
@@ -54,7 +54,7 @@
     </style>
 </head>
 <body>
-    <!-- Drawer Toggle -->
+<!-- Drawer Toggle -->
     <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
     <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
     
@@ -75,17 +75,14 @@
         </nav>
     </aside>
 
-    <div class="layout">
-        <main class="contenido">
+<div class="layout">
+    <main class="contenido">
             <div class="container">
                 <!-- Header Actions -->
                 <div class="header-actions">
                     <div>
                         <h1>📝 Gestiones</h1>
-                        <p class="subtitulo">Controla y sigue todas las gestines de tus solicitudes</p>
-                    </div>
-                    <div>
-                        <button class="btn-principal" onclick="abrirNuevaGestion()">➕ Nueva Gestión</button>
+                        <p class="subtitulo" id="titulo-campana-seleccionada">Todas las gestiones</p>
                     </div>
                 </div>
                 
@@ -117,17 +114,9 @@
                 <!-- Filtros Panel -->
                 <div class="filtros-panel">
                     <div class="filtros-row">
-                        <div class="filtro-group">
-                            <label>🔍Buscar por Cédula</label>
-                            <input type="text" id="cedula-buscar" placeholder="Ingrese número de cédula">
-                        </div>
-                        <div class="filtro-group">
-                            <label>📅Fecha Desde</label>
-                            <input type="date" id="fecha-desde">
-                        </div>
-                        <div class="filtro-group">
-                            <label>📅Fecha Hasta</label>
-                            <input type="date" id="fecha-hasta">
+                        <div class="filtro-group filtro-search-general">
+                            <label>🔍 Buscar</label>
+                            <input type="text" id="busqueda-general" placeholder="Buscar por cédula / nombre / teléfono / observación">
                         </div>
                         <div class="filtro-group">
                             <label>📋Tipo de Gestión</label>
@@ -143,7 +132,6 @@
                             </select>
                         </div>
                         <div class="filtro-actions">
-                            <button class="btn btn-primary" onclick="buscarGestiones()">🔍 Buscar</button>
                             <button class="btn btn-secondary" onclick="limpiarFiltros()">🧹 Limpiar</button>
                             <button class="btn btn-success" onclick="exportarExcel()">📥 Exportar</button>
                         </div>

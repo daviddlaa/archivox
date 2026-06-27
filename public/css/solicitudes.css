@@ -1579,3 +1579,122 @@ tr:hover{
         display: block;
     }
 }
+
+/* ===== PANEL LATERAL DE CAMPAÑAS ===== */
+
+/* Panel lateral - à esquerda */
+.panel-campanas {
+    width: 280px;
+    background: linear-gradient(180deg, #1f2937 0%, #0f172a 100%);
+    min-height: 100vh;
+    padding: 20px;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    overflow-y: auto;
+}
+
+.campanas-header {
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 15px;
+}
+
+.campanas-header h2 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* Lista de campañas */
+.campanas-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Item de campaña */
+.campana-item {
+    background: rgba(255,255,255,0.05);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.campana-item:hover {
+    background: rgba(255,255,255,0.1);
+    transform: translateX(3px);
+}
+
+.campana-item.seleccionada {
+    background: rgba(37, 99, 235, 0.2);
+    border-color: #2563eb;
+}
+
+.campana-nombre {
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.campana-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
+
+.campana-estado {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.campana-estado.activa {
+    background: #dcfce7;
+    color: #065f46;
+}
+
+.campana-estado.completada {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.campana-estado.pausada {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.campana-progreso {
+    color: #9ca3af;
+}
+
+/* Mensaje cuando no hay campañas */
+.campana-vacia {
+    color: #9ca3af;
+    text-align: center;
+    padding: 20px;
+    font-size: 13px;
+}
+
+/* Ajuste del contenido principal - EN ESCRITORIO NO HAY PANEL LATERAL */
+.layout .contenido {
+    margin-left: 0;
+}
+
+/* Responsive: en móvil hiding el panel */
+@media (max-width: 768px) {
+    .panel-campanas {
+        display: none;
+    }
+    
+    .layout .contenido {
+        margin-left: 0;
+    }
+}

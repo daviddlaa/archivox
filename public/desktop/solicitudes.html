@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solicitudes - Archivox</title>
-<link rel="stylesheet" href="/css/main.css">
-    <link rel="stylesheet" href="/css/solicitudes.css">
+<title>Solicitudes - Archivox</title>
+<link rel="stylesheet" href="/desktop/css/base.css">
+    <link rel="stylesheet" href="/desktop/css/solicitudes.css">
     <style>
         body {
             margin: 0;
@@ -116,6 +116,7 @@
 <div class="actions-mini">
                             <button class="btn-action btn-excel" id="btn-excel" title="Exportar a Excel" style="display:none;" onclick="exportarExcel()">📊 Excel</button>
                             <button class="btn-action btn-whatsapp" id="btn-whatsapp" title="Enviar a WhatsApp" style="display:none;" onclick="enviarWhatsApp()">📱 WhatsApp</button>
+                            <button class="btn-action btn-gestion" id="btn-gestion" title="Iniciar Gestión" style="display:none;" onclick="abrirModalNuevaGestion()">🚀 Iniciar Gestión</button>
                         </div>
                         <style>
                             .btn-excel { background: #22c55e !important; color: white !important; margin-right: 8px; }
@@ -173,31 +174,27 @@
                         </div>
                     </aside>
                     
-                    <!-- Panel Derecho: Cards o Tabla -->
+<!-- Panel Derecho: Solo Cards (tabla ocultada) -->
                     <div class="table-panel">
-                        <div class="table-container">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th class="th-checkbox">
-                                            <input type="checkbox" id="seleccionar-todos" title="Seleccionar todos">
-                                        </th>
-                                        <th class="sortable" data-columna="id_solicitud">Solicitud</th>
-                                        <th class="sortable" data-columna="estado">Estado</th>
-                                        <th class="sortable" data-columna="cedula">Cédula</th>
-                                        <th class="sortable" data-columna="nombre">Nombre</th>
-                                        <th class="sortable" data-columna="celular">Celular</th>
-                                        <th class="sortable" data-columna="codigo_plus">Código / Segmento</th>
-                                        <th class="sortable" data-columna="producto">Producto / Fecha</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabla">
-                                </tbody>
-                            </table>
-                        </div>
-                        <!-- Contenedor de Cards para escritorio -->
-                        <div id="cards-container" class="cards-container"></div>
+<!-- Toolbar Inline: Botones que aparecen al seleccionar cards -->
+                <div id="actions-inline" class="actions-inline" style="display: none;">
+                    <button class="inline-action-btn btn-excel" onclick="exportarExcel()" title="Exportar a Excel">
+                        <span class="inline-icon">📊</span>
+                        <span class="inline-text">Excel</span>
+                    </button>
+                    <button class="inline-action-btn btn-whatsapp" onclick="enviarWhatsApp()" title="Enviar a WhatsApp">
+                        <span class="inline-icon">📱</span>
+                        <span class="inline-text">WhatsApp</span>
+                    </button>
+                    <button class="inline-action-btn btn-gestion" onclick="abrirModalNuevaGestion()" title="Iniciar Gestión">
+                        <span class="inline-icon">🚀</span>
+                        <span class="inline-text">Gestión</span>
+                    </button>
+                    <span class="inline-count"><span id="seleccionadas-inline">0</span> seleccionadas</span>
+                </div>
+
+                <!-- Contenedor de Cards para escritorio -->
+                    <div id="cards-container" class="cards-container"></div>
                     </div>
                 </div>
             </div>

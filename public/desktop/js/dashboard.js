@@ -17,15 +17,6 @@ const colores = [
     '#06b6d4', '#3b82f6'
 ];
 
-const coloresEstado = {
-    'Activo': '#22c55e',
-    'Activa': '#22c55e',
-    'Rechazado': '#ef4444',
-    'Rechazada': '#ef4444',
-    'Pendiente': '#f59e0b',
-    ' 默认': '#6366f1'
-};
-
 async function cargarDashboard() {
     try {
         const response = await fetch('/api/excel/dashboard');

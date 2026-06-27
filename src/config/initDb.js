@@ -72,9 +72,30 @@ db.exec(`
         usuario_id INTEGER NOT NULL,
         tipo_gestion TEXT NOT NULL,
         observacion TEXT,
+        gestion_maestro_id INTEGER,
         fecha_gestion DATETIME DEFAULT CURRENT_TIMESTAMP,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (gestion_maestro_id) REFERENCES gestiones_maestro(id)
+    )
+`);
+
+// Nueva tabla: Gestion maestro (gestión por lotes de solicitudes)
+db.exec(`
+    CREATE TABLE IF NOT EXISTS gestiones_maestro (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        descripcion TEXT,
+        usuario_id INTEGER NOT NULL,
+        estado TEXT DEFAULT 'activa',
+        total_solicitudes INTEGER DEFAULT 0,
+        gestionadas INTEGER DEFAULT 0,
+        fecha_limite DATE,
+        fecha_inicio DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_fin DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     )
 `);
 

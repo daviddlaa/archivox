@@ -1,0 +1,411 @@
+/* ===== VENTAS ESCRITORIO - CSS ESPECÍFICO ===== */
+/* Este archivo contiene todos los estilos específicos para la página de ventas de escritorio */
+
+/* ===== CONTAINER ===== */
+.ventas-container {
+    padding: 30px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* ===== CABECERA ===== */
+.fila-cabecera {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+    background: white;
+    padding: 25px 30px;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.selector-mes {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.selector-mes select {
+    padding: 14px 20px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 16px;
+    min-width: 220px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.selector-mes select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.selector-mes label {
+    font-weight: 700;
+    color: #374151;
+    font-size: 16px;
+}
+
+.btn-config-meta {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+.btn-config-meta:hover {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
+/* ===== RESUMEN EQUIPO ===== */
+.resumen-equipo {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 30px;
+}
+
+.resumen-card {
+    background: white;
+    padding: 28px;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.resumen-card h3 {
+    margin: 0 0 12px 0;
+    color: #6b7280;
+    font-size: 14px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.resumen-card .valor {
+    font-size: 32px;
+    font-weight: bold;
+    color: #1f2937;
+    margin-bottom: 8px;
+}
+
+.resumen-card .meta {
+    font-size: 14px;
+    color: #6b7280;
+    margin-top: 6px;
+}
+
+/* ===== FILA PRINCIPAL ===== */
+.fila-principal {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+/* Gráfico */
+.grafico-container {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    width: 320px;
+    flex-shrink: 0;
+}
+
+.grafico-container h3 {
+    margin: 0 0 16px 0;
+    color: #1f2937;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.grafico-container canvas {
+    max-height: 280px !important;
+}
+
+/* Cards de vendedores */
+.cards-container {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 24px;
+}
+
+.vendedor-card {
+    background: white;
+    padding: 28px;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.vendedor-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+}
+
+.vendedor-card .nombre {
+    font-size: 20px;
+    font-weight: bold;
+    color: #1f2937;
+    margin-bottom: 16px;
+}
+
+.vendedor-card .nombre input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.vendedor-card .nombre input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Datos del vendedor */
+.vendedor-card .datos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.vendedor-card .dato label {
+    font-size: 13px;
+    color: #6b7280;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.vendedor-card .dato .valor {
+    font-size: 22px;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+/* Inputs */
+.vendedor-card .inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.vendedor-card .inputs input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.2s ease;
+}
+
+.vendedor-card .inputs input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Badges de estado */
+.vendedor-card .estado-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    margin-top: 12px;
+}
+
+.vendedor-card .estado-badge.alcanzado {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+}
+
+.vendedor-card .estado-badge.faltante {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+}
+
+/* Badge de meta */
+.vendedor-card .meta-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 12px;
+}
+
+.vendedor-card .meta-badge.alcanzado {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+}
+
+.vendedor-card .meta-badge.faltante {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+}
+
+.vendedor-card .meta-badge.sin-meta {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+/* Botones */
+.vendedor-card .btn-accion {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+.btn-agregar {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+.btn-agregar:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.btn-eliminar {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.btn-eliminar:hover {
+    background: #dc2626;
+}
+
+.btn-guardar {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    margin-left: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-guardar:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+/* Estado de bono */
+.estado-bono {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.estado-bono.alcanzado {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+}
+
+.estado-bono.faltante {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+}
+
+.estado-bono.sin-bono {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+/* Config bonos (oculto) */
+.config-bonos {
+    display: none;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+    .resumen-equipo {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .fila-principal {
+        flex-direction: column;
+    }
+    
+    .grafico-container {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .ventas-container {
+        padding: 20px;
+    }
+    
+    .fila-cabecera {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .selector-mes {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+    }
+    
+    .selector-mes select {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    .resumen-equipo {
+        grid-template-columns: 1fr;
+    }
+    
+    .cards-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .vendedor-card .datos,
+    .vendedor-card .inputs {
+        grid-template-columns: 1fr;
+    }
+}

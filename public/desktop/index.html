@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Archivox</title>
-    <link rel="stylesheet" href="/css/main.css">
+<title>Dashboard - Archivox</title>
+<link rel="stylesheet" href="/desktop/css/base.css">
+    <link rel="stylesheet" href="/desktop/css/dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -12,19 +13,20 @@
     <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
     <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
     
-    <div class="layout">
+<div class="layout">
         <main class="contenido">
+            <div class="dashboard-container">
 <!-- Header Simple -->
             <div class="dashboard-header">
                 <h1>📊 Dashboard</h1>
             </div>
             
-            <!-- Quick Links - Debajo del header -->
+<!-- Quick Links - Navegación Principal -->
             <div class="dashboard-quick-links">
                 <a href="/importar" class="btn-import">📤 Importar</a>
                 <a href="/solicitudes" class="btn-solicitudes">📋 Solicitudes</a>
                 <a href="/equipo-ventas" class="btn-ventas">💰 Ventas</a>
-                <a href="/historial" class="btn-historial">🔄 Historial</a>
+                <a href="/gestion-lote" class="btn-campaign">📢 Campañas</a>
             </div>
             
             <!-- Stats Row -->
@@ -59,21 +61,19 @@
                 </div>
             </div>
             
-            <!-- Welcome + Actions -->
-            <div class="dashboard-welcome">
+<!-- Acciones Principales -->
+            <div class="dashboard-actions">
                 <div class="dashboard-welcome-text">
                     <h2>Bienvenido al sistema</h2>
                     <p>Desde aquí podrás importar Excel, consultar solicitudes y monitorear el estado de los créditos.</p>
                 </div>
-<div class="dashboard-welcome-actions">
-                    <a href="/importar" class="btn-welcome btn-welcome-primary">📤 Importar Excel</a>
-                    <a href="/gestiones" class="btn-welcome">⚙️ Gestiones</a>
-                    <a href="/solicitudes" class="btn-welcome">📋 Solicitudes</a>
-                    <a href="/equipo-ventas" class="btn-welcome">💰 Ventas</a>
+                <div class="dashboard-actions-btns">
+                    <a href="/gestiones" class="btn-action">⚙️ Gestiones</a>
+                    <a href="/historial" class="btn-action btn-action-secondary">🔄 Historial</a>
                 </div>
             </div>
             
-            <!-- Charts Grid -->
+<!-- Charts Grid -->
             <div class="dashboard-panels">
                 <div class="panel">
                     <h3>📊 Estados</h3>
@@ -87,6 +87,7 @@
                         <canvas id="chartSegmentos"></canvas>
                     </div>
                 </div>
+            </div>
             </div>
         </main>
     </div>

@@ -86,9 +86,17 @@ function actualizarContador() {
     var contador = document.getElementById('seleccionadas-count');
     var btnWhatsApp = document.getElementById('btn-whatsapp');
     var btnExcel = document.getElementById('btn-excel');
+    var btnGestion = document.getElementById('btn-gestion');
+    var actionsInline = document.getElementById('actions-inline');
+    var contadorInline = document.getElementById('seleccionadas-inline');
     
     if (contador) {
         contador.textContent = filasSeleccionadas.length;
+    }
+    
+    // Actualizar contador inline
+    if (contadorInline) {
+        contadorInline.textContent = filasSeleccionadas.length;
     }
     
     // Mostrar/ocultar botón de WhatsApp según selección
@@ -106,6 +114,104 @@ function actualizarContador() {
             btnExcel.style.display = 'inline-flex';
         } else {
             btnExcel.style.display = 'none';
+        }
+    }
+    
+    // Mostrar/ocultar botón de Gestión según selección
+    if (btnGestion) {
+        if (filasSeleccionadas.length > 0) {
+            btnGestion.style.display = 'inline-flex';
+        } else {
+            btnGestion.style.display = 'none';
+        }
+    }
+    
+    // Mostrar/ocultar toolbar inline (arriba de las cards) - igual que versión móvil
+    if (actionsInline) {
+        if (filasSeleccionadas.length > 0) {
+            actionsInline.style.display = 'flex';
+        } else {
+            actionsInline.style.display = 'none';
+        }
+    }
+}
+
+// ================== GESTIÓN POR LOTES ==================
+
+// Función para abrir modal de nueva gestión
+function abrirModalNuevaGestion() {
+    if (filasSeleccionadas.length === 0) {
+        alert('Selecciona al menos una solicitud primero');
+        return;
+    }
+    
+    var contenido = '';
+    contenido += '<div style="padding: 20px;">';
+    contenido += '<h2 style="margin-top: 0; color: #1f2937;">🚀 Iniciar Gestión por Lotes</h2>';
+    contenido += '<div style="background: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
+    contenido += '<p><strong>Solicitudes seleccionadas:</strong> ' + filasSeleccionadas.length + '</p>';
+    contenido += '</div>';
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">📝 Nombre de la Gestión:</label>';
+    contenido += '<input type="text" id="nombre-gestion" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 15px;" placeholder="Ej: Gestión Cobranza Enero 2025">';
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">📝 Descripción (opcional):</label>';
+    contenido += '<textarea id="descripcion-gestion" rows="3" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; resize: vertical; margin-bottom: 15px;" placeholder="Objetivo de esta gestión..."></textarea>';
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">📅 Fecha Límite (opcional):</label>';
+    contenido += '<input type="date" id="fecha-limite-gestion" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 15px;">';
+    contenido += '<div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">';
+    contenido += '<button onclick="cerrarModal()" style="padding: 10px 20px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer;">Cancelar</button>';
+    contenido += '<button onclick="crearGestionLote()" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">🚀 Crear Gestión</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    crearModal(contenido);
+}
+
+// Función para crear gestión por lotes
+async function crearGestionLote() {
+    var nombre = document.getElementById('nombre-gestion').value.trim();
+    var descripcion = document.getElementById('descripcion-gestion').value.trim();
+    var fecha_limite = document.getElementById('fecha-limite-gestion').value;
+    
+    if (!nombre) {
+        alert('Por favor ingresa un nombre para la gestión');
+        return;
+    }
+    
+    var btn = document.querySelector('button[onclick="crearGestionLote()"]');
+    if (btn) {
+        btn.textContent = '⏳ Creando...';
+        btn.disabled = true;
+    }
+    
+    try {
+        var response = await fetch('/api/gestiones-maestro', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nombre: nombre,
+                descripcion: descripcion,
+                fecha_limite: fecha_limite || null,
+                solicitudes_ids: filasSeleccionadas
+            })
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok && resultado.id) {
+            alert('Gestión creada correctamente');
+            cerrarModal();
+            // Ir a la página de gestión por lotes
+            window.location.href = '/gestion-lote?id=' + resultado.id;
+        } else {
+            alert('Error: ' + (resultado.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error creando gestión:', error);
+        alert('Error al crear la gestión');
+    } finally {
+        if (btn) {
+            btn.textContent = '🚀 Crear Gestión';
+            btn.disabled = false;
         }
     }
 }
@@ -688,50 +794,21 @@ function aplicarFiltros() {
     renderizarTabla(filtrados);
 }
 
-// Renderizar tabla con los datos filtrados
+// Renderizar tabla con los datos filtrados (ahora solo usa cards)
 function renderizarTabla(datos) {
-    var tabla = document.getElementById('tabla');
-    
-    if (!datos.length) {
-        tabla.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;">No se encontraron registros</td></tr>';
-        return;
-    }
-    
-    var html = '';
-    datosFilas = {}; // Limpiar datos anteriores
-    
+    // Ya no usamos la tabla, solo las cards
+    // Guardar datos para uso posterior
+    datosFilas = {};
     for (var i = 0; i < datos.length; i++) {
         var item = datos[i];
-        var estadoClase = (item.estado || '').replace(/ /g, '-').toUpperCase();
         var id = item.id_solicitud || '';
-        var seleccionado = filasSeleccionadas.indexOf(id) > -1 ? 'checked' : '';
-        
-        // Guardar datos para usar después
         datosFilas[id] = item;
-        
-        html += '<tr' + (seleccionado ? ' class="fila-seleccionada"' : '') + '>';
-        html += '<td class="td-checkbox"><input type="checkbox" class="checkbox-fila" value="' + id + '" ' + seleccionado + '></td>';
-        html += '<td>' + id + '</td>';
-        html += '<td><span class="estado estado-' + estadoClase + '">' + (item.estado || '') + '</span></td>';
-        html += '<td>' + (item.cedula || '') + '</td>';
-        html += '<td>' + (item.nombre || '') + '</td>';
-        html += '<td>' + (item.celular || '') + '</td>';
-        html += '<td><div class="cell-combinado"><span class="codigo-plus-cell">' + (item.codigo_plus || '—') + '</span><span class="segmento-cell">' + (item.segmento || '—') + '</span></div></td>';
-        html += '<td><div class="cell-combinado"><span class="producto-cell">' + (item.producto || '—') + '</span><span class="fecha-cell">' + (item.fecha_solicitud || '—') + '</span></div></td>';
-        html += '<td class="td-acciones">';
-        html += '<button class="btn-accion btn-gestiones" onclick="abrirGestiones(\'' + id + '\')" title="Gestiones">📋</button>';
-        html += '<button class="btn-accion btn-completar" onclick="abrirCompletar(\'' + id + '\')" title="Completar información">✏️</button>';
-        html += '</td>';
-        html += '</tr>';
     }
     
-    tabla.innerHTML = html;
-    actualizarCheckboxes();
-    
-    // Renderizar cards para móvil
+    // Renderizar solo las cards (no la tabla)
     renderizarCards(datos);
     
-    // IMPORTANTE: Rec recrear sentinel después de renderizar cards
+    // IMPORTANTE: Recrear sentinel después de renderizar cards
     recrearSentinel();
 }
 
@@ -1074,12 +1151,11 @@ function crearModal(contenido) {
     
     var overlay = document.createElement('div');
     overlay.id = 'modal-generico';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+    overlay.className = 'modal-overlay';
     
-var modal = document.createElement('div');
-// Modal más grande: 1400px para 3 columnas sin scroll - MAS ALTO (98vh) - REORGANIZADO
-modal.style.cssText = 'background: white; border-radius: 16px; max-width: 1400px; width: 98%; max-height: 98vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4);';
-modal.innerHTML = contenido;
+    var modal = document.createElement('div');
+    modal.className = 'modal-content';
+    modal.innerHTML = contenido;
     
     // Cerrar al hacer click en el overlay
     overlay.onclick = function(e) {

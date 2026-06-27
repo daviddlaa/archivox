@@ -10,15 +10,15 @@
 <body>
     <div class="app-container">
         <!-- Header -->
-        <header class="app-header">
-            <button class="menu-btn" onclick="toggleDrawer()">☰</button>
-            <h1>📝 Gestiones</h1>
-            <button class="action-btn" onclick="abrirNuevaGestion()">➕</button>
-        </header>
+        <div class="header">
+            <div class="header-title">
+                <h1>📝 Gestiones</h1>
+            </div>
+        </div>
         
         <!-- Filtros -->
         <section class="filtros-section">
-            <input type="text" id="cedula-buscar" placeholder="🔍 Buscar por cédula..." class="search-input">
+            <input type="text" id="busqueda-general" placeholder="🔍 Buscar por cédula / nombre / teléfono / observación" class="search-input">
             <select id="tipo-gestion" class="filter-select">
                 <option value="">Todos los tipos</option>
                 <option value="Seguimiento">Seguimiento</option>
@@ -30,7 +30,6 @@
                 <option value="Otro">Otro</option>
             </select>
             <div class="filter-actions">
-                <button class="btn btn-primary" onclick="buscarGestiones()">🔍 Buscar</button>
                 <button class="btn btn-secondary" onclick="limpiarFiltros()">🧹</button>
             </div>
         </section>
@@ -56,23 +55,20 @@
         <div id="infinite-scroll-sentinel"></div>
     </div>
     
-    <!-- Drawer Menu -->
-    <div class="drawer-overlay" id="drawer-overlay" onclick="toggleDrawer()"></div>
-    <aside class="drawer" id="drawer">
-        <div class="drawer-header">
-            <h2>📊 Archivox</h2>
-            <button class="drawer-close" onclick="toggleDrawer()">✕</button>
-        </div>
-        <nav class="drawer-nav">
-            <a href="/movil/" class="drawer-link">📊 Dashboard</a>
-            <a href="/movil/solicitudes" class="drawer-link">📋 Solicitudes</a>
-            <a href="/movil/ventas" class="drawer-link">💰 Ventas</a>
-            <a href="/movil/gestiones" class="drawer-link">📝 Gestiones</a>
-            <a href="/movil/historial" class="drawer-link">🔄 Historial</a>
-            <a href="/movil/importar" class="drawer-link">📤 Importar</a>
-            <a href="#" class="drawer-link drawer-link-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
-        </nav>
-    </aside>
+    <nav class="nav-bottom">
+        <a href="/m">
+            <span class="nav-bottom-icon">📊</span>
+            Inicio
+        </a>
+        <a href="/m/solicitudes">
+            <span class="nav-bottom-icon">📋</span>
+            Solicitudes
+        </a>
+        <a href="#" onclick="abrirDrawer(); return false;" class="active">
+            <span class="nav-bottom-icon">☰</span>
+            Menú
+        </a>
+    </nav>
 
     <script src="/movil/js/drawer.js"></script>
     <script src="/movil/js/gestiones.js"></script>

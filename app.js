@@ -127,11 +127,26 @@ app.get('/ventas', requiresAuth, (req, res) => {
 
 // Rutas de Gestiones
 app.get('/gestiones', requiresAuth, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/desktop/gestiones.html'));
+    const isMobile = isMobileDevice(req.headers['user-agent']);
+    if (isMobile || req.query.movil === '1') {
+        res.sendFile(path.join(__dirname, 'public/movil/gestiones.html'));
+    } else {
+        res.sendFile(path.join(__dirname, 'public/desktop/gestiones.html'));
+    }
 });
 
 app.get('/m/gestiones', requiresAuth, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/desktop/gestiones.html'));
+    res.sendFile(path.join(__dirname, 'public/movil/gestiones.html'));
+});
+
+// Ruta móvil para Gestión por Lotes
+app.get('/m/gestion-lote', requiresAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/movil/gestion-lote.html'));
+});
+
+// Rutas de Gestión por Lotes
+app.get('/gestion-lote', requiresAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/desktop/gestion-lote.html'));
 });
 
 // Rutas de Control de Ventas del Equipo
@@ -180,6 +195,7 @@ app.get('/registro', (req, res) => {
 app.use('/api/excel', require('./src/routes/excel.routes'));
 app.use('/api/auth', require('./src/routes/auth.routes'));
 app.use('/api/debug', require('./src/routes/debug.routes'));
+app.use('/api/gestiones-maestro', require('./src/routes/gestionesMaestro.routes'));
 
 // Archivos estáticos
 app.use(express.static('public'));

@@ -3,6 +3,7 @@ const router = express.Router();
 
 const upload = require('../config/multer.config');
 const excelController = require('../controllers/excel.controller');
+const gmController = require('../controllers/gestionesMaestro.controller');
 
 // Middleware para verificar autenticación en API
 function requiresAuth(req, res, next) {
@@ -187,6 +188,43 @@ router.get(
     '/historial',
     requiresAuth,
     excelController.getHistorialActualizaciones
+);
+
+// ================== GESTIONES MAESTRO (GESTIÓN POR LOTES) ==================
+
+// Listar todas las gestione maestro
+router.get(
+    '/gestiones-maestro',
+    requiresAuth,
+    gmController.getGestionesMaestro
+);
+
+// Obtener una gestión maestro específica
+router.get(
+    '/gestiones-maestro/:id',
+    requiresAuth,
+    gmController.getGestionMaestroById
+);
+
+// Crear nueva gestión por lotes
+router.post(
+    '/gestiones-maestro',
+    requiresAuth,
+    gmController.createGestionMaestro
+);
+
+// Actualizar gestión maestro
+router.put(
+    '/gestiones-maestro/:id',
+    requiresAuth,
+    gmController.updateGestionMaestro
+);
+
+// Eliminar gestión maestro
+router.delete(
+    '/gestiones-maestro/:id',
+    requiresAuth,
+    gmController.deleteGestionMaestro
 );
 
 module.exports = router;

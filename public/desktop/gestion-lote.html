@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión por Lotes - Archivox</title>
+    <link rel="stylesheet" href="/desktop/css/base.css">
+    <link rel="stylesheet" href="/css/gestion-lote.css">
+</head>
+<body>
+    <!-- Drawer Toggle -->
+    <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
+    <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
+    
+    <!-- Drawer -->
+    <aside id="drawer" class="drawer">
+        <div class="drawer-header">
+            <div class="drawer-logo"><h2>📊 Archivox</h2></div>
+            <button class="drawer-close" onclick="Drawer.close()">✕</button>
+        </div>
+        <nav class="drawer-nav">
+            <a href="/" class="drawer-link">📊 Dashboard</a>
+            <a href="/equipo-ventas" class="drawer-link">💰 Control de Ventas</a>
+            <a href="/importar" class="drawer-link">📤 Importar Excel</a>
+            <a href="/solicitudes" class="drawer-link">📋 Solicitudes</a>
+            <a href="/gestiones" class="drawer-link">🚀 Gestiones</a>
+            <a href="/historial" class="drawer-link">🔄 Historial</a>
+            <a href="#" class="drawer-link drawer-link-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
+<div class="layout">
+<!-- Sidebar de Campañas -->
+        <aside id="sidebar-campañas" class="sidebar-campañas">
+            <div class="sidebar-header">
+                <h2>📋 Campañas</h2>
+            </div>
+            <div class="sidebar-content" id="lista-campañas">
+                <div class="loading">Cargando campañas...</div>
+            </div>
+        </aside>
+        
+        <main class="contenido">
+            <div class="container">
+                <div class="header-actions">
+                    <div>
+                        <h1>🚀 Gestión por Lotes</h1>
+                        <p class="subtitulo" id="gestion-nombre">Selecciona una campaña del panel lateral</p>
+                    </div>
+<div>
+                        <a href="/solicitudes" class="btn-volver">← Volver a Solicitudes</a>
+                    </div>
+                </div>
+                
+                <!-- Panel de Progreso -->
+                <div class="progreso-panel" id="panel-progreso" style="display: none;">
+                    <div class="progreso-info">
+                        <div class="progreso-item">
+                            <span class="progreso-label">Total Solicitudes</span>
+                            <span class="progreso-value" id="total-solicitudes">0</span>
+                        </div>
+                        <div class="progreso-item">
+                            <span class="progreso-label">Gestionadas</span>
+                            <span class="progreso-value" id="gestionadas">0</span>
+                        </div>
+                        <div class="progreso-item">
+                            <span class="progreso-label">Pendientes</span>
+                            <span class="progreso-value" id="pendientes">0</span>
+                        </div>
+                        <div class="progreso-item">
+                            <span class="progreso-label">Progreso</span>
+                            <span class="progreso-value" id="progreso-porcentaje">0%</span>
+                        </div>
+                    </div>
+                    <div class="progreso-barra">
+                        <div class="barra-relleno" id="barra-progreso" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <!-- Filtros y Búsqueda -->
+                <div class="filtros-row" id="filtros-row" style="display: none;">
+                    <input type="text" id="busqueda" placeholder="🔍 Buscar por id, cédula, nombre o teléfono...">
+                    <select id="filtro-estado">
+                        <option value="">Todos los estados</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Llamada">Llamada</option>
+                        <option value="WhatsApp">WhatsApp</option>
+                        <option value="Seguimiento">Seguimiento</option>
+                        <option value="Cobranza">Cobranza</option>
+                        <option value="Cita">Cita</option>
+                        <option value="Completada">Completada</option>
+                    </select>
+                </div>
+
+                <!-- Lista de Solicitudes -->
+                <div class="lista-solicitudes" id="lista-solicitudes">
+                    <div class="empty">
+                        <p>Selecciona una campaña del panel lateral para ver las solicitudes.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/desktop/js/gestion-lote.js"></script>
+    <script src="/desktop/js/drawer.js"></script>
+</body>
+</html>

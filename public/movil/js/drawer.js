@@ -45,50 +45,37 @@ function crearDrawer() {
             <span class="drawer-header-title">📋 Archivox</span>
             <button class="drawer-close" onclick="cerrarDrawer()">✕</button>
         </div>
-        <ul class="drawer-menu">
-            <li>
-                <a href="/m">
-                    <span class="drawer-menu-icon">📊</span>
-                    Dashboard
-                </a>
-            </li>
-            <li>
-                <a href="/m/solicitudes">
-                    <span class="drawer-menu-icon">📋</span>
-                    Solicitudes
-                </a>
-            </li>
-            <li>
-                <a href="/m/gestiones">
-                    <span class="drawer-menu-icon">📝</span>
-                    Gestiones
-                </a>
-            </li>
-            <li>
-                <a href="/m/importar">
-                    <span class="drawer-menu-icon">📤</span>
-                    Importar
-                </a>
-            </li>
-            <li>
-                <a href="/m/ventas">
-                    <span class="drawer-menu-icon">💰</span>
-                    Ventas
-                </a>
-            </li>
-            <li>
-                <a href="/m/historial">
-                    <span class="drawer-menu-icon">🔄</span>
-                    Historial
-                </a>
-            </li>
-            <li class="drawer-menu-logout">
-                <a href="#" onclick="cerrarSesion()">
-                    <span class="drawer-menu-icon">🚪</span>
-                    Cerrar Sesión
-                </a>
-            </li>
-        </ul>
+
+        <div class="drawer-section">
+            <h3>Inicio</h3>
+            <ul class="drawer-menu">
+                <li><a href="/m"><span class="drawer-menu-icon">📊</span>Dashboard</a></li>
+                <li><a href="/m/solicitudes"><span class="drawer-menu-icon">📋</span>Solicitudes</a></li>
+            </ul>
+        </div>
+
+        <div class="drawer-section">
+            <h3>Operaciones</h3>
+            <ul class="drawer-menu">
+                <li><a href="/m/importar"><span class="drawer-menu-icon">📤</span>Importar</a></li>
+                <li><a href="/m/gestiones"><span class="drawer-menu-icon">📝</span>Gestiones</a></li>
+                <li><a href="/m/gestion-lote"><span class="drawer-menu-icon">📦</span>Gestión por Lote</a></li>
+                <li><a href="/m/ventas"><span class="drawer-menu-icon">💰</span>Ventas</a></li>
+                <li><a href="/m/historial"><span class="drawer-menu-icon">🔄</span>Historial</a></li>
+            </ul>
+        </div>
+
+        <div class="drawer-section drawer-section-last">
+            <h3>Cuenta</h3>
+            <ul class="drawer-menu">
+                <li class="drawer-menu-logout">
+                    <a href="#" onclick="cerrarSesion()">
+                        <span class="drawer-menu-icon">🚪</span>
+                        Cerrar Sesión
+                    </a>
+                </li>
+            </ul>
+        </div>
     `;
     
     // Insertar en el body
