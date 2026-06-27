@@ -26,8 +26,8 @@ async function getGestionesMaestro(req, res) {
             return res.status(401).json({ error: 'No autenticado' });
         }
         
-const result = await pool.query(
-            'SELECT * FROM g3 WHERE usuario_id = $1 ORDER BY created_at DESC',
+        const result = await pool.query(
+            'SELECT * FROM gestiones_maestro WHERE usuario_id = $1 ORDER BY created_at DESC',
             [usuario_id]
         );
         
@@ -64,9 +64,9 @@ async function getGestionMaestroById(req, res) {
         const resultSol = await pool.query(`
             SELECT s.*, g.id as gestion_id, g.tipo_gestion, g.observacion as gestion_obs, g.fecha_gestion
             FROM solicitudes s
-            LEFT JOIN gestiones ON s.id_solicitud = g.solicitud_id AND g.gestion_maestro_id = $1
+            LEFT JOIN gestiones g ON s.id_solicitud = g.solicitud_id AND g.gestion_maestro_id = $1
             WHERE s.id_solicitud IN (
-                SELECT solicitud_id FROM gestioes WHERE gestion_maestro_id = $1
+                SELECT solicitud_id FROM gestiones WHERE gestion_maestro_id = $1
             )
             ORDER BY g.fecha_gestion DESC NULLS LAST
         `, [id]);
