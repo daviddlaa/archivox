@@ -196,6 +196,37 @@ app.use('/api/excel', require('./src/routes/excel.routes'));
 app.use('/api/auth', require('./src/routes/auth.routes'));
 app.use('/api/debug', require('./src/routes/debug.routes'));
 app.use('/api/gestiones-maestro', require('./src/routes/gestionesMaestro.routes'));
+app.use('/api/whatsapp', require('./src/routes/whatsapp.routes'));
+
+// Inicializar WhatsApp al iniciar el servidor
+const whatsappController = require('./src/controllers/whatsapp.controller');
+whatsappController.initWhatsAppServer(app);
+
+// Ruta local para generar QR usando biblioteca qrcode (sin dependencias externas)
+const QRCode = require('qrcode');
+app.get('/api/qr/generate', async (req, res) => {
+    const data = req.query.data;
+    if (!data) {
+        return res.status(400).json({ error: 'Parámetro "data" requerido' });
+    }
+    try {
+        // Generar QR como imagen PNG y devolver como buffer con content-type correcto
+        const qrBuffer = await QRCode.toBuffer(data, {
+            width: 250,
+            margin: 2,
+            color: {
+                dark: '#000000',
+                light: '#ffffff'
+            }
+        });
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.send(qrBuffer);
+    } catch (error) {
+        console.error('Error generando QR:', error);
+        res.status(500).json({ error: 'Error al generar código QR' });
+    }
+});
 
 // Archivos estáticos
 app.use(express.static('public'));

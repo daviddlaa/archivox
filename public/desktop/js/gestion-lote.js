@@ -54,6 +54,9 @@ async function init() {
     // Primero cargar las campañas en el sidebar
     await cargarListaCampanas();
     
+    // Cargar estado de WhatsApp
+    await cargarEstadoWhatsApp();
+    
     // Luego verificar si hay un ID en la URL
     gestionId = obtenerGestionId();
     
@@ -317,7 +320,15 @@ function renderizarSolicitudes(lista) {
 // Acciones
         html += '<div class="sol-acciones">';
         
+        // Si hay configuración de WhatsApp Masivo guardada, mostrar botón de enviar
+        var hayConfigWhatsApp = whatsappMensajeGlobal || whatsappImagenGlobal;
+        
         if (!gestionada) {
+            // Botón de envío si hay configuración
+            if (hayConfigWhatsApp && sol.celular) {
+                html += '<button class="btn-accion btn-enviar-wa btn-enviar-wa-' + sol.id_solicitud + '" onclick="enviarWhatsAppIndividual(\'' + sol.id_solicitud + '\', \'' + (sol.celular || '') + '\')">📤 Enviar WhatsApp</button>';
+            }
+            
             html += '<button class="btn-accion btn-llamar" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Llamada\')">📞 Llamada</button>';
             html += '<button class="btn-accion btn-whatsapp" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'WhatsApp\')">💬 WhatsApp</button>';
             html += '<button class="btn-accion btn-whatsapp-img" onclick="abrirGestionWhatsApp(\'' + sol.id_solicitud + '\', \'' + (sol.celular || '') + '\')">📷 WhatsApp c/Imagen</button>';
@@ -606,11 +617,11 @@ function abrirWhatsAppWeb(celular, mensaje) {
         numeroLimpio = '505' + numeroLimpio;
     }
     
-    // Construir URL de WhatsApp Web
-    var urlWhatsApp = 'https://web.whatsapp.com/send?phone=' + numeroLimpio;
+    // Usar wa.me que es más confiable que web.whatsapp.com
+    var urlWhatsApp = 'https://wa.me/' + numeroLimpio;
     
     if (mensaje) {
-        urlWhatsApp += '&text=' + encodeURIComponent(mensaje);
+        urlWhatsApp += '?text=' + encodeURIComponent(mensaje);
     }
     
     console.log('DEBUG: Abriendo WhatsApp Web:', urlWhatsApp);
@@ -618,8 +629,7 @@ function abrirWhatsAppWeb(celular, mensaje) {
     // Abrir en nueva pestaña
     var win = window.open(urlWhatsApp, '_blank');
     if (!win) {
-        // Si fue bloqueado, intentar con wa.me
-        window.open('https://wa.me/' + numeroLimpio + '?text=' + encodeURIComponent(mensaje || ''), '_blank');
+        alert('Por favor permite ventanas emergentes para enviar mensajes de WhatsApp');
     }
 }
 
@@ -710,7 +720,84 @@ if (!response.ok || resultado.error) {
     }
 }
 
+// ================== ESTADO DE WHATSAPP ==================
+
+// Variable para estado de WhatsApp
+var whatsappStatus = {
+    initialized: false,
+    isReady: false,
+    qrCode: null
+};
+
+// Obtener estado de WhatsApp del servidor
+async function cargarEstadoWhatsApp() {
+    try {
+        var response = await fetch('/api/whatsapp/status');
+        var data = await response.json();
+        whatsappStatus = data;
+        actualizarIndicadorWhatsApp();
+    } catch (error) {
+        console.error('Error obteniendo estado de WhatsApp:', error);
+        whatsappStatus.initialized = false;
+        actualizarIndicadorWhatsApp();
+    }
+}
+
+// Actualizar indicador visual de WhatsApp
+function actualizarIndicadorWhatsApp() {
+    var indicador = document.getElementById('whatsapp-status-indicator');
+    if (!indicador) return;
+    
+    if (whatsappStatus.isReady) {
+        indicador.innerHTML = '<span class="status-badge status-ready">✅ WhatsApp Conectado</span>';
+    } else if (whatsappStatus.qrCode) {
+        indicador.innerHTML = '<span class="status-badge status-qr">📱 Esperando QR - <button onclick="mostrarQRWhatsApp()" style="padding: 4px 8px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">Mostrar QR</button></span>';
+    } else {
+        indicador.innerHTML = '<span class="status-badge status-disconnected">❌ WhatsApp Desconectado</span>';
+    }
+}
+
+// Mostrar QR en modal
+function mostrarQRWhatsApp() {
+    if (!whatsappStatus.qrCode) {
+        alert('No hay código QR disponible. El servidor puede estar inicializando.');
+        return;
+    }
+    
+    var contenido = '';
+    contenido += '<div class="modal-gestion">';
+    contenido += '<h2>📱 Escanear Código QR</h2>';
+    contenido += '<p style="text-align: center; margin-bottom: 16px;">Abre WhatsApp en tu teléfono y escanea este código:</p>';
+    contenido += '<div style="text-align: center; margin-bottom: 16px;">';
+    // Intentar cargar QR local, si falla mostrar código
+    contenido += '<img src="/api/qr/generate?data=' + encodeURIComponent(whatsappStatus.qrCode) + '" alt="QR Code" style="border-radius: 8px; max-width: 250px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'">';
+    contenido += '<div style="display: none; text-align: center;">';
+    contenido += '<p style="font-size: 12px; color: #666;">Código de autenticación:</p>';
+    contenido += '<code style="display: block; word-break: break-all; padding: 12px; background: #f3f4f6; border-radius: 8px; font-size: 10px;">' + whatsappStatus.qrCode + '</code>';
+    contenido += '</div>';
+    contenido += '</div>';
+    contenido += '<p style="text-align: center; font-size: 12px; color: #666;">Una vez escaneado, el estado cambiará a "Conectado"</p>';
+    contenido += '<button class="btn-cerrar" onclick="cerrarModal()">Cerrar</button>';
+    contenido += '</div>';
+    
+    crearModal(contenido);
+}
+
+// Confirmar antes de enviar WhatsApp individual
+function confirmarEnvioWhatsApp(solicitudId, celular, nombre) {
+    var confirmado = confirm('📱 Enviar WhatsApp a ' + nombre + ' (' + celular + ')?\n\nSe abrirá WhatsApp Web para que envíes el mensaje.');
+    if (confirmado) {
+        enviarWhatsAppIndividual(solicitudId, celular);
+    }
+}
+
 // ================== WHATSAPP MASIVO ==================
+
+// Variables globales para WhatsApp Masivo
+var whatsappMensajeGlobal = '';
+var whatsappImagenGlobal = null;
+var whatsappImagenNombreGlobal = null;
+var whatsappTipoGlobal = 'WhatsApp';
 
 // Mostrar fila de WhatsApp al cargar gestión
 function mostrarFilaWhatsApp() {
@@ -732,15 +819,42 @@ function abrirModalWhatsApp() {
         return;
     }
     
+    // Obtener estado actual de WhatsApp
+    var estadoWhatsApp = whatsappStatus || { initialized: false, isReady: false, qrCode: null };
+    
     var contenido = '';
     
     contenido += '<div class="modal-gestion">';
-    contenido += '<h2>💬 WhatsApp Masivo</h2>';
+    contenido += '<h2>💬 WhatsApp Masivo - Configurar</h2>';
+    
+    // Mostrar estado de WhatsApp dentro del modal
+    contenido += '<div class="whatsapp-modal-status" style="margin-bottom: 16px; padding: 12px; border-radius: 8px; background: ' + (estadoWhatsApp.isReady ? '#dcfce7' : estadoWhatsApp.qrCode ? '#fef3c7' : '#fee2e2') + ';">';
+    if (estadoWhatsApp.isReady) {
+        contenido += '<p style="margin: 0; color: #166534; font-weight: bold;">✅ WhatsApp Conectado - Listo para enviar mensajes</p>';
+} else if (estadoWhatsApp.qrCode) {
+        contenido += '<p style="margin: 0 0 8px 0; color: #92400e; font-weight: bold;">📱 Esperando escanear QR - WhatsApp no conectado</p>';
+        contenido += '<div style="text-align: center; margin-bottom: 12px;">';
+        // Intentar cargar QR local, si falla mostrar código texto
+        contenido += '<img src="/api/qr/generate?data=' + encodeURIComponent(estadoWhatsApp.qrCode) + '" alt="QR Code" style="border-radius: 8px; border: 2px solid #d97706; max-width: 180px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'">';
+        contenido += '<div style="display: none; text-align: center;">';
+        contenido += '<code style="display: block; word-break: break-all; padding: 8px; background: #fef3c7; border-radius: 4px; font-size: 8px;">' + estadoWhatsApp.qrCode.substring(0, 50) + '...</code>';
+        contenido += '</div>';
+        contenido += '</div>';
+        contenido += '<p style="margin: 0; font-size: 12px; color: #92400e;">Escanea este código con WhatsApp en tu teléfono</p>';
+    } else {
+        contenido += '<p style="margin: 0; color: #991b1b; font-weight: bold;">❌ WhatsApp Desconectado</p>';
+        contenido += '<p style="margin: 8px 0 0 0; font-size: 12px; color: #991b1b;">El servicio de WhatsApp no está inicializado. Reinicia el servidor para conectar.</p>';
+    }
+    contenido += '</div>';
+    
     contenido += '<div class="modal-info">';
     contenido += '<p><strong>Total pendientes:</strong> ' + pendientes.length + '</p>';
-    contenido += '<p><strong>Con imagen:</strong> ' + (imagenWhatsApp ? 'Sí' : 'No') + '</p>';
-    if (imagenWhatsAppNombre) {
-        contenido += '<p><strong>Imagen:</strong> ' + imagenWhatsAppNombre + '</p>';
+    contenido += '<p><strong>Con imagen:</strong> ' + (whatsappImagenGlobal ? 'Sí' : 'No') + '</p>';
+    if (whatsappImagenNombreGlobal) {
+        contenido += '<p><strong>Imagen:</strong> ' + whatsappImagenNombreGlobal + '</p>';
+    }
+    if (whatsappMensajeGlobal) {
+        contenido += '<p><strong>Mensaje guardado:</strong> ' + whatsappMensajeGlobal.substring(0, 50) + '...</p>';
     }
     contenido += '</div>';
     
@@ -770,20 +884,171 @@ function abrirModalWhatsApp() {
     
     contenido += '<div class="modal-botones">';
     contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>';
-    contenido += '<button class="btn-guardar" id="btn-whatsapp-masivo" onclick="ejecutarWhatsAppMasivo()">📤 Enviar a ' + pendientes.length + '</button>';
+    contenido += '<button class="btn-guardar" id="btn-whatsapp-masivo" onclick="guardarConfiguracionWhatsApp()">💾 Guardar Configuración</button>';
     contenido += '</div>';
     contenido += '</div>';
     contenido += '</div>';
     
     crearModal(contenido);
     
+    // Si ya hay configuración guardada, mostrar en los campos
+    var tipoSelect = document.getElementById('whatsapp-tipo');
+    var mensajeTextarea = document.getElementById('whatsapp-mensaje');
+    if (tipoSelect) tipoSelect.value = whatsappTipoGlobal;
+    if (mensajeTextarea && whatsappMensajeGlobal) mensajeTextarea.value = whatsappMensajeGlobal;
+    
     // Si ya hay imagen cargada, mostrar preview
-    if (imagenWhatsApp) {
+    if (whatsappImagenGlobal) {
         var container = document.getElementById('whatsapp-preview-container');
         var img = document.getElementById('whatsapp-preview-img');
         if (container && img) {
             container.style.display = 'block';
-            img.src = imagenWhatsApp;
+            img.src = whatsappImagenGlobal;
+        }
+    }
+}
+
+// Guardar configuración de WhatsApp Masivo (sin enviar)
+async function guardarConfiguracionWhatsApp() {
+    whatsappTipoGlobal = document.getElementById('whatsapp-tipo').value;
+    whatsappMensajeGlobal = document.getElementById('whatsapp-mensaje').value.trim();
+    var fileInput = document.getElementById('whatsapp-file-input');
+    var file = fileInput ? fileInput.files[0] : null;
+    
+    if (!whatsappMensajeGlobal && !file) {
+        alert('Escriba un mensaje o adjunte una imagen');
+        return;
+    }
+    
+    var btn = document.getElementById('btn-whatsapp-masivo');
+    btn.textContent = '⏳ Guardando...';
+    btn.disabled = true;
+    
+    try {
+        // Si hay imagen, subirla primero
+        if (file) {
+            var formData = new FormData();
+            formData.append('imagen', file);
+            
+            var uploadResponse = await fetch('/api/excel/upload-imagen', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!uploadResponse.ok) {
+                var errorText = await uploadResponse.text();
+                throw new Error('Error al subir imagen: ' + uploadResponse.status);
+            }
+            
+            var uploadResult = await uploadResponse.json();
+            if (!uploadResult.success) {
+                throw new Error(uploadResult.error || 'Error al subir imagen');
+            }
+            whatsappImagenGlobal = uploadResult.url;
+            whatsappImagenNombreGlobal = file.name;
+        }
+        
+        alert('✅ Configuración guardada\n\nAhora cada tarjeta tiene un botón "📤 Enviar" para enviar manualmente el mensaje a cada cliente.');
+        
+        cerrarModal();
+        
+        // Recargar las solicitudes para mostrar los botones de envío
+        renderizarSolicitudes(solicitudes);
+        
+    } catch (error) {
+        console.error('Error guardando configuración:', error);
+        alert('Error: ' + error.message);
+    } finally {
+        btn.textContent = '💾 Guardar Configuración';
+        btn.disabled = false;
+    }
+}
+
+// Enviar WhatsApp individual desde la tarjeta
+async function enviarWhatsAppIndividual(solicitudId, celular) {
+    var sol = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
+    
+    if (!sol) {
+        alert('Solicitud no encontrada');
+        return;
+    }
+    
+    if (!celular || celular === '') {
+        alert('Esta solicitud no tiene número de celular');
+        return;
+    }
+    
+    if (!whatsappMensajeGlobal && !whatsappImagenGlobal) {
+        alert('Primero configure el mensaje e imagen en el botón "WhatsApp Masivo"');
+        return;
+    }
+    
+    var btn = document.querySelector('.btn-enviar-wa-' + solicitudId);
+    if (btn) {
+        btn.textContent = '⏳ Enviando...';
+        btn.disabled = true;
+    }
+    
+    try {
+        // Enviar a través de la API
+        var payload = {
+            phoneNumber: celular,
+            message: whatsappMensajeGlobal
+        };
+        
+        if (whatsappImagenGlobal) {
+            payload.imagePath = whatsappImagenGlobal;
+        }
+        
+        var endpoint = whatsappImagenGlobal ? '/api/whatsapp/send-image' : '/api/whatsapp/send';
+        
+        var response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        var result = await response.json();
+        
+        if (!response.ok || result.error) {
+            throw new Error(result.error || 'Error al enviar');
+        }
+        
+        // Guardar gestión en la base de datos
+        var observacion = whatsappMensajeGlobal;
+        if (whatsappImagenGlobal) {
+            observacion = (whatsappMensajeGlobal ? whatsappMensajeGlobal + '\n\n' : '') + '[Imagen: ' + whatsappImagenGlobal + ']';
+        }
+        
+        var gestionResponse = await fetch('/api/excel/gestiones', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                solicitud_id: solicitudId,
+                tipo_gestion: whatsappTipoGlobal,
+                observacion: observacion,
+                gestion_maestro_id: gestionId
+            })
+        });
+        
+        var gestionResult = await gestionResponse.json();
+        
+        if (!gestionResponse.ok || gestionResult.error) {
+            console.error('Error guardando gestión:', gestionResult.error);
+        }
+        
+        alert('✅ Mensaje enviado a ' + sol.nombre);
+        
+        // Recargar solicitudes
+        cargarSolicitudes();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error: ' + error.message);
+    } finally {
+        if (btn) {
+            btn.textContent = '📤 Enviar';
+            btn.disabled = false;
         }
     }
 }

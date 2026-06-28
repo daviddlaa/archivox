@@ -1,6 +1,5 @@
 const bcrypt = require('bcryptjs');
-const db = require('../config/db.js');
-const pool = db.pool || db;
+const pool = require('../config/db.js');
 
 // Registro de usuario
 exports.registrar = async (req, res) => {

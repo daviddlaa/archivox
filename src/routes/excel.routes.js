@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const upload = require('../config/multer.config');
+const { imagenes, excel } = require('../config/multer.config');
 const excelController = require('../controllers/excel.controller');
 const gmController = require('../controllers/gestionesMaestro.controller');
 
@@ -19,7 +19,7 @@ function requiresAuth(req, res, next) {
 router.post(
     '/upload',
     requiresAuth,
-    upload.array('excelFiles', 50),
+    excel.array('excelFiles', 50),
     excelController.uploadExcel
 );
 
@@ -27,7 +27,7 @@ router.post(
 router.post(
     '/upload-imagen',
     requiresAuth,
-    upload.single('imagen'),
+    imagenes.single('imagen'),
     excelController.subirImagenGestion
 );
 

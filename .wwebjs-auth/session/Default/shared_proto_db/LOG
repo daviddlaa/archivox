@@ -1,0 +1,4 @@
+2026/06/28-12:02:32.467 4968 Creating DB C:\Users\david\Desktop\Archivox\.wwebjs-auth\session\Default\shared_proto_db since it was missing.
+2026/06/28-12:02:32.480 4968 Reusing MANIFEST C:\Users\david\Desktop\Archivox\.wwebjs-auth\session\Default\shared_proto_db/MANIFEST-000001
+2026/06/28-12:02:32.481 4968 Recovering log #3
+2026/06/28-12:02:32.482 4968 Reusing old log C:\Users\david\Desktop\Archivox\.wwebjs-auth\session\Default\shared_proto_db/000003.log 

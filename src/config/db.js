@@ -1,7 +1,6 @@
 // Unified database helper - works with both SQLite and PostgreSQL
 require('dotenv').config();
 
-let db;
 let pool;
 
 // If DATABASE_URL exists, use PostgreSQL, otherwise use SQLite
@@ -12,27 +11,77 @@ if (process.env.DATABASE_URL) {
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false }
     });
-    
-    // Export pool directly for controllers expecting pool.query()
-    db = pool;
 } else {
     console.log('Using SQLite database (local)');
     const Database = require('better-sqlite3');
     const path = require('path');
     const dbPath = path.join(__dirname, '../../database.db');
-    db = new Database(dbPath);
+    const db = new Database(dbPath);
     db.pragma('journal_mode = WAL');
     
-    // For compatibility, provide query as alias to prepare/run
+    // Create a wrapper that mimics PostgreSQL's pool.query() interface
+    // Convert PostgreSQL placeholders and syntax to SQLite
     pool = {
         query: (sql, params) => {
-            if (sql.trim().toUpperCase().startsWith('SELECT')) {
-                return Promise.resolve(db.prepare(sql).all(...(params || [])));
+            // params should be an array - if undefined, use empty array
+            const queryParams = params || [];
+            
+            // Store original SQL for reference
+            let sqliteSql = sql;
+            
+            // Convert $1, $2, $3... to ?, ?, ?...
+            sqliteSql = sqliteSql.replace(/\$(\d+)/g, '?');
+            
+            // Convert INTERVAL syntax (PostgreSQL) to SQLite date functions
+            // INTERVAL '90 days' -> 90 days (subtract from date)
+            sqliteSql = sqliteSql.replace(/CURRENT_DATE\s*-\s*INTERVAL\s+'(\d+)\s*days'/gi, 
+                "datetime('now', '-' || '$1' || ' days')");
+            sqliteSql = sqliteSql.replace(/CURRENT_DATE\s*-\s*INTERVAL\s+'(\d+)\s*months'/gi, 
+                "datetime('now', '-' || '$1' || ' months')");
+            
+            // Convert TO_CHAR(fecha_solicitud, 'YYYY-MM') to strftime
+            sqliteSql = sqliteSql.replace(/TO_CHAR\([^,]+,\s*'YYYY-MM'\)/gi, 
+                "strftime('%Y-%m', fecha_solicitud)");
+            sqliteSql = sqliteSql.replace(/TO_CHAR\([^,]+,\s*'Mon YYYY'\)/gi, 
+                "strftime('%b %Y', fecha_solicitud)");
+            
+            // Convert COALESCE to IFNULL for SQLite
+            sqliteSql = sqliteSql.replace(/COALESCE\(([^,]+),\s*'([^']*)'\)/gi, 
+                "IFNULL($1, '')");
+            
+            // Convert RETURNING * (PostgreSQL) - SQLite doesn't support this
+            sqliteSql = sqliteSql.replace(/\s+RETURNING\s+\*/gi, '');
+            
+            // DEBUG logging
+            if (sql.includes('SELECT') || sql.includes('FROM')) {
+                console.log('DEBUG: Converting SQL:', sql.substring(0, 60), '->', sqliteSql.substring(0, 60));
             }
-            return Promise.resolve(db.prepare(sql).run(...(params || [])));
+            
+            if (sql.trim().toUpperCase().startsWith('SELECT')) {
+                try {
+                    const rows = db.prepare(sqliteSql).all(...queryParams);
+                    return Promise.resolve({ rows: rows });
+                } catch (err) {
+                    console.error('SQLite query error:', err.message);
+                    console.error('SQL:', sqliteSql);
+                    return Promise.resolve({ rows: [] });
+                }
+            }
+            try {
+                const result = db.prepare(sqliteSql).run(...queryParams);
+                // Return in same format as PostgreSQL
+                return Promise.resolve({ 
+                    rows: [], 
+                    rowCount: result.changes,
+                    lastInsertRowid: result.lastInsertRowid 
+                });
+            } catch (err) {
+                console.error('SQLite exec error:', err.message);
+                return Promise.resolve({ rows: [], rowCount: 0 });
+            }
         }
     };
 }
 
-module.exports = db;
-module.exports.pool = pool;
+// Export pool for use as database connection
+module.exports = pool;

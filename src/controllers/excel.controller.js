@@ -1,11 +1,8 @@
 
 const excelService = require('../services/excel.service');
-const db = require('../config/db.js');
+const pool = require('../config/db.js');
 const fs = require('fs');
 const path = require('path');
-
-// Reemplazar pool por db en todo el archivo
-const pool = db;
 
 exports.uploadExcel = async (req, res) => {
 
