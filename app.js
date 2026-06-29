@@ -144,6 +144,15 @@ app.get('/m/gestion-lote', requiresAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/gestion-lote.html'));
 });
 
+// Rutas de Relaciones
+app.get('/relaciones', requiresAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/desktop/relaciones.html'));
+});
+
+app.get('/m/relaciones', requiresAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/movil/relaciones.html'));
+});
+
 // Rutas de Gestión por Lotes
 app.get('/gestion-lote', requiresAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/desktop/gestion-lote.html'));
@@ -196,6 +205,8 @@ app.use('/api/excel', require('./src/routes/excel.routes'));
 app.use('/api/auth', require('./src/routes/auth.routes'));
 app.use('/api/debug', require('./src/routes/debug.routes'));
 app.use('/api/gestiones-maestro', require('./src/routes/gestionesMaestro.routes'));
+app.use('/api/relaciones', require('./src/routes/relaciones.routes'));
+app.use('/api/relaciones/gestiones', require('./src/routes/relacionesGestion.routes'));
 
 // Archivos estáticos
 app.use(express.static('public'));

@@ -60,6 +60,7 @@ function crearDrawer() {
                 <li><a href="/m/importar"><span class="drawer-menu-icon">📤</span>Importar</a></li>
                 <li><a href="/m/gestiones"><span class="drawer-menu-icon">📝</span>Gestiones</a></li>
                 <li><a href="/m/gestion-lote"><span class="drawer-menu-icon">🚀</span>Campañas</a></li>
+                <li><a href="/m/relaciones"><span class="drawer-menu-icon">📋</span>Relaciones</a></li>
                 <li><a href="/m/ventas"><span class="drawer-menu-icon">💰</span>Ventas</a></li>
                 <li><a href="/m/historial"><span class="drawer-menu-icon">🔄</span>Historial</a></li>
             </ul>

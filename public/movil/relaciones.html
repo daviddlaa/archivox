@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Relaciones - Archivox</title>
+    <link rel="stylesheet" href="/movil/css/estilos.css">
+    <link rel="stylesheet" href="/movil/css/gestiones.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        .relaciones-container { padding: 15px; }
+        .relaciones-header { margin-bottom: 15px; }
+        .relaciones-header h1 { font-size: 22px; margin: 0 0 4px 0; }
+        .relaciones-header p { font-size: 12px; color: #6b7280; margin: 0; }
+        
+        /* Upload */
+        .upload-card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; }
+        .upload-zone { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 24px 16px; text-align: center; cursor: pointer; background: #f8fafc; margin-bottom: 12px; }
+        .upload-zone.dragover { border-color: #6366f1; background: #eef2ff; }
+        .upload-icon { font-size: 32px; margin-bottom: 8px; }
+        .upload-text { font-size: 14px; color: #374151; margin: 0 0 4px 0; }
+        .upload-hint { font-size: 12px; color: #9ca3af; margin: 0; }
+        .btn-upload-movil { width: 100%; padding: 14px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .btn-upload-movil:disabled { opacity: 0.6; cursor: not-allowed; }
+        .upload-msg { margin-top: 10px; padding: 10px 12px; border-radius: 8px; font-size: 13px; display: none; }
+        .upload-msg.success { display: block; background: #d1fae5; color: #065f46; }
+        .upload-msg.error { display: block; background: #fee2e2; color: #991b1b; }
+        .upload-msg.loading { display: block; background: #fef3c7; color: #92400e; }
+        
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+        .stat-card { background: white; border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .stat-icon { font-size: 18px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; flex-shrink: 0; }
+        .stat-total .stat-icon { background: #e0e7ff; }
+        .stat-alta .stat-icon { background: #dbeafe; }
+        .stat-baja .stat-icon { background: #fee2e2; }
+        .stat-ops .stat-icon { background: #d1fae5; }
+        .stat-info h3 { margin: 0; font-size: 10px; color: #6b7280; text-transform: uppercase; }
+        .stat-info span { font-size: 18px; font-weight: bold; color: #1f2937; display: block; margin-top: 1px; }
+        
+        /* Filters */
+        .filters-card { background: white; border-radius: 12px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 12px; }
+        .filter-pills { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+        .pill { padding: 6px 14px; border-radius: 16px; border: 2px solid #e5e7eb; background: white; color: #374151; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .pill-active { background: #6366f1; color: white; border-color: #6366f1; }
+        .pill-alta { border-color: #93c5fd; color: #2563eb; }
+        .pill-alta.pill-active { background: #3b82f6; color: white; border-color: #3b82f6; }
+        .pill-baja { border-color: #fca5a5; color: #dc2626; }
+        .pill-baja.pill-active { background: #ef4444; color: white; border-color: #ef4444; }
+        .search-input { width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; margin-bottom: 8px; }
+        .search-input:focus { outline: none; border-color: #6366f1; }
+        
+
+        
+        /* Empty */
+        .empty-state { text-align: center; padding: 40px 20px; color: #9ca3af; }
+        .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+        .empty-state h3 { font-size: 18px; color: #6b7280; margin: 0 0 6px 0; }
+        .empty-state p { font-size: 13px; margin: 0; }
+        
+        .btn-export-movil { padding: 8px 14px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+/* Cards Móvil */
+.cards-container-movil { margin-bottom: 12px; }
+.cards-header-movil { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; font-size: 12px; color: #6b7280; font-weight: 600; }
+.cards-grid-movil { display: flex; flex-direction: column; gap: 10px; }
+
+.card-movil { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; border-left: 4px solid #e5e7eb; }
+.card-movil.estado-ALTA { border-left-color: #3b82f6; }
+.card-movil.estado-BAJA { border-left-color: #ef4444; }
+
+.card-movil-header { display: flex; align-items: center; gap: 6px; padding: 10px 12px 6px; border-bottom: 1px solid #f3f4f6; }
+.badge-movil { display: inline-block; padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.badge-movil.badge-ALTA { background: #dbeafe; color: #1e40af; }
+.badge-movil.badge-BAJA { background: #fee2e2; color: #991b1b; }
+.card-movil-id { font-size: 11px; color: #6b7280; flex: 1; }
+.card-movil-ops { font-size: 10px; color: #9ca3af; background: #f3f4f6; padding: 2px 8px; border-radius: 6px; }
+
+.card-movil-body { padding: 8px 12px 10px; }
+.card-movil-nombre { font-size: 14px; font-weight: 600; color: #1f2937; margin-bottom: 4px; }
+.card-movil-telefono { font-size: 13px; color: #374151; margin-bottom: 6px; }
+.card-movil-fechas { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; color: #6b7280; padding-top: 6px; border-top: 1px dashed #f3f4f6; }
+.card-movil-fechas span { white-space: nowrap; }
+
+/* Botones de acción en cards móvil */
+.card-movil-acciones { display: flex; gap: 4px; padding: 6px 10px 8px; border-top: 1px solid #f3f4f6; }
+.btn-sm-movil { padding: 6px 8px; border-radius: 6px; border: none; font-size: 13px; cursor: pointer; flex: 1; text-align: center; transition: all 0.2s; }
+.btn-sm-movil:hover { filter: brightness(1.1); }
+.btn-sm-call { background: #d1fae5; color: #065f46; }
+.btn-sm-whatsapp { background: #dcfce7; color: #166534; }
+.btn-sm-direct { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
+.btn-sm-ver { background: #e0e7ff; color: #3730a3; }
+.btn-sm-historial { background: #f3f4f6; color: #374151; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-title">
+            <h1>📋 Relaciones</h1>
+            <p>Clientes ALTA y BAJA</p>
+        </div>
+    </div>
+
+    <div class="relaciones-container">
+
+        <!-- Upload -->
+        <div class="upload-card" id="uploadSectionMovil">
+            <form id="formUploadRelacionesMovil">
+                <div class="upload-zone" id="dropZoneMovil">
+                    <div class="upload-icon">📤</div>
+                    <p class="upload-text">Sube tu archivo <strong>Relaciones.xlsx</strong></p>
+                    <p class="upload-hint">Toca para seleccionar</p>
+                    <input type="file" id="fileInputMovil" name="archivo" accept=".xlsx,.xls" hidden>
+                </div>
+                <button type="submit" class="btn-upload-movil" id="btnSubirMovil">📤 Subir y Procesar</button>
+            </form>
+            <div id="uploadMensajeMovil" class="upload-msg"></div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid" id="statsMovil" style="display:none;">
+            <div class="stat-card stat-total">
+                <div class="stat-icon">📄</div>
+                <div class="stat-info"><h3>Total</h3><span id="statTotalMovil">0</span></div>
+            </div>
+            <div class="stat-card stat-alta">
+                <div class="stat-icon">🔵</div>
+                <div class="stat-info"><h3>ALTA</h3><span id="statAltasMovil">0</span></div>
+            </div>
+            <div class="stat-card stat-baja">
+                <div class="stat-icon">🔴</div>
+                <div class="stat-info"><h3>BAJA</h3><span id="statBajasMovil">0</span></div>
+            </div>
+            <div class="stat-card stat-ops">
+                <div class="stat-icon">🔄</div>
+                <div class="stat-info"><h3>Ops</h3><span id="statOpsMovil">0</span></div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-card" id="filtersMovil" style="display:none;">
+            <div class="filter-pills">
+                <button class="pill pill-active" data-estado="" onclick="filtrarPorEstadoMovil('')">📋 Todas</button>
+                <button class="pill pill-alta" data-estado="ALTA" onclick="filtrarPorEstadoMovil('ALTA')">🔵 ALTA</button>
+                <button class="pill pill-baja" data-estado="BAJA" onclick="filtrarPorEstadoMovil('BAJA')">🔴 BAJA</button>
+            </div>
+            <input type="text" class="search-input" id="searchInputMovil" placeholder="🔍 Buscar cédula, nombre..." oninput="buscarRelacionesMovil()">
+            <div style="display:flex;gap:8px;">
+                <input type="date" id="fechaDesdeMovil" class="search-input" style="flex:1;" onchange="aplicarFiltrosMovil()">
+                <input type="date" id="fechaHastaMovil" class="search-input" style="flex:1;" onchange="aplicarFiltrosMovil()">
+            </div>
+        </div>
+
+        <!-- Cards -->
+        <div class="cards-container-movil" id="cardsSectionMovil" style="display:none;">
+            <div class="cards-header-movil">
+                <span id="resultCountMovil">0 resultados</span>
+                <div style="display:flex;gap:6px;">
+                    <button class="btn-export-movil" id="btnExportarMovil" onclick="exportarExcelRelacionesMovil()" style="display:none;">📥 Excel</button>
+                    <button class="btn-export-movil" id="btnReuploadMovil" onclick="mostrarUploadMovil()" style="display:none;background:#6b7280;">📤 Nuevo</button>
+                </div>
+            </div>
+            <div class="cards-grid-movil" id="cardsGridMovil"></div>
+        </div>
+
+        <!-- Empty -->
+        <div class="empty-state" id="emptyMovil">
+            <div class="empty-icon">📋</div>
+            <h3>No hay relaciones cargadas</h3>
+            <p>Sube tu archivo Excel de Relaciones para comenzar</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <nav class="nav-bottom">
+        <a href="/m">
+            <span class="nav-bottom-icon">📊</span>
+            Inicio
+        </a>
+        <a href="/m/relaciones" class="active">
+            <span class="nav-bottom-icon">📋</span>
+            Relaciones
+        </a>
+        <a href="#" onclick="abrirDrawer(); return false;">
+            <span class="nav-bottom-icon">☰</span>
+            Menú
+        </a>
+    </nav>
+
+    <script src="/movil/js/drawer.js"></script>
+    <script src="/movil/js/relaciones.js"></script>
+</body>
+</html>

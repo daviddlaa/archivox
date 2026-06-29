@@ -121,7 +121,49 @@ const initTables = async () => {
             )
         `);
         
-        console.log('Tablas creadas en PostgreSQL');
+                // Tabla de relaciones (ALTA/BAJA)
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS relaciones (
+                id SERIAL PRIMARY KEY,
+                usuario_id INTEGER NOT NULL,
+                identificacion TEXT,
+                cliente TEXT,
+                celular TEXT,
+                estado_relacion TEXT CHECK(estado_relacion IN ('ALTA','BAJA')),
+                fecha_inicio_relacion DATE,
+                fecha_fin_relacion DATE,
+                fecha_fin_credito DATE,
+                fecha_fin_fidelizacion DATE,
+                proxima_baja DATE,
+                motivo_ruptura TEXT,
+                numero_operaciones INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+            )
+        `);
+
+        // Tabla de gestiones para relaciones (separada de gestiones para solicitudes)
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS gestiones_relaciones (
+                id SERIAL PRIMARY KEY,
+                relacion_id INTEGER NOT NULL,
+                usuario_id INTEGER NOT NULL,
+                tipo_gestion TEXT NOT NULL,
+                observacion TEXT,
+                fecha_gestion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (relacion_id) REFERENCES relaciones(id),
+                FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+            )
+        `);
+
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_gestiones_relaciones_relacion_id 
+            ON gestiones_relaciones(relacion_id)
+        `);
+
+console.log('Tablas creadas en PostgreSQL');
     } catch (err) {
         console.error('Error creando tablas:', err.message);
     } finally {

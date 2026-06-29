@@ -114,4 +114,47 @@ db.exec(`
     )
 `);
 
+// Tabla de relaciones (ALTA/BAJA)
+db.exec(`
+    CREATE TABLE IF NOT EXISTS relaciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        usuario_id INTEGER NOT NULL,
+        identificacion TEXT,
+        cliente TEXT,
+        celular TEXT,
+        estado_relacion TEXT CHECK(estado_relacion IN ('ALTA','BAJA')),
+        fecha_inicio_relacion DATE,
+        fecha_fin_relacion DATE,
+        fecha_fin_credito DATE,
+        fecha_fin_fidelizacion DATE,
+        proxima_baja DATE,
+        motivo_ruptura TEXT,
+        numero_operaciones INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    )
+`);
+
+// Tabla de gestiones para relaciones
+// Separada de gestiones (que son para solicitudes)
+db.exec(`
+    CREATE TABLE IF NOT EXISTS gestiones_relaciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        relacion_id INTEGER NOT NULL,
+        usuario_id INTEGER NOT NULL,
+        tipo_gestion TEXT NOT NULL,
+        observacion TEXT,
+        fecha_gestion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (relacion_id) REFERENCES relaciones(id),
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    )
+`);
+
+db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_gestiones_relaciones_relacion_id 
+    ON gestiones_relaciones(relacion_id)
+`);
+
 module.exports = db;

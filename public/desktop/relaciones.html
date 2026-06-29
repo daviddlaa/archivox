@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relaciones - Archivox</title>
+    <link rel="stylesheet" href="/desktop/css/base.css">
+    <link rel="stylesheet" href="/desktop/css/relaciones.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- Drawer Toggle -->
+    <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
+    <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
+
+    <div class="layout">
+        <main class="contenido">
+            <div class="relaciones-container">
+
+                <!-- Header -->
+                <div class="relaciones-header">
+                    <div class="relaciones-header-left">
+                        <h1>📋 Relaciones</h1>
+                        <p class="relaciones-subtitle">Gestión de clientes ALTA y BAJA</p>
+                    </div>
+                </div>
+
+                <!-- Upload Section -->
+                <div class="relaciones-upload-section" id="upload-section">
+                    <div class="relaciones-upload-card">
+                        <form id="formUploadRelaciones">
+                            <div class="relaciones-upload-zone" id="dropZone">
+                                <div class="relaciones-upload-icon">📤</div>
+                                <p class="relaciones-upload-text">Arrastra tu archivo <strong>Relaciones.xlsx</strong> aquí</p>
+                                <p class="relaciones-upload-hint">o haz clic para seleccionar</p>
+                                <input type="file" id="fileInput" name="archivo" accept=".xlsx,.xls" hidden>
+                            </div>
+                            <button type="submit" class="btn-upload" id="btnSubir">
+                                📤 Subir y Procesar
+                            </button>
+                        </form>
+                        <div id="uploadMensaje" class="upload-mensaje"></div>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="relaciones-stats" id="relacionesStats" style="display:none;">
+                    <div class="relaciones-stat-card stat-total">
+                        <div class="relaciones-stat-icon">📄</div>
+                        <div class="relaciones-stat-info">
+                            <h3>Total</h3>
+                            <span id="statTotal">0</span>
+                        </div>
+                    </div>
+                    <div class="relaciones-stat-card stat-alta">
+                        <div class="relaciones-stat-icon">🔵</div>
+                        <div class="relaciones-stat-info">
+                            <h3>ALTA</h3>
+                            <span id="statAltas">0</span>
+                        </div>
+                    </div>
+                    <div class="relaciones-stat-card stat-baja">
+                        <div class="relaciones-stat-icon">🔴</div>
+                        <div class="relaciones-stat-info">
+                            <h3>BAJA</h3>
+                            <span id="statBajas">0</span>
+                        </div>
+                    </div>
+                    <div class="relaciones-stat-card stat-ops">
+                        <div class="relaciones-stat-icon">🔄</div>
+                        <div class="relaciones-stat-info">
+                            <h3>Operaciones</h3>
+                            <span id="statOps">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="relaciones-filters" id="relacionesFilters" style="display:none;">
+                    <div class="relaciones-filter-row">
+                        <div class="relaciones-filter-pills">
+                            <button class="pill pill-active" data-estado="" onclick="filtrarPorEstado('')">📋 Todas</button>
+                            <button class="pill pill-alta" data-estado="ALTA" onclick="filtrarPorEstado('ALTA')">🔵 ALTA</button>
+                            <button class="pill pill-baja" data-estado="BAJA" onclick="filtrarPorEstado('BAJA')">🔴 BAJA</button>
+                        </div>
+                        <div class="relaciones-filter-search">
+                            <input type="text" id="searchInput" placeholder="🔍 Buscar cédula, nombre o teléfono..." oninput="buscarRelaciones()">
+                        </div>
+                        <button class="btn-export" id="btnExportar" onclick="exportarExcelRelaciones()" style="display:none;">
+                            📥 Exportar Excel
+                        </button>
+                        <button class="btn-reupload" id="btnReupload" onclick="mostrarUpload()" style="display:none;">
+                            📤 Subir nuevo Excel
+                        </button>
+                    </div>
+                    <div class="relaciones-filter-row-secondary">
+                        <div class="relaciones-filter-date">
+                            <label>Desde:</label>
+                            <input type="date" id="fechaDesde" onchange="aplicarFiltros()">
+                        </div>
+                        <div class="relaciones-filter-date">
+                            <label>Hasta:</label>
+                            <input type="date" id="fechaHasta" onchange="aplicarFiltros()">
+                        </div>
+                        <button class="btn-clear" onclick="limpiarFiltros()">✕ Limpiar filtros</button>
+                    </div>
+                </div>
+
+                <!-- Cards Grid -->
+                <div class="relaciones-cards-section" id="relacionesCards" style="display:none;">
+                    <div class="relaciones-cards-header">
+                        <span id="resultCount">0 resultados</span>
+                        <div class="relaciones-cards-actions">
+                            <select id="ordenSelect" class="orden-select" onchange="cambiarOrden()">
+                                <option value="cliente_ASC">Orden: Nombre A-Z</option>
+                                <option value="cliente_DESC">Orden: Nombre Z-A</option>
+                                <option value="fecha_inicio_relacion_DESC">Orden: Más reciente</option>
+                                <option value="fecha_inicio_relacion_ASC">Orden: Más antiguo</option>
+                                <option value="numero_operaciones_DESC">Orden: Más operaciones</option>
+                                <option value="numero_operaciones_ASC">Orden: Menos operaciones</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="relaciones-cards-grid" id="cardsGrid">
+                    </div>
+                    <div class="relaciones-pagination" id="pagination">
+                        <button id="btnPrev" onclick="cambiarPagina(-1)">← Anterior</button>
+                        <span id="pageInfo">Página 1</span>
+                        <button id="btnNext" onclick="cambiarPagina(1)">Siguiente →</button>
+                    </div>
+                </div>
+
+                <!-- Empty state before data -->
+                <div class="relaciones-empty" id="relacionesEmpty">
+                    <div class="relaciones-empty-icon">📋</div>
+                    <h3>No hay relaciones cargadas</h3>
+                    <p>Sube tu archivo Excel de Relaciones para comenzar</p>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="/desktop/js/drawer.js"></script>
+    <script src="/desktop/js/relaciones.js"></script>
+</body>
+</html>

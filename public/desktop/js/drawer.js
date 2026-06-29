@@ -44,6 +44,7 @@ function crearDrawerDinamico() {
                 <a href="/solicitudes" class="drawer-link">📋 Solicitudes</a>
 <a href="/gestiones" class="drawer-link">📝 Gestiones</a>
 <a href="/gestion-lote" class="drawer-link">📢 Campañas</a>
+<a href="/relaciones" class="drawer-link">📋 Relaciones</a>
                 <a href="/historial" class="drawer-link">🔄 Historial</a>
                 <a href="#" class="drawer-link drawer-link-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
             </nav>
