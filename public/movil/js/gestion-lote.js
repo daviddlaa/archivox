@@ -522,6 +522,9 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
     btn.textContent = '⏳ Procesando...';
     btn.disabled = true;
     
+    // Variable para evitar que el flujo caiga al fallback si Web Share ya funcionó
+    var shareCompletado = false;
+    
     try {
         // ===== PASO 1: Intentar compartir con Web Share API (imagen + texto directo a WhatsApp) =====
         if (file && typeof navigator.share !== 'undefined' && navigator.canShare) {
@@ -537,10 +540,13 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
                     
                     // Guardar gestión
                     await guardarGestionWhatsApp(solicitudId, mensaje, null);
+                    shareCompletado = true;
                     
                     alert('✅ Gestión guardada');
                     cerrarModal();
-                    cargarDatosGestionMovil();
+                    await cargarDatosGestionMovil();
+                    btn.textContent = '📤 Enviar';
+                    btn.disabled = false;
                     return;
                 }
             } catch (shareError) {
@@ -553,6 +559,13 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
                 }
                 console.log('[WhatsApp Movil] Web Share no disponible, usando fallback:', shareError.message);
             }
+        }
+        
+        // Si Web Share ya completó, salir sin ejecutar fallback
+        if (shareCompletado) {
+            btn.textContent = '📤 Enviar';
+            btn.disabled = false;
+            return;
         }
         
         // ===== PASO 2: Fallback - Subir imagen y abrir WhatsApp con URL =====
@@ -598,7 +611,7 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
         
         alert('✅ Gestión guardada');
         cerrarModal();
-        cargarDatosGestionMovil();
+        await cargarDatosGestionMovil();
         
     } catch (error) {
         console.error('[WhatsApp Movil] Error:', error);

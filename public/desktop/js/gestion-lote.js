@@ -736,6 +736,9 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
     btn.textContent = '⏳ Procesando...';
     btn.disabled = true;
     
+    // Variable para evitar que el flujo caiga al fallback si Web Share ya funcionó
+    var shareCompletado = false;
+    
     try {
         // ===== PASO 1: Intentar Web Share API (compartir imagen directa) =====
         if (file && typeof navigator.share !== 'undefined' && navigator.canShare) {
@@ -750,10 +753,13 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
                     await navigator.share(shareData);
                     
                     await guardarGestionWhatsAppDesktop(solicitudId, mensaje, null);
+                    shareCompletado = true;
                     
                     alert('✅ Gestión guardada');
                     cerrarModal();
-                    cargarDatosGestion();
+                    await cargarDatosGestion();
+                    btn.textContent = '📤 Enviar';
+                    btn.disabled = false;
                     return;
                 }
             } catch (shareError) {
@@ -765,6 +771,13 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
                 }
                 console.log('[WhatsApp Desktop] Web Share falló, usando fallback:', shareError.message);
             }
+        }
+        
+        // Si Web Share ya completó, salir sin ejecutar fallback
+        if (shareCompletado) {
+            btn.textContent = '📤 Enviar';
+            btn.disabled = false;
+            return;
         }
         
         // ===== PASO 2: Abrir WhatsApp Web (antes de operaciones async para evitar bloqueo popup) =====
@@ -802,7 +815,7 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
         
         alert('✅ Gestión guardada');
         cerrarModal();
-        cargarDatosGestion();
+        await cargarDatosGestion();
         
     } catch (error) {
         console.error('[WhatsApp Desktop] Error:', error);
