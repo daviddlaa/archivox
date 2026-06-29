@@ -53,8 +53,7 @@ async function init() {
     gestionId = obtenerGestionId();
     
     if (gestionId) {
-        await cargarGestion();
-        await cargarSolicitudes();
+        await cargarDatosGestion();
         // Marcar la campaña como activa
         marcarCampañaActiva(gestionId);
     }
@@ -145,34 +144,43 @@ function marcarCampañaActiva(id) {
     }
 }
 
-// Cargar datos de la gestión
-async function cargarGestion() {
+// Cargar datos de la gestión (unifica cargarGestion + cargarSolicitudes)
+async function cargarDatosGestion() {
     try {
+        var container = document.getElementById('lista-solicitudes');
+        if (container) container.innerHTML = '<div class="loading">Cargando solicitudes...</div>';
+        
         var response = await fetch('/api/gestiones-maestro/' + gestionId);
         
         if (!response.ok) {
-            var error = await response.json();
-            alert('Error: ' + (error.error || 'Error al cargar la gestión'));
-            window.location.href = '/solicitudes';
-            return;
+            var errorData = await response.json().catch(function() { return {}; });
+            throw new Error(errorData.error || 'Error al cargar la gestión (status: ' + response.status + ')');
         }
         
         datosGestion = await response.json();
         
         // Actualizar título
-        document.getElementById('gestion-nombre').textContent = datosGestion.nombre || 'Gestión #' + gestionId;
+        var tituloEl = document.getElementById('gestion-nombre');
+        if (tituloEl) tituloEl.textContent = datosGestion.nombre || 'Gestión #' + gestionId;
         
-// Mostrar panel de progreso y filtros
-        document.getElementById('panel-progreso').style.display = 'block';
-        document.getElementById('filtros-row').style.display = 'flex';
+        // Mostrar panel de progreso y filtros
+        var panelProgreso = document.getElementById('panel-progreso');
+        var filtrosRow = document.getElementById('filtros-row');
+        if (panelProgreso) panelProgreso.style.display = 'block';
+        if (filtrosRow) filtrosRow.style.display = 'flex';
         
-        // Actualizar contadores
+        solicitudes = datosGestion.solicitudes || [];
+        todasLasSolicitudes = [...solicitudes];
+        
         actualizarProgreso();
+        renderizarSolicitudes(solicitudes);
         
     } catch (error) {
-        console.error('Error cargando gestión:', error);
-        alert('Error al cargar la gestión');
-        window.location.href = '/solicitudes';
+        console.error('Error cargando datos de gestión:', error);
+        var errContainer = document.getElementById('lista-solicitudes');
+        if (errContainer) errContainer.innerHTML = '<div class="error">Error al cargar: ' + error.message + '</div>';
+        var nombreEl = document.getElementById('gestion-nombre');
+        if (nombreEl) nombreEl.textContent = 'Error al cargar gestión';
     }
 }
 
@@ -198,32 +206,6 @@ function actualizarProgreso() {
     document.getElementById('pendientes').textContent = pendientes;
     document.getElementById('progreso-porcentaje').textContent = porcentaje + '%';
     document.getElementById('barra-progreso').style.width = porcentaje + '%';
-}
-
-// Cargar solicitudes de la gestión
-async function cargarSolicitudes() {
-    try {
-        var container = document.getElementById('lista-solicitudes');
-        container.innerHTML = '<div class="loading">Cargando solicitudes...</div>';
-        
-        var response = await fetch('/api/gestiones-maestro/' + gestionId);
-        
-        if (!response.ok) {
-            throw new Error('Error al cargar');
-        }
-        
-        datosGestion = await response.json();
-        solicitudes = datosGestion.solicitudes || [];
-        todasLasSolicitudes = [...solicitudes];
-        
-        renderizarSolicitudes(solicitudes);
-        actualizarProgreso();
-        
-    } catch (error) {
-        console.error('Error cargando solicitudes:', error);
-        document.getElementById('lista-solicitudes').innerHTML = 
-            '<div class="error">Error al cargar las solicitudes</div>';
-    }
 }
 
 // Renderizar lista de solicitudes
@@ -409,7 +391,7 @@ async function guardarGestionIndividual(solicitudId) {
         if (response.ok && !resultado.error) {
             alert('Gestión guardada correctamente');
             cerrarModal();
-            cargarSolicitudes();
+            cargarDatosGestion();
         } else {
             alert('Error: ' + (resultado.error || 'Error desconocido'));
         }
@@ -782,7 +764,7 @@ if (!response.ok || resultado.error) {
         alert('✅ Gestión guardada');
         
         cerrarModal();
-        cargarSolicitudes();
+        cargarDatosGestion();
         
     } catch (error) {
         console.error('Error:', error);

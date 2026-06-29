@@ -313,18 +313,27 @@ async function crearGestionLote() {
         console.log('[crearGestionLote] Response status:', response.status);
         
         var resultado = await response.json();
-        console.log('[crearGestionLote] Resultado:', resultado);
+        console.log('[crearGestionLote] Resultado JSON:', JSON.stringify(resultado));
+        console.log('[crearGestionLote] response.ok:', response.ok, 'resultado.id:', resultado && resultado.id, 'typeof:', typeof (resultado && resultado.id));
         
-        if (response.ok && resultado.id) {
+        if (response.ok && resultado && resultado.id) {
             alert('Gestión creada correctamente');
             cerrarModal();
             // Ir a la página de gestión por lotes
             window.location.href = '/gestion-lote?id=' + resultado.id;
         } else {
-            var msg = resultado.error || 'Error desconocido';
-            if (resultado.detalle) msg += '\nDetalle: ' + resultado.detalle;
+            var msg = '';
+            if (resultado && typeof resultado.error === 'string') {
+                msg = resultado.error;
+            } else if (resultado && resultado.mensaje) {
+                msg = resultado.mensaje;
+            } else {
+                msg = 'Error desconocido - la respuesta no contiene id';
+                if (resultado) msg += ' (respuesta: ' + JSON.stringify(resultado).substring(0, 100) + ')';
+            }
+            if (resultado && resultado.detalle) msg += '\nDetalle: ' + resultado.detalle;
             alert('Error: ' + msg);
-            console.error('[crearGestionLote] Error:', resultado);
+            console.error('[crearGestionLote] Error - respuesta inesperada:', JSON.stringify(resultado));
         }
     } catch (error) {
         console.error('[crearGestionLote] Error completa:', error);
