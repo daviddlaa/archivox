@@ -377,39 +377,44 @@ function exportarExcel() {
         return;
     }
     
-    var csvContent = '\uFEFF';
-    csvContent += 'ID Solicitud,Cédula,Nombre,Tipo Gestión,Observación,Fecha Gestión\n';
-    
+    // Convertir datos al formato que espera SheetJS
+    var datosAExportar = [];
     for (var i = 0; i < todosDatos.length; i++) {
         var g = todosDatos[i];
-        var row = [
-            g.solicitud_id || '',
-            g.cedula || '',
-            g.nombre || '',
-            g.tipo_gestion || '',
-            g.observacion || '',
-            formatFechaGestion(g.fecha_gestion)
-        ].map(function(val) {
-            var str = String(val || '');
-            if (str.indexOf(',') > -1 || str.indexOf('"') > -1) {
-                return '"' + str.replace(/"/g, '""') + '"';
-            }
-            return str;
-        }).join(',');
-        csvContent += row + '\n';
+        datosAExportar.push({
+            'ID Solicitud': g.solicitud_id || '',
+            'Cédula': g.cedula || '',
+            'Nombre': g.nombre || '',
+            'Tipo Gestión': g.tipo_gestion || '',
+            'Observación': g.observacion || '',
+            'Fecha Gestión': formatFechaGestion(g.fecha_gestion)
+        });
     }
     
-    var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    var link = document.createElement('a');
-    var url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'gestiones_' + getFechaHoraActual().replace(/[\s:]/g, '-') + '.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Crear libro de Excel con SheetJS
+    var wb = XLSX.utils.book_new();
+    var ws = XLSX.utils.json_to_sheet(datosAExportar);
     
-    alert('Se exportaron ' + todosDatos.length + ' registros');
+    // Ancho de columnas automático
+    ws['!cols'] = [
+        {wch: 14},  // ID Solicitud
+        {wch: 12},  // Cédula
+        {wch: 30},  // Nombre
+        {wch: 16},  // Tipo Gestión
+        {wch: 50},  // Observación
+        {wch: 18}   // Fecha Gestión
+    ];
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Gestiones');
+    
+    // Generar nombre de archivo con fecha
+    var fecha = getFechaHoraActual().replace(/[\s:]/g, '-');
+    var nombreArchivo = 'gestiones_' + fecha + '.xlsx';
+    
+    // Descargar archivo Excel
+    XLSX.writeFile(wb, nombreArchivo);
+    
+    alert('Se exportaron ' + todosDatos.length + ' registros a Excel');
 }
 
 // Infinite scroll setup
