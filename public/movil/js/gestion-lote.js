@@ -214,7 +214,7 @@ html += '<div class="sol-botones">';
         if (!gestionada) {
             html += '<button class="btn-sol btn-sol-call" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Llamada\')">📞 Llamada</button>';
             html += '<button class="btn-sol btn-sol-whatsapp" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'WhatsApp\')">💬 WhatsApp</button>';
-            html += '<button class="btn-sol btn-sol-whatsapp-img" onclick="abrirGestionWhatsApp(\'' + sol.id_solicitud + '\', \'' + (sol.celular || '') + '\')">📷 WhatsApp c/Imagen</button>';
+            html += '<button class="btn-sol btn-sol-whatsapp-img" onclick="abrirGestionWhatsApp(\'' + sol.id_solicitud + '\', \'' + (sol.celular || '') + '\')">💬 WhatsApp Directo</button>';
             html += '<button class="btn-sol btn-sol-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
             html += '<button class="btn-sol btn-sol-cobranza" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Cobranza\')">💰 Cobranza</button>';
             html += '<button class="btn-sol btn-sol-completar" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Completada\')">✅ Completar</button>';
@@ -361,7 +361,7 @@ init();
 
 // ================== WHATSAPP CON IMAGEN INDIVIDUAL ==================
 
-// Abrir modal de WhatsApp con imagen para una solicitud específica
+// Abrir modal de WhatsApp para una solicitud (solo texto, sin imagen)
 function abrirGestionWhatsApp(solicitudId, celular) {
     var sol = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
     
@@ -378,23 +378,18 @@ function abrirGestionWhatsApp(solicitudId, celular) {
     var contenido = '';
     
     contenido += '<div class="modal-gestion">';
-    contenido += '<h2>📷 WhatsApp c/Imagen - Solicitud #' + solicitudId + '</h2>';
+    contenido += '<h2>💬 WhatsApp Directo - Solicitud #' + solicitudId + '</h2>';
     contenido += '<div class="modal-info">';
     contenido += '<p><strong>Nombre:</strong> ' + (sol.nombre || '—') + '</p>';
     contenido += '<p><strong>Celular:</strong> ' + celular + '</p>';
     contenido += '</div>';
     contenido += '<div class="modal-form">';
     contenido += '<label>📝 Mensaje:</label>';
-    contenido += '<textarea id="whatsapp-img-mensaje" rows="3" placeholder="Escriba su mensaje..."></textarea>';
-    contenido += '<label>📎 Seleccionar Imagen:</label>';
-    contenido += '<input type="file" id="whatsapp-img-input" accept="image/jpeg,image/png,image/webp" onchange="previsualizarWhatsAppImg(event)">';
-    contenido += '<div id="whatsapp-img-preview-container" style="display: none; margin-top: 12px; text-align: center;">';
-    contenido += '<img id="whatsapp-img-preview" style="max-width: 150px; max-height: 150px; border-radius: 8px; border: 2px solid #e2e8f0;">';
-    contenido += '<div style="margin-top: 8px;"><button type="button" onclick="quitarWhatsAppImg()" style="padding: 6px 12px; background: #fee2e2; border: none; border-radius: 4px; cursor: pointer;">Quitar Imagen</button></div>';
-    contenido += '</div>';                    contenido += '<div style="margin-top: 16px; padding: 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #86efac;">';
+    contenido += '<textarea id="whatsapp-img-mensaje" rows="3" placeholder="Escriba su mensaje..." style="margin-bottom: 12px;"></textarea>';
+    contenido += '<div style="padding: 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #86efac; margin-bottom: 12px;">';
     contenido += '<div style="display: flex; align-items: center; gap: 8px;">';
     contenido += '<span style="font-size: 18px;">📱</span>';
-    contenido += '<span style="font-size: 13px; color: #166534;">Se abrirá WhatsApp en tu dispositivo con el mensaje pre-llenado.</span>';
+    contenido += '<span style="font-size: 13px; color: #166534;">Se abrirá WhatsApp con el mensaje y el número de la solicitud.</span>';
     contenido += '</div>';
     contenido += '<div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">';
     contenido += '<input type="checkbox" id="whatsapp-abrir-web" checked style="width: 18px; height: 18px;">';
@@ -403,50 +398,12 @@ function abrirGestionWhatsApp(solicitudId, celular) {
     contenido += '</div>';
     contenido += '<div class="modal-botones">';
     contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>';
-    contenido += '<button class="btn-guardar" id="btn-whatsapp-img" onclick="enviarWhatsAppImagen(\'' + solicitudId + '\', \'' + celular + '\')">📤 Enviar</button>';
+    contenido += '<button class="btn-guardar" id="btn-whatsapp-img" onclick="enviarWhatsApp(\'' + solicitudId + '\', \'' + celular + '\')">📤 Enviar</button>';
     contenido += '</div>';
     contenido += '</div>';
     contenido += '</div>';
     
     crearModal(contenido);
-}
-
-// Previsualizar imagen para WhatsApp individual
-function previsualizarWhatsAppImg(event) {
-    var file = event.target.files[0];
-    if (!file) return;
-    
-    var tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!tiposPermitidos.includes(file.type)) {
-        alert('Solo se permiten imágenes JPG, PNG o WebP');
-        event.target.value = '';
-        return;
-    }
-    
-    if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen no puede superar 5MB');
-        event.target.value = '';
-        return;
-    }
-    
-    var reader = new FileReader();
-    reader.onload = function(e) {
-        var container = document.getElementById('whatsapp-img-preview-container');
-        var img = document.getElementById('whatsapp-img-preview');
-        if (container && img) {
-            container.style.display = 'block';
-            img.src = e.target.result;
-        }
-    };
-    reader.readAsDataURL(file);
-}
-
-// Quitar imagen de WhatsApp individual
-function quitarWhatsAppImg() {
-    var input = document.getElementById('whatsapp-img-input');
-    var container = document.getElementById('whatsapp-img-preview-container');
-    if (input) input.value = '';
-    if (container) container.style.display = 'none';
 }
 
 // ================== CONFIGURACIÓN WHATSAPP ==================
@@ -505,108 +462,43 @@ function abrirWhatsAppMovil(celular, mensaje) {
     }
 }
 
-// Enviar WhatsApp con imagen (móvil optimizado)
-async function enviarWhatsAppImagen(solicitudId, celular) {
+// Enviar WhatsApp (solo texto, sin imagen)
+async function enviarWhatsApp(solicitudId, celular) {
     var mensaje = document.getElementById('whatsapp-img-mensaje').value.trim();
-    var fileInput = document.getElementById('whatsapp-img-input');
-    var file = fileInput ? fileInput.files[0] : null;
     var checkboxAbrir = document.getElementById('whatsapp-abrir-web');
     var abrirApp = checkboxAbrir ? checkboxAbrir.checked : true;
     
-    if (!mensaje && !file) {
-        alert('Escriba un mensaje o seleccione una imagen');
+    if (!mensaje) {
+        alert('Escriba un mensaje para enviar');
         return;
     }
     
     var btn = document.getElementById('btn-whatsapp-img');
-    btn.textContent = '⏳ Procesando...';
+    btn.textContent = '⏳ Guardando...';
     btn.disabled = true;
     
-    // Variable para evitar que el flujo caiga al fallback si Web Share ya funcionó
-    var shareCompletado = false;
-    
     try {
-        // ===== PASO 1: Intentar compartir con Web Share API (imagen + texto directo a WhatsApp) =====
-        if (file && typeof navigator.share !== 'undefined' && navigator.canShare) {
-            try {
-                var shareData = {
-                    text: mensaje || '📋 Gestión de solicitud #' + solicitudId,
-                    files: [file]
-                };
-                
-                if (navigator.canShare(shareData)) {
-                    console.log('[WhatsApp Movil] Usando Web Share API para compartir imagen');
-                    await navigator.share(shareData);
-                    
-                    // Guardar gestión
-                    await guardarGestionWhatsApp(solicitudId, mensaje, null);
-                    shareCompletado = true;
-                    
-                    alert('✅ Gestión guardada');
-                    cerrarModal();
-                    await cargarDatosGestionMovil();
-                    btn.textContent = '📤 Enviar';
-                    btn.disabled = false;
-                    return;
-                }
-            } catch (shareError) {
-                // Si el usuario canceló el share, no hacemos nada
-                if (shareError.name === 'AbortError') {
-                    console.log('[WhatsApp Movil] Usuario canceló el compartir');
-                    btn.textContent = '📤 Enviar';
-                    btn.disabled = false;
-                    return;
-                }
-                console.log('[WhatsApp Movil] Web Share no disponible, usando fallback:', shareError.message);
-            }
+        // ===== PASO 1: Guardar gestión =====
+        var response = await fetch('/api/excel/gestiones', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                solicitud_id: solicitudId,
+                tipo_gestion: 'WhatsApp',
+                observacion: mensaje,
+                gestion_maestro_id: gestionId
+            })
+        });
+        
+        var resultado = await response.json();
+        
+        if (!response.ok || resultado.error) {
+            throw new Error(resultado.error || 'Error al guardar gestión');
         }
         
-        // Si Web Share ya completó, salir sin ejecutar fallback
-        if (shareCompletado) {
-            btn.textContent = '📤 Enviar';
-            btn.disabled = false;
-            return;
-        }
-        
-        // ===== PASO 2: Fallback - Subir imagen y abrir WhatsApp con URL =====
-        console.log('[WhatsApp Movil] Usando modo fallback (subir imagen + URL en texto)');
-        
-        var imagenUrl = null;
-        if (file) {
-            var formData = new FormData();
-            formData.append('imagen', file);
-            
-            var uploadResponse = await fetch('/api/excel/upload-imagen', {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (!uploadResponse.ok) {
-                var errorText = await uploadResponse.text();
-                console.error('[WhatsApp Movil] Error upload-imagen:', errorText);
-                throw new Error('Error al subir imagen: ' + uploadResponse.status);
-            }
-            
-            var uploadResult = await uploadResponse.json();
-            if (!uploadResult.success) {
-                throw new Error(uploadResult.error || 'Error al subir imagen');
-            }
-            imagenUrl = uploadResult.url;
-            console.log('[WhatsApp Movil] Imagen subida:', imagenUrl);
-        }
-        
-        // ===== PASO 3: Construir mensaje =====
-        var textoWhatsApp = mensaje;
-        if (imagenUrl) {
-            textoWhatsApp = (mensaje ? mensaje + '\n\n' : '') + '📷 Ver imagen: ' + imagenUrl;
-        }
-        
-        // ===== PASO 4: Guardar gestión =====
-        await guardarGestionWhatsApp(solicitudId, mensaje, imagenUrl);
-        
-        // ===== PASO 5: Abrir WhatsApp app =====
+        // ===== PASO 2: Abrir WhatsApp app =====
         if (abrirApp) {
-            abrirWhatsAppMovil(celular, textoWhatsApp);
+            abrirWhatsAppMovil(celular, mensaje);
         }
         
         alert('✅ Gestión guardada');
@@ -620,32 +512,5 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
         btn.textContent = '📤 Enviar';
         btn.disabled = false;
     }
-}
-
-// Función auxiliar para guardar gestión de WhatsApp
-async function guardarGestionWhatsApp(solicitudId, mensaje, imagenUrl) {
-    var observacion = mensaje || '';
-    if (imagenUrl) {
-        observacion = (mensaje ? mensaje + '\n\n' : '') + '[Imagen: ' + imagenUrl + ']';
-    }
-    
-    var response = await fetch('/api/excel/gestiones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            solicitud_id: solicitudId,
-            tipo_gestion: 'WhatsApp',
-            observacion: observacion,
-            gestion_maestro_id: gestionId
-        })
-    });
-    
-    var resultado = await response.json();
-    
-    if (!response.ok || resultado.error) {
-        throw new Error(resultado.error || 'Error al guardar gestión');
-    }
-    
-    return resultado;
 }
 
