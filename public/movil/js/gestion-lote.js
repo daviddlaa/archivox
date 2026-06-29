@@ -218,14 +218,16 @@ function renderizarSolicitudes(lista) {
         }
 
 html += '<div class="sol-botones">';
-        if (!gestionada) {
-            html += '<button class="btn-sol btn-sol-call" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Llamada\')">📞 Llamada</button>';
-            html += '<button class="btn-sol btn-sol-whatsapp" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'WhatsApp\')">💬 WhatsApp</button>';
-            html += '<button class="btn-sol btn-sol-whatsapp-img" onclick="abrirGestionWhatsApp(\'' + sol.id_solicitud + '\', \'' + (sol.celular || '') + '\')">💬 WhatsApp Directo</button>';
-            html += '<button class="btn-sol btn-sol-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
-            html += '<button class="btn-sol btn-sol-cobranza" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Cobranza\')">💰 Cobranza</button>';
-            html += '<button class="btn-sol btn-sol-completar" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Completada\')">✅ Completar</button>';
-        } else {
+        // Botones de acción SIEMPRE visibles (independientemente del estado)
+        html += '<button class="btn-sol btn-sol-call" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Llamada\')">📞 Llamada</button>';
+        html += '<button class="btn-sol btn-sol-whatsapp" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'WhatsApp\')">💬 WhatsApp</button>';
+        html += '<button class="btn-sol btn-sol-whatsapp-img" onclick="abrirGestionWhatsApp(\'' + sol.id_solicitud + '\', \'' + (sol.celular || '') + '\')">💬 WhatsApp Directo</button>';
+        html += '<button class="btn-sol btn-sol-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
+        html += '<button class="btn-sol btn-sol-cobranza" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Cobranza\')">💰 Cobranza</button>';
+        html += '<button class="btn-sol btn-sol-completar" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Completada\')">✅ Completar</button>';
+        
+        // Botón ver gestión (si tiene gestión registrada)
+        if (gestionada) {
             html += '<button class="btn-sol btn-sol-ver" onclick="verGestion(\'' + sol.id_solicitud + '\')">👁️ Ver</button>';
         }
         

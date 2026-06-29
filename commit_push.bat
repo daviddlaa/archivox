@@ -4,6 +4,6 @@ git add -A
 git add src/config/db.js
 git add src/config/initDb.pg.js
 git add src/controllers/gestionesMaestro.controller.js
-git commit -m "fix ultima gestión en la tarjetas de las gestiones por lotes "
+git commit -m "fix ultimos cambios en gestion por lotes "
 git push origin master
 pause

@@ -98,6 +98,7 @@ const initTables = async () => {
                 total_solicitudes INTEGER DEFAULT 0,
                 gestionadas INTEGER DEFAULT 0,
                 fecha_limite DATE,
+                solicitudes_ids TEXT,
                 fecha_inicio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 fecha_fin TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

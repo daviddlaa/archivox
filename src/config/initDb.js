@@ -91,6 +91,7 @@ db.exec(`
         total_solicitudes INTEGER DEFAULT 0,
         gestionadas INTEGER DEFAULT 0,
         fecha_limite DATE,
+        solicitudes_ids TEXT,
         fecha_inicio DATETIME DEFAULT CURRENT_TIMESTAMP,
         fecha_fin DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

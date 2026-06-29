@@ -60,9 +60,27 @@ async function getGestionMaestroById(req, res) {
             return res.status(404).json({ error: 'Gestión no encontrada' });
         }
         
-        // Obtener solicitudes (SOLO la última gestión NO-Pendiente por solicitud)
-        // Excluimos 'Pendiente' para evitar que el Pendiente creado al generar la campaña
-        // (que tiene el ID más alto) opaque gestiones reales anteriores
+        // Obtener IDs de solicitudes guardados como JSON en la campaña
+        var solicitudesIds = [];
+        try {
+            if (gestion.solicitudes_ids) {
+                solicitudesIds = JSON.parse(gestion.solicitudes_ids);
+            }
+        } catch (e) {
+            console.error('[getGestionMaestroById] Error parseando solicitudes_ids:', e);
+        }
+        
+        if (solicitudesIds.length === 0) {
+            return res.json({
+                ...gestion,
+                solicitudes: []
+            });
+        }
+        
+        // Construir placeholders para la cláusula IN
+        const placeholders = solicitudesIds.map(function() { return '?'; }).join(',');
+        
+        // Obtener solicitudes con su última gestión real (si existe)
         const resultSol = await pool.query(`
             SELECT s.*, 
                    COALESCE(g.tipo_gestion, 'Pendiente') as tipo_gestion,
@@ -72,15 +90,12 @@ async function getGestionMaestroById(req, res) {
             FROM solicitudes s
             LEFT JOIN gestiones g ON g.id = (
                 SELECT MAX(g2.id) FROM gestiones g2 
-                WHERE g2.solicitud_id = s.id_solicitud 
-                AND g2.tipo_gestion != 'Pendiente'
+                WHERE g2.solicitud_id = s.id_solicitud
                 AND (g2.gestion_maestro_id = ? OR g2.gestion_maestro_id IS NULL)
             )
-            WHERE s.id_solicitud IN (
-                SELECT solicitud_id FROM gestiones WHERE gestion_maestro_id = ?
-            )
+            WHERE s.id_solicitud IN (${placeholders})
             ORDER BY CASE WHEN g.fecha_gestion IS NULL THEN 0 ELSE 1 END DESC, g.fecha_gestion DESC
-        `, [id, id]);
+        `, [id].concat(solicitudesIds));
         
         const Solicitudes = getRows(resultSol);
         
@@ -124,23 +139,22 @@ async function createGestionMaestro(req, res) {
             return res.status(400).json({ error: 'Se requiere al menos una solicitud' });
         }
         
-        // SQLite: Insertar y obtener el último ID
+        // Guardar los IDs de solicitudes como JSON en la misma tabla
+        // (evita escribir N registros innecesarios en gestiones con 'Pendiente/Por gestionar')
+        const solicitudesIdsJson = JSON.stringify(solicitudes_ids);
+        
         const resultGM = await pool.query(`
-            INSERT INTO gestiones_maestro (nombre, descripcion, usuario_id, total_solicitudes, gestionadas, fecha_limite)
-            VALUES (?, ?, ?, ?, 0, ?)
-        `, [nombre, descripcion || '', usuario_id, solicitudes_ids.length, fecha_limite || null]);
+            INSERT INTO gestiones_maestro (nombre, descripcion, usuario_id, total_solicitudes, gestionadas, fecha_limite, solicitudes_ids)
+            VALUES (?, ?, ?, ?, 0, ?, ?)
+        `, [nombre, descripcion || '', usuario_id, solicitudes_ids.length, fecha_limite || null, solicitudesIdsJson]);
         
         // SQLite usa lastInsertRowid
         const gestion_id = resultGM.lastInsertRowid;
-        console.log('[gestiones-maestro] Gestion ID creada:', gestion_id);
+        console.log('[gestiones-maestro] Gestion ID creada:', gestion_id, 'con', solicitudes_ids.length, 'solicitudes');
         
-        // Insertar cada gestión individual vinculada al maestro
-        for (const sol_id of solicitudes_ids) {
-            await pool.query(`
-                INSERT INTO gestiones (solicitud_id, usuario_id, tipo_gestion, observacion, gestion_maestro_id)
-                VALUES (?, ?, 'Pendiente', 'Por gestionar', ?)
-            `, [sol_id, usuario_id, gestion_id]);
-        }
+        // ✅ YA NO se insertan registros 'Pendiente/Por gestionar' en la tabla gestiones
+        // Los IDs quedan almacenados en gestiones_maestro.solicitudes_ids como JSON
+        // Las solicitudes se muestran como 'Pendiente' vía COALESCE en la consulta
         
         console.log('[gestiones-maestro] Gestion creada exitosamente, ID:', gestion_id);
         
@@ -309,7 +323,7 @@ async function obtenerProgresoGestion(req, res) {
             return res.status(404).json({ error: 'Gestión no encontrada' });
         }
         
-        // Contar gestións por estado
+        // Contar gestiones reales por estado (ya no hay registros 'Pendiente/Por gestionar')
         const resultCount = await pool.query(`
             SELECT tipo_gestion, COUNT(*) as count
             FROM gestiones 
@@ -319,15 +333,13 @@ async function obtenerProgresoGestion(req, res) {
         
         const conteo = getRows(resultCount);
         
-        // Calcular progreso
+        // Calcular progreso - todas las gestiones son reales
         const porEstado = {};
         let gestionadas = 0;
         
         for (const c of conteo) {
             porEstado[c.tipo_gestion] = c.count;
-            if (c.tipo_gestion !== 'Pendiente') {
-                gestionadas += parseInt(c.count);
-            }
+            gestionadas += parseInt(c.count);
         }
         
         res.json({
