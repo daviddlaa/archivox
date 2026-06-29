@@ -4,6 +4,6 @@ git add -A
 git add src/config/db.js
 git add src/config/initDb.pg.js
 git add src/controllers/gestionesMaestro.controller.js
-git commit -m "borrado masivo de gestiones maestro en escritorio"
+git commit -m "borrado masivo de gestiones maestro en escritorio 001"
 git push origin master
 pause
