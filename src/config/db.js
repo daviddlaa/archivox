@@ -26,7 +26,21 @@ if (process.env.DATABASE_URL) {
             console.log('[DB] Converting SQL placeholders:', sql.substring(0, 50).replace(/\s+/g, ' '), '->', pgSql.substring(0, 50).replace(/\s+/g, ' '));
         }
         
-        return originalQuery(pgSql, queryParams);
+        // Auto-add RETURNING id for INSERT queries so we can return lastInsertRowid
+        // PostgreSQL's query() doesn't have lastInsertRowid like SQLite
+        const trimmed = pgSql.trim().toUpperCase();
+        if (trimmed.startsWith('INSERT') && !trimmed.includes('RETURNING')) {
+            pgSql += ' RETURNING id';
+            console.log('[DB] Added RETURNING id to INSERT:', pgSql.substring(0, 80).replace(/\s+/g, ' '));
+        }
+        
+        return originalQuery(pgSql, queryParams).then(function(result) {
+            // Extract lastInsertRowid from RETURNING id for compatibility
+            if (result.rows && result.rows.length > 0 && result.rows[0].id != null) {
+                result.lastInsertRowid = result.rows[0].id;
+            }
+            return result;
+        });
     };
 } else {
     console.log('Using SQLite database (local)');
@@ -66,9 +80,6 @@ if (process.env.DATABASE_URL) {
             sqliteSql = sqliteSql.replace(/COALESCE\(([^,]+),\s*'([^']*)'\)/gi, 
                 "IFNULL($1, '')");
             
-            // Convert RETURNING * (PostgreSQL) - SQLite doesn't support this
-            sqliteSql = sqliteSql.replace(/\s+RETURNING\s+\*/gi, '');
-            
             // DEBUG logging
             if (sql.includes('SELECT') || sql.includes('FROM')) {
                 console.log('DEBUG: Converting SQL:', sql.substring(0, 60), '->', sqliteSql.substring(0, 60));
@@ -84,6 +95,23 @@ if (process.env.DATABASE_URL) {
                     return Promise.resolve({ rows: [] });
                 }
             }
+            
+            // Check if query has RETURNING clause
+            if (/\bRETURNING\b/i.test(sqliteSql)) {
+                try {
+                    const rows = db.prepare(sqliteSql).all(...queryParams);
+                    var rowId = rows && rows.length > 0 && rows[0].id != null ? rows[0].id : null;
+                    return Promise.resolve({ 
+                        rows: rows,
+                        rowCount: rows.length,
+                        lastInsertRowid: rowId
+                    });
+                } catch (err) {
+                    console.error('SQLite RETURNING error:', err.message);
+                    return Promise.resolve({ rows: [], rowCount: 0 });
+                }
+            }
+            
             try {
                 const result = db.prepare(sqliteSql).run(...queryParams);
                 // Return in same format as PostgreSQL
