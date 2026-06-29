@@ -331,6 +331,9 @@ function renderizarSolicitudes(lista) {
             html += '<button class="btn-accion btn-ver" onclick="verGestion(\'' + sol.id_solicitud + '\')">👁️ Ver Gestión</button>';
         }
         
+        // Botón historial para TODAS las cards
+        html += '<button class="btn-accion btn-historial" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button>';
+        
         html += '</div>';
         
         html += '</div>';
@@ -453,6 +456,80 @@ function verGestion(solicitudId) {
     contenido += '</div>';
     
     crearModal(contenido);
+}
+
+// Ver historial completo de gestiones de una solicitud
+async function verHistorial(solicitudId) {
+    try {
+        crearModal('<div class="modal-gestion" style="text-align:center;padding:30px;"><h2>📋 Historial</h2><p>⏳ Cargando...</p></div>');
+        
+        var response = await fetch('/api/excel/gestiones/' + solicitudId);
+        if (!response.ok) throw new Error('Error al cargar historial');
+        
+        var gestiones = await response.json();
+        
+        var contenido = '';
+        contenido += '<div class="modal-gestion">';
+        contenido += '<h2 style="margin-top:0;">📋 Historial - Solicitud #' + solicitudId + '</h2>';
+        
+        if (!gestiones || gestiones.length === 0) {
+            contenido += '<div style="text-align:center;padding:20px;color:#6b7280;">No hay gestiones registradas para esta solicitud</div>';
+        } else {
+            contenido += '<div style="margin-bottom:12px;color:#6b7280;font-size:13px;">📊 Total: ' + gestiones.length + ' gestione(s)</div>';
+            contenido += '<div style="max-height:450px;overflow-y:auto;">';
+            
+            var coloresTipo = {
+                'Pendiente': '#fef3c7',
+                'Llamada': '#d1fae5',
+                'WhatsApp': '#dcfce7',
+                'Seguimiento': '#dbeafe',
+                'Cobranza': '#fee2e2',
+                'Cita': '#e0e7ff',
+                'Completada': '#bbf7d0'
+            };
+            
+            for (var i = 0; i < gestiones.length; i++) {
+                var g = gestiones[i];
+                var fecha = g.fecha_gestion ? new Date(g.fecha_gestion).toLocaleString('es-ES') : '—';
+                var isLast = i === gestiones.length - 1;
+                var colorBadge = coloresTipo[g.tipo_gestion] || '#f3f4f6';
+                
+                contenido += '<div style="display:flex;gap:15px;position:relative;">';
+                // Timeline dot + line
+                contenido += '<div style="display:flex;flex-direction:column;align-items:center;">';
+                contenido += '<div style="width:14px;height:14px;border-radius:50%;background:' + colorBadge + ';border:2px solid #9ca3af;flex-shrink:0;"></div>';
+                if (!isLast) {
+                    contenido += '<div style="width:2px;flex:1;background:#e5e7eb;margin:4px 0;"></div>';
+                }
+                contenido += '</div>';
+                // Content
+                contenido += '<div style="flex:1;padding-bottom:' + (isLast ? '0' : '16px') + ';">';
+                contenido += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">';
+                contenido += '<span style="background:' + colorBadge + ';padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;color:#374151;">' + (g.tipo_gestion || '—') + '</span>';
+                contenido += '<span style="font-size:11px;color:#9ca3af;">' + fecha + '</span>';
+                contenido += '</div>';
+                contenido += '<div style="background:#f9fafb;padding:10px 12px;border-radius:8px;font-size:13px;color:#374151;line-height:1.5;">' + (g.observacion || 'Sin observación') + '</div>';
+                contenido += '</div>';
+                contenido += '</div>';
+            }
+            
+            contenido += '</div>';
+        }
+        
+        contenido += '<div style="margin-top:16px;text-align:right;">';
+        contenido += '<button class="btn-cerrar" onclick="cerrarModal()" style="padding:8px 20px;background:#f3f4f6;border:none;border-radius:8px;cursor:pointer;font-size:14px;">Cerrar</button>';
+        contenido += '</div>';
+        contenido += '</div>';
+        
+        // Cerrar modal de carga y abrir con datos
+        cerrarModal();
+        crearModal(contenido);
+        
+    } catch (error) {
+        console.error('Error cargando historial:', error);
+        cerrarModal();
+        alert('Error al cargar el historial');
+    }
 }
 
 // Crear modal genérico
