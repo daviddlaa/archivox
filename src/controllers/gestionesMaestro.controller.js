@@ -60,22 +60,26 @@ async function getGestionMaestroById(req, res) {
             return res.status(404).json({ error: 'Gestión no encontrada' });
         }
         
-        // Obtener solicitudes asociadas a esta gestión (SOLO la última gestión por solicitud)
-        // Usamos MAX(g2.id) para obtener la gestión más reciente (más robusto que ORDER BY fecha_gestion)
-        // Incluimos OR g2.gestion_maestro_id IS NULL porque gestiones anteriores a la migración 
-        // no tienen gestion_maestro_id asignado
+        // Obtener solicitudes (SOLO la última gestión NO-Pendiente por solicitud)
+        // Excluimos 'Pendiente' para evitar que el Pendiente creado al generar la campaña
+        // (que tiene el ID más alto) opaque gestiones reales anteriores
         const resultSol = await pool.query(`
-            SELECT s.*, g.id as gestion_id, g.tipo_gestion, g.observacion as gestion_obs, g.fecha_gestion
+            SELECT s.*, 
+                   COALESCE(g.tipo_gestion, 'Pendiente') as tipo_gestion,
+                   COALESCE(g.observacion, 'Por gestionar') as gestion_obs,
+                   g.id as gestion_id,
+                   g.fecha_gestion
             FROM solicitudes s
             LEFT JOIN gestiones g ON g.id = (
                 SELECT MAX(g2.id) FROM gestiones g2 
                 WHERE g2.solicitud_id = s.id_solicitud 
+                AND g2.tipo_gestion != 'Pendiente'
                 AND (g2.gestion_maestro_id = ? OR g2.gestion_maestro_id IS NULL)
             )
             WHERE s.id_solicitud IN (
                 SELECT solicitud_id FROM gestiones WHERE gestion_maestro_id = ?
             )
-            ORDER BY g.fecha_gestion DESC
+            ORDER BY CASE WHEN g.fecha_gestion IS NULL THEN 0 ELSE 1 END DESC, g.fecha_gestion DESC
         `, [id, id]);
         
         const Solicitudes = getRows(resultSol);
