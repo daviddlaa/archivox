@@ -46,31 +46,48 @@ function obtenerGestionId() {
 
 // Cargar datos de la gestión al iniciar
 async function init() {
+    console.log('[init] Iniciando carga de gestion-lote...');
+    
     // Primero cargar las campañas en el sidebar
     await cargarListaCampanas();
+    console.log('[init] Campañas cargadas, verificando ID en URL...');
     
     // Luego verificar si hay un ID en la URL
     gestionId = obtenerGestionId();
+    console.log('[init] gestionId desde URL:', gestionId);
     
     if (gestionId) {
+        console.log('[init] Cargando datos de gestión:', gestionId);
         await cargarDatosGestion();
         // Marcar la campaña como activa
         marcarCampañaActiva(gestionId);
+        console.log('[init] Carga completa');
+    } else {
+        console.log('[init] No hay ID en URL, mostrando solo lista de campañas');
     }
 }
 
 // Cargar lista de todas las campañas en el sidebar
 async function cargarListaCampanas() {
     try {
+        console.log('[cargarListaCampanas] Iniciando fetch...');
         var container = document.getElementById('lista-campañas');
         
-        var response = await fetch('/api/gestiones-maestro');
+        // Timeout de 10 segundos para el fetch
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); console.log('[cargarListaCampanas] Timeout!'); }, 10000);
+        
+        var response = await fetch('/api/gestiones-maestro', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        console.log('[cargarListaCampanas] Response status:', response.status);
         
         if (!response.ok) {
-            throw new Error('Error al cargar');
+            throw new Error('Error al cargar (status: ' + response.status + ')');
         }
         
         campañas = await response.json();
+        console.log('[cargarListaCampanas] Campañas recibidas:', campañas ? campañas.length : 0);
         
         if (!campañas || campañas.length === 0) {
             container.innerHTML = '<div class="empty">'+
@@ -147,10 +164,18 @@ function marcarCampañaActiva(id) {
 // Cargar datos de la gestión (unifica cargarGestion + cargarSolicitudes)
 async function cargarDatosGestion() {
     try {
+        console.log('[cargarDatosGestion] Cargando gestión ID:', gestionId);
         var container = document.getElementById('lista-solicitudes');
         if (container) container.innerHTML = '<div class="loading">Cargando solicitudes...</div>';
         
-        var response = await fetch('/api/gestiones-maestro/' + gestionId);
+        // Timeout de 10 segundos para el fetch
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); console.log('[cargarDatosGestion] Timeout!'); }, 10000);
+        
+        var response = await fetch('/api/gestiones-maestro/' + gestionId, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        console.log('[cargarDatosGestion] Response status:', response.status);
         
         if (!response.ok) {
             var errorData = await response.json().catch(function() { return {}; });
@@ -170,6 +195,7 @@ async function cargarDatosGestion() {
         if (filtrosRow) filtrosRow.style.display = 'flex';
         
         solicitudes = datosGestion.solicitudes || [];
+        console.log('[cargarDatosGestion] Solicitudes recibidas:', solicitudes.length);
         todasLasSolicitudes = [...solicitudes];
         
         actualizarProgreso();

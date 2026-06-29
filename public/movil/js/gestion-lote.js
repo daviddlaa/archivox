@@ -12,21 +12,36 @@ function obtenerGestionId() {
 }
 
 async function init() {
-    await cargarListaCampanas();
+    console.log('[movil-init] Iniciando carga de gestion-lote...');
+    try {
+        await cargarListaCampanas();
+        console.log('[movil-init] Campañas cargadas');
 
-    gestionId = obtenerGestionId();
-    if (gestionId) {
-        await cargarGestion();
-        await cargarSolicitudes();
-        marcarCampañaActiva(gestionId);
+        gestionId = obtenerGestionId();
+        console.log('[movil-init] gestionId:', gestionId);
+        
+        if (gestionId) {
+            await cargarDatosGestionMovil();
+            marcarCampañaActiva(gestionId);
+            console.log('[movil-init] Carga completa');
+        }
+    } catch (error) {
+        console.error('[movil-init] Error:', error);
     }
 }
 
 async function cargarListaCampanas() {
     try {
+        console.log('[movil-campanas] Fetching campaigns...');
         var container = document.getElementById('lista-campañas');
-        var response = await fetch('/api/gestiones-maestro');
-        if (!response.ok) throw new Error('Error al cargar campañas');
+        
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
+        var response = await fetch('/api/gestiones-maestro', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        console.log('[movil-campanas] Response:', response.status);
+        if (!response.ok) throw new Error('Error al cargar campañas (status: ' + response.status + ')');
         campañas = await response.json();
 
         if (!campañas || campañas.length === 0) {
@@ -83,17 +98,23 @@ function marcarCampañaActiva(id) {
     }
 }
 
-async function cargarGestion() {
+// Unifica cargarGestion + cargarSolicitudes en móvil
+async function cargarDatosGestionMovil() {
     try {
-        var response = await fetch('/api/gestiones-maestro/' + gestionId);
-        if (!response.ok) {
-            var error = await response.json().catch(function(){return {}});
-            alert('Error: ' + (error.error || 'Error al cargar la gestión'));
-            window.location.href = '/m/solicitudes';
-            return;
-        }
+        console.log('[movil-cargarDatos] Cargando gestión ID:', gestionId);
+        var container = document.getElementById('lista-solicitudes');
+        if (container) container.innerHTML = '<div class="sin-campana"><p>Cargando solicitudes...</p></div>';
+
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
+        var response = await fetch('/api/gestiones-maestro/' + gestionId, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        console.log('[movil-cargarDatos] Response:', response.status);
+        if (!response.ok) throw new Error('Error al cargar gestión (status: ' + response.status + ')');
 
         datosGestion = await response.json();
+        
         var titulo = document.getElementById('gestion-titulo');
         if (titulo) titulo.textContent = datosGestion.nombre || 'Gestión #' + gestionId;
 
@@ -102,11 +123,16 @@ async function cargarGestion() {
         var filtros = document.getElementById('filtros-row');
         if (filtros) filtros.style.display = 'block';
 
+        solicitudes = datosGestion.solicitudes || [];
+        console.log('[movil-cargarDatos] Solicitudes:', solicitudes.length);
+        todasLasSolicitudes = solicitudes.slice();
+
+        renderizarSolicitudes(solicitudes);
         actualizarProgreso();
     } catch (error) {
-        console.error('Error cargando gestión:', error);
-        alert('Error al cargar la gestión');
-        window.location.href = '/m/solicitudes';
+        console.error('[movil-cargarDatos] Error:', error);
+        var container = document.getElementById('lista-solicitudes');
+        if (container) container.innerHTML = '<div class="sin-campana"><p>Error: ' + error.message + '</p></div>';
     }
 }
 
@@ -128,27 +154,6 @@ function actualizarProgreso() {
     var elPct = document.getElementById('progreso-porcentaje'); if (elPct) elPct.textContent = porcentaje + '%';
     var barra = document.getElementById('barra-progreso'); if (barra) barra.style.width = porcentaje + '%';
     var barraContainer = document.getElementById('progreso-barra-container'); if (barraContainer) barraContainer.style.display = 'block';
-}
-
-async function cargarSolicitudes() {
-    try {
-        var container = document.getElementById('lista-solicitudes');
-        if (container) container.innerHTML = '<div class="sin-campana"><p>Cargando solicitudes...</p></div>';
-
-        var response = await fetch('/api/gestiones-maestro/' + gestionId);
-        if (!response.ok) throw new Error('Error al cargar solicitudes');
-
-        datosGestion = await response.json();
-        solicitudes = datosGestion.solicitudes || [];
-        todasLasSolicitudes = solicitudes.slice();
-
-        renderizarSolicitudes(solicitudes);
-        actualizarProgreso();
-    } catch (error) {
-        console.error('Error cargando solicitudes:', error);
-        var container = document.getElementById('lista-solicitudes');
-        if (container) container.innerHTML = '<div class="sin-campana"><p>Error al cargar las solicitudes</p></div>';
-    }
 }
 
 function renderizarSolicitudes(lista) {
@@ -294,7 +299,7 @@ async function guardarGestionIndividual(solicitudId) {
         if (response.ok && !resultado.error) {
             alert('Gestión guardada correctamente');
             cerrarModal();
-            cargarSolicitudes();
+            cargarDatosGestionMovil();
         } else {
             alert('Error: ' + (resultado.error || 'Error desconocido'));
         }
@@ -534,7 +539,7 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
         alert('✅ Gestión guardada');
         
         cerrarModal();
-        cargarSolicitudes();
+        cargarDatosGestionMovil();
         
     } catch (error) {
         console.error('Error:', error);
