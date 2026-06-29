@@ -502,13 +502,37 @@ init();
 
 // ================== WHATSAPP CON IMAGEN INDIVIDUAL ==================
 
-// Función para abrir WhatsApp Web (desktop: wa.me / web.whatsapp.com)
-function abrirWhatsAppDesktop(celular, mensaje) {
-    var numeroLimpio = String(celular).replace(/[^0-9]/g, '');
-    if (numeroLimpio.length === 8) {
-        numeroLimpio = '505' + numeroLimpio;
+// ================== CONFIGURACIÓN WHATSAPP ==================
+// Código de país para números sin prefijo internacional
+// Ecuador = 593, Nicaragua = 505, Costa Rica = 506, etc.
+var PAIS_CODIGO = '593';
+// Longitud máxima de un número nacional (sin código de país)
+// Ecuador móvil = 9 dígitos, fijo = 7-8 dígitos
+var PAIS_LONGITUD_MAX_SIN_CODIGO = 9;
+
+// Formatear número para WhatsApp: agrega código de país si es necesario
+function formatearNumeroWhatsApp(celular) {
+    var numero = String(celular).replace(/[^0-9]/g, '');
+    
+    // Quitar cero(s) a la izquierda (ej: 099XXXXXXXX → 99XXXXXXXX)
+    numero = numero.replace(/^0+/, '');
+    
+    // Si el número ya tiene código de país (más largo que la longitud máxima local), usarlo directo
+    if (numero.length > PAIS_LONGITUD_MAX_SIN_CODIGO) {
+        return numero;
     }
-    var urlWhatsApp = 'https://wa.me/' + numeroLimpio;
+    
+    // Si es un número local (sin código de país), agregar el código configurado
+    return PAIS_CODIGO + numero;
+}
+
+// Función para abrir WhatsApp Web (desktop: wa.me)
+function abrirWhatsAppDesktop(celular, mensaje) {
+    var numeroFormateado = formatearNumeroWhatsApp(celular);
+    
+    console.log('[WhatsApp Desktop] Número original:', celular, '→ formateado:', numeroFormateado);
+    
+    var urlWhatsApp = 'https://wa.me/' + numeroFormateado;
     if (mensaje) {
         urlWhatsApp += '?text=' + encodeURIComponent(mensaje);
     }

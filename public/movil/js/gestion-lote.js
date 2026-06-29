@@ -449,23 +449,45 @@ function quitarWhatsAppImg() {
     if (container) container.style.display = 'none';
 }
 
+// ================== CONFIGURACIÓN WHATSAPP ==================
+// Código de país para números sin prefijo internacional
+// Ecuador = 593, Nicaragua = 505, Costa Rica = 506, etc.
+var PAIS_CODIGO = '593';
+// Longitud máxima de un número nacional (sin código de país)
+// Ecuador móvil = 9 dígitos, fijo = 7-8 dígitos
+var PAIS_LONGITUD_MAX_SIN_CODIGO = 9;
+
+// Formatear número para WhatsApp: agrega código de país si es necesario
+function formatearNumeroWhatsApp(celular) {
+    var numero = String(celular).replace(/[^0-9]/g, '');
+    
+    // Quitar cero(s) a la izquierda (ej: 099XXXXXXXX → 99XXXXXXXX)
+    numero = numero.replace(/^0+/, '');
+    
+    // Si el número ya tiene código de país (más largo que la longitud máxima local), usarlo directo
+    if (numero.length > PAIS_LONGITUD_MAX_SIN_CODIGO) {
+        return numero;
+    }
+    
+    // Si es un número local (sin código de país), agregar el código configurado
+    return PAIS_CODIGO + numero;
+}
+
 // Abrir WhatsApp en móvil (app nativa si está instalada, o web como fallback)
 function abrirWhatsAppMovil(celular, mensaje) {
-    var numeroLimpio = String(celular).replace(/[^0-9]/g, '');
+    var numeroFormateado = formatearNumeroWhatsApp(celular);
     
-    if (numeroLimpio.length === 8) {
-        numeroLimpio = '505' + numeroLimpio;
-    }
+    console.log('[WhatsApp Movil] Número original:', celular, '→ formateado:', numeroFormateado);
     
     var texto = mensaje ? '&text=' + encodeURIComponent(mensaje) : '';
     
     // 1. Intentar deep link de WhatsApp app (whatsapp://)
-    var urlApp = 'whatsapp://send?phone=' + numeroLimpio + texto;
+    var urlApp = 'whatsapp://send?phone=' + numeroFormateado + texto;
     
     // 2. Fallback: universal link que abre la app o el navegador
-    var urlUniversal = 'https://api.whatsapp.com/send?phone=' + numeroLimpio + texto;
+    var urlUniversal = 'https://api.whatsapp.com/send?phone=' + numeroFormateado + texto;
     
-    console.log('[WhatsApp Movil] Intentando abrir app:', urlApp);
+    console.log('[WhatsApp Movil] Deep link:', urlApp);
     
     // Intentar deep link primero
     var win = window.open(urlApp, '_blank');
