@@ -102,8 +102,11 @@ async function cargarListaCampanas() {
             html += '<div class="campaña-progreso-barra" style="width: ' + pct + '%;"></div>';
             html += '</div>';
             
-            var estadoClase = (g.estado === 'Completada' || pct === 100) ? 'completada' : 'activa';
+var estadoClase = (g.estado === 'Completada' || pct === 100) ? 'completada' : 'activa';
             html += '<span class="campaña-estado ' + estadoClase + '">' + (g.estado || 'Activa') + '</span>';
+            
+            // Botón de eliminar
+            html += '<button class="campaña-btn-eliminar" onclick="event.stopPropagation(); confirmarEliminarCampaña(' + g.id + ', \'' + (g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ')">🗑️</button>';
             html += '</div>';
         }
         
@@ -629,6 +632,79 @@ function abrirWhatsAppWeb(celular, mensaje) {
         alert('Por favor permite ventanas emergentes para enviar mensajes de WhatsApp');
     }
 }
+
+// ================== ELIMINAR CAMPAÑA ==================
+
+// Mostrar modal de confirmación para eliminar campaña
+function confirmarEliminarCampaña(id, nombre, total, gestionadas) {
+    var contenido = '';
+    
+    contenido += '<div class="modal-eliminar">';
+    contenido += '<h2>🗑️ Eliminar Campaña</h2>';
+    
+    contenido += '<div class="modal-info-eliminar">';
+    contenido += '<p><strong>Campaña:</strong> ' + nombre + '</p>';
+    contenido += '<p><strong>Total Solicitudes:</strong> ' + total + '</p>';
+    contenido += '<p><strong>Gestionadas:</strong> ' + gestionadas + '</p>';
+    contenido += '<p><strong>Pendientes:</strong> ' + (total - gestionadas) + '</p>';
+    contenido += '</div>';
+    
+    // Advertencia
+    contenido += '<div class="modal-advertencia">';
+    contenido += '<p>⚠️ <strong>IMPORTANTE:</strong></p>';
+    contenido += '<ul>';
+contenido += '<li>Se eliminarán <strong>TODAS las gestione</strong> registradas en estas ' + total + ' solicitudes.</li>';
+    contenido += '<li>Esta acción es <strong>IRREVERSIBLE</strong>.</li>';
+    contenido += '<li>Los datos de las solicitudes originale NO se eliminarán.</li>';
+    contenido += '</ul>';
+    contenido += '</div>';
+    
+    contenido += '<div class="modal-botones">';
+    contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>';
+    contenido += '<button class="btn-eliminar" id="btn-eliminar-campaña" onclick="eliminarCampaña(' + id + ')">🗑️ Eliminar</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    crearModal(contenido);
+}
+
+// Eliminar campaña
+async function eliminarCampaña(id) {
+    var btn = document.getElementById('btn-eliminar-campaña');
+    btn.textContent = '⏳ Eliminando...';
+    btn.disabled = true;
+    
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + id, {
+            method: 'DELETE'
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok && !resultado.error) {
+            alert('✅ Campaña eliminada correctamente');
+            cerrarModal();
+            
+            // Si era la campaña activa, redirigir
+            if (String(gestionId) === String(id)) {
+                window.location.href = '/gestion-lote';
+            } else {
+                cargarListaCampanas();
+            }
+        } else {
+            alert('Error: ' + (resultado.error || 'Error al eliminar'));
+            btn.textContent = '🗑️ Eliminar';
+            btn.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error eliminando:', error);
+        alert('Error al eliminar la campaña');
+        btn.textContent = '🗑️ Eliminar';
+        btn.disabled = false;
+    }
+}
+
+// ================== FIN ELIMINAR CAMPAÑA ==================
 
 // Enviar WhatsApp con imagen
 async function enviarWhatsAppImagen(solicitudId, celular) {
