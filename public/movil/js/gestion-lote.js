@@ -495,6 +495,20 @@ init();
 
 // ================== WHATSAPP CON IMAGEN INDIVIDUAL ==================
 
+// Extraer solo el primer nombre del nombre completo
+function obtenerPrimerNombre(nombreCompleto) {
+    if (!nombreCompleto) return '';
+    var partes = nombreCompleto.trim().split(/\s+/);
+    return partes[0] || '';
+}
+
+// Generar mensaje predeterminado de WhatsApp con el nombre del cliente
+function generarMensajeWhatsApp(nombreCompleto) {
+    var primerNombre = obtenerPrimerNombre(nombreCompleto);
+    var saludo = primerNombre ? 'Hola ' + primerNombre + ' 👋' : 'Hola 👋';
+    return saludo + '\nResuelve Crédito Resuelve a las órdenes 💳✨\n\nTu crédito rescate puede estar aprobado con solo el 15% de entrada 🙌\nPregúntanos qué necesitas para tu hogar y te ayudamos a hacerlo posible 📲';
+}
+
 // Abrir modal de WhatsApp para una solicitud (solo texto, sin imagen)
 function abrirGestionWhatsApp(solicitudId, celular) {
     var sol = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
@@ -519,7 +533,8 @@ function abrirGestionWhatsApp(solicitudId, celular) {
     contenido += '</div>';
     contenido += '<div class="modal-form">';
     contenido += '<label>📝 Mensaje:</label>';
-    contenido += '<textarea id="whatsapp-img-mensaje" rows="3" placeholder="Escriba su mensaje..." style="margin-bottom: 12px;"></textarea>';
+    var mensajeDefecto = generarMensajeWhatsApp(sol.nombre);
+    contenido += '<textarea id="whatsapp-img-mensaje" rows="5" placeholder="Escriba su mensaje..." style="margin-bottom: 12px;">' + mensajeDefecto + '</textarea>';
     contenido += '<div style="padding: 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #86efac; margin-bottom: 12px;">';
     contenido += '<div style="display: flex; align-items: center; gap: 8px;">';
     contenido += '<span style="font-size: 18px;">📱</span>';
