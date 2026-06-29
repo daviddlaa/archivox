@@ -47,7 +47,8 @@
                         <h1>🚀 Gestión por Lotes</h1>
                         <p class="subtitulo" id="gestion-nombre">Selecciona una campaña del panel lateral</p>
                     </div>
-<div>
+<div style="display:flex;gap:10px;align-items:center;">
+                        <button class="btn-volver" id="btn-exportar-excel" onclick="exportarExcelGestionLote()" style="display:none;background:#22c55e;color:white;">📥 Exportar Excel</button>
                         <a href="/solicitudes" class="btn-volver">← Volver a Solicitudes</a>
                     </div>
                 </div>
@@ -104,6 +105,8 @@
         </main>
     </div>
 
+    <!-- SheetJS para exportar Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/desktop/js/gestion-lote.js"></script>
     <script src="/desktop/js/drawer.js"></script>
 </body>

@@ -122,6 +122,10 @@ async function cargarDatosGestionMovil() {
         if (panel) panel.style.display = 'block';
         var filtros = document.getElementById('filtros-row');
         if (filtros) filtros.style.display = 'block';
+        
+        // Mostrar botón de exportar Excel
+        var containerExportar = document.getElementById('exportar-excel-container');
+        if (containerExportar) containerExportar.style.display = 'block';
 
         solicitudes = datosGestion.solicitudes || [];
         console.log('[movil-cargarDatos] Solicitudes:', solicitudes.length);
@@ -441,6 +445,50 @@ function cerrarModal() {
 // Eventos
 var busqEl = document.getElementById('busqueda'); if (busqEl) busqEl.addEventListener('input', function() { renderizarSolicitudes(todasLasSolicitudes); });
 var filtroEl = document.getElementById('filtro-estado'); if (filtroEl) filtroEl.addEventListener('change', function() { renderizarSolicitudes(todasLasSolicitudes); });
+
+// ================== EXPORTAR CAMPAÑA A EXCEL ==================
+
+function exportarExcelGestionLote() {
+    var datos = todasLasSolicitudes;
+    
+    if (!datos || datos.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+    }
+    
+    var datosAExportar = [];
+    for (var i = 0; i < datos.length; i++) {
+        var sol = datos[i];
+        datosAExportar.push({
+            'Cédula': sol.cedula || '',
+            'Nombre': sol.nombre || '',
+            'Teléfono': sol.celular || '',
+            'Segmento': sol.segmento || '',
+            'Estado': sol.tipo_gestion || 'Pendiente',
+            'Observación': sol.gestion_obs || ''
+        });
+    }
+    
+    var wb = XLSX.utils.book_new();
+    var ws = XLSX.utils.json_to_sheet(datosAExportar);
+    
+    ws['!cols'] = [
+        {wch: 12},
+        {wch: 30},
+        {wch: 15},
+        {wch: 15},
+        {wch: 15},
+        {wch: 50}
+    ];
+    
+    var nombreCampana = (datosGestion && datosGestion.nombre) || 'campana';
+    var nombreArchivo = 'campana_' + nombreCampana.replace(/[^a-zA-Z0-9]/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Campaña');
+    XLSX.writeFile(wb, nombreArchivo);
+    
+    alert('Se exportaron ' + datos.length + ' registros a Excel');
+}
 
 // Iniciar
 init();

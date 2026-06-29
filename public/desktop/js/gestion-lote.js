@@ -194,6 +194,10 @@ async function cargarDatosGestion() {
         if (panelProgreso) panelProgreso.style.display = 'block';
         if (filtrosRow) filtrosRow.style.display = 'flex';
         
+        // Mostrar botón de exportar Excel
+        var btnExportar = document.getElementById('btn-exportar-excel');
+        if (btnExportar) btnExportar.style.display = 'inline-block';
+        
         solicitudes = datosGestion.solicitudes || [];
         console.log('[cargarDatosGestion] Solicitudes recibidas:', solicitudes.length);
         if (solicitudes.length > 0) {
@@ -582,6 +586,50 @@ document.getElementById('busqueda').addEventListener('input', function() {
 document.getElementById('filtro-estado').addEventListener('change', function() {
     renderizarSolicitudes(todasLasSolicitudes);
 });
+
+// ================== EXPORTAR CAMPAÑA A EXCEL ==================
+
+function exportarExcelGestionLote() {
+    var datos = todasLasSolicitudes;
+    
+    if (!datos || datos.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+    }
+    
+    var datosAExportar = [];
+    for (var i = 0; i < datos.length; i++) {
+        var sol = datos[i];
+        datosAExportar.push({
+            'Cédula': sol.cedula || '',
+            'Nombre': sol.nombre || '',
+            'Teléfono': sol.celular || '',
+            'Segmento': sol.segmento || '',
+            'Estado': sol.tipo_gestion || 'Pendiente',
+            'Observación': sol.gestion_obs || ''
+        });
+    }
+    
+    var wb = XLSX.utils.book_new();
+    var ws = XLSX.utils.json_to_sheet(datosAExportar);
+    
+    ws['!cols'] = [
+        {wch: 12},
+        {wch: 30},
+        {wch: 15},
+        {wch: 15},
+        {wch: 15},
+        {wch: 50}
+    ];
+    
+    var nombreCampana = (datosGestion && datosGestion.nombre) || 'campana';
+    var nombreArchivo = 'campana_' + nombreCampana.replace(/[^a-zA-Z0-9]/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Campaña');
+    XLSX.writeFile(wb, nombreArchivo);
+    
+    alert('Se exportaron ' + datos.length + ' registros a Excel');
+}
 
 // Iniciar
 init();

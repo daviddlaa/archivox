@@ -291,6 +291,11 @@
         </select>
     </div>
 
+    <!-- Botón Exportar Excel (visible solo con campaña cargada) -->
+    <div id="exportar-excel-container" style="padding: 0 15px 10px; display: none;">
+        <button id="btn-exportar-excel-movil" onclick="exportarExcelGestionLote()" style="width:100%;padding:12px;background:#22c55e;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">📥 Exportar Excel</button>
+    </div>
+
     <!-- Lista de Solicitudes -->
     <div class="sol-list" id="lista-solicitudes">
         <div class="sin-campana">
@@ -315,6 +320,8 @@
         </a>
     </nav>
 
+    <!-- SheetJS para exportar Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="/movil/js/drawer.js"></script>
 <script src="/movil/js/gestion-lote.js"></script>
 </body>
