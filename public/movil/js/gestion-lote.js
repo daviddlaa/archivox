@@ -506,7 +506,7 @@ function obtenerPrimerNombre(nombreCompleto) {
 function generarMensajeWhatsApp(nombreCompleto) {
     var primerNombre = obtenerPrimerNombre(nombreCompleto);
     var saludo = primerNombre ? 'Hola ' + primerNombre + ' 👋' : 'Hola 👋';
-    return saludo + '\nResuelve Crédito Resuelve a las órdenes 💳✨\n\nTu crédito rescate puede estar aprobado con solo el 15% de entrada 🙌\nPregúntanos qué necesitas para tu hogar y te ayudamos a hacerlo posible 📲';
+    return saludo + '\nCrédito Resuelve a las órdenes 💳✨\n\nTu crédito rescate esta aprobado con solo el 15% de entrada 🙌\nQué necesitas para tu hogar?, te ayudamos a hacerlo posible 📲';
 }
 
 // Abrir modal de WhatsApp para una solicitud (solo texto, sin imagen)
