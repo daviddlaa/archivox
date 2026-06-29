@@ -47,9 +47,22 @@ var response = await fetch('/api/relaciones/upload', { method: 'POST', body: for
             btn.disabled = false; btn.textContent = '📤 Subir y Procesar'; 
             return; 
         }
-        mostrarMensajeMovil('✅ ' + data.total + ' registros — 🔵 ' + data.altas + ' ALTAS, 🔴 ' + data.bajas + ' BAJAS', 'success');
-        document.getElementById('uploadSectionMovil').style.display = 'none';
-        await cargarStatsMovil(); await cargarRelacionesMovil(); mostrarSeccionesMovil();
+// Si total es 0, mostrar error con debug info
+        if (data.total === 0 && data.debug && data.debug.mensajeDebug) {
+            var dbg = data.debug.mensajeDebug;
+            var msgError = '❌ No se procesaron registros. Razón: ';
+            if (dbg.filasProblematicas > 0 && dbg.primerProblema) {
+                msgError += dbg.primerProblema.reason + '. Fila: ' + dbg.primerProblema.row;
+            } else {
+                msgError += 'Excel vacío o sin datos válidos';
+            }
+            mostrarMensajeMovil(msgError, 'error');
+            console.error('[Relaciones] Debug completo:', dbg);
+        } else {
+            mostrarMensajeMovil('✅ ' + data.total + ' registros — 🔵 ' + data.altas + ' ALTAS, 🔴 ' + data.bajas + ' BAJAS', 'success');
+            document.getElementById('uploadSectionMovil').style.display = 'none';
+            await cargarStatsMovil(); await cargarRelacionesMovil(); mostrarSeccionesMovil();
+        }
     } catch (error) { 
         console.error('[Relaciones] Error:', error); 
         mostrarMensajeMovil('❌ Error de conexión: ' + error.message, 'error'); 

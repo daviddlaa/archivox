@@ -43,10 +43,12 @@ var response = await fetch('/api/relaciones/upload', { method: 'POST', body: for
         console.log('[Relaciones] Respuesta status:', response.status);
         var data = await response.json();
         console.log('[Relaciones] Respuesta data:', data);
-        // Mostrar debug info prominente
+// Mostrar debug info prominente
         if (data.debug) {
             console.log('=== DEBUG INFO ===');
-            console.log(data.debug);
+            console.log('archivo:', data.debug.archivo);
+            console.log('filasProcesadas:', data.debug.filasProcesadas);
+            console.log('mensajeDebug:', JSON.stringify(data.debug.mensajeDebug, null, 2));
         }
         if (!response.ok) {
             mostrarMensaje('❌ ' + (data.error || 'Error ' + response.status), 'error'); 
@@ -54,11 +56,24 @@ var response = await fetch('/api/relaciones/upload', { method: 'POST', body: for
             btn.disabled = false; btn.textContent = '📤 Subir y Procesar'; 
             return; 
         }
-        mostrarMensaje('✅ ' + data.total + ' registros — 🔵 ' + data.altas + ' ALTAS, 🔴 ' + data.bajas + ' BAJAS', 'success');
-        document.getElementById('upload-section').style.display = 'none';
-        await cargarStats();
-        await cargarRelaciones();
-        mostrarSecciones();
+// Si total es 0, mostrar error con debug info
+        if (data.total === 0 && data.debug && data.debug.mensajeDebug) {
+            var dbg = data.debug.mensajeDebug;
+            var msgError = '❌ No se procesaron registros. Razón: ';
+            if (dbg.filasProblematicas > 0 && dbg.primerProblema) {
+                msgError += dbg.primerProblema.reason + '. Fila: ' + dbg.primerProblema.row;
+            } else {
+                msgError += 'Excel vacío o sin datos válidos';
+            }
+            mostrarMensaje(msgError, 'error');
+            console.error('[Relaciones] Debug completo:', dbg);
+        } else {
+            mostrarMensaje('✅ ' + data.total + ' registros — 🔵 ' + data.altas + ' ALTAS, 🔴 ' + data.bajas + ' BAJAS', 'success');
+            document.getElementById('upload-section').style.display = 'none';
+            await cargarStats();
+            await cargarRelaciones();
+            mostrarSecciones();
+        }
     } catch (error) { 
         console.error('[Relaciones] Error:', error); 
         mostrarMensaje('❌ Error al conectar con el servidor: ' + error.message, 'error'); 
