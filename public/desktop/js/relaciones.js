@@ -37,16 +37,27 @@ document.getElementById('formUploadRelaciones').addEventListener('submit', async
     var btn = document.getElementById('btnSubir');
     btn.disabled = true; btn.textContent = '⏳ Procesando...';
     mostrarMensaje('Procesando archivo...', 'loading');
+    console.log('[Relaciones] Subiendo archivo:', archivo.name);
     try {
         var response = await fetch('/api/relaciones/upload', { method: 'POST', body: formData, credentials: 'include' });
+        console.log('[Relaciones] Respuesta status:', response.status);
         var data = await response.json();
-        if (!response.ok) { mostrarMensaje('❌ ' + (data.error || 'Error'), 'error'); btn.disabled = false; btn.textContent = '📤 Subir y Procesar'; return; }
+        console.log('[Relaciones] Respuesta data:', data);
+        if (!response.ok) { 
+            mostrarMensaje('❌ ' + (data.error || 'Error ' + response.status), 'error'); 
+            console.error('[Relaciones] Error response:', data);
+            btn.disabled = false; btn.textContent = '📤 Subir y Procesar'; 
+            return; 
+        }
         mostrarMensaje('✅ ' + data.total + ' registros — 🔵 ' + data.altas + ' ALTAS, 🔴 ' + data.bajas + ' BAJAS', 'success');
         document.getElementById('upload-section').style.display = 'none';
         await cargarStats();
         await cargarRelaciones();
         mostrarSecciones();
-    } catch (error) { console.error('Error:', error); mostrarMensaje('❌ Error al conectar con el servidor', 'error'); }
+    } catch (error) { 
+        console.error('[Relaciones] Error:', error); 
+        mostrarMensaje('❌ Error al conectar con el servidor: ' + error.message, 'error'); 
+    }
     btn.disabled = false; btn.textContent = '📤 Subir y Procesar';
 });
 

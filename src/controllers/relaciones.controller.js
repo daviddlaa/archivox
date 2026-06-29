@@ -19,15 +19,25 @@ function getUsuarioId(req) {
 exports.uploadRelaciones = async function(req, res) {
     try {
         const usuarioId = getUsuarioId(req);
+        console.log('[Relaciones] uploadRelaciones - usuarioId:', usuarioId);
+        
         if (!usuarioId) {
+            console.log('[Relaciones] uploadRelaciones - ERROR: No autenticado');
             return res.status(401).json({ error: 'No autenticado' });
         }
 
         if (!req.file) {
+            console.log('[Relaciones] uploadRelaciones - ERROR: No se envió ningún archivo');
+            console.log('[Relaciones] req.body:', req.body);
+            console.log('[Relaciones] req.files:', req.files);
             return res.status(400).json({ error: 'No se envió ningún archivo' });
         }
 
+        console.log('[Relaciones] uploadRelaciones - Archivo recibido:', req.file.originalname, '- path:', req.file.path);
+
         const resultado = await relacionesService.procesarExcel(req.file.path, usuarioId);
+
+        console.log('[Relaciones] uploadRelaciones - Resultado:', resultado);
 
         res.json({
             mensaje: 'Relaciones importadas correctamente',

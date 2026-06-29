@@ -30,14 +30,25 @@ document.getElementById('formUploadRelacionesMovil').addEventListener('submit', 
     var btn = document.getElementById('btnSubirMovil');
     btn.disabled = true; btn.textContent = '⏳ Procesando...';
     mostrarMensajeMovil('Procesando archivo...', 'loading');
+    console.log('[Relaciones] Subiendo archivo:', archivo.name);
     try {
         var response = await fetch('/api/relaciones/upload', { method: 'POST', body: formData, credentials: 'include' });
+        console.log('[Relaciones] Respuesta status:', response.status);
         var data = await response.json();
-        if (!response.ok) { mostrarMensajeMovil('❌ ' + (data.error || 'Error'), 'error'); btn.disabled = false; btn.textContent = '📤 Subir y Procesar'; return; }
+        console.log('[Relaciones] Respuesta data:', data);
+        if (!response.ok) { 
+            mostrarMensajeMovil('❌ ' + (data.error || 'Error ' + response.status), 'error'); 
+            console.error('[Relaciones] Error response:', data);
+            btn.disabled = false; btn.textContent = '📤 Subir y Procesar'; 
+            return; 
+        }
         mostrarMensajeMovil('✅ ' + data.total + ' registros — 🔵 ' + data.altas + ' ALTAS, 🔴 ' + data.bajas + ' BAJAS', 'success');
         document.getElementById('uploadSectionMovil').style.display = 'none';
         await cargarStatsMovil(); await cargarRelacionesMovil(); mostrarSeccionesMovil();
-    } catch (error) { console.error('Error:', error); mostrarMensajeMovil('❌ Error de conexión', 'error'); }
+    } catch (error) { 
+        console.error('[Relaciones] Error:', error); 
+        mostrarMensajeMovil('❌ Error de conexión: ' + error.message, 'error'); 
+    }
     btn.disabled = false; btn.textContent = '📤 Subir y Procesar';
 });
 
