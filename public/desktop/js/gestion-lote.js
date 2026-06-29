@@ -502,8 +502,8 @@ init();
 
 // ================== WHATSAPP CON IMAGEN INDIVIDUAL ==================
 
-// Función para abrir WhatsApp Web con wa.me
-function abrirWhatsAppWeb(celular, mensaje) {
+// Función para abrir WhatsApp Web (desktop: wa.me / web.whatsapp.com)
+function abrirWhatsAppDesktop(celular, mensaje) {
     var numeroLimpio = String(celular).replace(/[^0-9]/g, '');
     if (numeroLimpio.length === 8) {
         numeroLimpio = '505' + numeroLimpio;
@@ -512,6 +512,7 @@ function abrirWhatsAppWeb(celular, mensaje) {
     if (mensaje) {
         urlWhatsApp += '?text=' + encodeURIComponent(mensaje);
     }
+    console.log('[WhatsApp Desktop] Abriendo:', urlWhatsApp);
     var win = window.open(urlWhatsApp, '_blank');
     if (!win) {
         alert('Por favor permite ventanas emergentes para WhatsApp');
@@ -556,11 +557,15 @@ function abrirGestionWhatsApp(solicitudId, celular) {
     contenido += '<div style="margin-top: 8px;"><button type="button" onclick="quitarWhatsAppImg()" style="padding: 6px 12px; background: #fee2e2; border: none; border-radius: 4px; cursor: pointer;">Quitar Imagen</button></div>';
     contenido += '</div>';
     
-    // Nuevo check para abrir WhatsApp Web
-    contenido += '<div style="margin-top: 16px; padding: 12px; background: #f0fdf4; border-radius: 8px;">';
+    // Check para abrir WhatsApp Web
+    contenido += '<div style="margin-top: 16px; padding: 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #86efac;">';
+    contenido += '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">';
+    contenido += '<span style="font-size: 16px;">💻</span>';
+    contenido += '<span style="font-size: 13px; color: #166534;">Se abrirá WhatsApp Web con el mensaje pre-llenado.</span>';
+    contenido += '</div>';
     contenido += '<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">';
-    contenido += '<input type="checkbox" id="whatsapp-abrir-web" checked style="width: 20px; height: 20px;">';
-    contenido += '<span>📱 Abrir WhatsApp Web automáticamente</span>';
+    contenido += '<input type="checkbox" id="whatsapp-abrir-web" checked style="width: 18px; height: 18px;">';
+    contenido += '<span style="font-size: 13px; color: #374151;">Abrir WhatsApp al enviar</span>';
     contenido += '</label>';
     contenido += '</div>';
     
@@ -615,31 +620,7 @@ function quitarWhatsAppImg() {
     if (container) container.style.display = 'none';
 }
 
-// Abrir WhatsApp Web directamente (sin esperar upload)
-function abrirWhatsAppWeb(celular, mensaje) {
-    // Limpiar y formatear número
-    var numeroLimpio = String(celular).replace(/[^0-9]/g, '');
-    
-    // Si no tiene código de país, agregar 505 (Nicaragua)
-    if (numeroLimpio.length === 8) {
-        numeroLimpio = '505' + numeroLimpio;
-    }
-    
-    // Usar wa.me que es más confiable que web.whatsapp.com
-    var urlWhatsApp = 'https://wa.me/' + numeroLimpio;
-    
-    if (mensaje) {
-        urlWhatsApp += '?text=' + encodeURIComponent(mensaje);
-    }
-    
-    console.log('DEBUG: Abriendo WhatsApp Web:', urlWhatsApp);
-    
-    // Abrir en nueva pestaña
-    var win = window.open(urlWhatsApp, '_blank');
-    if (!win) {
-        alert('Por favor permite ventanas emergentes para enviar mensajes de WhatsApp');
-    }
-}
+// Ya no se usa - reemplazada por abrirWhatsAppDesktop() arriba
 
 // ================== ELIMINAR CAMPAÑA ==================
 
@@ -714,13 +695,13 @@ async function eliminarCampaña(id) {
 
 // ================== FIN ELIMINAR CAMPAÑA ==================
 
-// Enviar WhatsApp con imagen
+// Enviar WhatsApp con imagen (desktop)
 async function enviarWhatsAppImagen(solicitudId, celular) {
     var mensaje = document.getElementById('whatsapp-img-mensaje').value.trim();
     var fileInput = document.getElementById('whatsapp-img-input');
     var file = fileInput ? fileInput.files[0] : null;
-    var checkboxAbrirWeb = document.getElementById('whatsapp-abrir-web');
-    var abrirWeb = checkboxAbrirWeb ? checkboxAbrirWeb.checked : true;
+    var checkboxAbrir = document.getElementById('whatsapp-abrir-web');
+    var abrirWeb = checkboxAbrir ? checkboxAbrir.checked : true;
     
     if (!mensaje && !file) {
         alert('Escriba un mensaje o seleccione una imagen');
@@ -732,13 +713,42 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
     btn.disabled = true;
     
     try {
-        // 0. ABRIR WHATSAPP WEB PRIMERO (antes de operaciones async)
-        // Esto evita que el navegador bloquee la ventana emergente
-        if (abrirWeb) {
-            abrirWhatsAppWeb(celular, mensaje);
+        // ===== PASO 1: Intentar Web Share API (compartir imagen directa) =====
+        if (file && typeof navigator.share !== 'undefined' && navigator.canShare) {
+            try {
+                var shareData = {
+                    text: mensaje || '📋 Gestión de solicitud #' + solicitudId,
+                    files: [file]
+                };
+                
+                if (navigator.canShare(shareData)) {
+                    console.log('[WhatsApp Desktop] Usando Web Share API');
+                    await navigator.share(shareData);
+                    
+                    await guardarGestionWhatsAppDesktop(solicitudId, mensaje, null);
+                    
+                    alert('✅ Gestión guardada');
+                    cerrarModal();
+                    cargarDatosGestion();
+                    return;
+                }
+            } catch (shareError) {
+                if (shareError.name === 'AbortError') {
+                    console.log('[WhatsApp Desktop] Usuario canceló');
+                    btn.textContent = '📤 Enviar';
+                    btn.disabled = false;
+                    return;
+                }
+                console.log('[WhatsApp Desktop] Web Share falló, usando fallback:', shareError.message);
+            }
         }
         
-        // 1. Subir imagen si existe
+        // ===== PASO 2: Abrir WhatsApp Web (antes de operaciones async para evitar bloqueo popup) =====
+        if (abrirWeb) {
+            abrirWhatsAppDesktop(celular, mensaje);
+        }
+        
+        // ===== PASO 3: Subir imagen si existe =====
         var imagenUrl = null;
         if (file) {
             var formData = new FormData();
@@ -749,10 +759,9 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
                 body: formData
             });
             
-            // Verificar que la respuesta es OK antes de parsear JSON
             if (!uploadResponse.ok) {
                 var errorText = await uploadResponse.text();
-                console.error('ERROR upload-imagen:', errorText);
+                console.error('[WhatsApp Desktop] Error upload-imagen:', errorText);
                 throw new Error('Error al subir imagen: ' + uploadResponse.status);
             }
             
@@ -761,43 +770,49 @@ async function enviarWhatsAppImagen(solicitudId, celular) {
                 throw new Error(uploadResult.error || 'Error al subir imagen');
             }
             imagenUrl = uploadResult.url;
-            console.log('DEBUG: Imagen subida:', imagenUrl);
+            console.log('[WhatsApp Desktop] Imagen subida:', imagenUrl);
         }
         
-        // 2. Guardar gestión en la base de datos
-        var observacion = mensaje;
-        if (imagenUrl) {
-            observacion = (mensaje ? mensaje + '\n\n' : '') + '[Imagen: ' + imagenUrl + ']';
-        }
-        
-        var response = await fetch('/api/excel/gestiones', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                solicitud_id: solicitudId,
-                tipo_gestion: 'WhatsApp',
-                observacion: observacion,
-                gestion_maestro_id: gestionId
-            })
-        });
-        
-        var resultado = await response.json();
-        
-if (!response.ok || resultado.error) {
-            throw new Error(resultado.error || 'Error al guardar gestión');
-        }
+        // ===== PASO 4: Guardar gestión =====
+        await guardarGestionWhatsAppDesktop(solicitudId, mensaje, imagenUrl);
         
         alert('✅ Gestión guardada');
-        
         cerrarModal();
         cargarDatosGestion();
         
     } catch (error) {
-        console.error('Error:', error);
+        console.error('[WhatsApp Desktop] Error:', error);
         alert('Error: ' + error.message);
     } finally {
         btn.textContent = '📤 Enviar';
         btn.disabled = false;
     }
+}
+
+// Función auxiliar para guardar gestión de WhatsApp (desktop)
+async function guardarGestionWhatsAppDesktop(solicitudId, mensaje, imagenUrl) {
+    var observacion = mensaje || '';
+    if (imagenUrl) {
+        observacion = (mensaje ? mensaje + '\n\n' : '') + '[Imagen: ' + imagenUrl + ']';
+    }
+    
+    var response = await fetch('/api/excel/gestiones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            solicitud_id: solicitudId,
+            tipo_gestion: 'WhatsApp',
+            observacion: observacion,
+            gestion_maestro_id: gestionId
+        })
+    });
+    
+    var resultado = await response.json();
+    
+    if (!response.ok || resultado.error) {
+        throw new Error(resultado.error || 'Error al guardar gestión');
+    }
+    
+    return resultado;
 }
 
