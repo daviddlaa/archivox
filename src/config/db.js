@@ -11,6 +11,23 @@ if (process.env.DATABASE_URL) {
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false }
     });
+
+    // Wrap the pool to convert SQLite ? placeholders to PostgreSQL $N placeholders
+    const originalQuery = pool.query.bind(pool);
+    pool.query = (sql, params) => {
+        const queryParams = params || [];
+        
+        // Convert SQLite ? placeholders to PostgreSQL $1, $2, $3... for PostgreSQL
+        // This handles queries written with SQLite syntax but executed on PostgreSQL
+        let pgSql = sql;
+        if (sql.includes('?')) {
+            let paramIndex = 1;
+            pgSql = sql.replace(/\?/g, () => '$' + paramIndex++);
+            console.log('[DB] Converting SQL placeholders:', sql.substring(0, 50).replace(/\s+/g, ' '), '->', pgSql.substring(0, 50).replace(/\s+/g, ' '));
+        }
+        
+        return originalQuery(pgSql, queryParams);
+    };
 } else {
     console.log('Using SQLite database (local)');
     const Database = require('better-sqlite3');
