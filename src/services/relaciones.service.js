@@ -56,29 +56,66 @@ exports.procesarExcel = async function(filePath, usuarioId) {
         throw new Error('El archivo Excel no tiene hojas');
     }
 
-    // Leer encabezados de la fila 2 (la fila 1 es el título combinado)
+    console.log('[Relaciones] Total filas en Excel:', worksheet.rowCount);
+    console.log('[Relaciones] Primera fila (para debug):', worksheet.getRow(1).values);
+    console.log('[Relaciones] Segunda fila (para debug):', worksheet.getRow(2).values);
+
+    // Leer encabezados de la fila 1 (asumiendo que no hay título combinado)
+    // O probamos fila 2 si la 1 está vacía
+    let headerRow = worksheet.getRow(1);
+    let firstRowValues = headerRow.values;
+    let hasHeadersInRow1 = firstRowValues && firstRowValues.some(v => v && String(v).trim().length > 0);
+    
+    if (!hasHeadersInRow1) {
+        console.log('[Relaciones] Fila 1 vacía, usando fila 2 como headers');
+        headerRow = worksheet.getRow(2);
+    }
+
     const headers = [];
-    const headerRow = worksheet.getRow(2);
     headerRow.eachCell(function(cell) {
         headers.push(String(cell.value || '').trim());
     });
 
     console.log('[Relaciones] Headers detectados:', headers);
+    console.log('[Relaciones] ¿Headers tiene IDENTIFICACIÓN?:', headers.some(h => h.includes('IDENTIFI')));
+    console.log('[Relaciones] ¿Headers tiene CLIENTE?:', headers.some(h => h.includes('CLIENTE')));
+    console.log('[Relaciones] ¿Headers tiene ESTADO?:', headers.some(h => h.includes('ESTADO')));
 
-    // Leer datos desde fila 3 en adelante
+    // Empezar desde fila 2 o 3 depende de dónde estén los headers
+    const dataStartRow = hasHeadersInRow1 ? 2 : 3;
+    console.log('[Relaciones] Empezando a leer datos desde fila:', dataStartRow);
+
+    // Leer datos
     const registros = [];
-    for (let rowNumber = 3; rowNumber <= worksheet.rowCount; rowNumber++) {
+    const problematicRows = [];
+    for (let rowNumber = dataStartRow; rowNumber <= worksheet.rowCount; rowNumber++) {
         const row = worksheet.getRow(rowNumber);
-        const registro = {};
+        const rowValues = row.values;
+        
+        // Skip empty rows
+        if (!rowValues || !rowValues.some(v => v && String(v).trim().length > 0)) {
+            continue;
+        }
 
+        const registro = {};
         row.eachCell(function(cell, colNumber) {
-            registro[headers[colNumber - 1]] = cell.value;
+            if (colNumber - 1 < headers.length) {
+                registro[headers[colNumber - 1]] = cell.value;
+            }
         });
+
+        // Debug: mostrar primera fila procesada
+        if (registros.length === 0) {
+            console.log('[Relaciones] Primera fila de datos:', JSON.stringify(registro));
+        }
 
         // Validar que tenga al menos identificación o cliente
         const idVal = String(registro['IDENTIFICACIÓN'] || registro['IDENTIFICACION'] || '').trim();
         const clienteVal = String(registro['CLIENTE'] || '').trim();
-        if (!idVal && !clienteVal) continue; // Saltar filas vacías
+        if (!idVal && !clienteVal) {
+            problematicRows.push({ row: rowNumber, reason: 'sin ID ni cliente', data: registro });
+            continue; // Saltar filas vacías
+        }
 
         const mapeado = mapearRegistro(registro);
 
@@ -88,7 +125,10 @@ exports.procesarExcel = async function(filePath, usuarioId) {
             // Si no es ALTA ni BAJA, intentar inferir
             if (estado.includes('ALTA')) mapeado.estado_relacion = 'ALTA';
             else if (estado.includes('BAJA')) mapeado.estado_relacion = 'BAJA';
-            else continue; // Saltar registros sin estado válido
+            else {
+                problematicRows.push({ row: rowNumber, reason: 'estado invalido: ' + estado, data: registro });
+                continue; // Saltar registros sin estado válido
+            }
         }
 
         // Convertir fechas
@@ -101,7 +141,8 @@ exports.procesarExcel = async function(filePath, usuarioId) {
         registros.push(mapeado);
     }
 
-    console.log('[Relaciones] Total registros a procesar:', registros.length);
+    console.log('[Relaciones] Total filas procesadas:', registros.length);
+    console.log('[Relaciones] Filas saltadas (problematicas):', problematicRows.slice(0, 5)); // Solo primeras 5
 
     if (registros.length === 0) {
         return { total: 0, altas: 0, bajas: 0 };

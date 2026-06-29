@@ -79,12 +79,36 @@ mostrarMensaje('❌ ' + (data.error || 'Error ' + response.status), 'error');
 |---------|-------|
 | `src/routes/relaciones.routes.js` | Usar `excel` de multer.config.js |
 | `src/controllers/relaciones.controller.js` | Agregar logs de debugging |
+| `src/services/relaciones.service.js` | **DEBUGGING COMPLETO** - Ahora detecta filas, headers, filas problemáticas |
 | `public/desktop/js/relaciones.js` | Logs + mejor manejo errores |
 | `public/movil/js/relaciones.js` | Logs + mejor manejo errores |
 
 ---
 
-## 5. Cómo probar
+## 5. NUEVO: Problema en producción (status 200 pero total: 0)
+
+**Síntoma:** 
+- La respuesta del servidor es HTTP 200 (éxito)
+- Pero `total: 0, altas: 0, bajas: 0` (no se importó nada)
+
+**Diagnóstico actualizado:**
+El Excel se procesa correctamente, pero no se encuentran registros válidos. Posibles causas:
+1. **Los headers no están en la fila esperada** - El código asume que están en fila 2, pero podrían estar en fila 1
+2. **Los datos no están en la fila esperada** - El código asume datos en fila 3, pero podrían estar en fila 2
+3. **Los nombres de columnas no coinciden** - case sensitivity
+4. **El campo "estado_relacion" no tiene valores "ALTA" o "BAJA"**
+
+**SOLUCIÓN IMPLEMENTADA:**
+Se agregó DEBUGGING COMPLETO en `relaciones.service.js`:
+- Muestra total de filas en Excel
+- Muestra los valores de las primeras 2 filas (para debug)
+- Detecta automáticamente si headers están en fila 1 o fila 2
+- Muestra cada registro que se salta y por qué (sin ID, estado inválido, etc.)
+- Muestra el primer registro procesado para validación
+
+---
+
+## 6. Cómo probar (versión con DEBUGGING)
 
 1. **Reiniciar el servidor:**
    ```bash
@@ -109,15 +133,16 @@ mostrarMensaje('❌ ' + (data.error || 'Error ' + response.status), 'error');
 
 ---
 
-## 6. Notas técnicas
+## 7. Notas técnicas
 
 - **Multer** es el middleware de Node.js para manejar `multipart/form-data` (upload de archivos)
 - La configuración compartida en `multer.config.js` ya estaba siendo usada por otros módulos exitosamente
 - Esta corrección unifica el patrón de carga de archivos en todo el sistema
+- El servicio ahora detección automática de posición de headers (fila 1 o 2)
 
 ---
 
-## 7. Preguntas frecuentes
+## 8. Preguntas frecuentes
 
 **P: Puedo seguir usando mi propia configuración Multer?**
 R: Sí, pero se recomienda usar la compartida para mantener consistencia.
@@ -127,6 +152,9 @@ R: El límite es 10MB (configurado en multer.config.js). Si necesitas más,hay q
 
 **P: El Excel tiene algún formato específico?**
 R: Sí, debe tener las columnasdocumentadas en `PLAN-PAGINA-RELACIONES.md`.
+
+**P: ¿Por qué devuelve total: 0?**
+R: Revisa los logs del servidor - ahí verás exactamente qué filas se saltaron y por qué.
 
 ---
 
