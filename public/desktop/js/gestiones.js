@@ -6,6 +6,110 @@ var currentLimit = 50;
 var isLoading = false;
 var hasMoreData = true;
 
+// ================== SELECCIÓN MÚLTIPLE ==================
+var gestionesSeleccionadas = {}; // objeto { id: true } para búsqueda rápida
+
+function toggleSeleccionGestion(id, checkbox) {
+    if (checkbox.checked) {
+        gestionesSeleccionadas[id] = true;
+    } else {
+        delete gestionesSeleccionadas[id];
+        // Desmarcar "seleccionar todos" si estaba marcado
+        var chkTodos = document.getElementById('seleccionar-todos');
+        if (chkTodos) chkTodos.checked = false;
+    }
+    actualizarContadorSeleccion();
+}
+
+function seleccionarTodosGestiones() {
+    var chkTodos = document.getElementById('seleccionar-todos');
+    var checkboxes = document.querySelectorAll('.chk-gestion');
+    
+    for (var i = 0; i < checkboxes.length; i++) {
+        checkboxes[i].checked = chkTodos.checked;
+        var id = checkboxes[i].value;
+        if (chkTodos.checked) {
+            gestionesSeleccionadas[id] = true;
+        } else {
+            delete gestionesSeleccionadas[id];
+        }
+    }
+    actualizarContadorSeleccion();
+}
+
+function actualizarContadorSeleccion() {
+    var count = Object.keys(gestionesSeleccionadas).length;
+    var btnEliminar = document.getElementById('btn-eliminar-seleccionadas');
+    var spanCount = document.getElementById('seleccionadas-count');
+    
+    if (spanCount) spanCount.textContent = count;
+    if (btnEliminar) {
+        btnEliminar.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+}
+
+function eliminarSeleccionadas() {
+    var ids = Object.keys(gestionesSeleccionadas);
+    if (ids.length === 0) {
+        alert('No hay gestiones seleccionadas');
+        return;
+    }
+    
+    if (!confirm('¿Está seguro de eliminar ' + ids.length + ' gestión(es)?\n\nEsta acción NO se puede deshacer.')) {
+        return;
+    }
+    
+    var btn = document.getElementById('btn-eliminar-seleccionadas');
+    if (btn) {
+        btn.textContent = '⏳ Eliminando...';
+        btn.disabled = true;
+    }
+    
+    var pendientes = ids.length;
+    var errores = 0;
+    var completados = 0;
+    
+    function eliminarSiguiente() {
+        if (ids.length === 0) {
+            // Terminamos
+            if (btn) {
+                btn.textContent = '🗑️ Borrar';
+                btn.disabled = false;
+            }
+            gestionesSeleccionadas = {};
+            actualizarContadorSeleccion();
+            buscarGestiones();
+            if (errores > 0) {
+                alert('Completado. Se eliminaron ' + completados + ' gestión(es). ' + errores + ' error(es).');
+            } else {
+                alert('Se eliminaron ' + completados + ' gestión(es) correctamente.');
+            }
+            return;
+        }
+        
+        var id = ids.shift();
+        fetch('/api/excel/gestiones/' + id, { method: 'DELETE' })
+            .then(function(res) { return res.json(); })
+            .then(function(resultado) {
+                if (resultado && !resultado.error) {
+                    completados++;
+                } else {
+                    errores++;
+                    console.error('Error eliminando gestión ' + id + ':', resultado.error);
+                }
+                eliminarSiguiente();
+            })
+            .catch(function(err) {
+                errores++;
+                console.error('Error eliminando gestión ' + id + ':', err);
+                eliminarSiguiente();
+            });
+    }
+    
+    eliminarSiguiente();
+}
+// ================== FIN SELECCIÓN MÚLTIPLE ==================
+
 
 
 
@@ -159,7 +263,7 @@ function renderizarTabla(datos) {
     }
     
     if (!datos.length) {
-        tabla.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">No se encontraron gestiones</td></tr>';
+        tabla.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;">No se encontraron gestiones</td></tr>';
         return;
     }
     
@@ -179,7 +283,12 @@ function renderizarTabla(datos) {
         var color = coloresTipo[g.tipo_gestion] || '#f3f4f6';
         var fechaFormateada = formatFechaGestion(g.fecha_gestion);
         
+        var seleccionada = gestionesSeleccionadas[g.id] ? 'checked' : '';
+        
         html += '<tr>';
+        html += '<td style="text-align:center;">';
+        html += '<input type="checkbox" class="chk-gestion" value="' + g.id + '" ' + seleccionada + ' onchange="toggleSeleccionGestion(' + g.id + ', this)">';
+        html += '</td>';
         html += '<td>' + (g.solicitud_id || '') + '</td>';
         html += '<td>' + (g.cedula || '') + '</td>';
         html += '<td>' + (g.nombre || '') + '</td>';

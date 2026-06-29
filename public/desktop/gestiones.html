@@ -134,6 +134,7 @@
                         <div class="filtro-actions">
                             <button class="btn btn-secondary" onclick="limpiarFiltros()">🧹 Limpiar</button>
                             <button class="btn btn-success" onclick="exportarExcel()">📥 Exportar</button>
+                            <button class="btn btn-danger" id="btn-eliminar-seleccionadas" onclick="eliminarSeleccionadas()" style="display:none;">🗑️ Borrar (<span id="seleccionadas-count">0</span>)</button>
                         </div>
                     </div>
                 </div>
@@ -143,6 +144,9 @@
                     <table class="tabla">
                         <thead>
                             <tr>
+                                <th style="width:40px;">
+                                    <input type="checkbox" id="seleccionar-todos" onchange="seleccionarTodosGestiones()" title="Seleccionar todo">
+                                </th>
                                 <th># Solicitud</th>
                                 <th>Cédula</th>
                                 <th>Nombre</th>
