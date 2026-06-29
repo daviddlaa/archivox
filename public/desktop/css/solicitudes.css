@@ -841,7 +841,7 @@ td .cell-combinado {
     max-width: 1400px;
     width: 98%;
     max-height: 98vh;
-    overflow: hidden;
+    overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
     animation: slideUp 0.3s ease;
 }
@@ -849,6 +849,38 @@ td .cell-combinado {
 @keyframes slideUp {
     from { transform: translateY(20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
+}
+
+/* ===== BOTONES MODAL GESTIÓN POR LOTES ===== */
+.btn-modal-cancelar {
+    padding: 10px 22px;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    transition: all 0.2s ease;
+}
+.btn-modal-cancelar:hover {
+    background: #e5e7eb;
+}
+.btn-modal-crear {
+    padding: 10px 22px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+}
+.btn-modal-crear:hover {
+    box-shadow: 0 4px 16px rgba(37,99,235,0.5);
+    transform: translateY(-1px);
 }
 
 /* Header del Modal */

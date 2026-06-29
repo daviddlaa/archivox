@@ -114,14 +114,9 @@
                             </div>
                         </div>
 <div class="actions-mini">
-                            <button class="btn-action btn-excel" id="btn-excel" title="Exportar a Excel" style="display:none;" onclick="exportarExcel()">📊 Excel</button>
-                            <button class="btn-action btn-whatsapp" id="btn-whatsapp" title="Enviar a WhatsApp" style="display:none;" onclick="enviarWhatsApp()">📱 WhatsApp</button>
-                            <button class="btn-action btn-gestion" id="btn-gestion" title="Iniciar Gestión" style="display:none;" onclick="abrirModalNuevaGestion()">🚀 Iniciar Gestión</button>
+                            <!-- Solo botón Gestión - resto eliminado por el usuario -->
+                            <button class="btn-action btn-gestion" id="btn-gestion" title="Iniciar Gestión por Lotes" style="display:none;" onclick="abrirModalNuevaGestion()">🚀 Gestión por Lotes</button>
                         </div>
-                        <style>
-                            .btn-excel { background: #22c55e !important; color: white !important; margin-right: 8px; }
-                            .btn-excel:hover { background: #16a34a !important; }
-                        </style>
                     </div>
                     
                     <!-- Columna 2: Filtros Estado -->
@@ -176,19 +171,11 @@
                     
 <!-- Panel Derecho: Solo Cards (tabla ocultada) -->
                     <div class="table-panel">
-<!-- Toolbar Inline: Botones que aparecen al seleccionar cards -->
+<!-- Toolbar Inline: Solo botón Gestión -->
                 <div id="actions-inline" class="actions-inline" style="display: none;">
-                    <button class="inline-action-btn btn-excel" onclick="exportarExcel()" title="Exportar a Excel">
-                        <span class="inline-icon">📊</span>
-                        <span class="inline-text">Excel</span>
-                    </button>
-                    <button class="inline-action-btn btn-whatsapp" onclick="enviarWhatsApp()" title="Enviar a WhatsApp">
-                        <span class="inline-icon">📱</span>
-                        <span class="inline-text">WhatsApp</span>
-                    </button>
-                    <button class="inline-action-btn btn-gestion" onclick="abrirModalNuevaGestion()" title="Iniciar Gestión">
+                    <button class="inline-action-btn btn-gestion" onclick="abrirModalNuevaGestion()" title="Iniciar Gestión por Lotes">
                         <span class="inline-icon">🚀</span>
-                        <span class="inline-text">Gestión</span>
+                        <span class="inline-text">Gestión por Lotes</span>
                     </button>
                     <span class="inline-count"><span id="seleccionadas-inline">0</span> seleccionadas</span>
                 </div>

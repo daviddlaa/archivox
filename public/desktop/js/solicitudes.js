@@ -84,8 +84,6 @@ function actualizarCheckboxes() {
 
 function actualizarContador() {
     var contador = document.getElementById('seleccionadas-count');
-    var btnWhatsApp = document.getElementById('btn-whatsapp');
-    var btnExcel = document.getElementById('btn-excel');
     var btnGestion = document.getElementById('btn-gestion');
     var actionsInline = document.getElementById('actions-inline');
     var contadorInline = document.getElementById('seleccionadas-inline');
@@ -99,25 +97,7 @@ function actualizarContador() {
         contadorInline.textContent = filasSeleccionadas.length;
     }
     
-    // Mostrar/ocultar botón de WhatsApp según selección
-    if (btnWhatsApp) {
-        if (filasSeleccionadas.length > 0) {
-            btnWhatsApp.style.display = 'inline-flex';
-        } else {
-            btnWhatsApp.style.display = 'none';
-        }
-    }
-    
-    // Mostrar/ocultar botón de Excel según selección
-    if (btnExcel) {
-        if (filasSeleccionadas.length > 0) {
-            btnExcel.style.display = 'inline-flex';
-        } else {
-            btnExcel.style.display = 'none';
-        }
-    }
-    
-    // Mostrar/ocultar botón de Gestión según selección
+    // Solo mostrar botón de Gestión según selección
     if (btnGestion) {
         if (filasSeleccionadas.length > 0) {
             btnGestion.style.display = 'inline-flex';
@@ -126,7 +106,7 @@ function actualizarContador() {
         }
     }
     
-    // Mostrar/ocultar toolbar inline (arriba de las cards) - igual que versión móvil
+    // Mostrar/ocultar toolbar inline (arriba de las cards)
     if (actionsInline) {
         if (filasSeleccionadas.length > 0) {
             actionsInline.style.display = 'flex';
@@ -138,30 +118,160 @@ function actualizarContador() {
 
 // ================== GESTIÓN POR LOTES ==================
 
-// Función para abrir modal de nueva gestión
+// Función para generar informe de las solicitudes seleccionadas
+function generarInformeSeleccionadas() {
+    var informe = {
+        total: filasSeleccionadas.length,
+        porEstado: {},
+        porSegmento: {},
+        porProducto: {},
+        celularesUnicos: []
+    };
+    
+    var celularesVistos = {};
+    
+    filasSeleccionadas.forEach(function(id) {
+        var datos = datosFilas[id];
+        if (datos) {
+            // Por Estado
+            var estado = datos.estado || 'Sin Estado';
+            informe.porEstado[estado] = (informe.porEstado[estado] || 0) + 1;
+            
+            // Por Segmento
+            var segmento = datos.segmento || 'Sin Segmento';
+            informe.porSegmento[segmento] = (informe.porSegmento[segmento] || 0) + 1;
+            
+            // Por Producto
+            var producto = datos.producto || 'Sin Producto';
+            informe.porProducto[producto] = (informe.porProducto[producto] || 0) + 1;
+            
+            // Celulares únicos
+            if (datos.celular && !celularesVistos[datos.celular]) {
+                celularesVistos[datos.celular] = true;
+                informe.celularesUnicos.push(datos.celular);
+            }
+        }
+    });
+    
+    return informe;
+}
+
+// Función para abrir modal de nueva gestión CON INFORME Y PLAN DE ACCIÓN (3 COLUMNAS)
 function abrirModalNuevaGestion() {
     if (filasSeleccionadas.length === 0) {
         alert('Selecciona al menos una solicitud primero');
         return;
     }
     
+    // Generar informe
+    var informe = generarInformeSeleccionadas();
+    
+    // Opciones de tipo de gestión
+    var opcionesTipoGestionModal = '';
+    ['Seguimiento', 'Cobranza', 'Llamada', 'WhatsApp', 'Reclamo', 'Cita', 'Otro'].forEach(function(tipo) {
+        opcionesTipoGestionModal += '<option value="' + tipo + '">' + tipo + '</option>';
+    });
+    
     var contenido = '';
-    contenido += '<div style="padding: 20px;">';
-    contenido += '<h2 style="margin-top: 0; color: #1f2937;">🚀 Iniciar Gestión por Lotes</h2>';
-    contenido += '<div style="background: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
-    contenido += '<p><strong>Solicitudes seleccionadas:</strong> ' + filasSeleccionadas.length + '</p>';
+    contenido += '<div style="padding: 24px; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; max-height: calc(98vh - 48px);">';
+    
+    // ===== HEADER =====
+    contenido += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-shrink: 0;">';
+    contenido += '<h2 style="margin: 0; color: #1f2937; font-size: 22px;">🚀 Gestión por Lotes</h2>';
+    contenido += '<span style="background: #e0e7ff; color: #3730a3; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">' + filasSeleccionadas.length + ' solicitudes seleccionadas</span>';
     contenido += '</div>';
-    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">📝 Nombre de la Gestión:</label>';
-    contenido += '<input type="text" id="nombre-gestion" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 15px;" placeholder="Ej: Gestión Cobranza Enero 2025">';
-    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">📝 Descripción (opcional):</label>';
-    contenido += '<textarea id="descripcion-gestion" rows="3" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; resize: vertical; margin-bottom: 15px;" placeholder="Objetivo de esta gestión..."></textarea>';
-    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">📅 Fecha Límite (opcional):</label>';
-    contenido += '<input type="date" id="fecha-limite-gestion" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 15px;">';
-    contenido += '<div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">';
-    contenido += '<button onclick="cerrarModal()" style="padding: 10px 20px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer;">Cancelar</button>';
-    contenido += '<button onclick="crearGestionLote()" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">🚀 Crear Gestión</button>';
+    
+    // ===== 3 COLUMNAS =====
+    contenido += '<div style="display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 16px; flex: 1; min-height: 0;">';
+    
+    // === COL 1: INFORME - Métricas ===
+    contenido += '<div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 12px; padding: 16px; display: flex; flex-direction: column;">';
+    contenido += '<h3 style="margin: 0 0 12px 0; color: #0369a1; font-size: 15px;">📊 INFORME</h3>';
+    
+    // Total + Celulares side by side
+    contenido += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">';
+    contenido += '<div style="background: white; padding: 10px; border-radius: 8px; text-align: center;">';
+    contenido += '<div style="font-size: 26px; font-weight: bold; color: #1f2937;">' + informe.total + '</div>';
+    contenido += '<div style="font-size: 10px; color: #6b7280; font-weight: 600; text-transform: uppercase;">Total</div>';
+    contenido += '</div>';
+    contenido += '<div style="background: white; padding: 10px; border-radius: 8px; text-align: center;">';
+    contenido += '<div style="font-size: 26px; font-weight: bold; color: #059669;">' + informe.celularesUnicos.length + '</div>';
+    contenido += '<div style="font-size: 10px; color: #6b7280; font-weight: 600; text-transform: uppercase;">Celulares</div>';
     contenido += '</div>';
     contenido += '</div>';
+    
+    // Por Estado
+    contenido += '<div style="background: white; padding: 10px; border-radius: 8px; flex: 1; overflow-y: auto;">';
+    contenido += '<div style="font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 6px;">📌 Por Estado</div>';
+    contenido += '<div style="display: flex; flex-wrap: wrap; gap: 4px;">';
+    Object.keys(informe.porEstado).forEach(function(estado) {
+        var count = informe.porEstado[estado];
+        contenido += '<span style="background: #e0e7ff; padding: 2px 8px; border-radius: 10px; font-size: 10px; color: #3730a3; font-weight: 600;">' + estado + ': ' + count + '</span>';
+    });
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    contenido += '</div>'; // fin col 1
+    
+    // === COL 2: INFORME - Detalles ===
+    contenido += '<div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 12px; padding: 16px; display: flex; flex-direction: column;">';
+    
+    // Por Segmento
+    contenido += '<div style="background: white; padding: 10px; border-radius: 8px; margin-bottom: 8px; flex: 1; overflow-y: auto;">';
+    contenido += '<div style="font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 6px;">🏷️ Por Segmento</div>';
+    contenido += '<div style="display: flex; flex-wrap: wrap; gap: 4px;">';
+    Object.keys(informe.porSegmento).forEach(function(segmento) {
+        var count = informe.porSegmento[segmento];
+        contenido += '<span style="background: #fef3c7; padding: 2px 8px; border-radius: 10px; font-size: 10px; color: #92400e; font-weight: 600;">' + segmento + ': ' + count + '</span>';
+    });
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    // Por Producto
+    contenido += '<div style="background: white; padding: 10px; border-radius: 8px; flex: 1; overflow-y: auto;">';
+    contenido += '<div style="font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 6px;">📦 Por Producto</div>';
+    contenido += '<div style="display: flex; flex-wrap: wrap; gap: 4px;">';
+    Object.keys(informe.porProducto).forEach(function(producto) {
+        var count = informe.porProducto[producto];
+        contenido += '<span style="background: #dcfce7; padding: 2px 8px; border-radius: 10px; font-size: 10px; color: #166534; font-weight: 600;">' + producto + ': ' + count + '</span>';
+    });
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    contenido += '</div>'; // fin col 2
+    
+    // === COL 3: PLAN DE ACCIÓN ===
+    contenido += '<div style="background: #f0fdf4; border: 2px solid #22c55e; border-radius: 12px; padding: 16px; display: flex; flex-direction: column;">';
+    contenido += '<h3 style="margin: 0 0 12px 0; color: #166534; font-size: 15px;">📋 PLAN DE ACCIÓN</h3>';
+    
+    contenido += '<div style="flex: 1;">';
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 12px; color: #374151;">📝 Nombre:</label>';
+    contenido += '<input type="text" id="nombre-gestion" style="width: 100%; padding: 9px 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 13px; margin-bottom: 10px; box-sizing: border-box;" placeholder="Ej: Gestión Cobranza Enero 2025">';
+    
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 12px; color: #374151;">📋 Tipo:</label>';
+    contenido += '<select id="tipo-gestion-lote" style="width: 100%; padding: 9px 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 13px; margin-bottom: 10px; background: white; box-sizing: border-box;">';
+    contenido += opcionesTipoGestionModal;
+    contenido += '</select>';
+    
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 12px; color: #374151;">🎯 Objetivo:</label>';
+    contenido += '<textarea id="descripcion-gestion" rows="2" style="width: 100%; padding: 9px 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 13px; resize: none; margin-bottom: 10px; box-sizing: border-box;" placeholder="¿Cuál es el objetivo de esta gestión...?"></textarea>';
+    
+    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 12px; color: #374151;">📅 Fecha Límite:</label>';
+    contenido += '<input type="date" id="fecha-limite-gestion" style="width: 100%; padding: 9px 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 13px; margin-bottom: 0; box-sizing: border-box;">';
+    contenido += '</div>';
+    
+    contenido += '</div>'; // fin col 3
+    
+    contenido += '</div>'; // fin grid 3 columnas
+    
+    // ===== BOTONES =====
+    contenido += '<div style="display: flex; gap: 10px; justify-content: flex-end; padding-top: 14px; margin-top: 16px; border-top: 2px solid #e5e7eb; flex-shrink: 0;">';
+    contenido += '<button onclick="cerrarModal()" class="btn-modal-cancelar">Cancelar</button>';
+    contenido += '<button onclick="crearGestionLote()" class="btn-modal-crear">🚀 Crear Gestión</button>';
+    contenido += '</div>';
+    
+    contenido += '</div>'; // fin container
+
     
     crearModal(contenido);
 }

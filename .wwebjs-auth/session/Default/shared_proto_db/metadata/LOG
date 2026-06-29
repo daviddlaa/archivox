@@ -1,4 +1,0 @@
-2026/06/28-12:02:32.449 4968 Creating DB C:\Users\david\Desktop\Archivox\.wwebjs-auth\session\Default\shared_proto_db\metadata since it was missing.
-2026/06/28-12:02:32.460 4968 Reusing MANIFEST C:\Users\david\Desktop\Archivox\.wwebjs-auth\session\Default\shared_proto_db\metadata/MANIFEST-000001
-2026/06/28-12:02:32.461 4968 Recovering log #3
-2026/06/28-12:02:32.462 4968 Reusing old log C:\Users\david\Desktop\Archivox\.wwebjs-auth\session\Default\shared_proto_db\metadata/000003.log 

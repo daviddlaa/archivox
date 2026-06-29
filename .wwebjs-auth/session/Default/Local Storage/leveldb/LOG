@@ -1,7 +1,0 @@
-2026/06/28-12:02:32.477 55a4 Creating DB C:\Users\david\Desktop\Archivox\.wwebjs-auth\session\Default\Local Storage\leveldb since it was missing.
-2026/06/28-12:02:32.507 55a4 Reusing MANIFEST C:\Users\david\Desktop\Archivox\.wwebjs-auth\session\Default\Local Storage\leveldb/MANIFEST-000001
-2026/06/28-12:02:32.508 55a4 Recovering log #3
-2026/06/28-12:02:32.513 55a4 Reusing old log C:\Users\david\Desktop\Archivox\.wwebjs-auth\session\Default\Local Storage\leveldb/000003.log 
-2026/06/28-12:08:32.563 2308 Level-0 table #5: started
-2026/06/28-12:08:32.589 2308 Level-0 table #5: 19765 bytes OK
-2026/06/28-12:08:32.594 2308 Delete type=0 #3
