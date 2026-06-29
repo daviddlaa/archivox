@@ -196,6 +196,13 @@ async function cargarDatosGestion() {
         
         solicitudes = datosGestion.solicitudes || [];
         console.log('[cargarDatosGestion] Solicitudes recibidas:', solicitudes.length);
+        if (solicitudes.length > 0) {
+            console.log('[cargarDatosGestion] Primeras 3 gestion_obs:', 
+                solicitudes.slice(0, 3).map(function(s) { 
+                    return {id: s.id_solicitud, obs: s.gestion_obs, tipo: s.tipo_gestion}; 
+                })
+            );
+        }
         todasLasSolicitudes = [...solicitudes];
         
         actualizarProgreso();

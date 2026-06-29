@@ -125,6 +125,13 @@ async function cargarDatosGestionMovil() {
 
         solicitudes = datosGestion.solicitudes || [];
         console.log('[movil-cargarDatos] Solicitudes:', solicitudes.length);
+        if (solicitudes.length > 0) {
+            console.log('[movil-cargarDatos] Primeras 3 gestion_obs:', 
+                solicitudes.slice(0, 3).map(function(s) { 
+                    return {id: s.id_solicitud, obs: s.gestion_obs, tipo: s.tipo_gestion}; 
+                })
+            );
+        }
         todasLasSolicitudes = solicitudes.slice();
 
         renderizarSolicitudes(solicitudes);

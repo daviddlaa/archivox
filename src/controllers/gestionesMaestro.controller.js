@@ -61,15 +61,14 @@ async function getGestionMaestroById(req, res) {
         }
         
         // Obtener solicitudes asociadas a esta gestión (SOLO la última gestión por solicitud)
+        // Usamos MAX(g2.id) para obtener la gestión más reciente (más robusto que ORDER BY fecha_gestion)
         const resultSol = await pool.query(`
             SELECT s.*, g.id as gestion_id, g.tipo_gestion, g.observacion as gestion_obs, g.fecha_gestion
             FROM solicitudes s
             LEFT JOIN gestiones g ON g.id = (
-                SELECT g2.id FROM gestiones g2 
+                SELECT MAX(g2.id) FROM gestiones g2 
                 WHERE g2.solicitud_id = s.id_solicitud 
                 AND g2.gestion_maestro_id = ?
-                ORDER BY g2.fecha_gestion DESC, g2.id DESC 
-                LIMIT 1
             )
             WHERE s.id_solicitud IN (
                 SELECT solicitud_id FROM gestiones WHERE gestion_maestro_id = ?
@@ -78,6 +77,13 @@ async function getGestionMaestroById(req, res) {
         `, [id, id]);
         
         const Solicitudes = getRows(resultSol);
+        
+        // Debug: mostrar los primeros gestion_obs para verificar
+        console.log('[getGestionMaestroById] Total solicitudes devueltas:', Solicitudes.length);
+        if (Solicitudes.length > 0) {
+            console.log('[getGestionMaestroById] Primeras 3 gestion_obs:', 
+                Solicitudes.slice(0, 3).map(s => ({id: s.id_solicitud, obs: s.gestion_obs, tipo: s.tipo_gestion})));
+        }
         
         res.json({
             ...gestion,
