@@ -62,13 +62,15 @@ async function getGestionMaestroById(req, res) {
         
         // Obtener solicitudes asociadas a esta gestión (SOLO la última gestión por solicitud)
         // Usamos MAX(g2.id) para obtener la gestión más reciente (más robusto que ORDER BY fecha_gestion)
+        // Incluimos OR g2.gestion_maestro_id IS NULL porque gestiones anteriores a la migración 
+        // no tienen gestion_maestro_id asignado
         const resultSol = await pool.query(`
             SELECT s.*, g.id as gestion_id, g.tipo_gestion, g.observacion as gestion_obs, g.fecha_gestion
             FROM solicitudes s
             LEFT JOIN gestiones g ON g.id = (
                 SELECT MAX(g2.id) FROM gestiones g2 
                 WHERE g2.solicitud_id = s.id_solicitud 
-                AND g2.gestion_maestro_id = ?
+                AND (g2.gestion_maestro_id = ? OR g2.gestion_maestro_id IS NULL)
             )
             WHERE s.id_solicitud IN (
                 SELECT solicitud_id FROM gestiones WHERE gestion_maestro_id = ?
