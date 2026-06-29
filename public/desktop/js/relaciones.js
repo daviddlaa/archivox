@@ -39,11 +39,16 @@ document.getElementById('formUploadRelaciones').addEventListener('submit', async
     mostrarMensaje('Procesando archivo...', 'loading');
     console.log('[Relaciones] Subiendo archivo:', archivo.name);
     try {
-        var response = await fetch('/api/relaciones/upload', { method: 'POST', body: formData, credentials: 'include' });
+var response = await fetch('/api/relaciones/upload', { method: 'POST', body: formData, credentials: 'include' });
         console.log('[Relaciones] Respuesta status:', response.status);
         var data = await response.json();
         console.log('[Relaciones] Respuesta data:', data);
-        if (!response.ok) { 
+        // Mostrar debug info prominente
+        if (data.debug) {
+            console.log('=== DEBUG INFO ===');
+            console.log(data.debug);
+        }
+        if (!response.ok) {
             mostrarMensaje('❌ ' + (data.error || 'Error ' + response.status), 'error'); 
             console.error('[Relaciones] Error response:', data);
             btn.disabled = false; btn.textContent = '📤 Subir y Procesar'; 

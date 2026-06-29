@@ -33,17 +33,23 @@ exports.uploadRelaciones = async function(req, res) {
             return res.status(400).json({ error: 'No se envió ningún archivo' });
         }
 
-        console.log('[Relaciones] uploadRelaciones - Archivo recibido:', req.file.originalname, '- path:', req.file.path);
+console.log('[Relaciones] uploadRelaciones - Archivo recibido:', req.file.originalname, '- path:', req.file.path);
 
         const resultado = await relacionesService.procesarExcel(req.file.path, usuarioId);
 
         console.log('[Relaciones] uploadRelaciones - Resultado:', resultado);
 
+        // Incluir debug info en la respuesta para ver en consola del navegador
         res.json({
             mensaje: 'Relaciones importadas correctamente',
             total: resultado.total,
             altas: resultado.altas,
-            bajas: resultado.bajas
+            bajas: resultado.bajas,
+            debug: {
+                archivo: req.file.originalname,
+                filasProcesadas: resultado.total,
+                mensajeDebug: resultado.debug || 'Sin info de debug'
+            }
         });
     } catch (error) {
         console.error('[Relaciones] Error uploadRelaciones:', error);

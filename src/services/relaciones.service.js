@@ -141,11 +141,20 @@ exports.procesarExcel = async function(filePath, usuarioId) {
         registros.push(mapeado);
     }
 
-    console.log('[Relaciones] Total filas procesadas:', registros.length);
+console.log('[Relaciones] Total filas procesadas:', registros.length);
     console.log('[Relaciones] Filas saltadas (problematicas):', problematicRows.slice(0, 5)); // Solo primeras 5
 
+    const debugInfo = {
+        totalFilasExcel: worksheet.rowCount,
+        headersDetectados: headers,
+        filasProcesadas: registros.length,
+        filasProblematicas: problematicRows.length,
+        primerProblema: problematicRows[0] || null
+    };
+    console.log('[Relaciones] DEBUG INFO:', debugInfo);
+
     if (registros.length === 0) {
-        return { total: 0, altas: 0, bajas: 0 };
+        return { total: 0, altas: 0, bajas: 0, debug: debugInfo };
     }
 
     // Eliminar registros anteriores del usuario
@@ -200,9 +209,10 @@ exports.procesarExcel = async function(filePath, usuarioId) {
         fs.unlinkSync(filePath);
     }
 
-    return {
+return {
         total: insertados,
         altas: altas,
-        bajas: bajas
+        bajas: bajas,
+        debug: debugInfo
     };
 };
