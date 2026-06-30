@@ -72,44 +72,34 @@
     background: #e5e7eb;
 }
 
-/* ===== STATS GRID ===== */
+/* ===== STATS GRID - TODO EN UNA FILA HORIZONTAL ===== */
 .stats-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 24px;
+    grid-template-columns: auto auto auto auto auto;
+    gap: 10px;
+    margin-bottom: 12px;
     background: white;
-    padding: 25px;
-    border-radius: 16px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.stats-column {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.stats-row {
-    display: flex;
-    gap: 16px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    align-items: center;
     flex-wrap: wrap;
 }
 
+/* KPIs ultra-compactos */
 .stat-card {
-    flex: 1;
-    min-width: 120px;
     background: #f8fafc;
-    padding: 20px;
-    border-radius: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
     text-align: center;
-    border: 2px solid transparent;
+    border: 1px solid transparent;
     transition: all 0.2s ease;
+    min-width: 70px;
 }
 
 .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
 
 .stat-total {
@@ -129,16 +119,16 @@
 
 .stat-value {
     display: block;
-    font-size: 32px;
+    font-size: 16px;
     font-weight: bold;
     color: #1f2937;
 }
 
 .stat-label {
     display: block;
-    font-size: 13px;
+    font-size: 9px;
     color: #6b7280;
-    margin-top: 6px;
+    margin-top: 2px;
     text-transform: uppercase;
     font-weight: 600;
 }
@@ -194,29 +184,29 @@
 .filter-column {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
 }
 
 .filter-label {
     font-weight: 700;
     color: #374151;
-    font-size: 15px;
+    font-size: 13px;
 }
 
 .filter-buttons {
     display: flex;
-    gap: 10px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
 .filter-btn {
     background: #f3f4f6;
-    border: 2px solid #e5e7eb;
+    border: 1px solid #e5e7eb;
     color: #374151;
-    padding: 10px 18px;
-    border-radius: 20px;
+    padding: 6px 12px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     transition: all 0.2s ease;
 }
@@ -255,9 +245,79 @@
 /* ===== MAIN CONTENT GRID ===== */
 .main-content-grid {
     display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 24px;
+    grid-template-columns: 1fr;
+    gap: 0;
     align-items: start;
+}
+
+/* ===== RESUMEN + ACCIONES RAPIDAS (FILA HORIZONTAL) ===== */
+.resumen-acciones-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.resumen-compacto {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.resumen-label {
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.resumen-value {
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.resumen-divider {
+    color: #d1d5db;
+    margin: 0 4px;
+}
+
+.acciones-fila {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.action-row-btn {
+    padding: 6px 12px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-row-btn:hover {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+}
+
+.action-row-btn.btn-danger {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+.action-row-btn.btn-danger:hover {
+    background: #fee2e2;
+    border-color: #f87171;
 }
 
 /* Info Panel */
@@ -353,9 +413,10 @@
 /* Table Panel */
 .table-panel {
     background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     overflow: hidden;
+    width: 100%;
 }
 
 /* ===== ESTILOS PARA STATS CARDS (KPIs) ===== */
@@ -685,9 +746,10 @@ td .cell-combinado {
 /* ===== CARDS CONTAINER (MOSTRANDO SOLO CARDS EN ESCRITORIO) ===== */
 .cards-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 16px;
-    padding: 20px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 16px;
+    width: 100%;
 }
 
 /* Estilo de cada Card */

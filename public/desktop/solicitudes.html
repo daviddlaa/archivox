@@ -95,94 +95,75 @@
                     </div>
                 </div>
                 
-                <!-- Fila Superior: Stats + Filtros en 3 columnas -->
+<!-- Fila Superior: TODO en UNA fila horizontal -->
                 <div class="stats-grid">
-                    <!-- Columna 1: Stats -->
-                    <div class="stats-column">
-                        <div class="stats-row">
-                            <div class="stat-card stat-total">
-                                <span class="stat-value" id="totalRegistros">0</span>
-                                <span class="stat-label">Total Registros</span>
-                            </div>
-                            <div class="stat-card stat-showing">
-                                <span class="stat-value" id="mostrando">0</span>
-                                <span class="stat-label">Mostrando</span>
-                            </div>
-                            <div class="stat-card stat-selected">
-                                <span class="stat-value" id="seleccionadas-count">0</span>
-                                <span class="stat-label">Seleccionadas</span>
-                            </div>
-                        </div>
-<div class="actions-mini">
-                            <!-- Solo botón Gestión - resto eliminado por el usuario -->
-                            <button class="btn-action btn-gestion" id="btn-gestion" title="Iniciar Gestión por Lotes" style="display:none;" onclick="abrirModalNuevaGestion()">🚀 Gestión por Lotes</button>
-                        </div>
+                    <!-- KPIs compactas -->
+                    <div class="stat-card stat-total">
+                        <span class="stat-value" id="totalRegistros">0</span>
+                        <span class="stat-label">Total</span>
                     </div>
-                    
-                    <!-- Columna 2: Filtros Estado -->
+                    <div class="stat-card stat-showing">
+                        <span class="stat-value" id="mostrando">0</span>
+                        <span class="stat-label">Mostrando</span>
+                    </div>
+                    <div class="stat-card stat-selected">
+                        <span class="stat-value" id="seleccionadas-count">0</span>
+                        <span class="stat-label">Selecc</span>
+                    </div>
+                    <!-- Filtro Estado compacto -->
                     <div class="filter-column">
-                        <label class="filter-label">📌 Estado</label>
+                        <label class="filter-label">📌</label>
                         <div class="filter-buttons" id="filtro-estado">
                             <button class="filter-btn active" data-value="">Todos</button>
                         </div>
                     </div>
-                    
-                    <!-- Columna 3: Filtros Segmento -->
+                    <!-- Filtro Segmento compacto -->
                     <div class="filter-column">
-                        <label class="filter-label">🏷️ Segmento</label>
+                        <label class="filter-label">🏷️</label>
                         <div class="filter-buttons" id="filtro-segmento">
                             <button class="filter-btn active" data-value="">Todos</button>
                         </div>
                     </div>
+                    <div class="actions-mini">
+                        <button class="btn-action btn-gestion" id="btn-gestion" title="Iniciar Gestión por Lotes" style="display:none;" onclick="abrirModalNuevaGestion()">🚀 Gestión</button>
+                    </div>
                 </div>
 
-                <!-- Fila de Búsqueda -->
+<!-- Fila de Búsqueda -->
                 <div class="search-row">
                     <input type="text" id="cedula" placeholder="🔍 Buscar por id de solicitud, cédula, nombres, apellidos o teléfono...">
                 </div>
 
-                <!-- Contenido Principal: Panel Izquierdo + Tabla -->
-                <div class="main-content-grid">
-                    <!-- Panel Izquierdo: Info Rápida -->
-                    <aside class="info-panel">
-                        <h3>📊 Resumen</h3>
-                        <div class="info-stats">
-                            <div class="info-stat">
-                                <span class="info-label">Estado Actual</span>
-                                <span class="info-value">Todos</span>
-                            </div>
-                            <div class="info-stat">
-                                <span class="info-label">Segmento</span>
-                                <span class="info-value">Todos</span>
-                            </div>
-                            <div class="info-stat">
-                                <span class="info-label">Última Actualización</span>
-                                <span class="info-value" id="ultima-actualizacion">-</span>
-                            </div>
-                        </div>
-                        <div class="quick-actions">
-                            <h4>⚡ Acciones Rápidas</h4>
-                            <button class="quick-btn" onclick="exportarSeleccionadas()">📥 Exportar</button>
-                            <button class="quick-btn" onclick="marcarSeleccionadas()">✓ Marcar Todas</button>
-                            <button class="quick-btn" onclick="limpiarFiltros()">🧹 Limpiar</button>
-                            <button class="quick-btn btn-danger" onclick="borrarTodas()">🗑️ Borrar Todo</button>
-                        </div>
-                    </aside>
-                    
-<!-- Panel Derecho: Solo Cards (tabla ocultada) -->
-                    <div class="table-panel">
-<!-- Toolbar Inline: Solo botón Gestión -->
-                <div id="actions-inline" class="actions-inline" style="display: none;">
-                    <button class="inline-action-btn btn-gestion" onclick="abrirModalNuevaGestion()" title="Iniciar Gestión por Lotes">
-                        <span class="inline-icon">🚀</span>
-                        <span class="inline-text">Gestión por Lotes</span>
-                    </button>
-                    <span class="inline-count"><span id="seleccionadas-inline">0</span> seleccionadas</span>
+                <!-- Fila Resumen + Acciones Rápidas (compacta) -->
+                <div class="resumen-acciones-row">
+                    <div class="resumen-compacto">
+                        <span class="resumen-label">📊 Estado:</span>
+                        <span class="resumen-value" id="resumen-estado">Todos</span>
+                        <span class="resumen-divider">|</span>
+                        <span class="resumen-label">🏷️ Segmento:</span>
+                        <span class="resumen-value" id="resumen-segmento">Todos</span>
+                    </div>
+                    <div class="acciones-fila">
+                        <button class="action-row-btn" onclick="exportarSeleccionadas()">📥 Exportar</button>
+                        <button class="action-row-btn" onclick="marcarSeleccionadas()">✓ Marcar</button>
+                        <button class="action-row-btn" onclick="limpiarFiltros()">🧹 Limpiar</button>
+                        <button class="action-row-btn btn-danger" onclick="borrarTodas()">🗑️ Borrar</button>
+                    </div>
                 </div>
 
-                <!-- Contenedor de Cards para escritorio -->
-                    <div id="cards-container" class="cards-container"></div>
+                <!-- Contenido Principal: Solo Cards -->
+                <div class="table-panel">
+                    <!-- Toolbar Inline: Solo botón Gestión -->
+                    <div id="actions-inline" class="actions-inline" style="display: none;">
+                        <button class="inline-action-btn btn-gestion" onclick="abrirModalNuevaGestion()" title="Iniciar Gestión por Lotes">
+                            <span class="inline-icon">🚀</span>
+                            <span class="inline-text">Gestión por Lotes</span>
+                        </button>
+                        <span class="inline-count"><span id="seleccionadas-inline">0</span> seleccionadas</span>
                     </div>
+
+                    <!-- Contenedor de Cards para escritorio -->
+                    <div id="cards-container" class="cards-container"></div>
                 </div>
             </div>
         </main>
