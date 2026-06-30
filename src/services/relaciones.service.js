@@ -76,13 +76,39 @@ exports.procesarExcel = async function(filePath, usuarioId) {
         headers.push(String(cell.value || '').trim());
     });
 
-    console.log('[Relaciones] Headers detectados:', headers);
+console.log('[Relaciones] Headers detectados:', headers);
     console.log('[Relaciones] ¿Headers tiene IDENTIFICACIÓN?:', headers.some(h => h.includes('IDENTIFI')));
     console.log('[Relaciones] ¿Headers tiene CLIENTE?:', headers.some(h => h.includes('CLIENTE')));
     console.log('[Relaciones] ¿Headers tiene ESTADO?:', headers.some(h => h.includes('ESTADO')));
 
-    // Empezar desde fila 2 o 3 depende de dónde estén los headers
-    const dataStartRow = hasHeadersInRow1 ? 2 : 3;
+// DETECTAR SI LOS HEADERS SON VÁLIDOS - contienen palabras clave esperado
+    const tieneHeadersValidos = headers.some(h => h.includes('IDENTIFI')) || 
+                             headers.some(h => h.includes('CLIENTE')) ||
+                             headers.some(h => h.includes('CELULAR')) ||
+                             headers.some(h => h.includes('ESTADO'));
+    
+    let dataStartRow;
+    
+    if (!tieneHeadersValidos) {
+        console.log('[Relaciones] Headers NO válidos, intentando con fila 2...');
+        // Leer headers de la fila 2
+        headerRow = worksheet.getRow(2);
+        const nuevosHeaders = [];
+        headerRow.eachCell(function(cell) {
+            nuevosHeaders.push(String(cell.value || '').trim());
+        });
+        console.log('[Relaciones] Nuevos headers detectados:', nuevosHeaders);
+        
+        // Reemplazar headers
+        headers.length = 0;
+        nuevosHeaders.forEach(function(h) { headers.push(h); });
+        
+        // Los datos starts en fila 3
+        dataStartRow = 3;
+    } else {
+        // Los datos starts en fila 2
+        dataStartRow = 2;
+    }
     console.log('[Relaciones] Empezando a leer datos desde fila:', dataStartRow);
 
     // Leer datos
