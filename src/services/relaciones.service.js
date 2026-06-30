@@ -28,19 +28,44 @@ function mapearRegistro(row) {
 }
 
 /**
- * Convierte valores de fecha Excel (números seriales o cadenas) a formato DATE
+ * Convierte valores de fecha Excel (números seriales, objetos Date o cadenas) a formato DATE ISO (YYYY-MM-DD)
  */
 function convertirFecha(valor) {
     if (!valor) return null;
-    // Si ya es string, devolverlo tal cual
-    if (typeof valor === 'string') return valor;
+    
+    // Si es string, verificar si ya es formato válido YYYY-MM-DD
+    if (typeof valor === 'string') {
+        var trimmed = valor.trim();
+        // Si ya es formato ISO, devolver tal cual
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+        // Intentar convertir string a fecha
+        var dateFromString = new Date(trimmed);
+        if (!isNaN(dateFromString.getTime())) {
+            return dateFromString.toISOString().split('T')[0];
+        }
+        return trimmed;
+    }
+    
+    // Si es objeto Date (Excel convierte fechas a Date)
+    if (valor instanceof Date && !isNaN(valor.getTime())) {
+        return valor.toISOString().split('T')[0];
+    }
+    
     // Si es número (fecha serial de Excel), convertir
     if (typeof valor === 'number') {
         const epoch = new Date(1899, 11, 30);
         const fecha = new Date(epoch.getTime() + valor * 86400000);
         return fecha.toISOString().split('T')[0];
     }
-    return String(valor);
+    
+    // Último intento: convertir a string y parsear
+    var str = String(valor);
+    var dateAttempt = new Date(str);
+    if (!isNaN(dateAttempt.getTime())) {
+        return dateAttempt.toISOString().split('T')[0];
+    }
+    
+    return null;
 }
 
 /**
