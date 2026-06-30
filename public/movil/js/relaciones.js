@@ -36,10 +36,14 @@ var response = await fetch('/api/relaciones/upload', { method: 'POST', body: for
         console.log('[Relaciones] Respuesta status:', response.status);
         var data = await response.json();
         console.log('[Relaciones] Respuesta data:', data);
-        // Mostrar debug info prominente
+// Mostrar debug info prominente
         if (data.debug) {
             console.log('=== DEBUG INFO ===');
-            console.log(data.debug);
+            console.log('archivo:', data.debug.archivo);
+            console.log('filasProcesadas:', data.debug.filasProcesadas);
+            console.log('erroresInsert:', data.debug.erroresInsert);
+            console.log('primerErrorInsert:', data.debug.primerErrorInsert);
+            console.log('mensajeDebug:', JSON.stringify(data.debug.mensajeDebug, null, 2));
         }
         if (!response.ok) {
             mostrarMensajeMovil('❌ ' + (data.error || 'Error ' + response.status), 'error'); 
@@ -47,12 +51,14 @@ var response = await fetch('/api/relaciones/upload', { method: 'POST', body: for
             btn.disabled = false; btn.textContent = '📤 Subir y Procesar'; 
             return; 
         }
-// Si total es 0, mostrar error con debug info
-        if (data.total === 0 && data.debug && data.debug.mensajeDebug) {
-            var dbg = data.debug.mensajeDebug;
-            var msgError = '❌ No se procesaron registros. Razón: ';
-            if (dbg.filasProblematicas > 0 && dbg.primerProblema) {
-                msgError += dbg.primerProblema.reason + '. Fila: ' + dbg.primerProblema.row;
+        // Si total es 0, mostrar error con debug info
+        var dbg = data.debug ? (data.debug.mensajeDebug || data.debug) : null;
+        if (data.total === 0 && dbg) {
+            var msgError = '❌ No se insertaron registros. ';
+            if (dbg.erroresInsert > 0 && dbg.primerErrorInsert) {
+                msgError += 'Error DB: ' + dbg.primerErrorInsert.error;
+            } else if (dbg.filasProblematicas > 0 && dbg.primerProblema) {
+                msgError += 'Razón: ' + dbg.primerProblema.reason + '. Fila: ' + dbg.primerProblema.row;
             } else {
                 msgError += 'Excel vacío o sin datos válidos';
             }

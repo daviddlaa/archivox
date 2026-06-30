@@ -186,8 +186,9 @@ console.log('[Relaciones] Total filas procesadas:', registros.length);
     // Eliminar registros anteriores del usuario
     await pool.query('DELETE FROM relaciones WHERE usuario_id = ?', [usuarioId]);
 
-    // Insertar nuevos registros
+// Insertar nuevos registros
     let insertados = 0;
+    let erroresInsert = [];
     for (const r of registros) {
         try {
             await pool.query(
@@ -213,9 +214,16 @@ console.log('[Relaciones] Total filas procesadas:', registros.length);
             );
             insertados++;
         } catch (err) {
-            console.error('[Relaciones] Error insertando registro:', err.message);
+            console.error('[Relaciones] Error insertando:', err.message);
+            erroresInsert.push({ id: r.identificacion, error: err.message });
+            if (erroresInsert.length <= 3) {
+                console.error('[Relaciones] Primer error:', erroresInsert[0]);
+            }
         }
     }
+
+    console.log('[Relaciones] Registros insertados:', insertados, 'de', registros.length);
+    console.log('[Relaciones] Errores:', erroresInsert.length);
 
     // Contar altas y bajas
     const countResult = await pool.query(
@@ -235,7 +243,11 @@ console.log('[Relaciones] Total filas procesadas:', registros.length);
         fs.unlinkSync(filePath);
     }
 
-return {
+// Incluir errores de insert en debug
+    debugInfo.erroresInsert = erroresInsert.length;
+    debugInfo.primerErrorInsert = erroresInsert[0] || null;
+
+    return {
         total: insertados,
         altas: altas,
         bajas: bajas,
