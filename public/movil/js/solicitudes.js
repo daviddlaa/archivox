@@ -2,6 +2,7 @@
 let todosDatos = [];
 let datosFilas = {};
 let filasSeleccionadas = [];
+let idsVisibles = [];
 let filtros = { estado: '', segmento: '', busqueda: '' };
 
 // Toggle selección de card
@@ -20,11 +21,37 @@ function toggleCard(id) {
     actualizarContador();
 }
 
+function toggleSeleccionarTodasVisibles() {
+    if (!idsVisibles.length) return;
+
+    const todasSeleccionadas = idsVisibles.every(function(id) {
+        return filasSeleccionadas.indexOf(id) !== -1;
+    });
+
+    idsVisibles.forEach(function(id) {
+        const card = document.getElementById('card-' + id);
+        if (!card) return;
+
+        if (todasSeleccionadas) {
+            filasSeleccionadas = filasSeleccionadas.filter(function(filaId) {
+                return filaId !== id;
+            });
+            card.classList.remove('seleccionada');
+        } else if (filasSeleccionadas.indexOf(id) === -1) {
+            filasSeleccionadas.push(id);
+            card.classList.add('seleccionada');
+        }
+    });
+
+    actualizarContador();
+}
+
 function actualizarContador() {
     const contador = document.getElementById('seleccionadas-count');
     const actionsFloating = document.getElementById('actions-floating');
     
     const btnGestion = document.getElementById('btn-gestion');
+    const btnSeleccionarTodo = document.getElementById('btn-seleccionar-todo');
     if (contador) contador.textContent = filasSeleccionadas.length;
     if (actionsFloating) {
         actionsFloating.style.display = filasSeleccionadas.length > 0 ? 'flex' : 'none';
@@ -32,6 +59,19 @@ function actualizarContador() {
     // Mostrar/ocultar botón de campañas junto a los otros botones flotantes
     if (btnGestion) {
         btnGestion.style.display = filasSeleccionadas.length > 0 ? 'inline-flex' : 'none';
+    }
+
+    if (btnSeleccionarTodo) {
+        if (!idsVisibles.length) {
+            btnSeleccionarTodo.disabled = true;
+            btnSeleccionarTodo.textContent = 'Seleccionar todo';
+        } else {
+            const todasSeleccionadas = idsVisibles.every(function(id) {
+                return filasSeleccionadas.indexOf(id) !== -1;
+            });
+            btnSeleccionarTodo.disabled = false;
+            btnSeleccionarTodo.textContent = todasSeleccionadas ? 'Deseleccionar todo' : 'Seleccionar todo';
+        }
     }
 }
 
@@ -395,8 +435,13 @@ if (filtros.busqueda) {
 // Renderizar cards de clientes
 function renderizarCards(datos) {
     const container = document.getElementById('cards-container');
+    idsVisibles = Array.isArray(datos) ? datos.map(function(d) {
+        return d.id_solicitud;
+    }) : [];
+
     if (!datos.length) {
         container.innerHTML = '<div class="no-data">No hay solicitudes</div>';
+        actualizarContador();
         return;
     }
     
@@ -451,6 +496,7 @@ return `
     
     // Recrear el sentinel para infinite scroll
     recrearSentinel();
+    actualizarContador();
 }
 
 // Recrear el sentinel para infinite scroll
