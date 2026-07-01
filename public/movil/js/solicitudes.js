@@ -897,7 +897,7 @@ function abrirModalNuevaGestionMovil() {
 
     var contenido = '';
     contenido += '<div style="padding: 20px; background: white; min-height: 100vh;">';
-    contenido += '<h2 style="margin-top:0; color:#1f2937; font-size:18px;">🚀 Gestión por Lotes</h2>';
+    contenido += '<h2 style="margin-top:0; color:#1f2937; font-size:18px;">🚀 Crear campaña</h2>';
     
     // ================== 📊 INFORME (MÓVIL) ==================
     contenido += '<div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 12px; padding: 12px; margin-bottom: 15px;">';

@@ -1370,8 +1370,9 @@ td .cell-combinado {
 }
 
 .inline-action-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     padding: 8px 14px;
     border-radius: 8px;
@@ -1380,6 +1381,7 @@ td .cell-combinado {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    line-height: 1;
 }
 
 .inline-action-btn:hover {
@@ -1403,7 +1405,12 @@ td .cell-combinado {
 }
 
 .inline-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: 16px;
+    line-height: 1;
+    flex-shrink: 0;
 }
 
 .inline-text {

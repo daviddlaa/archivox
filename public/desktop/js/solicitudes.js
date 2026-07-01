@@ -177,7 +177,7 @@ function abrirModalNuevaGestion() {
     
     // ===== HEADER =====
     contenido += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-shrink: 0;">';
-    contenido += '<h2 style="margin: 0; color: #1f2937; font-size: 22px;">🚀 Gestión por Lotes</h2>';
+    contenido += '<h2 style="margin: 0; color: #1f2937; font-size: 22px;">🚀 Crear campaña</h2>';
     contenido += '<span style="background: #e0e7ff; color: #3730a3; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">' + filasSeleccionadas.length + ' solicitudes seleccionadas</span>';
     contenido += '</div>';
     
