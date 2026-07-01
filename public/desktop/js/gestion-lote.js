@@ -332,20 +332,17 @@ function renderizarSolicitudes(lista) {
         html += '<div class="sol-acciones">';
         
         // Botones de acción SIEMPRE visibles (independientemente del estado)
-        html += '<button class="btn-accion btn-llamar" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Llamada\')">📞 Llamada</button>';
-        html += '<button class="btn-accion btn-whatsapp" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'WhatsApp\')">💬 WhatsApp</button>';
-        html += '<button class="btn-accion btn-whatsapp-img" onclick="abrirGestionWhatsApp(\'' + sol.id_solicitud + '\', \'' + (sol.celular || '') + '\')">💬 WhatsApp Directo</button>';
         html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
-        html += '<button class="btn-accion btn-cobranza" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Cobranza\')">💰 Cobranza</button>';
-        html += '<button class="btn-accion btn-completar" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Completada\')">✅ Completar</button>';
+        html += '<button class="btn-accion secondary" onclick="copiarTexto(\'' + (sol.cedula || "") + '\', \'cédula\')">📋 Cédula</button>';
+        html += '<button class="btn-accion secondary" onclick="copiarTexto(\'' + (sol.celular || "") + '\', \'teléfono\')">📱 Teléfono</button>';
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {
-            html += '<button class="btn-accion btn-ver" onclick="verGestion(\'' + sol.id_solicitud + '\')">👁️ Ver Gestión</button>';
+            html += '<button class="btn-accion tertiary" onclick="verGestion(\'' + sol.id_solicitud + '\')">👁️ Ver</button>';
         }
         
         // Botón historial para TODAS las cards
-        html += '<button class="btn-accion btn-historial" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button>';
+        html += '<button class="btn-accion tertiary" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button>';
         
         html += '</div>';
         
@@ -353,6 +350,40 @@ function renderizarSolicitudes(lista) {
     }
     
     container.innerHTML = html;
+}
+
+function copiarTexto(texto, etiqueta) {
+    var valor = String(texto || '').trim();
+    if (!valor) {
+        alert('No hay ' + etiqueta + ' para copiar');
+        return;
+    }
+
+    var copiarYNotificar = function() {
+        alert(etiqueta.charAt(0).toUpperCase() + etiqueta.slice(1) + ' copiada');
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(valor).then(copiarYNotificar).catch(function() {
+            fallbackCopy(valor, etiqueta, copiarYNotificar);
+        });
+        return;
+    }
+
+    fallbackCopy(valor, etiqueta, copiarYNotificar);
+}
+
+function fallbackCopy(texto, etiqueta, callback) {
+    var textarea = document.createElement('textarea');
+    textarea.value = texto;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    if (callback) callback();
 }
 
 // Abrir modal de gestión para una solicitud

@@ -316,6 +316,34 @@ body {
     background: #16a34a;
 }
 
+.btn-accion.secondary {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.btn-accion.secondary:hover {
+    background: #cbd5e1;
+}
+
+.btn-accion.tertiary {
+    background: #f8fafc;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.btn-accion.tertiary:hover {
+    background: #f1f5f9;
+}
+
+.btn-accion.btn-seguimiento {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.btn-accion.btn-seguimiento:hover {
+    background: #bfdbfe;
+}
+
 /* Botón WhatsApp con Imagen */
 .btn-accion.btn-whatsapp-img {
     background: #dcfce7;

@@ -222,21 +222,19 @@ function renderizarSolicitudes(lista) {
         }
 
 html += '<div class="sol-botones">';
-        // Botones de acción SIEMPRE visibles (independientemente del estado)
-        html += '<button class="btn-sol btn-sol-call" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Llamada\')">📞 Llamada</button>';
-        html += '<button class="btn-sol btn-sol-whatsapp" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'WhatsApp\')">💬 WhatsApp</button>';
-        html += '<button class="btn-sol btn-sol-whatsapp-img" onclick="abrirGestionWhatsApp(\'' + sol.id_solicitud + '\', \'' + (sol.celular || '') + '\')">💬 WhatsApp Directo</button>';
-        html += '<button class="btn-sol btn-sol-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
-        html += '<button class="btn-sol btn-sol-cobranza" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Cobranza\')">💰 Cobranza</button>';
-        html += '<button class="btn-sol btn-sol-completar" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Completada\')">✅ Completar</button>';
+        // Acciones compactas de la tarjeta
+        html += '<button class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')">📞</button>';
+        html += '<button class="btn-sol btn-sol-primary btn-sol-small" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">Seguimiento</button>';
+        html += '<button class="btn-sol btn-sol-secondary btn-sol-small" onclick="copiarTexto(\'' + (sol.cedula || "") + '\', \'cédula\')">Ced.</button>';
+        html += '<button class="btn-sol btn-sol-secondary btn-sol-small" onclick="copiarTexto(\'' + (sol.celular || "") + '\', \'teléfono\')">Tel.</button>';
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {
-            html += '<button class="btn-sol btn-sol-ver" onclick="verGestion(\'' + sol.id_solicitud + '\')">👁️ Ver</button>';
+            html += '<button class="btn-sol btn-sol-ver btn-sol-small" onclick="verGestion(\'' + sol.id_solicitud + '\')">Ver</button>';
         }
         
         // Botón historial para TODAS las cards
-        html += '<button class="btn-sol btn-sol-historial" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button>';
+        html += '<button class="btn-sol btn-sol-historial btn-sol-small" onclick="verHistorial(\'' + sol.id_solicitud + '\')">Historial</button>';
         
         html += '</div>';
 
@@ -244,6 +242,45 @@ html += '<div class="sol-botones">';
     }
 
     container.innerHTML = html;
+}
+
+function copiarTexto(texto, etiqueta) {
+    var valor = String(texto || '').trim();
+    if (!valor) {
+        alert('No hay ' + etiqueta + ' para copiar');
+        return;
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(valor).then(function() {
+            alert(etiqueta.charAt(0).toUpperCase() + etiqueta.slice(1) + ' copiada');
+        });
+        return;
+    }
+
+    var textarea = document.createElement('textarea');
+    textarea.value = valor;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    alert(etiqueta.charAt(0).toUpperCase() + etiqueta.slice(1) + ' copiada');
+}
+
+function llamarDesdeGestionLote(celular) {
+    if (!celular) {
+        alert('No hay número de celular');
+        return;
+    }
+    var numeroLimpio = String(celular).replace(/\D/g, '');
+    if (!numeroLimpio) {
+        alert('No hay número de celular');
+        return;
+    }
+    window.location.href = 'tel:' + numeroLimpio;
 }
 
 function abrirGestion(solicitudId, tipo) {
