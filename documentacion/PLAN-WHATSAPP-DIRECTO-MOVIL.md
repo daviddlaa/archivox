@@ -32,6 +32,7 @@ Permitir que, desde la tarjeta de una solicitud en la versión móvil de Gestió
 ## Comportamiento esperado
 - El usuario pulsa el botón de WhatsApp Directo en la tarjeta.
 - Se abre un modal con el mensaje pre-cargado y editable.
+- El modal muestra tres opciones rápidas de mensaje para elegir una plantilla y rellenar automáticamente el textarea.
 - El saludo del mensaje usa el nombre y apellido completo del cliente cuando está disponible.
 - Al pulsar Enviar, se guarda la gestión y se abre WhatsApp.
 

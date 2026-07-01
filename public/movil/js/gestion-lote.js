@@ -573,6 +573,18 @@ function abrirGestionWhatsApp(solicitudId, celular) {
     contenido += '<div class="modal-form">';
     contenido += '<label>📝 Mensaje:</label>';
     var mensajeDefecto = generarMensajeWhatsApp(sol.nombre);
+    var opcionesMensajes = [
+        { texto: mensajeDefecto, etiqueta: 'Mensaje predeterminado' },
+        { texto: 'Hola ' + (sol.nombre || '') + ' 👋\nCrédito Resuelve a las órdenes 💳✨\n\nTu crédito está aprobado 🙌\n¿Deseas que te ayudemos con tu hogar? 📲', etiqueta: 'Aprobación rápida' },
+        { texto: 'Hola ' + (sol.nombre || '') + ' 👋\nTe contactamos de Crédito Resuelve 💳\n\nEstamos listos para ayudarte con tu crédito. ¿Cuándo te parece conversar? 📲', etiqueta: 'Seguimiento simple' },
+        { texto: 'Hola ' + (sol.nombre || '') + ' 👋\nQuedamos atentos a tus necesidades.\n\nSi gustas, te compartimos más información sobre tu crédito. 📲', etiqueta: 'Consulta general' }
+    ];
+    var opcionesJson = JSON.stringify(opcionesMensajes).replace(/'/g, "\\'");
+    contenido += '<select id="whatsapp-opcion-mensaje" onchange="cambiarMensajeWhatsApp(this.value, \'whatsapp-img-mensaje\', \'' + opcionesJson + '\')" style="margin-bottom: 10px;">';
+    for (var i = 0; i < opcionesMensajes.length; i++) {
+        contenido += '<option value="' + i + '">' + opcionesMensajes[i].etiqueta + '</option>';
+    }
+    contenido += '</select>';
     contenido += '<textarea id="whatsapp-img-mensaje" rows="5" placeholder="Escriba su mensaje..." style="margin-bottom: 12px;">' + mensajeDefecto + '</textarea>';
     contenido += '<div style="padding: 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #86efac; margin-bottom: 12px;">';
     contenido += '<div style="display: flex; align-items: center; gap: 8px;">';
@@ -592,6 +604,15 @@ function abrirGestionWhatsApp(solicitudId, celular) {
     contenido += '</div>';
     
     crearModal(contenido);
+}
+
+function cambiarMensajeWhatsApp(index, textareaId, opcionesJson) {
+    var textarea = document.getElementById(textareaId);
+    if (!textarea) return;
+    var opciones = JSON.parse(opcionesJson);
+    if (opciones[index] && opciones[index].texto) {
+        textarea.value = opciones[index].texto;
+    }
 }
 
 // ================== CONFIGURACIÓN WHATSAPP ==================
