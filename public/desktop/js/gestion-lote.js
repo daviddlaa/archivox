@@ -761,11 +761,11 @@ function abrirGestionWhatsApp(solicitudId, celular) {
         { texto: 'Hola ' + (sol.nombre || '') + ' 👋\nQuedamos atentos a tus necesidades.\n\nSi gustas, te compartimos más información sobre tu crédito. 📲', etiqueta: 'Consulta general' }
     ];
     var opcionesJson = JSON.stringify(opcionesMensajes).replace(/'/g, "\\'");
-    contenido += '<select id="whatsapp-opcion-mensaje" onchange="cambiarMensajeWhatsApp(this.value, \'whatsapp-img-mensaje\', \'' + opcionesJson + '\')" style="margin-bottom: 10px;">';
+    contenido += '<div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;">';
     for (var i = 0; i < opcionesMensajes.length; i++) {
-        contenido += '<option value="' + i + '">' + opcionesMensajes[i].etiqueta + '</option>';
+        contenido += '<button type="button" class="btn-plantilla-whatsapp" onclick="cambiarMensajeWhatsApp(' + i + ', \'whatsapp-img-mensaje\', \'' + opcionesJson + '\')">' + opcionesMensajes[i].etiqueta + '</button>';
     }
-    contenido += '</select>';
+    contenido += '</div>';
     contenido += '<textarea id="whatsapp-img-mensaje" rows="5" placeholder="Escriba su mensaje..." style="margin-bottom: 12px;">' + mensajeDefecto + '</textarea>';
     
     // Info de WhatsApp

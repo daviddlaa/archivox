@@ -673,6 +673,21 @@ body {
     margin-top: 16px;
 }
 
+.btn-plantilla-whatsapp {
+    border: 1px solid #86efac;
+    background: #f0fdf4;
+    color: #166534;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-plantilla-whatsapp:hover {
+    background: #dcfce7;
+}
+
 /* ===== BOTÓN ELIMINAR CAMPAÑA ===== */
 .campaña-btn-eliminar {
     position: absolute;
