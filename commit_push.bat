@@ -4,6 +4,6 @@ git add -A
 git add src/config/db.js
 git add src/config/initDb.pg.js
 git add src/controllers/gestionesMaestro.controller.js
-git commit -m "boton whatsapp directo en gestion lote"
+git commit -m "boton de whatsapp directo en gestion lote mensaje noimbre y apellido"
 git push origin master
 pause

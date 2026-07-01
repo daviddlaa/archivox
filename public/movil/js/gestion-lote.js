@@ -535,17 +535,16 @@ init();
 
 // ================== WHATSAPP CON IMAGEN INDIVIDUAL ==================
 
-// Extraer solo el primer nombre del nombre completo
-function obtenerPrimerNombre(nombreCompleto) {
+// Obtener el nombre completo del cliente para el saludo del mensaje
+function obtenerNombreParaMensaje(nombreCompleto) {
     if (!nombreCompleto) return '';
-    var partes = nombreCompleto.trim().split(/\s+/);
-    return partes[0] || '';
+    return String(nombreCompleto).trim().replace(/\s+/g, ' ');
 }
 
-// Generar mensaje predeterminado de WhatsApp con el nombre del cliente
+// Generar mensaje predeterminado de WhatsApp con el nombre completo del cliente
 function generarMensajeWhatsApp(nombreCompleto) {
-    var primerNombre = obtenerPrimerNombre(nombreCompleto);
-    var saludo = primerNombre ? 'Hola ' + primerNombre + ' 👋' : 'Hola 👋';
+    var nombreParaSaludo = obtenerNombreParaMensaje(nombreCompleto);
+    var saludo = nombreParaSaludo ? 'Hola ' + nombreParaSaludo + ' 👋' : 'Hola 👋';
     return saludo + '\nCrédito Resuelve a las órdenes 💳✨\n\nTu crédito esta aprobado 🙌\nQué necesitas para tu hogar?, te ayudamos a hacerlo posible 📲';
 }
 
