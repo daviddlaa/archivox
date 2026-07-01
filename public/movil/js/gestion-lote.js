@@ -225,6 +225,7 @@ html += '<div class="sol-botones">';
         // Acciones compactas de la tarjeta
         html += '<button class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')">📞</button>';
         html += '<button class="btn-sol btn-sol-primary btn-sol-small" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">Seguimiento</button>';
+        html += '<button class="btn-sol btn-sol-call btn-sol-small" onclick="abrirGestionWhatsApp(\'' + sol.id_solicitud + '\', \' + escaparParaAtributo(sol.celular || \'\') + '\')">💬 Directo</button>';
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {

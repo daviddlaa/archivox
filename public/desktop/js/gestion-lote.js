@@ -333,6 +333,7 @@ function renderizarSolicitudes(lista) {
         
         // Botones de acción SIEMPRE visibles (independientemente del estado)
         html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
+        html += '<button class="btn-accion btn-whatsapp-img" onclick="abrirGestionWhatsApp(\'' + sol.id_solicitud + '\', \' + escaparParaAtributo(sol.celular || \'\') + '\')">💬 Directo</button>';
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {
