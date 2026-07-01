@@ -760,10 +760,9 @@ function abrirGestionWhatsApp(solicitudId, celular) {
         { texto: 'Hola ' + (sol.nombre || '') + ' 👋\nTe contactamos de Crédito Resuelve 💳\n\nEstamos listos para ayudarte con tu crédito. ¿Cuándo te parece conversar? 📲', etiqueta: 'Seguimiento simple' },
         { texto: 'Hola ' + (sol.nombre || '') + ' 👋\nQuedamos atentos a tus necesidades.\n\nSi gustas, te compartimos más información sobre tu crédito. 📲', etiqueta: 'Consulta general' }
     ];
-    var opcionesJson = JSON.stringify(opcionesMensajes).replace(/'/g, "\\'");
     contenido += '<div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;">';
     for (var i = 0; i < opcionesMensajes.length; i++) {
-        contenido += '<button type="button" class="btn-plantilla-whatsapp" onclick="cambiarMensajeWhatsApp(' + i + ', \'whatsapp-img-mensaje\', \'' + opcionesJson + '\')">' + opcionesMensajes[i].etiqueta + '</button>';
+        contenido += '<button type="button" class="btn-plantilla-whatsapp" data-index="' + i + '" data-opciones="' + encodeURIComponent(JSON.stringify(opcionesMensajes)) + '" onclick="cambiarMensajeWhatsAppDesdeBoton(this)">' + opcionesMensajes[i].etiqueta + '</button>';
     }
     contenido += '</div>';
     contenido += '<textarea id="whatsapp-img-mensaje" rows="5" placeholder="Escriba su mensaje..." style="margin-bottom: 12px;">' + mensajeDefecto + '</textarea>';
@@ -790,9 +789,11 @@ function abrirGestionWhatsApp(solicitudId, celular) {
     crearModal(contenido);
 }
 
-function cambiarMensajeWhatsApp(index, textareaId, opcionesJson) {
-    var textarea = document.getElementById(textareaId);
-    if (!textarea) return;
+function cambiarMensajeWhatsAppDesdeBoton(boton) {
+    var textarea = document.getElementById('whatsapp-img-mensaje');
+    if (!textarea || !boton) return;
+    var index = parseInt(boton.getAttribute('data-index'), 10);
+    var opcionesJson = decodeURIComponent(boton.getAttribute('data-opciones') || '');
     var opciones = JSON.parse(opcionesJson);
     if (opciones[index] && opciones[index].texto) {
         textarea.value = opciones[index].texto;
