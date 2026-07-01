@@ -122,8 +122,9 @@ Se unificaron ambas funciones en una sola:
 |---------|--------|
 | `src/config/db.js` | `RETURNING id` automático en INSERTs PostgreSQL + soporte RETURNING en SQLite |
 | `public/desktop/js/solicitudes.js` | Mejor logging, null-check, mensajes de error descriptivos |
-| `public/desktop/js/gestion-lote.js` | Unificación `cargarDatosGestion()`, timeout, logs |
-| `public/movil/js/gestion-lote.js` | Unificación `cargarDatosGestionMovil()`, timeout, logs |
+| `public/desktop/js/gestion-lote.js` | Unificación `cargarDatosGestion()`, timeout, logs y etiquetas clicables para copiar cédula/teléfono |
+| `public/movil/js/gestion-lote.js` | Unificación `cargarDatosGestionMovil()`, timeout, logs y etiquetas clicables para copiar cédula/teléfono |
+| `public/css/gestion-lote.css` | Estilos para resaltar las etiquetas clicables de cédula y teléfono |
 
 ---
 
@@ -134,7 +135,8 @@ Se unificaron ambas funciones en una sola:
 3. ✅ Debe redirigir a `/gestion-lote?id=X`
 4. ✅ El sidebar muestra la campaña
 5. ✅ Al hacer clic, se ven las solicitudes con botones de gestión
-6. ✅ También funciona en versión móvil (`/m/gestion-lote`)
+6. ✅ Al pulsar sobre la etiqueta de cédula o teléfono en la tarjeta, se copia el valor correspondiente
+7. ✅ También funciona en versión móvil (`/m/gestion-lote`)
 
 ---
 

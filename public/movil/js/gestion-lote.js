@@ -212,8 +212,8 @@ function renderizarSolicitudes(lista) {
 
         html += '<div class="sol-nombre">' + (sol.nombre || 'Sin nombre') + '</div>';
         html += '<div class="sol-datos">';
-        html += '<span>📍 ' + (sol.cedula || '—') + '</span>';
-        html += '<span>📱 ' + (sol.celular || '—') + '</span>';
+        html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.cedula || '') + '\', \'cédula\')" title="Copiar cédula">🆔 ' + (sol.cedula || '—') + '</span>';
+        html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.celular || '') + '\', \'teléfono\')" title="Copiar teléfono">📱 ' + (sol.celular || '—') + '</span>';
         html += '<span>🏷️ ' + (sol.segmento || '—') + '</span>';
         html += '</div>';
 
@@ -225,8 +225,6 @@ html += '<div class="sol-botones">';
         // Acciones compactas de la tarjeta
         html += '<button class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')">📞</button>';
         html += '<button class="btn-sol btn-sol-primary btn-sol-small" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">Seguimiento</button>';
-        html += '<button class="btn-sol btn-sol-secondary btn-sol-small" onclick="copiarTexto(\'' + (sol.cedula || "") + '\', \'cédula\')">Ced.</button>';
-        html += '<button class="btn-sol btn-sol-secondary btn-sol-small" onclick="copiarTexto(\'' + (sol.celular || "") + '\', \'teléfono\')">Tel.</button>';
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {
@@ -242,6 +240,10 @@ html += '<div class="sol-botones">';
     }
 
     container.innerHTML = html;
+}
+
+function escaparParaAtributo(texto) {
+    return String(texto || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
 function copiarTexto(texto, etiqueta) {

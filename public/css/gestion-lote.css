@@ -250,6 +250,18 @@ body {
     gap: 4px;
 }
 
+.sol-dato-copy {
+    cursor: pointer;
+    color: var(--primary);
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.sol-dato-copy:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
 .sol-observacion {
     font-size: 13px;
     color: var(--text-dark);

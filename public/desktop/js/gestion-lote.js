@@ -315,8 +315,8 @@ function renderizarSolicitudes(lista) {
         html += '<div class="sol-info">';
         html += '<div class="sol-nombre">' + (sol.nombre || 'Sin nombre') + '</div>';
         html += '<div class="sol-datos">';
-        html += '<span>📍 ' + (sol.cedula || '—') + '</span>';
-        html += '<span>📱 ' + (sol.celular || '—') + '</span>';
+        html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.cedula || '') + '\', \'cédula\')" title="Copiar cédula">🆔 ' + (sol.cedula || '—') + '</span>';
+        html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.celular || '') + '\', \'teléfono\')" title="Copiar teléfono">📱 ' + (sol.celular || '—') + '</span>';
         html += '<span>🏷️ ' + (sol.segmento || '—') + '</span>';
         html += '</div>';
         html += '</div>';
@@ -333,8 +333,6 @@ function renderizarSolicitudes(lista) {
         
         // Botones de acción SIEMPRE visibles (independientemente del estado)
         html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
-        html += '<button class="btn-accion secondary" onclick="copiarTexto(\'' + (sol.cedula || "") + '\', \'cédula\')">📋 Cédula</button>';
-        html += '<button class="btn-accion secondary" onclick="copiarTexto(\'' + (sol.celular || "") + '\', \'teléfono\')">📱 Teléfono</button>';
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {
@@ -350,6 +348,10 @@ function renderizarSolicitudes(lista) {
     }
     
     container.innerHTML = html;
+}
+
+function escaparParaAtributo(texto) {
+    return String(texto || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
 function copiarTexto(texto, etiqueta) {
