@@ -482,6 +482,10 @@ return `
                     ? `<span style="color:#6b7280;margin-left:6px;">${new Date(d.ultima_gestion_fecha).toLocaleString('es-ES')}</span>`
                     : ''
                 }
+                ${d.ultima_gestion_tipo && d.ultima_gestion_obs 
+                    ? `<div style="color:#374151;margin-top:2px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.ultima_gestion_obs.length > 50 ? d.ultima_gestion_obs.substring(0, 50) + '...' : d.ultima_gestion_obs}</div>`
+                    : ''
+                }
             </div>
             
             <!-- OPCIÓN A: Compacto - 3 botones en fila -->
