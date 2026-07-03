@@ -210,7 +210,7 @@ function renderizarSolicitudes(lista) {
         html += '<div class="sol-badge estado-' + estado.replace(/\s+/g,'') + '">' + estado + '</div>';
         html += '</div>';
 
-        html += '<div class="sol-nombre">' + (sol.nombre || 'Sin nombre') + '</div>';
+        html += '<div class="sol-nombre sol-nombre-copy" onclick="copiarNombreCedula(\'' + escaparParaAtributo(sol.nombre || '') + '\', \'' + escaparParaAtributo(sol.cedula || '') + '\')" title="Copiar nombre completo y cédula">' + (sol.nombre || 'Sin nombre') + '</div>';
         html += '<div class="sol-datos">';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.cedula || '') + '\', \'cédula\')" title="Copiar cédula">🆔 ' + (sol.cedula || '—') + '</span>';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.celular || '') + '\', \'teléfono\')" title="Copiar teléfono">📱 ' + (sol.celular || '—') + '</span>';
@@ -245,6 +245,27 @@ html += '<div class="sol-botones">';
 
 function escaparParaAtributo(texto) {
     return String(texto || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function copiarNombreCedula(nombre, cedula) {
+    var valorNombre = String(nombre || '').trim();
+    var valorCedula = String(cedula || '').trim();
+    var texto = '';
+
+    if (valorNombre && valorCedula) {
+        texto = valorNombre + ' - ' + valorCedula;
+    } else if (valorNombre) {
+        texto = valorNombre;
+    } else if (valorCedula) {
+        texto = valorCedula;
+    }
+
+    if (!texto) {
+        alert('No hay nombre ni cédula para copiar');
+        return;
+    }
+
+    copiarTexto(texto, 'nombre y cédula');
 }
 
 function copiarTexto(texto, etiqueta) {

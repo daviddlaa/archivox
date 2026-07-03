@@ -236,6 +236,17 @@ body {
     margin-bottom: 6px;
 }
 
+.sol-nombre-copy {
+    cursor: pointer;
+    color: var(--primary);
+    transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.sol-nombre-copy:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
 .sol-datos {
     display: flex;
     gap: 16px;
