@@ -817,6 +817,54 @@ td .cell-combinado {
     color: #6b7280;
 }
 
+/* Última gestión en card */
+.cliente-ultima-gestion {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+    padding: 6px 8px;
+    background: #f9fafb;
+    border-radius: 6px;
+    border-left: 3px solid #22c55e;
+}
+
+.cliente-ultima-gestion.vacia {
+    border-left-color: #d1d5db;
+    background: #f9fafb;
+}
+
+.ultima-gestion-badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+}
+
+.ultima-gestion-fecha {
+    font-size: 10px;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.ultima-gestion-obs {
+    width: 100%;
+    font-size: 11px;
+    color: #374151;
+    margin-top: 2px;
+    line-height: 1.3;
+    font-style: italic;
+}
+
+.ultima-gestion-sin {
+    font-size: 11px;
+    color: #9ca3af;
+    font-style: italic;
+}
+
 /* Detalles tags */
 .cliente-detalle {
     display: flex;

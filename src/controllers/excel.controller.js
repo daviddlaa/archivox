@@ -99,7 +99,17 @@ exports.listarSolicitudes = async (req, res) => {
         });
     }
 
-    let sql = 'SELECT * FROM solicitudes WHERE usuario_id = $1';
+    let sql = `SELECT s.*,
+                   g.tipo_gestion as ultima_gestion_tipo,
+                   g.observacion as ultima_gestion_obs,
+                   g.fecha_gestion as ultima_gestion_fecha
+            FROM solicitudes s
+            LEFT JOIN gestiones g ON g.id = (
+                SELECT g2.id FROM gestiones g2 
+                WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id
+                ORDER BY g2.fecha_gestion DESC LIMIT 1
+            )
+            WHERE s.usuario_id = $1`;
     const params = [usuarioId];
 
     if (estado) {
@@ -968,7 +978,17 @@ const {
     } = req.query;
 
     try {
-        let sql = 'SELECT * FROM solicitudes WHERE usuario_id = $1';
+        let sql = `SELECT s.*,
+                   g.tipo_gestion as ultima_gestion_tipo,
+                   g.observacion as ultima_gestion_obs,
+                   g.fecha_gestion as ultima_gestion_fecha
+            FROM solicitudes s
+            LEFT JOIN gestiones g ON g.id = (
+                SELECT g2.id FROM gestiones g2 
+                WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id
+                ORDER BY g2.fecha_gestion DESC LIMIT 1
+            )
+            WHERE s.usuario_id = $1`;
         const params = [usuarioId];
         let paramIndex = 2;
 
@@ -976,10 +996,10 @@ const {
         if (q && q.trim()) {
             const termino = '%' + q.trim() + '%';
             sql += ` AND (
-                cedula LIKE $${paramIndex} 
-                OR LOWER(nombre) LIKE LOWER($${paramIndex}) 
-                OR celular LIKE $${paramIndex}
-                OR CAST(id_solicitud AS TEXT) LIKE $${paramIndex}
+                s.cedula LIKE $${paramIndex} 
+                OR LOWER(s.nombre) LIKE LOWER($${paramIndex}) 
+                OR s.celular LIKE $${paramIndex}
+                OR CAST(s.id_solicitud AS TEXT) LIKE $${paramIndex}
             )`;
             params.push(termino);
             paramIndex++;
@@ -987,31 +1007,55 @@ const {
 
         // Filtro por estado
         if (estado) {
-            sql += ` AND estado = $${paramIndex}`;
+            sql += ` AND s.estado = $${paramIndex}`;
             params.push(estado);
             paramIndex++;
         }
 
         // Filtro por segmento
         if (segmento) {
-            sql += ` AND segmento = $${paramIndex}`;
+            sql += ` AND s.segmento = $${paramIndex}`;
             params.push(segmento);
             paramIndex++;
         }
 
-        // Contar total para paginación
-        let countSql = sql.replace('SELECT *', 'SELECT COUNT(*) as total');
-        
         // Agregar orden y paginación
-        sql += ' ORDER BY id DESC';
+        sql += ' ORDER BY s.id DESC';
         sql += ' LIMIT ' + parseInt(limite) + ' OFFSET ' + parseInt(offset);
 
         // Ejecutar query principal
         const result = await pool.query(sql, params);
         
-        // Ejecutar query de conteo
-        const countParams = params.slice(0, -2); // Quitar LIMIT y OFFSET del count
-        const countResult = await pool.query(countSql, params.slice(0, paramIndex - 1));
+        // Query de conteo separada (sin JOIN, solo solicitudes)
+        let countSql = 'SELECT COUNT(*) as total FROM solicitudes s WHERE s.usuario_id = $1';
+        const countParams = [usuarioId];
+        let countIndex = 2;
+        
+        if (q && q.trim()) {
+            const termino = '%' + q.trim() + '%';
+            countSql += ` AND (
+                s.cedula LIKE $${countIndex} 
+                OR LOWER(s.nombre) LIKE LOWER($${countIndex}) 
+                OR s.celular LIKE $${countIndex}
+                OR CAST(s.id_solicitud AS TEXT) LIKE $${countIndex}
+            )`;
+            countParams.push(termino);
+            countIndex++;
+        }
+        
+        if (estado) {
+            countSql += ` AND s.estado = $${countIndex}`;
+            countParams.push(estado);
+            countIndex++;
+        }
+        
+        if (segmento) {
+            countSql += ` AND s.segmento = $${countIndex}`;
+            countParams.push(segmento);
+            countIndex++;
+        }
+        
+        const countResult = await pool.query(countSql, countParams);
         const total = parseInt(countResult.rows[0]?.total) || 0;
 
         res.json({

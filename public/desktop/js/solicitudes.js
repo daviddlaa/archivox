@@ -519,6 +519,37 @@ for (var i = 0; i < datos.length; i++) {
         html += '    <span>📱 ' + (item.celular || '—') + '</span>';
         html += '  </div>';
         
+        // Última gestión (si existe)
+        if (item.ultima_gestion_tipo) {
+            var coloresGestion = {
+                'Seguimiento': '#dbeafe',
+                'Cobranza': '#fee2e2',
+                'Llamada': '#d1fae5',
+                'WhatsApp': '#dcfce7',
+                'Reclamo': '#fef3c7',
+                'Cita': '#e0e7ff',
+                'Completada': '#bbf7d0',
+                'Otro': '#f3f4f6'
+            };
+            var colorGestion = coloresGestion[item.ultima_gestion_tipo] || '#f3f4f6';
+            var fechaGestion = item.ultima_gestion_fecha ? new Date(item.ultima_gestion_fecha).toLocaleString('es-ES') : '';
+            var observacionTruncada = item.ultima_gestion_obs ? item.ultima_gestion_obs.substring(0, 60) + (item.ultima_gestion_obs.length > 60 ? '...' : '') : '';
+            
+            html += '  <div class="cliente-ultima-gestion">';
+            html += '    <span class="ultima-gestion-badge" style="background:' + colorGestion + ';">📋 ' + item.ultima_gestion_tipo + '</span>';
+            if (fechaGestion) {
+                html += '    <span class="ultima-gestion-fecha">' + fechaGestion + '</span>';
+            }
+            if (observacionTruncada) {
+                html += '    <div class="ultima-gestion-obs">' + observacionTruncada + '</div>';
+            }
+            html += '  </div>';
+        } else {
+            html += '  <div class="cliente-ultima-gestion vacia">';
+            html += '    <span class="ultima-gestion-sin">Sin gestiones</span>';
+            html += '  </div>';
+        }
+        
         // Detalles
         html += '  <div class="cliente-detalle">';
         html += '    <span class="cliente-tag">🏷️ ' + (item.segmento || '—') + '</span>';

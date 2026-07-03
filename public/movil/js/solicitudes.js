@@ -472,6 +472,18 @@ return `
                 <span>Céd: ${d.cedula || 'N/A'}</span>
             </div>
             
+            <!-- Última gestión -->
+            <div class="ultima-gestion-movil" style="margin: 6px 0 8px 0; font-size: 11px;">
+                ${d.ultima_gestion_tipo 
+                    ? `<span style="background:#dcfce7;padding:2px 8px;border-radius:10px;font-weight:600;color:#166534;">📋 ${d.ultima_gestion_tipo}</span>`
+                    : `<span style="color:#9ca3af;">Sin gestiones</span>`
+                }
+                ${d.ultima_gestion_fecha 
+                    ? `<span style="color:#6b7280;margin-left:6px;">${new Date(d.ultima_gestion_fecha).toLocaleString('es-ES')}</span>`
+                    : ''
+                }
+            </div>
+            
             <!-- OPCIÓN A: Compacto - 3 botones en fila -->
             <div class="botones-contacto" style="display: flex; gap: 6px; margin: 8px 0;">
                 <button onclick="event.stopPropagation(); llamarCliente('${d.celular}')" style="flex:1; padding: 8px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📞</button>
