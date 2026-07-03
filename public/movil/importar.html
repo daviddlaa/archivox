@@ -5,41 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Importar Excel - Archivox</title>
     <link rel="stylesheet" href="/movil/css/estilos.css">
-    <style>
-        .importar-container { padding: 20px; }
-        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .card h2 { font-size: 18px; color: #1f2937; margin-bottom: 15px; }
-        
-        input[type="file"] { width: 100%; border: 2px dashed #cbd5e1; padding: 25px 15px; border-radius: 10px; background: #f8fafc; margin-bottom: 15px; font-size: 14px; }
-        input[type="file"]:hover { background: #eef4ff; }
-        
-        button { width: 100%; background: #2563eb; color: white; border: none; padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
-        button:hover { background: #1d4ed8; }
-        
-        .msg { margin-top: 15px; padding: 12px; border-radius: 8px; font-size: 14px; }
-        .msg-info { background: #eef4ff; border-left: 4px solid #2563eb; }
-        .msg-loading { background: #fff8db; border-left: 4px solid #f59e0b; }
-        .msg-success { background: #ecfdf5; border-left: 4px solid #10b981; }
-        .msg-error { background: #fef2f2; border-left: 4px solid #ef4444; }
-    </style>
+    <link rel="stylesheet" href="/movil/css/importar.css">
 </head>
 <body>
     <!-- Header -->
     <div class="header">
         <div class="header-title">
             <h1>📤 Importar Excel</h1>
+            <p>Sube archivos y procesa tus solicitudes desde móvil</p>
         </div>
+        <button class="btn-menu" onclick="abrirDrawer()">☰</button>
     </div>
 
     <!-- Content -->
     <div class="importar-container">
-        <div class="card">
-            <h2>Sube tus archivos Excel</h2>
-            <form id="formExcel">
-                <input type="file" id="excelFiles" name="excelFiles" multiple accept=".xlsx,.xls">
-                <button type="submit">Subir Archivos</button>
-            </form>
-            <div id="mensaje"></div>
+        <div class="importar-card">
+            <div class="card">
+                <h2>Importar Excel</h2>
+                <p>Asegúrate de seleccionar archivos `.xlsx` o `.xls` para cargar las solicitudes en el sistema.</p>
+
+                <form id="formExcel">
+                    <input type="file" id="excelFiles" name="excelFiles" multiple accept=".xlsx,.xls">
+                    <button type="submit">📤 Subir Archivos</button>
+                </form>
+
+                <div id="mensaje"></div>
+            </div>
         </div>
     </div>
 
@@ -53,7 +44,7 @@
             <span class="nav-bottom-icon">📋</span>
             Solicitudes
         </a>
-        <a href="#" onclick="abrirDrawer(); return false;" class="active">
+        <a href="#" class="active" onclick="abrirDrawer(); return false;">
             <span class="nav-bottom-icon">☰</span>
             Menú
         </a>
