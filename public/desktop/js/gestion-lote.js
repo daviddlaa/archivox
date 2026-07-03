@@ -317,6 +317,7 @@ function renderizarSolicitudes(lista) {
         html += '<div class="sol-datos">';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.cedula || '') + '\', \'cédula\')" title="Copiar cédula">🆔 ' + (sol.cedula || '—') + '</span>';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.celular || '') + '\', \'teléfono\')" title="Copiar teléfono">📱 ' + (sol.celular || '—') + '</span>';
+        html += '<span class="sol-chat-icon" onclick="abrirWhatsAppDesktop(\'' + escaparParaAtributo(sol.celular || '') + '\', \'\')" title="Abrir chat WhatsApp">💬</span>';
         html += '<span>🏷️ ' + (sol.segmento || '—') + '</span>';
         html += '</div>';
         html += '</div>';
@@ -334,7 +335,6 @@ function renderizarSolicitudes(lista) {
         // Botones de acción SIEMPRE visibles (independientemente del estado)
         html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
         html += "<button class=\"btn-accion btn-whatsapp-img\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
-        html += "<button class=\"btn-accion btn-ver-chat\" onclick=\"abrirWhatsAppDesktop('" + escaparParaAtributo(sol.celular || '') + "', '')\">💬 Ver Chat</button>";
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {

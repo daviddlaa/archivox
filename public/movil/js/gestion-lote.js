@@ -214,6 +214,7 @@ function renderizarSolicitudes(lista) {
         html += '<div class="sol-datos">';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.cedula || '') + '\', \'cédula\')" title="Copiar cédula">🆔 ' + (sol.cedula || '—') + '</span>';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.celular || '') + '\', \'teléfono\')" title="Copiar teléfono">📱 ' + (sol.celular || '—') + '</span>';
+        html += '<span class="sol-chat-icon" onclick="abrirWhatsAppMovil(\'' + escaparParaAtributo(sol.celular || '') + '\', \'\')" title="Abrir chat WhatsApp">💬</span>';
         html += '<span>🏷️ ' + (sol.segmento || '—') + '</span>';
         html += '</div>';
 
@@ -226,7 +227,6 @@ html += '<div class="sol-botones">';
         html += '<button class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')">📞</button>';
         html += '<button class="btn-sol btn-sol-primary btn-sol-small" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">Seguimiento</button>';
         html += "<button class=\"btn-sol btn-sol-call btn-sol-small\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
-        html += "<button class=\"btn-sol btn-sol-ver-chat btn-sol-small\" onclick=\"abrirWhatsAppMovil('" + escaparParaAtributo(sol.celular || '') + "', '')\">💬 Ver Chat</button>";
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {

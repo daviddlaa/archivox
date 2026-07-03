@@ -377,14 +377,16 @@ body {
     background: #bbf7d0;
 }
 
-/* Botón Ver Chat (WhatsApp directo sin guardar) */
-.btn-accion.btn-ver-chat {
-    background: #25D366;
-    color: white;
+/* Icono Ver Chat (WhatsApp directo sin guardar) - junto al teléfono */
+.sol-datos .sol-chat-icon {
+    cursor: pointer;
+    font-size: 14px;
+    color: #25D366;
+    transition: transform 0.2s ease;
 }
 
-.btn-accion.btn-ver-chat:hover {
-    background: #1da851;
+.sol-datos .sol-chat-icon:hover {
+    transform: scale(1.25);
 }
 
 /* ===== SIDEBAR DE CAMPAÑAS ===== */

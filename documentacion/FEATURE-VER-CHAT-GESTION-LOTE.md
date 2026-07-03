@@ -2,22 +2,38 @@
 
 ## 📝 Descripción
 
-Se agregó un botón **"💬 Ver Chat"** en las tarjetas de gestión por lotes (campañas) que abre WhatsApp directamente con el número del cliente **sin guardar ningún dato en la base de datos**.
+Se agregó un icono **💬** (Ver Chat) en las tarjetas de gestión por lotes (campañas) que abre WhatsApp directamente con el número del cliente **sin guardar ningún dato en la base de datos**.
+
+El icono está ubicado **junto al número de teléfono** en la sección de datos de cada tarjeta.
 
 ## 🎯 Comportamiento
 
-- Al hacer clic en el botón, se abre WhatsApp (Web en escritorio, app nativa en móvil) con el número del cliente.
+- Al hacer clic en el icono **💬** (junto al celular), se abre WhatsApp (Web en escritorio, app nativa en móvil) con el número del cliente.
 - **No abre ningún modal**, no pide mensaje, no guarda gestión.
 - Es una acción puramente de navegación: solo abre el chat de WhatsApp.
+
+## Ubicación visual
+
+```
+┌──────────────────────────────────────┐
+│  #12345                    [WhatsApp]│
+│  Juan Pérez                          │
+│  🆔 1234567890  📱 0987654321  💬   │  ← Icono junto al teléfono
+│  📝 Observación                      │
+│                                      │
+│  [Seguimiento] [Directo]             │
+│  [Ver] [Historial]                   │
+└──────────────────────────────────────┘
+```
 
 ## 📁 Archivos modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `public/desktop/js/gestion-lote.js` | Se agregó botón `btn-ver-chat` en `renderizarSolicitudes()` que llama a `abrirWhatsAppDesktop(celular, '')` |
-| `public/movil/js/gestion-lote.js` | Se agregó botón `btn-sol-ver-chat` en `renderizarSolicitudes()` que llama a `abrirWhatsAppMovil(celular, '')` |
-| `public/css/gestion-lote.css` | Estilos para `.btn-accion.btn-ver-chat` (fondo verde WhatsApp `#25D366`) |
-| `public/movil/gestion-lote.html` | Estilo inline para `.btn-sol-ver-chat` |
+| `public/desktop/js/gestion-lote.js` | Se quitó el botón `btn-ver-chat` de `sol-acciones` y se agregó icono `sol-chat-icon` en `sol-datos` junto al celular |
+| `public/movil/js/gestion-lote.js` | Se quitó el botón `btn-sol-ver-chat` de `sol-botones` y se agregó icono `sol-chat-icon` en `sol-datos` junto al celular |
+| `public/css/gestion-lote.css` | Se reemplazaron los estilos de `.btn-accion.btn-ver-chat` por `.sol-chat-icon` (icono inline) |
+| `public/movil/gestion-lote.html` | Se reemplazó `.btn-sol-ver-chat` por `.sol-chat-icon` (icono inline) |
 
 ## 🔧 Funciones reutilizadas
 
@@ -29,16 +45,9 @@ Se agregó un botón **"💬 Ver Chat"** en las tarjetas de gestión por lotes (
 
 ## ✅ Validación
 
-- [ ] El botón aparece en todas las tarjetas de solicitudes
+- [ ] El icono 💬 aparece junto al número de teléfono en cada tarjeta
 - [ ] Al hacer clic se abre WhatsApp con el número del cliente
 - [ ] No se guarda ningún registro en la base de datos
 - [ ] Funciona en escritorio (abre WhatsApp Web)
 - [ ] Funciona en móvil (abre la app de WhatsApp)
-
-## 🧪 Pruebas sugeridas
-
-1. Abrir una campaña con solicitudes
-2. Hacer clic en "💬 Ver Chat" en cualquier tarjeta
-3. Verificar que se abre WhatsApp con el número correcto
-4. Verificar que no aparece ningún mensaje de "gestión guardada"
-5. Verificar en la BD que no se creó ningún registro nuevo
+- [ ] Los botones de acción ya no muestran el botón "Ver Chat" duplicado
