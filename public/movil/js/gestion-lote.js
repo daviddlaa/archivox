@@ -226,6 +226,7 @@ html += '<div class="sol-botones">';
         html += '<button class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')">📞</button>';
         html += '<button class="btn-sol btn-sol-primary btn-sol-small" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">Seguimiento</button>';
         html += "<button class=\"btn-sol btn-sol-call btn-sol-small\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
+        html += "<button class=\"btn-sol btn-sol-ver-chat btn-sol-small\" onclick=\"abrirWhatsAppMovil('" + escaparParaAtributo(sol.celular || '') + "', '')\">💬 Ver Chat</button>";
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {

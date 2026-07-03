@@ -377,6 +377,16 @@ body {
     background: #bbf7d0;
 }
 
+/* Botón Ver Chat (WhatsApp directo sin guardar) */
+.btn-accion.btn-ver-chat {
+    background: #25D366;
+    color: white;
+}
+
+.btn-accion.btn-ver-chat:hover {
+    background: #1da851;
+}
+
 /* ===== SIDEBAR DE CAMPAÑAS ===== */
 .sidebar-campañas {
     position: fixed;
