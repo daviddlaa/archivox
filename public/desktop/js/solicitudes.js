@@ -1351,6 +1351,11 @@ function abrirCompletar(id) {
             contenido += '</div>';
 
             contenido += '<div class="completar-field">';
+            contenido += '<label for="correo-completar">📧 Correo Electrónico</label>';
+            contenido += '<input type="email" id="correo-completar" value="' + (d.correo_electronico || '') + '" placeholder="cliente@ejemplo.com">';
+            contenido += '</div>';
+
+            contenido += '<div class="completar-field">';
             contenido += '<label for="ingreso-mensual-completar">💰 Ingreso Mensual</label>';
             contenido += '<input type="number" id="ingreso-mensual-completar" value="' + (d.ingreso_mensual || '') + '" step="0.01" min="0" placeholder="0.00">';
             contenido += '</div>';
@@ -1682,6 +1687,7 @@ function guardarGestion(id) {
 // Función para guardar completar información (todos los campos)
 function guardarCompletar(id) {
     var codigo_plus = document.getElementById('codigo-plus-completar').value.trim();
+    var correo_electronico = document.getElementById('correo-completar').value.trim();
     var direccion = document.getElementById('direccion-completar').value.trim();
     var direccion_trabajo = document.getElementById('direccion-trabajo-completar').value.trim();
     var ocupacion = document.getElementById('ocupacion-completar').value.trim();
@@ -1710,6 +1716,7 @@ function guardarCompletar(id) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             codigo_plus: codigo_plus,
+            correo_electronico: correo_electronico,
             direccion: direccion,
             direccion_trabajo: direccion_trabajo,
             ocupacion: ocupacion,

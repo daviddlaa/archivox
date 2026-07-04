@@ -4,7 +4,6 @@ git add -A
 git add src/config/db.js
 git add src/config/initDb.pg.js
 git add src/controllers/gestionesMaestro.controller.js
-git commit -m "# PLAN: Botón Completar Info en Solicitudes (versión Escritorio)
-"
+git commit -m "agregar email "
 git push origin master
 pause

@@ -1193,6 +1193,7 @@ async function abrirCompletarInfoMovil(id) {
     
     // Intentar cargar datos completos existentes (incluyendo referencias)
     var codigoPlus = datos.codigo_plus || '';
+    var correoElectronico = datos.correo_electronico || '';
     var direccion = datos.direccion || '';
     var direccionTrabajo = datos.direccion_trabajo || '';
     var ocupacion = datos.ocupacion || '';
@@ -1204,6 +1205,7 @@ async function abrirCompletarInfoMovil(id) {
         if (res.ok) {
             var data = await res.json();
             codigoPlus = data.codigo_plus || codigoPlus;
+            correoElectronico = data.correo_electronico || correoElectronico;
             direccion = data.direccion || direccion;
             direccionTrabajo = data.direccion_trabajo || direccionTrabajo;
             ocupacion = data.ocupacion || ocupacion;
@@ -1272,6 +1274,9 @@ async function abrirCompletarInfoMovil(id) {
     contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">💼 Ocupación:</label>';
     contenido += '<input type="text" id="ocupacion-completar" value="' + escaparParaAtributo(ocupacion) + '" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:10px;box-sizing:border-box;" placeholder="Ocupación">';
     
+    contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">📧 Correo Electrónico:</label>';
+    contenido += '<input type="email" id="correo-completar" value="' + escaparParaAtributo(correoElectronico) + '" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:10px;box-sizing:border-box;" placeholder="cliente@ejemplo.com">';
+    
     contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">💰 Ingreso Mensual:</label>';
     contenido += '<input type="number" step="0.01" min="0" id="ingreso-mensual-completar" value="' + (ingresoMensual || '') + '" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:0;box-sizing:border-box;" placeholder="0.00">';
     
@@ -1297,6 +1302,7 @@ async function abrirCompletarInfoMovil(id) {
 // Guardar información completa (código plus, dirección, referencias, etc.)
 function guardarCompletarInfoMovil(id) {
     var codigo_plus = document.getElementById('codigo-plus-completar').value.trim();
+    var correo_electronico = document.getElementById('correo-completar').value.trim();
     var direccion = document.getElementById('direccion-completar').value.trim();
     var direccion_trabajo = document.getElementById('direccion-trabajo-completar').value.trim();
     var ocupacion = document.getElementById('ocupacion-completar').value.trim();
@@ -1329,6 +1335,7 @@ function guardarCompletarInfoMovil(id) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             codigo_plus: codigo_plus,
+            correo_electronico: correo_electronico,
             direccion: direccion,
             direccion_trabajo: direccion_trabajo,
             ocupacion: ocupacion,

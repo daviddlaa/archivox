@@ -2,6 +2,7 @@
 -- Ejecutar en producción UNA SOLA VEZ
 
 -- PostgreSQL (producción actual)
+ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS correo_electronico TEXT;
 ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS direccion TEXT;
 ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS direccion_trabajo TEXT;
 ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS ocupacion TEXT;

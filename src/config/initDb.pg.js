@@ -29,6 +29,7 @@ const initTables = async () => {
                 segmento TEXT,
                 producto TEXT,
                 codigo_plus TEXT,
+                correo_electronico TEXT,
                 direccion TEXT,
                 direccion_trabajo TEXT,
                 ocupacion TEXT,

@@ -860,7 +860,7 @@ exports.getSolicitudCompleta = async (req, res) => {
     try {
         // Obtener datos de la solicitud
         const solicitudResult = await pool.query(
-            `SELECT id_solicitud, codigo_plus, direccion, direccion_trabajo, ocupacion, ingreso_mensual
+            `SELECT id_solicitud, codigo_plus, correo_electronico, direccion, direccion_trabajo, ocupacion, ingreso_mensual
              FROM solicitudes WHERE id_solicitud = $1 AND usuario_id = $2`,
             [id, usuarioId]
         );
@@ -896,7 +896,7 @@ exports.actualizarCompletarInfo = async (req, res) => {
     }
     
     const { id } = req.params;
-    const { codigo_plus, direccion, direccion_trabajo, ocupacion, ingreso_mensual, referencias } = req.body;
+    const { codigo_plus, correo_electronico, direccion, direccion_trabajo, ocupacion, ingreso_mensual, referencias } = req.body;
     
     if (!id) {
         return res.status(400).json({ error: 'ID de solicitud requerido' });
@@ -911,14 +911,15 @@ exports.actualizarCompletarInfo = async (req, res) => {
         const updateResult = await client.query(
             `UPDATE solicitudes 
              SET codigo_plus = $1, 
-                 direccion = $2, 
-                 direccion_trabajo = $3, 
-                 ocupacion = $4, 
-                 ingreso_mensual = $5,
+                 correo_electronico = $2,
+                 direccion = $3, 
+                 direccion_trabajo = $4, 
+                 ocupacion = $5, 
+                 ingreso_mensual = $6,
                  fecha_actualizacion = CURRENT_TIMESTAMP
-             WHERE id_solicitud = $6 AND usuario_id = $7
+             WHERE id_solicitud = $7 AND usuario_id = $8
              RETURNING *`,
-            [codigo_plus || null, direccion || null, direccion_trabajo || null, ocupacion || null, ingreso_mensual || null, id, usuarioId]
+            [codigo_plus || null, correo_electronico || null, direccion || null, direccion_trabajo || null, ocupacion || null, ingreso_mensual || null, id, usuarioId]
         );
         
         if (updateResult.rows.length === 0) {

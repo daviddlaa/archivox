@@ -75,6 +75,9 @@ async function main() {
         // --- PASO 1: Agregar columnas a solicitudes ---
         console.log('[1/2] Agregando columnas a tabla solicitudes...');
 
+        await pool.query(`ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS correo_electronico TEXT;`);
+        console.log('  ✅ correo_electronico (TEXT)');
+
         await pool.query(`ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS direccion TEXT;`);
         console.log('  ✅ direccion (TEXT)');
 
