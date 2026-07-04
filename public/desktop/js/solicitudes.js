@@ -1296,7 +1296,7 @@ function abrirCompletar(id) {
     fetch('/api/excel/solicitudes/' + id + '/completa')
         .then(function(res) { return res.json(); })
         .then(function(data) {
-            var d = data.solicitud || {};
+            var d = data; // La API devuelve los campos directo, no anidados en .solicitud
             var refs = data.referencias || [];
 
             var contenido = '';
