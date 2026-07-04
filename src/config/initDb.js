@@ -25,6 +25,10 @@ db.exec(`
         segmento TEXT,
         producto TEXT,
         codigo_plus TEXT,
+        direccion TEXT,
+        direccion_trabajo TEXT,
+        ocupacion TEXT,
+        ingreso_mensual REAL,
         fecha_solicitud TEXT,
         usuario_id INTEGER,
         fecha_importacion DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -97,6 +101,18 @@ db.exec(`
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    )
+`);
+
+// Tabla de referencias de solicitudes (Completar Info)
+db.exec(`
+    CREATE TABLE IF NOT EXISTS solicitudes_referencias (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_solicitud INTEGER NOT NULL,
+        nombre TEXT NOT NULL,
+        telefono TEXT,
+        relacion TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
 `);
 

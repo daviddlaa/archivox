@@ -4,6 +4,6 @@ git add -A
 git add src/config/db.js
 git add src/config/initDb.pg.js
 git add src/controllers/gestionesMaestro.controller.js
-git commit -m "Copiar nombre + cédula y WhatsApp sin texto en tarjetas de Solicitudes"
+git commit -m "Botón Completar Info en tarjetas de Solicitudes (versión móvil)"
 git push origin master
 pause

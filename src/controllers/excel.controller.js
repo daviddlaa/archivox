@@ -846,6 +846,117 @@ try {
 // ================== C�DIGO PLUS ==================
 
 // Actualizar c�digo plus de una solicitud
+// ================== COMPLETAR INFO ==================
+
+// Obtener solicitud con información completa (incluyendo referencias)
+exports.getSolicitudCompleta = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { id } = req.params;
+    
+    try {
+        // Obtener datos de la solicitud
+        const solicitudResult = await pool.query(
+            `SELECT id_solicitud, codigo_plus, direccion, direccion_trabajo, ocupacion, ingreso_mensual
+             FROM solicitudes WHERE id_solicitud = $1 AND usuario_id = $2`,
+            [id, usuarioId]
+        );
+        
+        if (solicitudResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Solicitud no encontrada' });
+        }
+        
+        // Obtener referencias
+        const referenciasResult = await pool.query(
+            `SELECT id, nombre, telefono, relacion
+             FROM solicitudes_referencias
+             WHERE id_solicitud = $1
+             ORDER BY id ASC`,
+            [id]
+        );
+        
+        res.json({
+            ...solicitudResult.rows[0],
+            referencias: referenciasResult.rows
+        });
+    } catch (err) {
+        console.error('Error getSolicitudCompleta:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Actualizar información completa de una solicitud
+exports.actualizarCompletarInfo = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { id } = req.params;
+    const { codigo_plus, direccion, direccion_trabajo, ocupacion, ingreso_mensual, referencias } = req.body;
+    
+    if (!id) {
+        return res.status(400).json({ error: 'ID de solicitud requerido' });
+    }
+    
+    const client = await pool.connect();
+    
+    try {
+        await client.query('BEGIN');
+        
+        // 1. Actualizar solicitud
+        const updateResult = await client.query(
+            `UPDATE solicitudes 
+             SET codigo_plus = $1, 
+                 direccion = $2, 
+                 direccion_trabajo = $3, 
+                 ocupacion = $4, 
+                 ingreso_mensual = $5,
+                 fecha_actualizacion = CURRENT_TIMESTAMP
+             WHERE id_solicitud = $6 AND usuario_id = $7
+             RETURNING *`,
+            [codigo_plus || null, direccion || null, direccion_trabajo || null, ocupacion || null, ingreso_mensual || null, id, usuarioId]
+        );
+        
+        if (updateResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Solicitud no encontrada' });
+        }
+        
+        // 2. Eliminar referencias existentes
+        await client.query(
+            `DELETE FROM solicitudes_referencias WHERE id_solicitud = $1`,
+            [id]
+        );
+        
+        // 3. Insertar nuevas referencias
+        if (referencias && Array.isArray(referencias) && referencias.length > 0) {
+            for (const ref of referencias) {
+                if (ref.nombre && ref.nombre.trim()) {
+                    await client.query(
+                        `INSERT INTO solicitudes_referencias (id_solicitud, nombre, telefono, relacion)
+                         VALUES ($1, $2, $3, $4)`,
+                        [id, ref.nombre.trim(), ref.telefono || null, ref.relacion || null]
+                    );
+                }
+            }
+        }
+        
+        await client.query('COMMIT');
+        
+        res.json({ mensaje: 'Información guardada correctamente' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error actualizarCompletarInfo:', err);
+        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
+    }
+};
+
 exports.actualizarCodigoPlus = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {

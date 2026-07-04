@@ -134,6 +134,22 @@ router.post(
     excelController.saveConfigBonos
 );
 
+// ================== COMPLETAR INFO ==================
+
+// Obtener solicitud con información completa (incluyendo referencias)
+router.get(
+    '/solicitudes/:id/completa',
+    requiresAuth,
+    excelController.getSolicitudCompleta
+);
+
+// Actualizar información completa de una solicitud (código plus, dirección, referencias, etc.)
+router.put(
+    '/solicitudes/:id/completar-info',
+    requiresAuth,
+    excelController.actualizarCompletarInfo
+);
+
 // ================== CÓDIGO PLUS ==================
 
 // Obtener una solicitud por ID

@@ -449,17 +449,15 @@ return `
                 <button onclick="event.stopPropagation(); abrirGestionesMovil('${d.id_solicitud}')" style="flex:1; padding: 8px; background: #fef3c7; border: none; border-radius: 6px; font-size: 11px; cursor: pointer;">📋</button>
             </div>
             
-            <!-- Código Plus -->
-            <div class="input-codigo-plus-container" style="margin: 8px 0;">
-                <input type="text" class="input-codigo-plus" value="${d.codigo_plus || ''}" data-id="${d.id_solicitud}" placeholder="Código Plus" autocomplete="off" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px;" onblur="guardarCodigoPlus(this)">
-            </div>
-            
             <!-- Tags compactos -->
             <div class="tags" style="display: flex; gap: 5px; flex-wrap: wrap;">
                 <span class="tag">${d.segmento || 'N/A'}</span>
                 <span class="tag">${d.producto || 'N/A'}</span>
                 <span class="tag">${d.fecha_solicitud || 'N/A'}</span>
             </div>
+            
+            <!-- Botón Completar Info -->
+            <button onclick="event.stopPropagation(); abrirCompletarInfoMovil('${d.id_solicitud}')" style="width:100%;padding:8px;background:#e0e7ff;color:#3730a3;border:none;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600;margin-top:6px;">✏️ Completar Info</button>
         </div>
 `;
     }).join('');
@@ -545,47 +543,6 @@ function whatsAppCliente(celular, nombre) {
     // Abrir WhatsApp
     var urlWhatsApp = 'https://wa.me/' + numeroLimpio + '?text=' + mensaje;
     window.open(urlWhatsApp, '_blank');
-}
-
-// ================== CÓDIGO PLUS ==================
-
-// Guardar código plus cuando el input pierde el foco
-function guardarCodigoPlus(input) {
-    var id = input.dataset.id;
-    var codigo_plus = input.value.trim();
-    
-    // Mostrar indicador de guardado
-    input.style.backgroundColor = '#fef3c7';
-    
-    fetch('/api/excel/solicitudes/' + id + '/codigo-plus', {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ codigo_plus: codigo_plus })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(resultado) {
-        if (response.ok) {
-            // Mostrar guardado exitoso
-            input.style.backgroundColor = '#dcfce7';
-            setTimeout(function() {
-                input.style.backgroundColor = '';
-            }, 1000);
-            console.log('Código Plus guardado:', resultado);
-        } else {
-            // Mostrar error
-            input.style.backgroundColor = '#fee2e2';
-            console.error('Error:', resultado.error);
-            alert('Error al guardar: ' + resultado.error);
-        }
-    })
-    .catch(function(err) {
-        console.error('Error guardando código plus:', err);
-        input.style.backgroundColor = '#fee2e2';
-    });
 }
 
 // ================== GESTIONES Y COMPLETAR EN MÓVIL ==================
@@ -1222,6 +1179,182 @@ function guardarCompletarMovil(id) {
     
     alert('Información guardada para solicitud #' + id);
     cerrarModal();
+}
+
+// ================== COMPLETAR INFO (NUEVO) ==================
+
+// Abrir modal de Completar Información con formulario completo
+async function abrirCompletarInfoMovil(id) {
+    var datos = datosFilas[id];
+    if (!datos) {
+        alert('No se encontraron datos para esta solicitud');
+        return;
+    }
+    
+    // Intentar cargar datos completos existentes (incluyendo referencias)
+    var codigoPlus = datos.codigo_plus || '';
+    var direccion = datos.direccion || '';
+    var direccionTrabajo = datos.direccion_trabajo || '';
+    var ocupacion = datos.ocupacion || '';
+    var ingresoMensual = datos.ingreso_mensual || '';
+    var referencias = [];
+    
+    try {
+        var res = await fetch('/api/excel/solicitudes/' + id + '/completa');
+        if (res.ok) {
+            var data = await res.json();
+            codigoPlus = data.codigo_plus || codigoPlus;
+            direccion = data.direccion || direccion;
+            direccionTrabajo = data.direccion_trabajo || direccionTrabajo;
+            ocupacion = data.ocupacion || ocupacion;
+            ingresoMensual = data.ingreso_mensual || ingresoMensual;
+            referencias = data.referencias || [];
+        }
+    } catch (e) {
+        console.error('Error cargando datos completos:', e);
+    }
+    
+    // Asegurar 3 slots de referencia
+    while (referencias.length < 3) {
+        referencias.push({ nombre: '', telefono: '', relacion: '' });
+    }
+    
+    // Generar HTML de referencias
+    var htmlReferencias = '';
+    for (var i = 0; i < 3; i++) {
+        var r = referencias[i] || {};
+        var num = i + 1;
+        var opcionesRelacion = ['Amigo', 'Familiar', 'Vecino', 'Compañero', 'Otro'].map(function(rel) {
+            var selected = rel === r.relacion ? 'selected' : '';
+            return '<option value="' + rel + '" ' + selected + '>' + rel + '</option>';
+        }).join('');
+        
+        htmlReferencias += `
+            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:12px;">
+                <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:8px;">👤 Referencia #${num}</div>
+                <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:#4b5563;">Nombres y Apellidos:</label>
+                <input type="text" id="ref-${num}-nombre" value="${escaparParaAtributo(r.nombre)}" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:8px;box-sizing:border-box;" placeholder="Nombre completo">
+                <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:#4b5563;">📞 Teléfono:</label>
+                <input type="tel" id="ref-${num}-telefono" value="${escaparParaAtributo(r.telefono)}" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:8px;box-sizing:border-box;" placeholder="Número de teléfono">
+                <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:#4b5563;">🤝 Relación:</label>
+                <select id="ref-${num}-relacion" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;background:white;box-sizing:border-box;">
+                    <option value="">Seleccionar...</option>
+                    ${opcionesRelacion}
+                </select>
+            </div>
+        `;
+    }
+    
+    var contenido = '';
+    contenido += '<div style="padding: 20px; background: white; min-height: 100vh;">';
+    contenido += '<h2 style="margin-top: 0; color: #1f2937; font-size: 18px;">✏️ Completar Información</h2>';
+    
+    // Datos del cliente (solo lectura)
+    contenido += '<div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px;">';
+    contenido += '<p><strong>👤 Cliente:</strong> ' + (datos.nombre || 'N/A') + '</p>';
+    contenido += '<p><strong>🆔 Cédula:</strong> ' + (datos.cedula || 'N/A') + '</p>';
+    contenido += '<p><strong>📱 Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
+    contenido += '</div>';
+    
+    // Información Adicional
+    contenido += '<div style="border: 2px solid #818cf8; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #eef2ff;">';
+    contenido += '<h3 style="margin-top:0; color:#4338ca; font-size:15px;">📋 Información Adicional</h3>';
+    
+    contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">📦 Código Plus:</label>';
+    contenido += '<input type="text" id="codigo-plus-completar" value="' + escaparParaAtributo(codigoPlus) + '" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:10px;box-sizing:border-box;" placeholder="Código Plus">';
+    
+    contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">📍 Dirección:</label>';
+    contenido += '<input type="text" id="direccion-completar" value="' + escaparParaAtributo(direccion) + '" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:10px;box-sizing:border-box;" placeholder="Dirección de domicilio">';
+    
+    contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">🏢 Dirección de Trabajo:</label>';
+    contenido += '<input type="text" id="direccion-trabajo-completar" value="' + escaparParaAtributo(direccionTrabajo) + '" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:10px;box-sizing:border-box;" placeholder="Dirección de trabajo">';
+    
+    contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">💼 Ocupación:</label>';
+    contenido += '<input type="text" id="ocupacion-completar" value="' + escaparParaAtributo(ocupacion) + '" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:10px;box-sizing:border-box;" placeholder="Ocupación">';
+    
+    contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">💰 Ingreso Mensual:</label>';
+    contenido += '<input type="number" step="0.01" min="0" id="ingreso-mensual-completar" value="' + (ingresoMensual || '') + '" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:0;box-sizing:border-box;" placeholder="0.00">';
+    
+    contenido += '</div>';
+    
+    // Referencias
+    contenido += '<div style="border: 2px solid #22c55e; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #f0fdf4;">';
+    contenido += '<h3 style="margin-top:0; color:#166534; font-size:15px;">👥 Referencias Personales</h3>';
+    contenido += htmlReferencias;
+    contenido += '</div>';
+    
+    // Botón guardar
+    contenido += '<button onclick="guardarCompletarInfoMovil(\'' + id + '\')" style="width:100%;padding:14px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">💾 Guardar Información</button>';
+    
+    // Botón cerrar
+    contenido += '<button onclick="cerrarModal()" style="width:100%;padding:12px;background:#f3f4f6;border:none;border-radius:8px;cursor:pointer;font-size:14px;margin-top:10px;">✕ Cerrar</button>';
+    
+    contenido += '</div>';
+    
+    crearModalMovil(contenido);
+}
+
+// Guardar información completa (código plus, dirección, referencias, etc.)
+function guardarCompletarInfoMovil(id) {
+    var codigo_plus = document.getElementById('codigo-plus-completar').value.trim();
+    var direccion = document.getElementById('direccion-completar').value.trim();
+    var direccion_trabajo = document.getElementById('direccion-trabajo-completar').value.trim();
+    var ocupacion = document.getElementById('ocupacion-completar').value.trim();
+    var ingresoInput = document.getElementById('ingreso-mensual-completar').value.trim();
+    var ingreso_mensual = ingresoInput ? (parseFloat(ingresoInput) || null) : null;
+    
+    // Recoger referencias (solo las que tienen nombre)
+    var referencias = [];
+    for (var i = 1; i <= 3; i++) {
+        var nombre = document.getElementById('ref-' + i + '-nombre').value.trim();
+        var telefono = document.getElementById('ref-' + i + '-telefono').value.trim();
+        var relacion = document.getElementById('ref-' + i + '-relacion').value;
+        
+        referencias.push({
+            nombre: nombre,
+            telefono: telefono,
+            relacion: relacion
+        });
+    }
+    
+    // Mostrar indicador de guardado
+    var btn = document.querySelector('button[onclick="guardarCompletarInfoMovil(\'' + id + '\')"]');
+    if (btn) {
+        btn.textContent = '⏳ Guardando...';
+        btn.disabled = true;
+    }
+    
+    fetch('/api/excel/solicitudes/' + id + '/completar-info', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            codigo_plus: codigo_plus,
+            direccion: direccion,
+            direccion_trabajo: direccion_trabajo,
+            ocupacion: ocupacion,
+            ingreso_mensual: ingreso_mensual,
+            referencias: referencias
+        })
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(resultado) {
+        if (!resultado.error) {
+            alert('Información guardada correctamente');
+            cerrarModal();
+        } else {
+            alert('Error: ' + (resultado.error || 'Error desconocido'));
+        }
+    })
+    .catch(function(err) {
+        console.error('Error guardando completar info:', err);
+        alert('Error al guardar: ' + err.message);
+    })
+    .finally(function() {
+        if (btn) {
+            btn.textContent = '💾 Guardar Información';
+            btn.disabled = false;
+        }
+    });
 }
 
 // ================== EXPORTAR A EXCEL ==================

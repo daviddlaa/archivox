@@ -29,6 +29,10 @@ const initTables = async () => {
                 segmento TEXT,
                 producto TEXT,
                 codigo_plus TEXT,
+                direccion TEXT,
+                direccion_trabajo TEXT,
+                ocupacion TEXT,
+                ingreso_mensual DECIMAL(12,2),
                 fecha_solicitud TEXT,
                 usuario_id INTEGER,
                 fecha_importacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -105,6 +109,23 @@ const initTables = async () => {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
             )
+        `);
+        
+        // Tabla de referencias de solicitudes (Completar Info)
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS solicitudes_referencias (
+                id SERIAL PRIMARY KEY,
+                id_solicitud INTEGER NOT NULL,
+                nombre TEXT NOT NULL,
+                telefono TEXT,
+                relacion TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_solicitudes_referencias_solicitud
+            ON solicitudes_referencias(id_solicitud)
         `);
         
         // Tabla de auditoría de actualizaciones de solicitudes
