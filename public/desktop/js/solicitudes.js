@@ -413,6 +413,49 @@ function obtenerFilasSeleccionadas() {
     return filasSeleccionadas;
 }
 
+// Función para escapar texto para usar en atributos HTML onclick
+function escaparParaAtributo(texto) {
+    return String(texto || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+// Función para copiar nombre + cédula al portapapeles
+function copiarNombreCedula(nombre, cedula) {
+    var valorNombre = String(nombre || '').trim();
+    var valorCedula = String(cedula || '').trim();
+    var texto = '';
+
+    if (valorNombre && valorCedula) {
+        texto = valorNombre + ' - ' + valorCedula;
+    } else if (valorNombre) {
+        texto = valorNombre;
+    } else if (valorCedula) {
+        texto = valorCedula;
+    } else {
+        alert('No hay datos para copiar');
+        return;
+    }
+
+    navigator.clipboard.writeText(texto).then(function() {
+        alert('Copiado: ' + texto);
+    }).catch(function(err) {
+        console.error('Error al copiar:', err);
+        alert('Error al copiar al portapapeles');
+    });
+}
+
+// Función para abrir WhatsApp sin texto predefinido (escritorio)
+function abrirWhatsAppChatEscritorio(celular) {
+    if (!celular) {
+        alert('No hay número de celular');
+        return;
+    }
+    var numeroLimpio = celular.replace(/\D/g, '');
+    if (!numeroLimpio.startsWith('593') && numeroLimpio.length <= 10) {
+        numeroLimpio = '593' + numeroLimpio;
+    }
+    window.open('https://wa.me/' + numeroLimpio, '_blank');
+}
+
 // Función para formatear número WhatsApp con código de país (+593 para Ecuador)
 function formatearWhatsApp(celular) {
     if (!celular) return '';
@@ -510,8 +553,8 @@ for (var i = 0; i < datos.length; i++) {
         html += '    <span class="cliente-estado" style="background:' + colorEstado + ';">' + (item.estado || '') + '</span>';
         html += '  </div>';
         
-        // Nombre del cliente
-        html += '  <div class="cliente-nombre">' + (item.nombre || '') + '</div>';
+        // Nombre del cliente - click para copiar nombre + cédula
+        html += '  <div class="cliente-nombre" onclick="copiarNombreCedula(\'' + escaparParaAtributo(item.nombre || '') + '\', \'' + escaparParaAtributo(item.cedula || '') + '\')" title="Copiar nombre + cédula" style="cursor:pointer;">' + (item.nombre || '') + ' 📋</div>';
         
         // Info row: Cédula y Celular
         html += '  <div class="cliente-info-row">';
@@ -560,6 +603,7 @@ for (var i = 0; i < datos.length; i++) {
         // Botones de acciones
         html += '  <div class="card-actions">';
         html += '    <button class="card-action-btn card-gestiones-btn" onclick="abrirGestiones(\'' + id + '\')">📋 Gestiones</button>';
+        html += '    <button class="card-action-btn card-whatsapp-btn" onclick="abrirWhatsAppChatEscritorio(\'' + escaparParaAtributo(item.celular || '') + '\')">💬 WhatsApp</button>';
         html += '    <button class="card-action-btn card-completar-btn" onclick="abrirCompletar(\'' + id + '\')">✏️ Completar</button>';
         html += '  </div>';
         

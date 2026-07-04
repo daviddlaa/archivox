@@ -417,7 +417,7 @@ return `
                 <span class="client-id">#${d.id_solicitud}</span>
                 <span class="badge estado-${d.estado}">${d.estado || 'N/A'}</span>
             </div>
-            <div class="client-name">${d.nombre || 'Sin nombre'}</div>
+            <div class="client-name" onclick="copiarNombreCedula('${escaparParaAtributo(d.nombre || '')}', '${escaparParaAtributo(d.cedula || '')}')" style="cursor:pointer;" title="Copiar nombre + cédula">${d.nombre || 'Sin nombre'} 📋</div>
             
             <!-- OPCIÓN A: Compacto - Teléfono + Cédula en misma línea -->
             <div class="client-info-compact" style="display: flex; gap: 10px; margin: 4px 0; font-size: 12px; color: #6b7280;">
@@ -445,7 +445,7 @@ return `
             <!-- OPCIÓN A: Compacto - 3 botones en fila -->
             <div class="botones-contacto" style="display: flex; gap: 6px; margin: 8px 0;">
                 <button onclick="event.stopPropagation(); llamarCliente('${d.celular}')" style="flex:1; padding: 8px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📞</button>
-                <button onclick="event.stopPropagation(); whatsAppCliente('${d.celular}', '${d.nombre}')" style="flex:1; padding: 8px; background: #25D366; color: white; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">💬</button>
+                <button onclick="event.stopPropagation(); abrirWhatsAppChatMovil('${d.celular}')" style="flex:1; padding: 8px; background: #25D366; color: white; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">💬</button>
                 <button onclick="event.stopPropagation(); abrirGestionesMovil('${d.id_solicitud}')" style="flex:1; padding: 8px; background: #fef3c7; border: none; border-radius: 6px; font-size: 11px; cursor: pointer;">📋</button>
             </div>
             
@@ -600,6 +600,49 @@ let opcionesTipoGestion = [
     'Cita',
     'Otro'
 ];
+
+// Función para escapar texto para usar en atributos HTML onclick
+function escaparParaAtributo(texto) {
+    return String(texto || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+// Función para copiar nombre + cédula al portapapeles
+function copiarNombreCedula(nombre, cedula) {
+    var valorNombre = String(nombre || '').trim();
+    var valorCedula = String(cedula || '').trim();
+    var texto = '';
+
+    if (valorNombre && valorCedula) {
+        texto = valorNombre + ' - ' + valorCedula;
+    } else if (valorNombre) {
+        texto = valorNombre;
+    } else if (valorCedula) {
+        texto = valorCedula;
+    } else {
+        alert('No hay datos para copiar');
+        return;
+    }
+
+    navigator.clipboard.writeText(texto).then(function() {
+        alert('Copiado: ' + texto);
+    }).catch(function(err) {
+        console.error('Error al copiar:', err);
+        alert('Error al copiar al portapapeles');
+    });
+}
+
+// Función para abrir WhatsApp sin texto predefinido (móvil)
+function abrirWhatsAppChatMovil(celular) {
+    if (!celular) {
+        alert('No hay número de celular');
+        return;
+    }
+    var numeroLimpio = celular.replace(/\D/g, '');
+    if (!numeroLimpio.startsWith('593') && numeroLimpio.length <= 10) {
+        numeroLimpio = '593' + numeroLimpio;
+    }
+    window.open('https://wa.me/' + numeroLimpio, '_blank');
+}
 
 // Función para obtener la fecha y hora actual formateada
 function getFechaHoraActual() {
