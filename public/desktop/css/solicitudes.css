@@ -1343,6 +1343,245 @@ td .cell-combinado {
     opacity: 0.5;
 }
 
+/* ===== MODAL COMPLETAR INFO - 3 COLUMNAS SIN SCROLL ===== */
+.completar-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: calc(98vh - 8px);
+}
+
+.completar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #1f2937, #111827);
+    color: white;
+    flex-shrink: 0;
+    border-radius: 16px 16px 0 0;
+}
+
+.completar-header h2 {
+    margin: 0;
+    color: white;
+    font-size: 20px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.completar-id {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 500;
+    background: rgba(255,255,255,0.1);
+    padding: 2px 10px;
+    border-radius: 12px;
+}
+
+.completar-body {
+    display: grid;
+    grid-template-columns: 260px 1fr 1fr;
+    gap: 16px;
+    padding: 18px 24px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.completar-col {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.completar-col h3 {
+    margin: 0 0 12px 0;
+    color: #1f2937;
+    font-size: 14px;
+    font-weight: 700;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e5e7eb;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Col 1: Info Cliente */
+.completar-col-info {
+    background: #f8fafc;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.completar-info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.completar-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #f0f0f0;
+}
+
+.completar-info-item .info-label {
+    font-size: 10px;
+    color: #6b7280;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.completar-info-item .info-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* Col 2: Datos Personales */
+.completar-col-datos {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.completar-col-datos .completar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.completar-field {
+    margin-bottom: 10px;
+}
+
+.completar-field label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.completar-field input {
+    width: 100%;
+    padding: 9px 11px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 13px;
+    transition: all 0.2s ease;
+    background: white;
+    box-sizing: border-box;
+}
+
+.completar-field input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.completar-field input:hover {
+    border-color: #d1d5db;
+}
+
+.completar-field input[type="number"]::-webkit-inner-spin-button,
+.completar-field input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.completar-field input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* Col 3: Referencias */
+.completar-col-refs {
+    background: #f8fafc;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px;
+    overflow-y: auto;
+}
+
+.completar-ref-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
+}
+
+.completar-ref-card:hover {
+    border-color: #6366f1;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+.completar-ref-card:last-child {
+    margin-bottom: 0;
+}
+
+.completar-ref-title {
+    font-weight: 600;
+    font-size: 11px;
+    color: #6b7280;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.completar-ref-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.completar-ref-grid input {
+    padding: 8px 10px;
+    border: 2px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    background: white;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.completar-ref-grid input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.completar-ref-grid input:hover {
+    border-color: #d1d5db;
+}
+
+/* Footer */
+.completar-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 14px 24px;
+    border-top: 2px solid #e5e7eb;
+    flex-shrink: 0;
+    background: white;
+    border-radius: 0 0 16px 16px;
+}
+
 /* Responsive para el Modal */
 @media (max-width: 1200px) {
     .gestion-layout {

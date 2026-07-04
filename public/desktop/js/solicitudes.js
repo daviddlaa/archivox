@@ -1285,78 +1285,107 @@ function abrirGestiones(id) {
     cargarHistorialGestiones(id);
 }
 
-// Función para abrir modal de Completar Información
+// Función para abrir modal de Completar Información (3 columnas, sin scroll)
 function abrirCompletar(id) {
     var datos = datosFilas[id];
     if (!datos) {
         alert('No se encontraron datos para esta solicitud');
         return;
     }
-    
-    // Cargar datos completos del servidor
+
     fetch('/api/excel/solicitudes/' + id + '/completa')
         .then(function(res) { return res.json(); })
         .then(function(data) {
             var d = data.solicitud || {};
             var refs = data.referencias || [];
-            
+
             var contenido = '';
-            contenido += '<div id="completar-info-container">';
-            contenido += '<div style="padding: 24px; max-width: 700px; margin: 0 auto;">';
-            contenido += '<h2 style="margin-top: 0; color: #1f2937; font-size: 20px;">✏️ Completar Información</h2>';
-            
-            // Datos del cliente
-            contenido += '<div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 18px;">';
-            contenido += '<p style="margin: 4px 0;"><strong>Solicitud #' + id + '</strong></p>';
-            contenido += '<p style="margin: 4px 0;"><strong>Nombre:</strong> ' + (datos.nombre || 'N/A') + '</p>';
-            contenido += '<p style="margin: 4px 0;"><strong>Cédula:</strong> ' + (datos.cedula || 'N/A') + '</p>';
-            contenido += '<p style="margin: 4px 0;"><strong>Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
+            contenido += '<div class="completar-container">';
+
+            // ===== HEADER =====
+            contenido += '<div class="completar-header">';
+            contenido += '<h2>✏️ Completar Información <span class="completar-id">#' + id + '</span></h2>';
+            contenido += '<button class="btn-cerrar" onclick="cerrarModal()">✕</button>';
             contenido += '</div>';
-            
-            // Código Plus
-            contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:13px;">🔢 Código Plus</label>';
-            contenido += '<input type="text" id="codigo-plus-completar" value="' + (d.codigo_plus || '') + '" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;margin-bottom:14px;box-sizing:border-box;" placeholder="Código Plus">';
-            
-            // Dirección
-            contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:13px;">📍 Dirección</label>';
-            contenido += '<input type="text" id="direccion-completar" value="' + (d.direccion || '') + '" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;margin-bottom:14px;box-sizing:border-box;" placeholder="Dirección">';
-            
-            // Dirección de Trabajo
-            contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:13px;">🏢 Dirección de Trabajo</label>';
-            contenido += '<input type="text" id="direccion-trabajo-completar" value="' + (d.direccion_trabajo || '') + '" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;margin-bottom:14px;box-sizing:border-box;" placeholder="Dirección de Trabajo">';
-            
-            // Ocupación
-            contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:13px;">💼 Ocupación</label>';
-            contenido += '<input type="text" id="ocupacion-completar" value="' + (d.ocupacion || '') + '" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;margin-bottom:14px;box-sizing:border-box;" placeholder="Ocupación">';
-            
-            // Ingreso Mensual
-            contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:13px;">💰 Ingreso Mensual</label>';
-            contenido += '<input type="number" id="ingreso-mensual-completar" value="' + (d.ingreso_mensual || '') + '" step="0.01" min="0" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;margin-bottom:18px;box-sizing:border-box;" placeholder="0.00">';
-            
-            // ===== REFERENCIAS =====
-            contenido += '<h3 style="margin:0 0 12px 0;color:#374151;font-size:16px;">👥 Referencias</h3>';
-            
+
+            // ===== BODY: 3 COLUMNAS =====
+            contenido += '<div class="completar-body">';
+
+            // === COL 1: INFO CLIENTE ===
+            contenido += '<div class="completar-col completar-col-info">';
+            contenido += '<h3>👤 Información del Cliente</h3>';
+            contenido += '<div class="completar-info-grid">';
+            contenido += '<div class="completar-info-item"><span class="info-label">Solicitud</span><span class="info-value">#' + id + '</span></div>';
+            contenido += '<div class="completar-info-item"><span class="info-label">Nombre</span><span class="info-value">' + (datos.nombre || 'N/A') + '</span></div>';
+            contenido += '<div class="completar-info-item"><span class="info-label">Cédula</span><span class="info-value">' + (datos.cedula || 'N/A') + '</span></div>';
+            contenido += '<div class="completar-info-item"><span class="info-label">Celular</span><span class="info-value">' + (datos.celular || 'N/A') + '</span></div>';
+            contenido += '<div class="completar-info-item"><span class="info-label">Estado</span><span class="info-value">' + (datos.estado || 'N/A') + '</span></div>';
+            contenido += '<div class="completar-info-item"><span class="info-label">Segmento</span><span class="info-value">' + (datos.segmento || 'N/A') + '</span></div>';
+            contenido += '<div class="completar-info-item"><span class="info-label">Producto</span><span class="info-value">' + (datos.producto || 'N/A') + '</span></div>';
+            contenido += '</div>';
+            contenido += '</div>';
+
+            // === COL 2: DATOS PERSONALES ===
+            contenido += '<div class="completar-col completar-col-datos">';
+            contenido += '<h3>📋 Datos Personales</h3>';
+            contenido += '<div class="completar-scroll">';
+
+            contenido += '<div class="completar-field">';
+            contenido += '<label for="codigo-plus-completar">🔢 Código Plus</label>';
+            contenido += '<input type="text" id="codigo-plus-completar" value="' + (d.codigo_plus || '') + '" placeholder="Código Plus">';
+            contenido += '</div>';
+
+            contenido += '<div class="completar-field">';
+            contenido += '<label for="direccion-completar">📍 Dirección</label>';
+            contenido += '<input type="text" id="direccion-completar" value="' + (d.direccion || '') + '" placeholder="Dirección domiciliaria">';
+            contenido += '</div>';
+
+            contenido += '<div class="completar-field">';
+            contenido += '<label for="direccion-trabajo-completar">🏢 Dirección de Trabajo</label>';
+            contenido += '<input type="text" id="direccion-trabajo-completar" value="' + (d.direccion_trabajo || '') + '" placeholder="Dirección de trabajo">';
+            contenido += '</div>';
+
+            contenido += '<div class="completar-field">';
+            contenido += '<label for="ocupacion-completar">💼 Ocupación</label>';
+            contenido += '<input type="text" id="ocupacion-completar" value="' + (d.ocupacion || '') + '" placeholder="Ej: Comerciante">';
+            contenido += '</div>';
+
+            contenido += '<div class="completar-field">';
+            contenido += '<label for="ingreso-mensual-completar">💰 Ingreso Mensual</label>';
+            contenido += '<input type="number" id="ingreso-mensual-completar" value="' + (d.ingreso_mensual || '') + '" step="0.01" min="0" placeholder="0.00">';
+            contenido += '</div>';
+
+            contenido += '</div>'; // fin .completar-scroll
+            contenido += '</div>'; // fin col 2
+
+            // === COL 3: REFERENCIAS ===
+            contenido += '<div class="completar-col completar-col-refs">';
+            contenido += '<h3>👥 Referencias</h3>';
+
             for (var i = 1; i <= 3; i++) {
                 var ref = refs[i - 1] || {};
-                contenido += '<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:12px;">';
-                contenido += '<div style="font-weight:600;font-size:13px;color:#6b7280;margin-bottom:8px;">Referencia #' + i + '</div>';
-                contenido += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">';
-                contenido += '<input type="text" id="ref-' + i + '-nombre" value="' + (ref.nombre || '') + '" style="padding:9px;border:2px solid #e5e7eb;border-radius:6px;font-size:13px;box-sizing:border-box;" placeholder="Nombre y Apellido">';
-                contenido += '<input type="text" id="ref-' + i + '-telefono" value="' + (ref.telefono || '') + '" style="padding:9px;border:2px solid #e5e7eb;border-radius:6px;font-size:13px;box-sizing:border-box;" placeholder="Teléfono">';
-                contenido += '<input type="text" id="ref-' + i + '-relacion" value="' + (ref.relacion || '') + '" style="padding:9px;border:2px solid #e5e7eb;border-radius:6px;font-size:13px;box-sizing:border-box;" placeholder="Relación (amigo/familiar)">';
+                contenido += '<div class="completar-ref-card">';
+                contenido += '<div class="completar-ref-title">Referencia #' + i + '</div>';
+                contenido += '<div class="completar-ref-grid">';
+                contenido += '<input type="text" id="ref-' + i + '-nombre" value="' + (ref.nombre || '') + '" placeholder="Nombre y Apellido">';
+                contenido += '<input type="text" id="ref-' + i + '-telefono" value="' + (ref.telefono || '') + '" placeholder="Teléfono">';
+                contenido += '<input type="text" id="ref-' + i + '-relacion" value="' + (ref.relacion || '') + '" placeholder="Relación (amigo/familiar)">';
                 contenido += '</div>';
                 contenido += '</div>';
             }
-            
-            // Botones
-            contenido += '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:2px solid #e5e7eb;">';
-            contenido += '<button onclick="cerrarModal()" style="padding:10px 22px;background:#f3f4f6;border:none;border-radius:8px;cursor:pointer;font-size:14px;">Cancelar</button>';
-            contenido += '<button onclick="guardarCompletar(\'' + id + '\')" style="padding:10px 22px;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;">💾 Guardar</button>';
+
+            contenido += '</div>'; // fin col 3
+
+            contenido += '</div>'; // fin .completar-body
+
+            // ===== FOOTER =====
+            contenido += '<div class="completar-footer">';
+            contenido += '<button onclick="cerrarModal()" class="btn-modal-cancelar">Cancelar</button>';
+            contenido += '<button onclick="guardarCompletar(\'' + id + '\')" class="btn-modal-crear">💾 Guardar Cambios</button>';
             contenido += '</div>';
-            
-            contenido += '</div>';
-            contenido += '</div>';
-            
+
+            contenido += '</div>'; // fin .completar-container
+
             crearModal(contenido);
         })
         .catch(function(err) {
@@ -1365,7 +1394,8 @@ function abrirCompletar(id) {
         });
 }
 
-// Función para crear modal genérico - Mejorado para pantallas grandes
+// Función para abrir modal de Completar Información (V2 - 3 columnas sin scroll)
+// ELIMINADA - reemplazada por abrirCompletar() con 3 columnas
 function crearModal(contenido) {
     // Eliminar modal existente si hay
     var modalExistente = document.getElementById('modal-generico');
