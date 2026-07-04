@@ -119,8 +119,7 @@ function renderizarLista(datos) {
         html += '<div class="gestion-footer">';
         html += '<span class="gestion-fecha">' + fechaFormateada + '</span>';
         html += '<div class="gestion-actions">';
-        html += '<button class="btn-icon" onclick="event.stopPropagation(); agregarSeguimiento(\'' + g.solicitud_id + '\')">➕</button> ';
-        html += '<button class="btn-icon" onclick="event.stopPropagation(); eliminarGestion(\'' + g.id + '\')">🗑️</button>';
+        html += '<button class="btn-icon" onclick="event.stopPropagation(); verGestion(\'' + g.id + '\')">👁️</button>';
         html += '</div>';
         html += '</div>';
         html += '</div>';
@@ -157,98 +156,7 @@ function verGestion(id) {
     crearModal(contenido);
 }
 
-function agregarSeguimiento(solicitudId) {
-    // Similar a desktop pero adaptado para móvil
-    var opcionesTipo = '';
-    var tipos = ['Seguimiento', 'Cobranza', 'Llamada', 'WhatsApp', 'Reclamo', 'Cita', 'Otro'];
-    for (var j = 0; j < tipos.length; j++) {
-        opcionesTipo += '<option value="' + tipos[j] + '">' + tipos[j] + '</option>';
-    }
-    
-    var contenido = '';
-    contenido += '<div class="modal-content">';
-    contenido += '<h2>➕ Nuevo Seguimiento</h2>';
-    contenido += '<div class="modal-body">';
-    contenido += '<p><strong>Solicitud:</strong> ' + solicitudId + '</p>';
-    contenido += '<label>Tipo:</label>';
-    contenido += '<select id="seguimiento-tipo" class="form-select">' + opcionesTipo + '</select>';
-    contenido += '<label>Observación:</label>';
-    contenido += '<textarea id="seguimiento-observacion" class="form-textarea" rows="4" placeholder="Escriba su observación..."></textarea>';
-    contenido += '</div>';
-    contenido += '<div class="modal-footer">';
-    contenido += '<button onclick="cerrarModal()" class="btn btn-secondary">Cancelar</button>';
-    contenido += '<button onclick="guardarSeguimiento(\'' + solicitudId + '\')" class="btn btn-primary">Guardar</button>';
-    contenido += '</div>';
-    contenido += '</div>';
-    
-    crearModal(contenido);
-}
 
-function guardarSeguimiento(solicitudId) {
-    var tipoSelect = document.getElementById('seguimiento-tipo');
-    var observacionInput = document.getElementById('seguimiento-observacion');
-    
-    var tipo_gestion = tipoSelect ? tipoSelect.value : '';
-    var observacion = observacionInput ? observacionInput.value.trim() : '';
-    
-    if (!tipo_gestion) {
-        alert('Seleccione un tipo');
-        return;
-    }
-    
-    if (!observacion) {
-        alert('Escriba una observación');
-        return;
-    }
-    
-    fetch('/api/excel/gestiones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            solicitud_id: solicitudId,
-            tipo_gestion: tipo_gestion,
-            observacion: observacion,
-            gestion_maestro_id: campanhaAtual && campanhaAtual !== 0 ? campanhaAtual : null
-        })
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(resultado) {
-        if (resultado && !resultado.error) {
-            alert('Seguimiento guardado');
-            cerrarModal();
-            buscarGestiones();
-        } else {
-            alert('Error: ' + (resultado.error || 'Error desconocido'));
-        }
-    })
-    .catch(function(err) {
-        console.error('Error:', err);
-        alert('Error al guardar');
-    });
-}
-
-function eliminarGestion(id) {
-    if (!confirm('¿Eliminar esta gestión?')) {
-        return;
-    }
-    
-    fetch('/api/excel/gestiones/' + id, {
-        method: 'DELETE'
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(resultado) {
-        if (resultado && !resultado.error) {
-            alert('Gestión eliminada');
-            buscarGestiones();
-        } else {
-            alert('Error: ' + (resultado.error || 'Error'));
-        }
-    })
-    .catch(function(err) {
-        console.error('Error:', err);
-        alert('Error al eliminar');
-    });
-}
 
 function crearModal(contenido) {
     var overlay = document.createElement('div');

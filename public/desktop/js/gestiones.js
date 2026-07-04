@@ -6,114 +6,7 @@ var currentLimit = 50;
 var isLoading = false;
 var hasMoreData = true;
 
-// ================== SELECCIÓN MÚLTIPLE ==================
-var gestionesSeleccionadas = {}; // objeto { id: true } para búsqueda rápida
-
-function toggleSeleccionGestion(id, checkbox) {
-    if (checkbox.checked) {
-        gestionesSeleccionadas[id] = true;
-    } else {
-        delete gestionesSeleccionadas[id];
-        // Desmarcar "seleccionar todos" si estaba marcado
-        var chkTodos = document.getElementById('seleccionar-todos');
-        if (chkTodos) chkTodos.checked = false;
-    }
-    actualizarContadorSeleccion();
-}
-
-function seleccionarTodosGestiones() {
-    var chkTodos = document.getElementById('seleccionar-todos');
-    var checkboxes = document.querySelectorAll('.chk-gestion');
-    
-    for (var i = 0; i < checkboxes.length; i++) {
-        checkboxes[i].checked = chkTodos.checked;
-        var id = checkboxes[i].value;
-        if (chkTodos.checked) {
-            gestionesSeleccionadas[id] = true;
-        } else {
-            delete gestionesSeleccionadas[id];
-        }
-    }
-    actualizarContadorSeleccion();
-}
-
-function actualizarContadorSeleccion() {
-    var count = Object.keys(gestionesSeleccionadas).length;
-    var btnEliminar = document.getElementById('btn-eliminar-seleccionadas');
-    var spanCount = document.getElementById('seleccionadas-count');
-    
-    if (spanCount) spanCount.textContent = count;
-    if (btnEliminar) {
-        btnEliminar.style.display = count > 0 ? 'inline-block' : 'none';
-    }
-}
-
-function eliminarSeleccionadas() {
-    var ids = Object.keys(gestionesSeleccionadas);
-    if (ids.length === 0) {
-        alert('No hay gestiones seleccionadas');
-        return;
-    }
-    
-    if (!confirm('¿Está seguro de eliminar ' + ids.length + ' gestión(es)?\n\nEsta acción NO se puede deshacer.')) {
-        return;
-    }
-    
-    var btn = document.getElementById('btn-eliminar-seleccionadas');
-    if (btn) {
-        btn.textContent = '⏳ Eliminando...';
-        btn.disabled = true;
-    }
-    
-    var pendientes = ids.length;
-    var errores = 0;
-    var completados = 0;
-    
-    function eliminarSiguiente() {
-        if (ids.length === 0) {
-            // Terminamos
-            if (btn) {
-                btn.textContent = '🗑️ Borrar';
-                btn.disabled = false;
-            }
-            gestionesSeleccionadas = {};
-            actualizarContadorSeleccion();
-            buscarGestiones();
-            if (errores > 0) {
-                alert('Completado. Se eliminaron ' + completados + ' gestión(es). ' + errores + ' error(es).');
-            } else {
-                alert('Se eliminaron ' + completados + ' gestión(es) correctamente.');
-            }
-            return;
-        }
-        
-        var id = ids.shift();
-        fetch('/api/excel/gestiones/' + id, { method: 'DELETE' })
-            .then(function(res) { return res.json(); })
-            .then(function(resultado) {
-                if (resultado && !resultado.error) {
-                    completados++;
-                } else {
-                    errores++;
-                    console.error('Error eliminando gestión ' + id + ':', resultado.error);
-                }
-                eliminarSiguiente();
-            })
-            .catch(function(err) {
-                errores++;
-                console.error('Error eliminando gestión ' + id + ':', err);
-                eliminarSiguiente();
-            });
-    }
-    
-    eliminarSiguiente();
-}
-// ================== FIN SELECCIÓN MÚLTIPLE ==================
-
-
-
-
-function getFechaHoraActual() {
+// ================== FIN SELECCIÓN MÚLTIPLE (ELIMINADA - SOLO LECTURA) ==================function getFechaHoraActual() {
     var ahora = new Date();
     var dia = String(ahora.getDate()).padStart(2, '0');
     var mes = String(ahora.getMonth() + 1).padStart(2, '0');
@@ -283,12 +176,7 @@ function renderizarTabla(datos) {
         var color = coloresTipo[g.tipo_gestion] || '#f3f4f6';
         var fechaFormateada = formatFechaGestion(g.fecha_gestion);
         
-        var seleccionada = gestionesSeleccionadas[g.id] ? 'checked' : '';
-        
         html += '<tr>';
-        html += '<td style="text-align:center;">';
-        html += '<input type="checkbox" class="chk-gestion" value="' + g.id + '" ' + seleccionada + ' onchange="toggleSeleccionGestion(' + g.id + ', this)">';
-        html += '</td>';
         html += '<td>' + (g.solicitud_id || '') + '</td>';
         html += '<td>' + (g.cedula || '') + '</td>';
         html += '<td>' + (g.nombre || '') + '</td>';
@@ -296,9 +184,7 @@ function renderizarTabla(datos) {
         html += '<td>' + (g.observacion || '') + '</td>';
         html += '<td>' + fechaFormateada + '</td>';
         html += '<td>';
-        html += '<button class="btn-accion" onclick="agregarSeguimiento(\'' + g.solicitud_id + '\')" title="Agregar seguimiento">➕</button> ';
-        html += '<button class="btn-accion" onclick="verGestion(\'' + g.id + '\')" title="Ver">👁️</button> ';
-        html += '<button class="btn-accion" onclick="eliminarGestion(\'' + g.id + '\')" title="Eliminar">🗑️</button>';
+        html += '<button class="btn-accion" onclick="verGestion(\'' + g.id + '\')" title="Ver">👁️</button>';
         html += '</td>';
         html += '</tr>';
     }
@@ -352,7 +238,6 @@ function renderizarCards(datos) {
         html += '<div class="gestion-card-footer">';
         html += '<span>📅 ' + fechaFormateada + '</span>';
         html += '<div class="gestion-card-acciones">';
-        html += '<button class="btn-accion primary" onclick="agregarSeguimiento(\'' + g.solicitud_id + '\')" title="Agregar">➕</button>';
         html += '<button class="btn-accion" onclick="verGestion(\'' + g.id + '\')" title="Ver">👁️</button>';
         html += '</div>';
         html += '</div>';
@@ -388,29 +273,6 @@ function verGestion(id) {
     contenido += '</div>';
     
     crearModal(contenido);
-}
-
-function eliminarGestion(id) {
-    if (!confirm('¿Está seguro de eliminar esta gestión?')) {
-        return;
-    }
-    
-    fetch('/api/excel/gestiones/' + id, {
-        method: 'DELETE'
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(resultado) {
-        if (resultado && !resultado.error) {
-            alert('Gestión eliminada correctamente');
-            buscarGestiones();
-        } else {
-            alert('Error: ' + (resultado.error || 'Error desconocido'));
-        }
-    })
-    .catch(function(err) {
-        console.error('Error:', err);
-        alert('Error al eliminar');
-    });
 }
 
 function crearModal(contenido) {
@@ -555,261 +417,7 @@ function initInfiniteScroll() {
     }
 }
 
-// ================== NUEVA GESTIÓN ==================
 
-var opcionesTipoGestion = [
-    'Seguimiento',
-    'Cobranza',
-    'Llamada',
-    'WhatsApp',
-    'Reclamo',
-    'Cita',
-    'Otro'
-];
-
-// Función para abrir modal de nueva gestión
-function abrirNuevaGestion() {
-    // Primero buscar las solicitudes existentes para poder seleccionar
-    fetch('/api/excel/solicitudes?limite=1000&offset=0')
-        .then(function(res) { return res.json(); })
-        .then(function(resultado) {
-            var solicitudes = Array.isArray(resultado) ? resultado : (resultado.data || []);
-            
-            if (solicitudes.length === 0) {
-                alert('No hay solicitudes registradas. Importe un archivo primero.');
-                return;
-            }
-            
-            // Crear opciones del dropdown de solicitudes
-            var opcionesSolicitudes = '';
-            for (var i = 0; i < solicitudes.length; i++) {
-                var s = solicitudes[i];
-                opcionesSolicitudes += '<option value="' + s.id_solicitud + '" data-cedula="' + (s.cedula || '') + '" data-nombre="' + (s.nombre || '') + '" data-celular="' + (s.celular || '') + '">' + s.id_solicitud + ' - ' + (s.nombre || 'Sin nombre') + ' - ' + (s.cedula || '') + '</option>';
-            }
-            
-            // Crear opciones del dropdown de tipo de gestión
-            var opcionesTipo = '';
-            for (var j = 0; j < opcionesTipoGestion.length; j++) {
-                opcionesTipo += '<option value="' + opcionesTipoGestion[j] + '">' + opcionesTipoGestion[j] + '</option>';
-            }
-            
-            var contenido = '';
-            contenido += '<div style="padding: 20px;">';
-            contenido += '<h2 style="margin-top: 0; color: #1f2937;">➕ Nueva Gestión</h2>';
-            contenido += '<div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
-            contenido += '<p style="margin: 5px 0;"><strong>Fecha:</strong> ' + getFechaHoraActual() + '</p>';
-            contenido += '</div>';
-            contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">📋 Solicitud:</label>';
-            contenido += '<select id="nueva-gestion-solicitud" onchange="actualizarInfoNuevaGestion()" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 15px;">';
-            contenido += '<option value="">-- Seleccionar Solicitud --</option>';
-            contenido += opcionesSolicitudes;
-            contenido += '</select>';
-            contenido += '<div id="info-solicitud-seleccionada" style="background: #eff6ff; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none;">';
-            contenido += '<p style="margin: 5px 0;"><strong>Nombre:</strong> <span id="info-nombre"></span></p>';
-            contenido += '<p style="margin: 5px 0;"><strong>Cédula:</strong> <span id="info-cedula"></span></p>';
-            contenido += '<p style="margin: 5px 0;"><strong>Celular:</strong> <span id="info-celular"></span></p>';
-            contenido += '</div>';
-            contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">📝 Tipo de Gestión:</label>';
-            contenido += '<select id="nueva-gestion-tipo" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 15px;">';
-            contenido += opcionesTipo;
-            contenido += '</select>';
-            contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">📝 Observación:</label>';
-            contenido += '<textarea id="nueva-gestion-observacion" rows="5" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; resize: vertical;" placeholder="Escriba su observación aquí..."></textarea>';
-            contenido += '<div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">';
-            contenido += '<button onclick="cerrarModal()" style="padding: 10px 20px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer;">Cancelar</button>';
-            contenido += '<button onclick="guardarNuevaGestion()" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">💾 Guardar</button>';
-            contenido += '</div>';
-            contenido += '</div>';
-            
-            crearModal(contenido);
-        })
-        .catch(function(err) {
-            console.error('Error cargando solicitudes:', err);
-            alert('Error al cargar solicitudes');
-        });
-}
-
-// Actualizar información de la solicitud seleccionada
-function actualizarInfoNuevaGestion() {
-    var select = document.getElementById('nueva-gestion-solicitud');
-    var infoDiv = document.getElementById('info-solicitud-seleccionada');
-    var selectedOption = select.options[select.selectedIndex];
-    
-    if (!selectedOption.value) {
-        if (infoDiv) infoDiv.style.display = 'none';
-        return;
-    }
-    
-    document.getElementById('info-nombre').textContent = selectedOption.dataset.nombre || '';
-    document.getElementById('info-cedula').textContent = selectedOption.dataset.cedula || '';
-    document.getElementById('info-celular').textContent = selectedOption.dataset.celular || '';
-    
-    if (infoDiv) infoDiv.style.display = 'block';
-}
-
-// Guardar nueva gestión
-function guardarNuevaGestion() {
-    var solicitudSelect = document.getElementById('nueva-gestion-solicitud');
-    var tipoSelect = document.getElementById('nueva-gestion-tipo');
-    var observacionInput = document.getElementById('nueva-gestion-observacion');
-    
-    var solicitud_id = solicitudSelect.value;
-    var tipo_gestion = tipoSelect.value;
-    var observacion = observacionInput.value.trim();
-    
-    if (!solicitud_id) {
-        alert('Por favor seleccione una solicitud');
-        return;
-    }
-    
-    if (!tipo_gestion) {
-        alert('Por favor seleccione un tipo de gestión');
-        return;
-    }
-    
-    if (!observacion) {
-        alert('Por favor escriba una observación');
-        return;
-    }
-    
-    // Mostrar indicador de guardado
-    var btn = document.querySelector('button[onclick="guardarNuevaGestion()"]');
-    if (btn) {
-        btn.textContent = '💾 Guardando...';
-        btn.disabled = true;
-    }
-    
-    fetch('/api/excel/gestiones', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            solicitud_id: solicitud_id,
-            tipo_gestion: tipo_gestion,
-            observacion: observacion,
-            gestion_maestro_id: campanhaAtual && campanhaAtual !== 0 ? campanhaAtual : null
-        })
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(resultado) {
-        if (resultado && !resultado.error) {
-            alert('Gestión guardada correctamente');
-            cerrarModal();
-            buscarGestiones(); // Recargar la tabla
-        } else {
-            alert('Error: ' + (resultado.error || 'Error desconocido'));
-        }
-    })
-    .catch(function(err) {
-        console.error('Error guardando gestión:', err);
-        alert('Error al guardar la gestión');
-    })
-    .finally(function() {
-        if (btn) {
-            btn.textContent = '💾 Guardar';
-            btn.disabled = false;
-        }
-    });
-}
-
-// Función para agregar seguimiento rápido a una solicitud específica
-function agregarSeguimiento(solicitudId) {
-    // Buscar info de la solicitud en los datos actuales
-    var gestion = todosDatos.find(function(g) { return g.solicitud_id == solicitudId; });
-    var nombre = gestion ? gestion.nombre : '';
-    var cedula = gestion ? gestion.cedula : '';
-    var celular = gestion ? gestion.celular : '';
-    
-    // Crear opciones del dropdown de tipo
-    var opcionesTipo = '';
-    for (var j = 0; j < opcionesTipoGestion.length; j++) {
-        opcionesTipo += '<option value="' + opcionesTipoGestion[j] + '">' + opcionesTipoGestion[j] + '</option>';
-    }
-    
-    var contenido = '';
-    contenido += '<div style="padding: 20px;">';
-    contenido += '<h2 style="margin-top: 0; color: #1f2937;">➕ Nuevo Seguimiento</h2>';
-    contenido += '<div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 15px;">';
-    contenido += '<p style="margin: 5px 0;"><strong>Solicitud:</strong> ' + solicitudId + '</p>';
-    contenido += '<p style="margin: 5px 0;"><strong>Nombre:</strong> ' + (nombre || 'N/A') + '</p>';
-    contenido += '<p style="margin: 5px 0;"><strong>Cédula:</strong> ' + (cedula || 'N/A') + '</p>';
-    contenido += '<p style="margin: 5px 0;"><strong>Celular:</strong> ' + (celular || 'N/A') + '</p>';
-    contenido += '<p style="margin: 5px 0;"><strong>Fecha:</strong> ' + getFechaHoraActual() + '</p>';
-    contenido += '</div>';
-    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">📝 Tipo de Gestión:</label>';
-    contenido += '<select id="seguimiento-tipo" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 15px;">';
-    contenido += opcionesTipo;
-    contenido += '</select>';
-    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 8px;">📝 Observación:</label>';
-    contenido += '<textarea id="seguimiento-observacion" rows="5" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; resize: vertical;" placeholder="Escriba su observación aquí..."></textarea>';
-    contenido += '<div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">';
-    contenido += '<button onclick="cerrarModal()" style="padding: 10px 20px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer;">Cancelar</button>';
-    contenido += '<button onclick="guardarSeguimiento(\'' + solicitudId + '\')" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">💾 Guardar</button>';
-    contenido += '</div>';
-    contenido += '</div>';
-    
-    crearModal(contenido);
-}
-
-// Guardar seguimiento rápido
-function guardarSeguimiento(solicitudId) {
-    var tipoSelect = document.getElementById('seguimiento-tipo');
-    var observacionInput = document.getElementById('seguimiento-observacion');
-    
-    var tipo_gestion = tipoSelect.value;
-    var observacion = observacionInput.value.trim();
-    
-    if (!tipo_gestion) {
-        alert('Por favor seleccione un tipo de gestión');
-        return;
-    }
-    
-    if (!observacion) {
-        alert('Por favor escriba una observación');
-        return;
-    }
-    
-    // Mostrar indicador de guardado
-    var btn = document.querySelector('button[onclick="guardarSeguimiento(\'' + solicitudId + '\')"]');
-    if (btn) {
-        btn.textContent = '💾 Guardando...';
-        btn.disabled = true;
-    }
-    
-    fetch('/api/excel/gestiones', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            solicitud_id: solicitudId,
-            tipo_gestion: tipo_gestion,
-            observacion: observacion,
-            gestion_maestro_id: campanhaAtual && campanhaAtual !== 0 ? campanhaAtual : null
-        })
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(resultado) {
-        if (resultado && !resultado.error) {
-            alert('Seguimiento agregado correctamente');
-            cerrarModal();
-            buscarGestiones(); // Recargar la tabla
-        } else {
-            alert('Error: ' + (resultado.error || 'Error desconocido'));
-        }
-    })
-    .catch(function(err) {
-        console.error('Error guardando seguimiento:', err);
-        alert('Error al guardar el seguimiento');
-    })
-    .finally(function() {
-        if (btn) {
-            btn.textContent = '💾 Guardar';
-            btn.disabled = false;
-        }
-    });
-}
 
 // Inicializar
 buscarGestiones();
