@@ -50,3 +50,47 @@ Eliminar todos los botones y funciones que generan escrituras en la base de dato
 - 📥 Exportar a Excel
 - ♾️ Infinite scroll
 - 🧹 Limpiar filtros
+
+---
+
+## 🐛 Fix posterior: Error "Illegal return statement" en producción (Render)
+
+### Síntoma
+La página de Gestiones en escritorio no cargaba. La consola mostraba:
+```
+gestiones.js:17 Uncaught SyntaxError: Illegal return statement
+```
+La versión móvil sí funcionaba correctamente.
+
+### Causa raíz
+Al eliminar el bloque de selección múltiple (funciones de escritura), el comentario de reemplazo quedó **pegado en la misma línea** que la función `getFechaHoraActual()`:
+
+```javascript
+// ANTES (roto):
+// ================== FIN SELECCIÓN MÚLTIPLE (ELIMINADA) ==================function getFechaHoraActual() {
+```
+
+Al estar en la misma línea que `//`, JavaScript trató `function getFechaHoraActual() {` como parte del comentario, por lo que:
+- La función nunca se definió
+- El `return` de su cuerpo (línea 17) quedó como código suelto a nivel global
+- `return` solo es válido dentro de una función → `SyntaxError: Illegal return statement`
+
+La versión móvil no se vio afectada porque su archivo (`public/movil/js/gestiones.js`) no tenía esta concatenación.
+
+### Solución aplicada
+
+**Archivo:** `public/desktop/js/gestiones.js`
+
+1. Se agregó un **salto de línea** entre el comentario y `function getFechaHoraActual()`:
+
+```javascript
+// DESPUÉS (corregido):
+// ================== FIN SELECCIÓN MÚLTIPLE (ELIMINADA) ==================
+
+function getFechaHoraActual() {
+```
+
+2. Se corrigió `colspan="8"` → `colspan="7"` en la fila de "No se encontraron gestiones" porque la tabla ahora tiene 7 columnas (se eliminó la columna de checkboxes).
+
+### Lección aprendida
+Al usar `str_replace` para eliminar bloques grandes de código, hay que verificar que el reemplazo no deje código pegado a comentarios. Siempre revisar que el archivo resultante tenga saltos de línea adecuados entre declaraciones.

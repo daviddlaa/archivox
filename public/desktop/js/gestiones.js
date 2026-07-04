@@ -6,7 +6,9 @@ var currentLimit = 50;
 var isLoading = false;
 var hasMoreData = true;
 
-// ================== FIN SELECCIÓN MÚLTIPLE (ELIMINADA - SOLO LECTURA) ==================function getFechaHoraActual() {
+// ================== FIN SELECCIÓN MÚLTIPLE (ELIMINADA - SOLO LECTURA) ==================
+
+function getFechaHoraActual() {
     var ahora = new Date();
     var dia = String(ahora.getDate()).padStart(2, '0');
     var mes = String(ahora.getMonth() + 1).padStart(2, '0');
@@ -156,7 +158,7 @@ function renderizarTabla(datos) {
     }
     
     if (!datos.length) {
-        tabla.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;">No se encontraron gestiones</td></tr>';
+        tabla.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">No se encontraron gestiones</td></tr>';
         return;
     }
     
