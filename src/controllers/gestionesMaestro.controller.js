@@ -385,21 +385,24 @@ async function agregarSolicitudesACampana(req, res) {
             return res.status(404).json({ error: 'Gestión no encontrada' });
         }
 
-        // Parsear IDs existentes
+        // Parsear IDs existentes (normalizar a números por si están como strings en BD)
         var idsExistentes = [];
         try {
             if (gestion.solicitudes_ids) {
-                idsExistentes = JSON.parse(gestion.solicitudes_ids);
+                idsExistentes = JSON.parse(gestion.solicitudes_ids).map(function(id) { return Number(id); });
             }
         } catch (e) {
             console.error('[agregarSolicitudesACampana] Error parseando solicitudes_ids:', e);
         }
 
+        // Normalizar nuevos IDs a números
+        var nuevosIds = solicitudes_ids.map(function(id) { return Number(id); });
+
         // Agregar nuevos IDs evitando duplicados
         var idsActualizados = [...idsExistentes];
         var agregados = 0;
-        for (var i = 0; i < solicitudes_ids.length; i++) {
-            var nuevoId = solicitudes_ids[i];
+        for (var i = 0; i < nuevosIds.length; i++) {
+            var nuevoId = nuevosIds[i];
             if (idsActualizados.indexOf(nuevoId) === -1) {
                 idsActualizados.push(nuevoId);
                 agregados++;
@@ -458,18 +461,21 @@ async function quitarSolicitudDeCampana(req, res) {
             return res.status(404).json({ error: 'Gestión no encontrada' });
         }
 
-        // Parsear IDs existentes
+        // Parsear IDs existentes (normalizar a números por si están como strings en BD)
         var idsExistentes = [];
         try {
             if (gestion.solicitudes_ids) {
-                idsExistentes = JSON.parse(gestion.solicitudes_ids);
+                idsExistentes = JSON.parse(gestion.solicitudes_ids).map(function(id) { return Number(id); });
             }
         } catch (e) {
             console.error('[quitarSolicitudDeCampana] Error parseando solicitudes_ids:', e);
         }
 
+        // Normalizar solicitud_id a número
+        var solicitudIdNum = Number(solicitud_id);
+
         // Verificar que la solicitud existe en la campaña
-        var index = idsExistentes.indexOf(solicitud_id);
+        var index = idsExistentes.indexOf(solicitudIdNum);
         if (index === -1) {
             return res.status(400).json({ error: 'La solicitud no pertenece a esta campaña' });
         }
