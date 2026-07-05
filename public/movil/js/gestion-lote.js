@@ -572,36 +572,71 @@ async function quitarSolicitudDeCampana(solicitudId) {
     }
 }
 
-// ================== AGREGAR SOLICITUDES A CAMPAÑA (MÓVIL) ==================
+// ================== AGREGAR SOLICITUDES A CAMPAÑA (MÓVIL - REDISEÑADO) ==================
 
 function abrirModalAgregarSolicitudesMovil() {
-    var contenido = '';
-    contenido += '<div class="modal-agregar-solicitudes">';
-    contenido += '<h2>➕ Agregar Solicitudes</h2>';
+    // Crear overlay y bottom sheet
+    var overlay = document.createElement('div');
+    overlay.id = 'modal-agregar-movil';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:10000;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s ease;';
     
-    // Búsqueda
-    contenido += '<div class="modal-agregar-busqueda">';
-    contenido += '<input type="text" id="busqueda-agregar" placeholder="🔍 Buscar por cédula, nombre o teléfono..." oninput="buscarSolicitudesParaAgregarMovil(event)">';
-    contenido += '</div>';
+    var sheet = document.createElement('div');
+    sheet.style.cssText = 'background:white;width:100%;max-height:85vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden;animation:slideUp 0.3s ease;box-shadow:0 -10px 40px rgba(0,0,0,0.15);';
     
-    // Lista de resultados
-    contenido += '<div id="resultados-agregar" class="resultados-agregar">';
-    contenido += '<div class="agregar-vacio">Escribe para buscar solicitudes disponibles</div>';
-    contenido += '</div>';
+    // === HEADER ===
+    sheet.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid #e5e7eb;flex-shrink:0;">' +
+        '<h2 style="margin:0;font-size:17px;color:#1f2937;">➕ Agregar Solicitudes</h2>' +
+        '<button onclick="cerrarModalAgregarMovil()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#6b7280;">✕</button>' +
+        '</div>' +
+        // === BARRA DE BÚSQUEDA ===
+        '<div style="padding:12px 18px 8px;flex-shrink:0;">' +
+        '<input type="text" id="busqueda-agregar" autofocus placeholder="🔍 Buscar por nombre, cédula o teléfono..." style="width:100%;padding:14px 16px;border:2px solid #e5e7eb;border-radius:12px;font-size:16px;outline:none;box-sizing:border-box;transition:border-color 0.2s;" oninput="buscarSolicitudesParaAgregarMovil(event)" onfocus="this.style.borderColor=\'#6366f1\'" onblur="this.style.borderColor=\'#e5e7eb\'">' +
+        '</div>' +
+        // === CONTADOR DE SELECCIONADOS ===
+        '<div id="seleccionados-agregar" style="display:none;padding:8px 18px;flex-shrink:0;">' +
+        '<div style="background:#eef2ff;padding:8px 14px;border-radius:10px;font-size:13px;color:#4338ca;font-weight:600;">✅ <span id="contador-seleccionados">0</span> solicitude(s) seleccionada(s)</div>' +
+        '</div>' +
+        // === LISTA DE RESULTADOS ===
+        '<div id="resultados-agregar" style="flex:1;overflow-y:auto;padding:8px 18px;min-height:120px;">' +
+        '<div style="text-align:center;padding:40px 10px;color:#9ca3af;font-size:14px;">🔍 Escribe al menos 2 caracteres para buscar</div>' +
+        '</div>' +
+        // === BOTÓN AGREGAR (STICKY BOTTOM) ===
+        '<div style="padding:12px 18px 20px;border-top:1px solid #e5e7eb;flex-shrink:0;">' +
+        '<button id="btn-agregar-solicitudes" onclick="agregarSolicitudesSeleccionadasMovil()" disabled style="width:100%;padding:16px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.2s;opacity:0.5;">➕ Agregar (0)</button>' +
+        '</div>';
     
-    // Seleccionados
-    contenido += '<div id="seleccionados-agregar" class="seleccionados-agregar" style="display:none;">';
-    contenido += '<p><strong>Seleccionados:</strong> <span id="contador-seleccionados">0</span></p>';
-    contenido += '</div>';
+    overlay.appendChild(sheet);
+    document.body.appendChild(overlay);
     
-    contenido += '<div class="modal-botones">';
-    contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>';
-    contenido += '<button class="btn-guardar" id="btn-agregar-solicitudes" onclick="agregarSolicitudesSeleccionadasMovil()" disabled>➕ Agregar (0)</button>';
-    contenido += '</div>';
-    contenido += '</div>';
+    // Cerrar al tocar el overlay (fuera del sheet)
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) cerrarModalAgregarMovil();
+    });
     
-    crearModal(contenido);
+    // Auto-focus al input después de que el DOM se actualice
+    setTimeout(function() {
+        var input = document.getElementById('busqueda-agregar');
+        if (input) input.focus();
+    }, 300);
 }
+
+function cerrarModalAgregarMovil() {
+    var modal = document.getElementById('modal-agregar-movil');
+    if (modal) {
+        modal.style.transition = 'opacity 0.2s ease';
+        modal.style.opacity = '0';
+        setTimeout(function() { modal.remove(); }, 200);
+    }
+    // Limpiar selecciones
+    solicitudesSeleccionadas = {};
+}
+
+// Agregar keyframes animation al cargar la página
+(function() {
+    var style = document.createElement('style');
+    style.textContent = '@keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } } @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }';
+    document.head.appendChild(style);
+})();
 
 var solicitudesDisponibles = [];
 var solicitudesSeleccionadas = {};
@@ -739,7 +774,7 @@ async function agregarSolicitudesSeleccionadasMovil() {
         if (response.ok && !resultado.error) {
             alert('✅ ' + resultado.mensaje);
             solicitudesSeleccionadas = {};
-            cerrarModal();
+            cerrarModalAgregarMovil();
             await cargarDatosGestionMovil();
             await cargarListaCampanas();
         } else {
