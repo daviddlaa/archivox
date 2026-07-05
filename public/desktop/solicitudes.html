@@ -126,6 +126,7 @@
                     </div>
                     <div class="actions-mini">
                         <button class="btn-action btn-gestion" id="btn-gestion" title="Iniciar Gestión por Lotes" style="display:none;" onclick="abrirModalNuevaGestion()">🚀 Gestión</button>
+                        <button class="btn-action btn-agregar-campana" id="btn-agregar-campana" title="Agregar a campaña existente" style="display:none;" onclick="abrirModalAgregarCampana()">➕ Campaña</button>
                     </div>
                 </div>
 
@@ -158,6 +159,10 @@
                         <button class="inline-action-btn btn-gestion" onclick="abrirModalNuevaGestion()" title="Crear campaña">
                             <span class="inline-icon" aria-hidden="true">🚀</span>
                             <span class="inline-text">Crear campaña</span>
+                        </button>
+                        <button class="inline-action-btn btn-agregar-campana" id="btn-agregar-campana" onclick="abrirModalAgregarCampana()" title="Agregar a campaña existente">
+                            <span class="inline-icon" aria-hidden="true">➕</span>
+                            <span class="inline-text">Agregar a campaña</span>
                         </button>
                         <span class="inline-count"><span id="seleccionadas-inline">0</span> seleccionadas</span>
                     </div>

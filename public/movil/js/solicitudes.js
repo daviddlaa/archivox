@@ -60,6 +60,10 @@ function actualizarContador() {
     if (btnGestion) {
         btnGestion.style.display = filasSeleccionadas.length > 0 ? 'inline-flex' : 'none';
     }
+    var btnAgregarCampanaMovil = document.getElementById('btn-agregar-campana-movil');
+    if (btnAgregarCampanaMovil) {
+        btnAgregarCampanaMovil.style.display = filasSeleccionadas.length > 0 ? 'inline-flex' : 'none';
+    }
 
     if (btnSeleccionarTodo) {
         if (!idsVisibles.length) {
@@ -978,6 +982,184 @@ async function crearGestionLoteMovil() {
         alert('Error al crear gestión');
     } finally {
         if (btn) { btn.textContent = '🚀 Crear Gestión'; btn.disabled = false; }
+    }
+}
+
+// ================== AGREGAR A CAMPAÑA EXISTENTE (MÓVIL) ==================
+
+var campanaSeleccionadaIdMovil = null;
+
+// Abrir modal para agregar solicitudes a una campaña existente (móvil)
+async function abrirModalAgregarCampanaMovil() {
+    if (filasSeleccionadas.length === 0) {
+        alert('Selecciona al menos una card primero');
+        return;
+    }
+
+    var contenido = '';
+    contenido += '<div style="padding: 20px; background: white; min-height: 100vh;">';
+    contenido += '<h2 style="margin-top:0; color:#1f2937; font-size:18px;">➕ Agregar a Campaña</h2>';
+    contenido += '<div style="background: #e0e7ff; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #3730a3; margin-bottom: 15px; display: inline-block;">' + filasSeleccionadas.length + ' solicitudes seleccionadas</div>';
+    contenido += '<div id="campanas-list-movil" style="text-align: center; padding: 40px; color: #6b7280;">⏳ Cargando campañas...</div>';
+    contenido += '<div style="margin-top: 20px; display: flex; gap: 10px;">';
+    contenido += '<button onclick="cerrarModal()" style="flex:1; padding: 12px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">Cancelar</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+
+    crearModalMovil(contenido);
+
+    // Cargar campañas
+    try {
+        var response = await fetch('/api/gestiones-maestro', {
+            credentials: 'include'
+        });
+        if (!response.ok) throw new Error('Error al cargar campañas');
+        var campanas = await response.json();
+        renderizarListaCampanasMovil(campanas);
+    } catch (error) {
+        console.error('Error cargando campañas móvil:', error);
+        var listContainer = document.getElementById('campanas-list-movil');
+        if (listContainer) {
+            listContainer.innerHTML = '<div style="color: #dc2626;">❌ Error al cargar campañas</div>';
+        }
+    }
+}
+
+// Renderizar lista de campañas (móvil)
+function renderizarListaCampanasMovil(campanas) {
+    var container = document.getElementById('campanas-list-movil');
+    if (!container) return;
+
+    if (!campanas || campanas.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;">📭 No hay campañas creadas aún.<br><br><button onclick="cerrarModal(); abrirModalNuevaGestionMovil()" style="padding: 12px 24px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">🚀 Crear nueva campaña</button></div>';
+        return;
+    }
+
+    var html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+
+    for (var i = 0; i < campanas.length; i++) {
+        var c = campanas[i];
+        var gestionadas = parseInt(c.gestionadas || 0);
+        var total = parseInt(c.total_solicitudes || 0);
+        var progreso = total > 0 ? Math.round((gestionadas / total) * 100) : 0;
+
+        var estadoColor = '#6b7280';
+        var estadoBg = '#f3f4f6';
+        if (c.estado === 'activa') { estadoColor = '#065f46'; estadoBg = '#dcfce7'; }
+        else if (c.estado === 'completada') { estadoColor = '#1e40af'; estadoBg = '#dbeafe'; }
+        else if (c.estado === 'pausada') { estadoColor = '#92400e'; estadoBg = '#fef3c7'; }
+
+        html += '<div class="campana-item-select-movil" data-id="' + c.id + '" style="background: #f8fafc; border: 2px solid #e5e7eb; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s ease;" onclick="seleccionarCampanaMovil(this, \'' + c.id + '\')">';
+        html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">';
+        html += '<span style="font-weight: 600; font-size: 14px; color: #1f2937;">' + (c.nombre || 'Sin nombre') + '</span>';
+        html += '<span style="background: ' + estadoBg + '; color: ' + estadoColor + '; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">' + (c.estado || '—') + '</span>';
+        html += '</div>';
+        html += '<div style="display: flex; gap: 15px; font-size: 12px; color: #6b7280;">';
+        html += '<span>📋 ' + total + ' solicitudes</span>';
+        html += '<span>✅ ' + gestionadas + ' gestionadas</span>';
+        html += '<span>📊 ' + progreso + '%</span>';
+        html += '</div>';
+        html += '</div>';
+    }
+
+    html += '</div>';
+    html += '<div style="margin-top: 12px; text-align: center;">';
+    html += '<button id="btn-confirmar-agregar-movil" onclick="confirmarAgregarCampanaMovil()" disabled style="width: 100%; padding: 14px; background: #9ca3af; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: not-allowed; transition: all 0.2s ease;">Selecciona una campaña</button>';
+    html += '</div>';
+
+    container.innerHTML = html;
+
+    // Agregar hover effect con JS
+    var items = container.querySelectorAll('.campana-item-select-movil');
+    for (var j = 0; j < items.length; j++) {
+        items[j].addEventListener('mouseenter', function() {
+            if (!this.classList.contains('seleccionada')) {
+                this.style.borderColor = '#93c5fd';
+                this.style.background = '#f0f5ff';
+            }
+        });
+        items[j].addEventListener('mouseleave', function() {
+            if (!this.classList.contains('seleccionada')) {
+                this.style.borderColor = '#e5e7eb';
+                this.style.background = '#f8fafc';
+            }
+        });
+    }
+}
+
+// Seleccionar una campaña (móvil)
+function seleccionarCampanaMovil(elemento, id) {
+    var items = document.querySelectorAll('.campana-item-select-movil');
+    for (var i = 0; i < items.length; i++) {
+        items[i].classList.remove('seleccionada');
+        items[i].style.borderColor = '#e5e7eb';
+        items[i].style.background = '#f8fafc';
+    }
+
+    elemento.classList.add('seleccionada');
+    elemento.style.borderColor = '#2563eb';
+    elemento.style.background = '#eff6ff';
+
+    campanaSeleccionadaIdMovil = id;
+
+    var btn = document.getElementById('btn-confirmar-agregar-movil');
+    if (btn) {
+        btn.disabled = false;
+        btn.style.background = '#2563eb';
+        btn.style.cursor = 'pointer';
+        btn.textContent = '➕ Agregar a esta campaña';
+    }
+}
+
+// Confirmar y agregar solicitudes a la campaña (móvil)
+async function confirmarAgregarCampanaMovil() {
+    if (!campanaSeleccionadaIdMovil) {
+        alert('Selecciona una campaña primero');
+        return;
+    }
+
+    if (filasSeleccionadas.length === 0) {
+        alert('No hay solicitudes seleccionadas');
+        return;
+    }
+
+    var btn = document.getElementById('btn-confirmar-agregar-movil');
+    if (btn) {
+        btn.textContent = '⏳ Agregando...';
+        btn.disabled = true;
+    }
+
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + campanaSeleccionadaIdMovil + '/agregar-solicitudes', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                solicitudes_ids: filasSeleccionadas
+            })
+        });
+
+        var resultado = await response.json();
+
+        if (response.ok) {
+            alert('✅ ' + (resultado.mensaje || 'Solicitudes agregadas correctamente'));
+            cerrarModal();
+            // Ir a la campaña
+            try { window.location.href = '/m/gestion-lote?id=' + campanaSeleccionadaIdMovil; } catch (e) { window.location.href = '/gestion-lote?id=' + campanaSeleccionadaIdMovil; }
+        } else {
+            alert('Error: ' + (resultado.error || 'Error desconocido'));
+            if (btn) {
+                btn.textContent = '➕ Agregar a esta campaña';
+                btn.disabled = false;
+            }
+        }
+    } catch (error) {
+        console.error('Error agregando a campaña:', error);
+        alert('Error al agregar solicitudes: ' + error.message);
+        if (btn) {
+            btn.textContent = '➕ Agregar a esta campaña';
+            btn.disabled = false;
+        }
     }
 }
 

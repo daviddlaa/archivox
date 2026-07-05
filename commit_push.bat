@@ -6,6 +6,6 @@ git add -A
 git add src/config/db.js
 git add src/config/initDb.pg.js
 git add src/controllers/gestionesMaestro.controller.js
-git commit -m "fix de selecion de tarjetas solicitudes movil"
+git commit -m "inline de agragar solitudes en solictudes por lotes"
 git push origin master
 pause

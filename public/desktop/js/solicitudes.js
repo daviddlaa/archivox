@@ -97,12 +97,20 @@ function actualizarContador() {
         contadorInline.textContent = filasSeleccionadas.length;
     }
     
-    // Solo mostrar botón de Gestión según selección
+    // Mostrar/ocultar botón de Gestión y Agregar a Campaña según selección
     if (btnGestion) {
         if (filasSeleccionadas.length > 0) {
             btnGestion.style.display = 'inline-flex';
         } else {
             btnGestion.style.display = 'none';
+        }
+    }
+    var btnAgregarCampana = document.getElementById('btn-agregar-campana');
+    if (btnAgregarCampana) {
+        if (filasSeleccionadas.length > 0) {
+            btnAgregarCampana.style.display = 'inline-flex';
+        } else {
+            btnAgregarCampana.style.display = 'none';
         }
     }
     
@@ -341,6 +349,189 @@ async function crearGestionLote() {
     } finally {
         if (btn) {
             btn.textContent = '🚀 Crear Gestión';
+            btn.disabled = false;
+        }
+    }
+}
+
+// ================== AGREGAR A CAMPAÑA EXISTENTE ==================
+
+var campanaSeleccionadaId = null;
+
+// Abrir modal para agregar solicitudes seleccionadas a una campaña existente
+async function abrirModalAgregarCampana() {
+    if (filasSeleccionadas.length === 0) {
+        alert('Selecciona al menos una solicitud primero');
+        return;
+    }
+
+    var contenido = '';
+    contenido += '<div style="padding: 24px; max-width: 600px; margin: 0 auto;">';
+    contenido += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">';
+    contenido += '<h2 style="margin: 0; color: #1f2937; font-size: 20px;">➕ Agregar a Campaña</h2>';
+    contenido += '<span style="background: #e0e7ff; color: #3730a3; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">' + filasSeleccionadas.length + ' solicitudes</span>';
+    contenido += '</div>';
+    contenido += '<div id="campanas-list" style="text-align: center; padding: 40px; color: #6b7280;">⏳ Cargando campañas...</div>';
+    contenido += '<div style="display: flex; gap: 10px; justify-content: flex-end; padding-top: 14px; margin-top: 16px; border-top: 2px solid #e5e7eb;">';
+    contenido += '<button onclick="cerrarModal()" class="btn-modal-cancelar">Cancelar</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+
+    crearModal(contenido);
+
+    // Cargar campañas
+    try {
+        var response = await fetch('/api/gestiones-maestro', {
+            credentials: 'include'
+        });
+        if (!response.ok) throw new Error('Error al cargar campañas');
+        var campanas = await response.json();
+        renderizarListaCampanas(campanas);
+    } catch (error) {
+        console.error('Error cargando campañas:', error);
+        var listContainer = document.getElementById('campanas-list');
+        if (listContainer) {
+            listContainer.innerHTML = '<div style="color: #dc2626;">❌ Error al cargar campañas</div>';
+        }
+    }
+}
+
+// Renderizar lista de campañas en el modal
+function renderizarListaCampanas(campanas) {
+    var container = document.getElementById('campanas-list');
+    if (!container) return;
+
+    if (!campanas || campanas.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;">📭 No hay campañas creadas aún.<br><br><button onclick="cerrarModal(); abrirModalNuevaGestion()" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">🚀 Crear nueva campaña</button></div>';
+        return;
+    }
+
+    var html = '<div style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">';
+
+    for (var i = 0; i < campanas.length; i++) {
+        var c = campanas[i];
+        var gestionadas = parseInt(c.gestionadas || 0);
+        var total = parseInt(c.total_solicitudes || 0);
+        var progreso = total > 0 ? Math.round((gestionadas / total) * 100) : 0;
+
+        var estadoColor = '#6b7280';
+        var estadoBg = '#f3f4f6';
+        if (c.estado === 'activa') { estadoColor = '#065f46'; estadoBg = '#dcfce7'; }
+        else if (c.estado === 'completada') { estadoColor = '#1e40af'; estadoBg = '#dbeafe'; }
+        else if (c.estado === 'pausada') { estadoColor = '#92400e'; estadoBg = '#fef3c7'; }
+
+        html += '<div class="campana-item-select" data-id="' + c.id + '" style="background: #f8fafc; border: 2px solid #e5e7eb; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s ease;" onclick="seleccionarCampana(this, \'' + c.id + '\')">';
+        html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">';
+        html += '<span style="font-weight: 600; font-size: 14px; color: #1f2937;">' + (c.nombre || 'Sin nombre') + '</span>';
+        html += '<span style="background: ' + estadoBg + '; color: ' + estadoColor + '; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">' + (c.estado || '—') + '</span>';
+        html += '</div>';
+        html += '<div style="display: flex; gap: 15px; font-size: 12px; color: #6b7280;">';
+        html += '<span>📋 ' + total + ' solicitudes</span>';
+        html += '<span>✅ ' + gestionadas + ' gestionadas</span>';
+        html += '<span>📊 ' + progreso + '%</span>';
+        html += '</div>';
+        html += '</div>';
+    }
+
+    html += '</div>';
+    html += '<div style="margin-top: 12px; text-align: center;">';
+    html += '<button id="btn-confirmar-agregar" onclick="confirmarAgregarACampana()" disabled style="padding: 12px 30px; background: #9ca3af; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: not-allowed; transition: all 0.2s ease;">Selecciona una campaña</button>';
+    html += '</div>';
+
+    container.innerHTML = html;
+
+    // Agregar hover effect con JS
+    var items = container.querySelectorAll('.campana-item-select');
+    for (var j = 0; j < items.length; j++) {
+        items[j].addEventListener('mouseenter', function() {
+            if (!this.classList.contains('seleccionada')) {
+                this.style.borderColor = '#93c5fd';
+                this.style.background = '#f0f5ff';
+            }
+        });
+        items[j].addEventListener('mouseleave', function() {
+            if (!this.classList.contains('seleccionada')) {
+                this.style.borderColor = '#e5e7eb';
+                this.style.background = '#f8fafc';
+            }
+        });
+    }
+}
+
+// Seleccionar una campaña
+function seleccionarCampana(elemento, id) {
+    // Deseleccionar todas
+    var items = document.querySelectorAll('.campana-item-select');
+    for (var i = 0; i < items.length; i++) {
+        items[i].classList.remove('seleccionada');
+        items[i].style.borderColor = '#e5e7eb';
+        items[i].style.background = '#f8fafc';
+    }
+
+    // Seleccionar esta
+    elemento.classList.add('seleccionada');
+    elemento.style.borderColor = '#2563eb';
+    elemento.style.background = '#eff6ff';
+
+    campanaSeleccionadaId = id;
+
+    // Habilitar botón
+    var btn = document.getElementById('btn-confirmar-agregar');
+    if (btn) {
+        btn.disabled = false;
+        btn.style.background = '#2563eb';
+        btn.style.cursor = 'pointer';
+        btn.textContent = '➕ Agregar a esta campaña';
+    }
+}
+
+// Confirmar y agregar solicitudes a la campaña seleccionada
+async function confirmarAgregarACampana() {
+    if (!campanaSeleccionadaId) {
+        alert('Selecciona una campaña primero');
+        return;
+    }
+
+    if (filasSeleccionadas.length === 0) {
+        alert('No hay solicitudes seleccionadas');
+        return;
+    }
+
+    var btn = document.getElementById('btn-confirmar-agregar');
+    if (btn) {
+        btn.textContent = '⏳ Agregando...';
+        btn.disabled = true;
+    }
+
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + campanaSeleccionadaId + '/agregar-solicitudes', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                solicitudes_ids: filasSeleccionadas
+            })
+        });
+
+        var resultado = await response.json();
+
+        if (response.ok) {
+            alert('✅ ' + (resultado.mensaje || 'Solicitudes agregadas correctamente'));
+            cerrarModal();
+            // Ir a la campaña
+            window.location.href = '/gestion-lote?id=' + campanaSeleccionadaId;
+        } else {
+            alert('Error: ' + (resultado.error || 'Error desconocido'));
+            if (btn) {
+                btn.textContent = '➕ Agregar a esta campaña';
+                btn.disabled = false;
+            }
+        }
+    } catch (error) {
+        console.error('Error agregando a campaña:', error);
+        alert('Error al agregar solicitudes: ' + error.message);
+        if (btn) {
+            btn.textContent = '➕ Agregar a esta campaña';
             btn.disabled = false;
         }
     }
