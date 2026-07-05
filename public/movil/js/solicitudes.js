@@ -417,7 +417,7 @@ return `
                 <span class="client-id">#${d.id_solicitud}</span>
                 <span class="badge estado-${d.estado}">${d.estado || 'N/A'}</span>
             </div>
-            <div class="client-name" onclick="copiarNombreCedula('${escaparParaAtributo(d.nombre || '')}', '${escaparParaAtributo(d.cedula || '')}')" style="cursor:pointer;" title="Copiar nombre + cédula">${d.nombre || 'Sin nombre'} 📋</div>
+            <div class="client-name" onclick="event.stopPropagation(); copiarNombreCedula('${escaparParaAtributo(d.nombre || '')}', '${escaparParaAtributo(d.cedula || '')}')" style="cursor:pointer;" title="Copiar nombre + cédula">${d.nombre || 'Sin nombre'} 📋</div>
             
             <!-- OPCIÓN A: Compacto - Teléfono + Cédula en misma línea -->
             <div class="client-info-compact" style="display: flex; gap: 10px; margin: 4px 0; font-size: 12px; color: #6b7280;">
