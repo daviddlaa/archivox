@@ -237,6 +237,13 @@
         }
         
         .btn-sol:hover { opacity: 0.9; transform: scale(1.02); }
+        .btn-sol.btn-sol-quitar {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .btn-sol.btn-sol-quitar:hover {
+            background: #fecaca;
+        }
         
         /* ===== ESTADO COLORES ===== */
         .estado-Pendiente { background: #fef3c7; color: #92400e; }
@@ -311,6 +318,11 @@
             <option value="Cita">Cita</option>
             <option value="Completada">Completada</option>
         </select>
+    </div>
+
+    <!-- Botón Agregar Solicitudes (visible solo con campaña cargada) -->
+    <div id="agregar-solicitudes-container" style="padding: 0 15px 10px; display: none;">
+        <button onclick="abrirModalAgregarSolicitudesMovil()" style="width:100%;padding:12px;background:linear-gradient(135deg, #6366f1, #4f46e5);color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">➕ Agregar Solicitudes</button>
     </div>
 
     <!-- Botón Exportar Excel (visible solo con campaña cargada) -->

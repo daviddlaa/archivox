@@ -126,6 +126,10 @@ async function cargarDatosGestionMovil() {
         // Mostrar botón de exportar Excel
         var containerExportar = document.getElementById('exportar-excel-container');
         if (containerExportar) containerExportar.style.display = 'block';
+        
+        // Mostrar botón de agregar solicitudes
+        var containerAgregar = document.getElementById('agregar-solicitudes-container');
+        if (containerAgregar) containerAgregar.style.display = 'block';
 
         solicitudes = datosGestion.solicitudes || [];
         console.log('[movil-cargarDatos] Solicitudes:', solicitudes.length);
@@ -235,6 +239,9 @@ html += '<div class="sol-botones">';
         
         // Botón historial para TODAS las cards
         html += '<button class="btn-sol btn-sol-historial btn-sol-small" onclick="verHistorial(\'' + sol.id_solicitud + '\')">Historial</button>';
+        
+        // Botón quitar de campaña
+        html += '<button class="btn-sol btn-sol-quitar btn-sol-small" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar</button>';
         
         html += '</div>';
 
@@ -507,6 +514,244 @@ function cerrarModal() {
 // Eventos
 var busqEl = document.getElementById('busqueda'); if (busqEl) busqEl.addEventListener('input', function() { renderizarSolicitudes(todasLasSolicitudes); });
 var filtroEl = document.getElementById('filtro-estado'); if (filtroEl) filtroEl.addEventListener('change', function() { renderizarSolicitudes(todasLasSolicitudes); });
+
+// ================== QUITAR SOLICITUD DE CAMPAÑA (MÓVIL) ==================
+
+function confirmarQuitarSolicitud(solicitudId, nombreCliente) {
+    var contenido = '';
+    contenido += '<div class="modal-gestion">';
+    contenido += '<h2>❌ Quitar Solicitud #' + solicitudId + '</h2>';
+    contenido += '<div class="modal-info">';
+    contenido += '<p><strong>Solicitud:</strong> #' + solicitudId + '</p>';
+    contenido += '<p><strong>Cliente:</strong> ' + (nombreCliente || '—') + '</p>';
+    contenido += '<p><strong>Campaña:</strong> ' + (datosGestion ? datosGestion.nombre : '—') + '</p>';
+    contenido += '</div>';
+    contenido += '<div class="modal-advertencia">';
+    contenido += '<p>⚠️ <strong>¿Estás seguro?</strong></p>';
+    contenido += '<ul style="padding-left: 20px; margin: 8px 0; font-size: 13px;">';
+    contenido += '<li>La solicitud será quitada de esta campaña.</li>';
+    contenido += '<li>Las gestiones registradas NO se eliminarán.</li>';
+    contenido += '<li>Esta acción es <strong>IRREVERSIBLE</strong>.</li>';
+    contenido += '</ul>';
+    contenido += '</div>';
+    contenido += '<div class="modal-botones">';
+    contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>';
+    contenido += '<button class="btn-eliminar" id="btn-confirmar-quitar" onclick="quitarSolicitudDeCampana(' + solicitudId + ')">❌ Quitar</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    crearModal(contenido);
+}
+
+async function quitarSolicitudDeCampana(solicitudId) {
+    var btn = document.getElementById('btn-confirmar-quitar');
+    if (btn) { btn.textContent = '⏳ Quitando...'; btn.disabled = true; }
+    
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + gestionId + '/quitar-solicitud', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ solicitud_id: parseInt(solicitudId) })
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok && !resultado.error) {
+            alert('✅ Solicitud quitada de la campaña');
+            cerrarModal();
+            await cargarDatosGestionMovil();
+            await cargarListaCampanas();
+        } else {
+            alert('Error: ' + (resultado.error || 'Error al quitar solicitud'));
+            if (btn) { btn.textContent = '❌ Quitar'; btn.disabled = false; }
+        }
+    } catch (error) {
+        console.error('[movil] Error quitando solicitud:', error);
+        alert('Error al quitar la solicitud');
+        if (btn) { btn.textContent = '❌ Quitar'; btn.disabled = false; }
+    }
+}
+
+// ================== AGREGAR SOLICITUDES A CAMPAÑA (MÓVIL) ==================
+
+function abrirModalAgregarSolicitudesMovil() {
+    var contenido = '';
+    contenido += '<div class="modal-agregar-solicitudes">';
+    contenido += '<h2>➕ Agregar Solicitudes</h2>';
+    
+    // Búsqueda
+    contenido += '<div class="modal-agregar-busqueda">';
+    contenido += '<input type="text" id="busqueda-agregar" placeholder="🔍 Buscar por cédula, nombre o teléfono..." oninput="buscarSolicitudesParaAgregarMovil(event)">';
+    contenido += '</div>';
+    
+    // Lista de resultados
+    contenido += '<div id="resultados-agregar" class="resultados-agregar">';
+    contenido += '<div class="agregar-vacio">Escribe para buscar solicitudes disponibles</div>';
+    contenido += '</div>';
+    
+    // Seleccionados
+    contenido += '<div id="seleccionados-agregar" class="seleccionados-agregar" style="display:none;">';
+    contenido += '<p><strong>Seleccionados:</strong> <span id="contador-seleccionados">0</span></p>';
+    contenido += '</div>';
+    
+    contenido += '<div class="modal-botones">';
+    contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>';
+    contenido += '<button class="btn-guardar" id="btn-agregar-solicitudes" onclick="agregarSolicitudesSeleccionadasMovil()" disabled>➕ Agregar (0)</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    crearModal(contenido);
+}
+
+var solicitudesDisponibles = [];
+var solicitudesSeleccionadas = {};
+
+async function buscarSolicitudesParaAgregarMovil(event) {
+    var termino = event.target.value.trim();
+    var resultadosContainer = document.getElementById('resultados-agregar');
+    
+    if (!termino || termino.length < 2) {
+        resultadosContainer.innerHTML = '<div class="agregar-vacio">Escribe al menos 2 caracteres para buscar</div>';
+        return;
+    }
+    
+    resultadosContainer.innerHTML = '<div class="agregar-cargando">🔍 Buscando...</div>';
+    
+    try {
+        var response = await fetch('/api/excel/solicitudes/buscar?q=' + encodeURIComponent(termino));
+        if (!response.ok) throw new Error('Error en búsqueda');
+        
+        var data = await response.json();
+        
+        // Obtener IDs ya en la campaña
+        if (!datosGestion || !datosGestion.solicitudes_ids) {
+            resultadosContainer.innerHTML = '<div class="agregar-vacio">Error: no hay datos de campaña</div>';
+            return;
+        }
+        
+        var idsEnCampana = [];
+        try {
+            idsEnCampana = JSON.parse(datosGestion.solicitudes_ids);
+        } catch (e) {
+            console.error('[movil] Error parseando solicitudes_ids:', e);
+        }
+        
+        var lista = Array.isArray(data) ? data : (data.solicitudes || []);
+        solicitudesDisponibles = [];
+        
+        for (var i = 0; i < lista.length; i++) {
+            var sol = lista[i];
+            var idSol = sol.id_solicitud || sol.id;
+            if (idsEnCampana.indexOf(idSol) === -1) {
+                solicitudesDisponibles.push(sol);
+            }
+        }
+        
+        if (solicitudesDisponibles.length === 0) {
+            resultadosContainer.innerHTML = '<div class="agregar-vacio">No se encontraron solicitudes disponibles</div>';
+            return;
+        }
+        
+        var html = '';
+        for (var i = 0; i < solicitudesDisponibles.length; i++) {
+            var sol = solicitudesDisponibles[i];
+            var solId = sol.id_solicitud || sol.id;
+            var isSelected = solicitudesSeleccionadas[solId] ? 'selected' : '';
+            
+            html += '<div class="agregar-item ' + isSelected + '" onclick="toggleSeleccionSolicitudMovil(' + solId + ')">';
+            html += '<div class="agregar-item-check">' + (isSelected ? '✅' : '⬜') + '</div>';
+            html += '<div class="agregar-item-info">';
+            html += '<div class="agregar-item-nombre">#' + solId + ' - ' + (sol.nombre || 'Sin nombre') + '</div>';
+            html += '<div class="agregar-item-datos">🆔 ' + (sol.cedula || '—') + ' | 📱 ' + (sol.celular || '—') + '</div>';
+            html += '</div>';
+            html += '</div>';
+        }
+        
+        resultadosContainer.innerHTML = html;
+        actualizarBotonAgregarMovil();
+        
+    } catch (error) {
+        console.error('[movil] Error en búsqueda:', error);
+        resultadosContainer.innerHTML = '<div class="agregar-error">Error al buscar: ' + error.message + '</div>';
+    }
+}
+
+function toggleSeleccionSolicitudMovil(solicitudId) {
+    if (solicitudesSeleccionadas[solicitudId]) {
+        delete solicitudesSeleccionadas[solicitudId];
+    } else {
+        solicitudesSeleccionadas[solicitudId] = true;
+    }
+    
+    var items = document.querySelectorAll('.agregar-item');
+    items.forEach(function(item) {
+        var onclick = item.getAttribute('onclick') || '';
+        var match = onclick.match(/toggleSeleccionSolicitudMovil\((\d+)\)/);
+        if (match) {
+            var id = parseInt(match[1]);
+            if (solicitudesSeleccionadas[id]) {
+                item.classList.add('selected');
+                item.querySelector('.agregar-item-check').textContent = '✅';
+            } else {
+                item.classList.remove('selected');
+                item.querySelector('.agregar-item-check').textContent = '⬜';
+            }
+        }
+    });
+    
+    actualizarBotonAgregarMovil();
+}
+
+function actualizarBotonAgregarMovil() {
+    var count = Object.keys(solicitudesSeleccionadas).length;
+    var btn = document.getElementById('btn-agregar-solicitudes');
+    var contador = document.getElementById('contador-seleccionados');
+    var container = document.getElementById('seleccionados-agregar');
+    
+    if (btn) {
+        btn.textContent = '➕ Agregar (' + count + ')';
+        btn.disabled = count === 0;
+    }
+    if (contador) contador.textContent = count;
+    if (container) container.style.display = count > 0 ? 'block' : 'none';
+}
+
+async function agregarSolicitudesSeleccionadasMovil() {
+    var ids = Object.keys(solicitudesSeleccionadas).map(function(id) { return parseInt(id); });
+    
+    if (ids.length === 0) {
+        alert('Selecciona al menos una solicitud');
+        return;
+    }
+    
+    var btn = document.getElementById('btn-agregar-solicitudes');
+    if (btn) { btn.textContent = '⏳ Agregando...'; btn.disabled = true; }
+    
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + gestionId + '/agregar-solicitudes', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ solicitudes_ids: ids })
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok && !resultado.error) {
+            alert('✅ ' + resultado.mensaje);
+            solicitudesSeleccionadas = {};
+            cerrarModal();
+            await cargarDatosGestionMovil();
+            await cargarListaCampanas();
+        } else {
+            alert('Error: ' + (resultado.error || 'Error al agregar solicitudes'));
+            if (btn) { btn.textContent = '➕ Agregar (' + ids.length + ')'; btn.disabled = false; }
+        }
+    } catch (error) {
+        console.error('[movil] Error agregando solicitudes:', error);
+        alert('Error al agregar las solicitudes');
+        if (btn) { btn.textContent = '➕ Agregar (' + ids.length + ')'; btn.disabled = false; }
+    }
+}
 
 // ================== EXPORTAR CAMPAÑA A EXCEL ==================
 

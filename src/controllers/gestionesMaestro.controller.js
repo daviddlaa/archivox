@@ -358,6 +358,158 @@ async function obtenerProgresoGestion(req, res) {
     }
 }
 
+// PUT /api/gestiones-maestro/:id/agregar-solicitudes - Agregar solicitudes a una campaña
+async function agregarSolicitudesACampana(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+
+        const { id } = req.params;
+        const { solicitudes_ids } = req.body;
+
+        if (!solicitudes_ids || !Array.isArray(solicitudes_ids) || solicitudes_ids.length === 0) {
+            return res.status(400).json({ error: 'Se requiere al menos un ID de solicitud' });
+        }
+
+        // Obtener la campaña actual
+        const resultGM = await pool.query(
+            'SELECT * FROM gestiones_maestro WHERE id = ? AND usuario_id = ?',
+            [id, usuario_id]
+        );
+
+        const gestion = getFirstRow(resultGM);
+
+        if (!gestion) {
+            return res.status(404).json({ error: 'Gestión no encontrada' });
+        }
+
+        // Parsear IDs existentes
+        var idsExistentes = [];
+        try {
+            if (gestion.solicitudes_ids) {
+                idsExistentes = JSON.parse(gestion.solicitudes_ids);
+            }
+        } catch (e) {
+            console.error('[agregarSolicitudesACampana] Error parseando solicitudes_ids:', e);
+        }
+
+        // Agregar nuevos IDs evitando duplicados
+        var idsActualizados = [...idsExistentes];
+        var agregados = 0;
+        for (var i = 0; i < solicitudes_ids.length; i++) {
+            var nuevoId = solicitudes_ids[i];
+            if (idsActualizados.indexOf(nuevoId) === -1) {
+                idsActualizados.push(nuevoId);
+                agregados++;
+            }
+        }
+
+        if (agregados === 0) {
+            return res.json({ mensaje: 'Las solicitudes ya estaban en la campaña', agregados: 0, total: idsActualizados.length });
+        }
+
+        // Guardar los IDs actualizados
+        const solicitudesIdsJson = JSON.stringify(idsActualizados);
+        await pool.query(`
+            UPDATE gestiones_maestro 
+            SET solicitudes_ids = ?, total_solicitudes = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND usuario_id = ?
+        `, [solicitudesIdsJson, idsActualizados.length, id, usuario_id]);
+
+        console.log('[agregarSolicitudesACampana] Agregados', agregados, 'solicitudes a campaña', id, 'Total:', idsActualizados.length);
+
+        res.json({
+            mensaje: agregados + ' solicitude(s) agregada(s) correctamente',
+            agregados: agregados,
+            total: idsActualizados.length
+        });
+    } catch (error) {
+        console.error('Error en agregarSolicitudesACampana:', error);
+        res.status(500).json({ error: 'Error al agregar solicitudes a la campaña' });
+    }
+}
+
+// PUT /api/gestiones-maestro/:id/quitar-solicitud - Quitar una solicitud de una campaña
+async function quitarSolicitudDeCampana(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+
+        const { id } = req.params;
+        const { solicitud_id } = req.body;
+
+        if (!solicitud_id) {
+            return res.status(400).json({ error: 'solicitud_id es requerido' });
+        }
+
+        // Obtener la campaña actual
+        const resultGM = await pool.query(
+            'SELECT * FROM gestiones_maestro WHERE id = ? AND usuario_id = ?',
+            [id, usuario_id]
+        );
+
+        const gestion = getFirstRow(resultGM);
+
+        if (!gestion) {
+            return res.status(404).json({ error: 'Gestión no encontrada' });
+        }
+
+        // Parsear IDs existentes
+        var idsExistentes = [];
+        try {
+            if (gestion.solicitudes_ids) {
+                idsExistentes = JSON.parse(gestion.solicitudes_ids);
+            }
+        } catch (e) {
+            console.error('[quitarSolicitudDeCampana] Error parseando solicitudes_ids:', e);
+        }
+
+        // Verificar que la solicitud existe en la campaña
+        var index = idsExistentes.indexOf(solicitud_id);
+        if (index === -1) {
+            return res.status(400).json({ error: 'La solicitud no pertenece a esta campaña' });
+        }
+
+        // Quitar el ID
+        idsExistentes.splice(index, 1);
+
+        // Calcular nuevas gestionadas: si la solicitud tenía gestión, restar 1
+        var nuevasGestionadas = gestion.gestionadas || 0;
+        // Verificar si había gestiones asociadas a esta solicitud en esta campaña
+        const resultCheckGestion = await pool.query(
+            'SELECT COUNT(*) as count FROM gestiones WHERE solicitud_id = ? AND gestion_maestro_id = ?',
+            [solicitud_id, id]
+        );
+        var checkRow = getFirstRow(resultCheckGestion);
+        var count = checkRow ? (checkRow.count || 0) : 0;
+        if (count > 0) {
+            nuevasGestionadas = Math.max(0, nuevasGestionadas - 1);
+        }
+
+        // Guardar los IDs actualizados
+        const solicitudesIdsJson = JSON.stringify(idsExistentes);
+        await pool.query(`
+            UPDATE gestiones_maestro 
+            SET solicitudes_ids = ?, total_solicitudes = ?, gestionadas = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND usuario_id = ?
+        `, [solicitudesIdsJson, idsExistentes.length, nuevasGestionadas, id, usuario_id]);
+
+        console.log('[quitarSolicitudDeCampana] Quitada solicitud', solicitud_id, 'de campaña', id, 'Total:', idsExistentes.length);
+
+        res.json({
+            mensaje: 'Solicitud quitada correctamente',
+            total: idsExistentes.length
+        });
+    } catch (error) {
+        console.error('Error en quitarSolicitudDeCampana:', error);
+        res.status(500).json({ error: 'Error al quitar solicitud de la campaña' });
+    }
+}
+
 module.exports = {
     // Aliases en español para compatibilidad con las rutas
     crearGestionMaestro: createGestionMaestro,
@@ -366,6 +518,8 @@ module.exports = {
     actualizarGestionMaestro: updateGestionMaestro,
     eliminarGestionMaestro: deleteGestionMaestro,
     obtenerProgresoGestion: obtenerProgresoGestion,
+    agregarSolicitudesACampana: agregarSolicitudesACampana,
+    quitarSolicitudDeCampana: quitarSolicitudDeCampana,
     createGestion: createGestion,
     // Aliases en inglés para excel.routes.js
     getGestionesMaestro: getGestionesMaestro,

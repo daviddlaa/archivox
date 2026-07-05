@@ -22,4 +22,10 @@ router.delete('/:id', controller.eliminarGestionMaestro);
 // GET /api/gestiones-maestro/:id/progreso - Obtener progreso
 router.get('/:id/progreso', controller.obtenerProgresoGestion);
 
+// PUT /api/gestiones-maestro/:id/agregar-solicitudes - Agregar solicitudes a una campaña
+router.put('/:id/agregar-solicitudes', controller.agregarSolicitudesACampana);
+
+// PUT /api/gestiones-maestro/:id/quitar-solicitud - Quitar una solicitud de una campaña
+router.put('/:id/quitar-solicitud', controller.quitarSolicitudDeCampana);
+
 module.exports = router;
