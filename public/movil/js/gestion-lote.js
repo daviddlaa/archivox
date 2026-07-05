@@ -636,7 +636,7 @@ async function buscarSolicitudesParaAgregarMovil(event) {
             console.error('[movil] Error parseando solicitudes_ids:', e);
         }
         
-        var lista = Array.isArray(data) ? data : (data.solicitudes || []);
+        var lista = Array.isArray(data) ? data : (data.data || []);
         solicitudesDisponibles = [];
         
         for (var i = 0; i < lista.length; i++) {

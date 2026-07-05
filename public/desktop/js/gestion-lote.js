@@ -775,7 +775,7 @@ async function buscarSolicitudesParaAgregar(event) {
         solicitudesDisponibles = [];
         
         // Determinar si data es un array o tiene propiedad solicitudes
-        var lista = Array.isArray(data) ? data : (data.solicitudes || []);
+        var lista = Array.isArray(data) ? data : (data.data || []);
         
         for (var i = 0; i < lista.length; i++) {
             var sol = lista[i];
