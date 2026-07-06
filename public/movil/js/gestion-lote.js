@@ -198,13 +198,18 @@ function renderizarSolicitudes(lista) {
             if (estadoActual !== filtroEstado) return false;
         }
         return true;
-    });
-
-    if (filtradas.length === 0) {
+    });    if (filtradas.length === 0) {
         container.innerHTML = '<div class="sin-campana"><p>No hay solicitudes que coincidan con los filtros</p></div>';
         return;
     }
-
+    
+    // Ordenar: destacadas primero (🔥 al inicio)
+    filtradas.sort(function(a, b) {
+        if (a.destacado == 1 && b.destacado != 1) return -1;
+        if (a.destacado != 1 && b.destacado == 1) return 1;
+        return 0;
+    });
+    
     var html = '';
     for (var i = 0; i < filtradas.length; i++) {
         var sol = filtradas[i];
@@ -218,9 +223,9 @@ function renderizarSolicitudes(lista) {
         html += '<div class="sol-id">#' + sol.id_solicitud + '</div>';
         html += '<div class="sol-header-badges">';
         if (destacada) {
-            html += '<span class="sol-destacado-badge sol-destacado-badge-on" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 0)" title="Quitar destacado">⭐ Destacada</span>';
+            html += '<span class="sol-destacado-badge sol-destacado-badge-on" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 0)" title="Quitar destacado">🔥 Destacada</span>';
         } else {
-            html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1)" title="Destacar tarjeta">☆ Destacar</span>';
+            html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1)" title="Destacar tarjeta">🔥 Destacar</span>';
         }
         html += '<div class="sol-badge estado-' + estado.replace(/\s+/g,'') + '">' + estado + '</div>';
         html += '</div>';
@@ -376,7 +381,7 @@ function abrirGestion(solicitudId, tipo) {
     var destacadoActual = sol.destacado == 1;
     contenido += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;padding:10px 12px;background:' + (destacadoActual ? '#fffbeb' : '#f9fafb') + ';border-radius:8px;border:1px solid ' + (destacadoActual ? '#f59e0b' : '#e5e7eb') + ';">';
     contenido += '<input type="checkbox" id="toggle-destacar" ' + (destacadoActual ? 'checked' : '') + ' style="width:18px;height:18px;">';
-    contenido += '<span style="font-size:13px;color:' + (destacadoActual ? '#92400e' : '#6b7280') + ';">⭐ Destacar tarjeta</span>';
+    contenido += '<span style="font-size:13px;color:' + (destacadoActual ? '#92400e' : '#6b7280') + ';">🔥 Destacar tarjeta</span>';
     contenido += '</label>';
     
     contenido += '<div class="modal-botones">';
