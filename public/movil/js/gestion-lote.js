@@ -62,6 +62,10 @@ async function cargarListaCampanas() {
             html += '<span>✓ ' + (g.gestionadas || 0) + '</span>';
             html += '<span>' + pct + '%</span>';
             html += '</div>';
+            html += '<div class="campaña-chip-acciones">';
+            html += '<button class="campaña-chip-editar" onclick="event.stopPropagation(); abrirModalEditarCampanaMovil(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Editar campaña">✏️</button>';
+            html += '<button class="campaña-chip-borrar" onclick="event.stopPropagation(); confirmarEliminarCampañaMovil(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ')" title="Eliminar campaña">🗑️</button>';
+            html += '</div>';
             html += '</div>';
         }
 
@@ -249,6 +253,14 @@ html += '<div class="sol-botones">';
     }
 
     container.innerHTML = html;
+}
+
+function escaparParaHTML(texto) {
+    return String(texto || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 }
 
 function escaparParaAtributo(texto) {
@@ -831,6 +843,239 @@ function exportarExcelGestionLote() {
     
     alert('Se exportaron ' + datos.length + ' registros a Excel');
 }
+
+// ================== EDITAR CAMPAÑA (MÓVIL) ==================
+
+function abrirModalEditarCampanaMovil(id, nombre, descripcion, fechaLimite, estado) {
+    var nombreEsc = escaparParaHTML(nombre);
+    var descEsc = escaparParaHTML(descripcion);
+    
+    var overlay = document.createElement('div');
+    overlay.id = 'modal-editar-campana-movil';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:10000;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s ease;';
+    
+    var sheet = document.createElement('div');
+    sheet.style.cssText = 'background:white;width:100%;max-height:80vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden;animation:slideUp 0.3s ease;box-shadow:0 -10px 40px rgba(0,0,0,0.15);';
+    
+    sheet.innerHTML = 
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid #e5e7eb;flex-shrink:0;">' +
+            '<h2 style="margin:0;font-size:17px;color:#1f2937;">✏️ Editar Campaña</h2>' +
+            '<button onclick="cerrarModalEditarCampanaMovil()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#6b7280;">✕</button>' +
+        '</div>' +
+        '<div style="padding:16px 18px 20px;overflow-y:auto;flex:1;">' +
+            '<form id="form-editar-campana-movil" onsubmit="event.preventDefault(); guardarEdicionCampanaMovil(' + id + ')">' +
+            '<label style="display:block;font-weight:600;font-size:13px;color:#374151;margin-bottom:6px;">📋 Nombre de la campaña:</label>' +
+            '<input type="text" id="edit-nombre-movil" value="' + nombreEsc + '" placeholder="Nombre de la campaña" required style="width:100%;padding:14px 16px;border:2px solid #e5e7eb;border-radius:10px;font-size:15px;margin-bottom:16px;box-sizing:border-box;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor=\'#6366f1\'" onblur="this.style.borderColor=\'#e5e7eb\'">' +
+            
+            '<label style="display:block;font-weight:600;font-size:13px;color:#374151;margin-bottom:6px;">📝 Descripción (opcional):</label>' +
+            '<textarea id="edit-descripcion-movil" rows="3" placeholder="Descripción de la campaña..." style="width:100%;padding:14px 16px;border:2px solid #e5e7eb;border-radius:10px;font-size:15px;margin-bottom:16px;box-sizing:border-box;font-family:inherit;resize:vertical;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor=\'#6366f1\'" onblur="this.style.borderColor=\'#e5e7eb\'">' + descEsc + '</textarea>' +
+            
+            '<label style="display:block;font-weight:600;font-size:13px;color:#374151;margin-bottom:6px;">📅 Fecha límite (opcional):</label>' +
+            '<input type="date" id="edit-fecha-limite-movil" value="' + fechaLimite + '" style="width:100%;padding:14px 16px;border:2px solid #e5e7eb;border-radius:10px;font-size:15px;margin-bottom:16px;box-sizing:border-box;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor=\'#6366f1\'" onblur="this.style.borderColor=\'#e5e7eb\'">' +
+            
+            '<label style="display:block;font-weight:600;font-size:13px;color:#374151;margin-bottom:6px;">📊 Estado:</label>' +
+            '<div style="display:flex;gap:10px;margin-bottom:8px;">' +
+                '<label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;background:' + (estado === 'Activa' ? '#eef2ff' : '#f9fafb') + ';border:2px solid ' + (estado === 'Activa' ? '#6366f1' : '#e5e7eb') + ';border-radius:10px;cursor:pointer;transition:all 0.2s;" onclick="seleccionarEstadoMovil(\'Activa\')">' +
+                    '<span style="font-size:18px;">🟢</span>' +
+                    '<span style="font-weight:600;font-size:14px;color:' + (estado === 'Activa' ? '#4338ca' : '#6b7280') + '">Activa</span>' +
+                '</label>' +
+                '<label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;background:' + (estado === 'Completada' ? '#eef2ff' : '#f9fafb') + ';border:2px solid ' + (estado === 'Completada' ? '#6366f1' : '#e5e7eb') + ';border-radius:10px;cursor:pointer;transition:all 0.2s;" onclick="seleccionarEstadoMovil(\'Completada\')">' +
+                    '<span style="font-size:18px;">✅</span>' +
+                    '<span style="font-weight:600;font-size:14px;color:' + (estado === 'Completada' ? '#4338ca' : '#6b7280') + '">Completada</span>' +
+                '</label>' +
+            '</div>' +
+            '<input type="hidden" id="edit-estado-movil" value="' + estado + '">' +
+            
+            '<div style="display:flex;gap:10px;margin-top:20px;">' +
+                '<button type="button" onclick="cerrarModalEditarCampanaMovil()" style="flex:1;padding:14px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;">Cancelar</button>' +
+                '<button type="submit" style="flex:1;padding:14px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">💾 Guardar</button>' +
+            '</div>' +
+            '</form>' +
+        '</div>';
+    
+    overlay.appendChild(sheet);
+    document.body.appendChild(overlay);
+    
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) cerrarModalEditarCampanaMovil();
+    });
+}
+
+function cerrarModalEditarCampanaMovil() {
+    var modal = document.getElementById('modal-editar-campana-movil');
+    if (modal) {
+        modal.style.transition = 'opacity 0.2s ease';
+        modal.style.opacity = '0';
+        setTimeout(function() { modal.remove(); }, 200);
+    }
+}
+
+function seleccionarEstadoMovil(estado) {
+    document.getElementById('edit-estado-movil').value = estado;
+    // Actualizar estilos visuales
+    var labels = document.querySelectorAll('#modal-editar-campana-movil label[onclick^="seleccionarEstadoMovil"]');
+    labels.forEach(function(label) {
+        var onclick = label.getAttribute('onclick') || '';
+        var isSelected = onclick.indexOf("'" + estado + "'") !== -1;
+        if (isSelected) {
+            label.style.background = '#eef2ff';
+            label.style.borderColor = '#6366f1';
+            var span = label.querySelector('span:last-child');
+            if (span) span.style.color = '#4338ca';
+        } else {
+            label.style.background = '#f9fafb';
+            label.style.borderColor = '#e5e7eb';
+            var span = label.querySelector('span:last-child');
+            if (span) span.style.color = '#6b7280';
+        }
+    });
+}
+
+async function guardarEdicionCampanaMovil(id) {
+    var nombre = document.getElementById('edit-nombre-movil').value.trim();
+    var descripcion = document.getElementById('edit-descripcion-movil').value.trim();
+    var fechaLimite = document.getElementById('edit-fecha-limite-movil').value;
+    var estado = document.getElementById('edit-estado-movil').value;
+    
+    if (!nombre) {
+        alert('El nombre de la campaña es requerido');
+        return;
+    }
+    
+    // Deshabilitar botones
+    var submitBtn = document.querySelector('#form-editar-campana-movil button[type="submit"]');
+    var cancelBtn = document.querySelector('#form-editar-campana-movil button[type="button"]');
+    if (submitBtn) { submitBtn.textContent = '⏳ Guardando...'; submitBtn.disabled = true; }
+    if (cancelBtn) cancelBtn.disabled = true;
+    
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nombre: nombre,
+                descripcion: descripcion,
+                fecha_limite: fechaLimite || null,
+                estado: estado
+            })
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok && !resultado.error) {
+            alert('✅ Campaña actualizada correctamente');
+            cerrarModalEditarCampanaMovil();
+            await cargarListaCampanas();
+            // Si es la campaña activa, actualizar el título
+            if (String(gestionId) === String(id)) {
+                var tituloEl = document.getElementById('gestion-titulo');
+                if (tituloEl) tituloEl.textContent = nombre;
+            }
+        } else {
+            alert('Error: ' + (resultado.error || 'Error al actualizar campaña'));
+            if (submitBtn) { submitBtn.textContent = '💾 Guardar'; submitBtn.disabled = false; }
+            if (cancelBtn) cancelBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error('[movil] Error editando campaña:', error);
+        alert('Error al actualizar la campaña');
+        if (submitBtn) { submitBtn.textContent = '💾 Guardar'; submitBtn.disabled = false; }
+        if (cancelBtn) cancelBtn.disabled = false;
+    }
+}
+
+// ================== FIN EDITAR CAMPAÑA (MÓVIL) ==================
+
+// ================== ELIMINAR CAMPAÑA (MÓVIL) ==================
+
+function confirmarEliminarCampañaMovil(id, nombre, total, gestionadas) {
+    var pendientes = total - gestionadas;
+    
+    var overlay = document.createElement('div');
+    overlay.id = 'modal-eliminar-campana-movil';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:10000;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s ease;';
+    
+    var sheet = document.createElement('div');
+    sheet.style.cssText = 'background:white;width:100%;max-height:70vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden;animation:slideUp 0.3s ease;box-shadow:0 -10px 40px rgba(0,0,0,0.15);';
+    
+    var nombreEsc = escaparParaHTML(nombre);
+    
+    sheet.innerHTML = 
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid #e5e7eb;flex-shrink:0;">' +
+            '<h2 style="margin:0;font-size:17px;color:#dc2626;">🗑️ Eliminar Campaña</h2>' +
+            '<button onclick="cerrarModalEliminarCampanaMovil()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#6b7280;">✕</button>' +
+        '</div>' +
+        '<div style="padding:16px 18px 20px;overflow-y:auto;flex:1;">' +
+            '<div style="background:#fef2f2;padding:16px;border-radius:12px;margin-bottom:16px;">' +
+                '<p style="margin:0 0 8px;font-size:14px;color:#991b1b;"><strong>Campaña:</strong> ' + nombreEsc + '</p>' +
+                '<p style="margin:0 0 8px;font-size:13px;color:#991b1b;">📄 Total solicitudes: ' + total + '</p>' +
+                '<p style="margin:0 0 8px;font-size:13px;color:#991b1b;">✓ Gestionadas: ' + gestionadas + '</p>' +
+                '<p style="margin:0;font-size:13px;color:#991b1b;">⏳ Pendientes: ' + pendientes + '</p>' +
+            '</div>' +
+            '<div style="background:#fef3c7;border:1px solid #f59e0b;padding:14px;border-radius:10px;margin-bottom:16px;">' +
+                '<p style="margin:0 0 6px;font-weight:bold;font-size:13px;color:#92400e;">⚠️ IMPORTANTE:</p>' +
+                '<ul style="margin:0;padding-left:18px;font-size:12px;color:#92400e;">' +
+                    '<li style="margin-bottom:4px;">Se eliminarán <strong>TODAS las gestiones</strong> registradas.</li>' +
+                    '<li style="margin-bottom:4px;">Esta acción es <strong>IRREVERSIBLE</strong>.</li>' +
+                    '<li>Los datos de las solicitudes originales NO se eliminarán.</li>' +
+                '</ul>' +
+            '</div>' +
+            '<div style="display:flex;gap:10px;margin-top:20px;">' +
+                '<button type="button" onclick="cerrarModalEliminarCampanaMovil()" style="flex:1;padding:14px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;">Cancelar</button>' +
+                '<button type="button" id="btn-eliminar-campana-movil" onclick="eliminarCampañaMovil(' + id + ')" style="flex:1;padding:14px;background:#dc2626;color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">🗑️ Eliminar</button>' +
+            '</div>' +
+        '</div>';
+    
+    overlay.appendChild(sheet);
+    document.body.appendChild(overlay);
+    
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) cerrarModalEliminarCampanaMovil();
+    });
+}
+
+function cerrarModalEliminarCampanaMovil() {
+    var modal = document.getElementById('modal-eliminar-campana-movil');
+    if (modal) {
+        modal.style.transition = 'opacity 0.2s ease';
+        modal.style.opacity = '0';
+        setTimeout(function() { modal.remove(); }, 200);
+    }
+}
+
+async function eliminarCampañaMovil(id) {
+    var btn = document.getElementById('btn-eliminar-campana-movil');
+    if (btn) { btn.textContent = '⏳ Eliminando...'; btn.disabled = true; }
+    
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + id, {
+            method: 'DELETE'
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok && !resultado.error) {
+            alert('✅ Campaña eliminada correctamente');
+            cerrarModalEliminarCampanaMovil();
+            
+            // Si era la campaña activa, recargar sin ID
+            if (String(gestionId) === String(id)) {
+                window.location.href = '/m/gestion-lote';
+            } else {
+                await cargarListaCampanas();
+            }
+        } else {
+            alert('Error: ' + (resultado.error || 'Error al eliminar'));
+            if (btn) { btn.textContent = '🗑️ Eliminar'; btn.disabled = false; }
+        }
+    } catch (error) {
+        console.error('[movil] Error eliminando campaña:', error);
+        alert('Error al eliminar la campaña');
+        if (btn) { btn.textContent = '🗑️ Eliminar'; btn.disabled = false; }
+    }
+}
+
+// ================== FIN ELIMINAR CAMPAÑA (MÓVIL) ==================
 
 // Iniciar
 init();

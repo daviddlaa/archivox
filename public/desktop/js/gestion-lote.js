@@ -121,6 +121,9 @@ async function cargarListaCampanas() {
 var estadoClase = (g.estado === 'Completada' || pct === 100) ? 'completada' : 'activa';
             html += '<span class="campaña-estado ' + estadoClase + '">' + (g.estado || 'Activa') + '</span>';
             
+            // Botón de editar
+            html += '<button class="campaña-btn-editar" onclick="event.stopPropagation(); abrirModalEditarCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Editar campaña">✏️</button>';
+            
             // Botón de eliminar
             html += '<button class="campaña-btn-eliminar" onclick="event.stopPropagation(); confirmarEliminarCampaña(' + g.id + ', \'' + (g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ')">🗑️</button>';
             html += '</div>';
@@ -1141,6 +1144,103 @@ async function eliminarCampaña(id) {
         btn.disabled = false;
     }
 }
+
+function escaparParaHTML(texto) {
+    return String(texto || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+// ================== EDITAR CAMPAÑA ==================
+
+function abrirModalEditarCampana(id, nombre, descripcion, fechaLimite, estado) {
+    var nombreEsc = escaparParaHTML(nombre);
+    var descEsc = escaparParaHTML(descripcion);
+    
+    var contenido = '';
+    
+    contenido += '<div class="modal-editar-campana">';
+    contenido += '<h2>✏️ Editar Campaña</h2>';
+    
+    contenido += '<div class="modal-editar-form">';
+    
+    contenido += '<label>📋 Nombre de la campaña:</label>';
+    contenido += '<input type="text" id="edit-nombre" value="' + nombreEsc + '" placeholder="Nombre de la campaña" style="width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box;">';
+    
+    contenido += '<label>📝 Descripción (opcional):</label>';
+    contenido += '<textarea id="edit-descripcion" rows="3" placeholder="Descripción de la campaña..." style="width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box;font-family:inherit;resize:vertical;">' + descEsc + '</textarea>';
+    
+    contenido += '<label>📅 Fecha límite (opcional):</label>';
+    contenido += '<input type="date" id="edit-fecha-limite" value="' + fechaLimite + '" style="width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box;">';
+    
+    contenido += '<label>📊 Estado:</label>';
+    contenido += '<select id="edit-estado" style="width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;margin-bottom:4px;box-sizing:border-box;">';
+    contenido += '<option value="Activa"' + (estado === 'Activa' ? ' selected' : '') + '>🟢 Activa</option>';
+    contenido += '<option value="Completada"' + (estado === 'Completada' ? ' selected' : '') + '>✅ Completada</option>';
+    contenido += '</select>';
+    
+    contenido += '</div>';
+    
+    contenido += '<div class="modal-botones">';
+    contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>';
+    contenido += '<button class="btn-guardar" id="btn-guardar-editar-campana" onclick="guardarEdicionCampana(' + id + ')">💾 Guardar cambios</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    crearModal(contenido);
+}
+
+async function guardarEdicionCampana(id) {
+    var nombre = document.getElementById('edit-nombre').value.trim();
+    var descripcion = document.getElementById('edit-descripcion').value.trim();
+    var fechaLimite = document.getElementById('edit-fecha-limite').value;
+    var estado = document.getElementById('edit-estado').value;
+    
+    if (!nombre) {
+        alert('El nombre de la campaña es requerido');
+        return;
+    }
+    
+    var btn = document.getElementById('btn-guardar-editar-campana');
+    if (btn) { btn.textContent = '⏳ Guardando...'; btn.disabled = true; }
+    
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nombre: nombre,
+                descripcion: descripcion,
+                fecha_limite: fechaLimite || null,
+                estado: estado
+            })
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok && !resultado.error) {
+            alert('✅ Campaña actualizada correctamente');
+            cerrarModal();
+            await cargarListaCampanas();
+            // Si es la campaña activa, actualizar el título
+            if (String(gestionId) === String(id)) {
+                var tituloEl = document.getElementById('gestion-nombre');
+                if (tituloEl) tituloEl.textContent = nombre;
+            }
+        } else {
+            alert('Error: ' + (resultado.error || 'Error al actualizar campaña'));
+            if (btn) { btn.textContent = '💾 Guardar cambios'; btn.disabled = false; }
+        }
+    } catch (error) {
+        console.error('Error editando campaña:', error);
+        alert('Error al actualizar la campaña');
+        if (btn) { btn.textContent = '💾 Guardar cambios'; btn.disabled = false; }
+    }
+}
+
+// ================== FIN EDITAR CAMPAÑA ==================
 
 // ================== FIN ELIMINAR CAMPAÑA ==================
 

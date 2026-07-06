@@ -855,6 +855,32 @@ body {
     margin: 0;
 }
 
+/* ===== BOTÓN EDITAR CAMPAÑA ===== */
+.campaña-btn-editar {
+    position: absolute;
+    top: 8px;
+    right: 40px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: all 0.2s;
+}
+
+.campaña-btn-editar:hover {
+    opacity: 1;
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.1);
+}
+
 /* ===== BOTÓN ELIMINAR CAMPAÑA ===== */
 .campaña-btn-eliminar {
     position: absolute;
@@ -883,6 +909,30 @@ body {
 
 .campaña-card {
     position: relative;
+}
+
+/* ===== MODAL EDITAR CAMPAÑA ===== */
+.modal-editar-campana h2 {
+    margin-top: 0;
+    color: var(--primary);
+    font-size: 20px;
+    margin-bottom: 16px;
+}
+
+.modal-editar-form label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--text-dark);
+}
+
+.modal-editar-form input:focus,
+.modal-editar-form textarea:focus,
+.modal-editar-form select:focus {
+    outline: none;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 /* ===== MODAL ELIMINAR ===== */

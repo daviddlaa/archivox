@@ -33,8 +33,56 @@
             flex-direction: column;
             gap: 4px;
         }
+        .campaña-chip {
+            position: relative;
+            padding-right: 50px;
+        }
         .campaña-chip:hover {
             background: rgba(255,255,255,0.2);
+        }
+        .campaña-chip-acciones {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            display: flex;
+            gap: 2px;
+        }
+        .campaña-chip-editar,
+        .campaña-chip-borrar {
+            width: 20px;
+            height: 20px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.25);
+            color: white;
+            cursor: pointer;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.4;
+            transition: all 0.2s;
+            padding: 0;
+            line-height: 1;
+        }
+        .campaña-chip-borrar {
+            background: rgba(239, 68, 68, 0.4);
+        }
+        .campaña-chip:hover .campaña-chip-editar,
+        .campaña-chip:hover .campaña-chip-borrar,
+        .campaña-chip-editar:focus,
+        .campaña-chip-borrar:focus {
+            opacity: 1;
+        }
+        .campaña-chip-editar:hover {
+            background: rgba(255,255,255,0.5);
+        }
+        .campaña-chip-borrar:hover {
+            background: rgba(239, 68, 68, 0.8);
+        }
+        .campaña-chip-editar:active,
+        .campaña-chip-borrar:active {
+            transform: scale(0.85);
         }
         .campaña-chip.active {
             background: rgba(255,255,255,0.25);
