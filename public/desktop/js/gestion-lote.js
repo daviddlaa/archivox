@@ -341,7 +341,8 @@ function renderizarSolicitudes(lista) {
         
         // Botones de acción SIEMPRE visibles (independientemente del estado)
         html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
-        html += "<button class=\"btn-accion btn-whatsapp-img\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
+        // Botón WhatsApp Directo - abre WhatsApp al instante (sin guardar en BD)
+        html += "<button class=\"btn-accion btn-whatsapp-img\" onclick=\"abrirWhatsAppDirecto('" + escaparParaAtributo(sol.celular || '') + "', '" + escaparParaAtributo(sol.nombre || '') + "')\">💬 Directo</button>";
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {
@@ -941,6 +942,18 @@ function exportarExcelGestionLote() {
 
 // Iniciar
 init();
+
+// ================== WHATSAPP DIRECTO SIN GUARDAR ==================
+
+// Abre WhatsApp Directo con el mensaje predeterminado, sin guardar en BD
+function abrirWhatsAppDirecto(celular, nombre) {
+    if (!celular || celular === '') {
+        alert('Esta solicitud no tiene número de celular');
+        return;
+    }
+    var mensaje = generarMensajeWhatsApp(nombre);
+    abrirWhatsAppDesktop(celular, mensaje);
+}
 
 // ================== WHATSAPP CON IMAGEN INDIVIDUAL ==================
 

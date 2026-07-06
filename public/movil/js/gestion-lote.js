@@ -234,7 +234,8 @@ html += '<div class="sol-botones">';
         // Acciones compactas de la tarjeta
         html += '<button class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')">📞</button>';
         html += '<button class="btn-sol btn-sol-primary btn-sol-small" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">Seguimiento</button>';
-        html += "<button class=\"btn-sol btn-sol-call btn-sol-small\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
+        // Botón WhatsApp Directo - abre WhatsApp al instante (sin guardar en BD)
+        html += "<button class=\"btn-sol btn-sol-call btn-sol-small\" onclick=\"abrirWhatsAppDirectoMovil('" + escaparParaAtributo(sol.celular || '') + "', '" + escaparParaAtributo(sol.nombre || '') + "')\">💬 Directo</button>";
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {
@@ -1079,6 +1080,18 @@ async function eliminarCampañaMovil(id) {
 
 // Iniciar
 init();
+
+// ================== WHATSAPP DIRECTO SIN GUARDAR (MÓVIL) ==================
+
+// Abre WhatsApp Directo con el mensaje predeterminado, sin guardar en BD (móvil)
+function abrirWhatsAppDirectoMovil(celular, nombre) {
+    if (!celular || celular === '') {
+        alert('Esta solicitud no tiene número de celular');
+        return;
+    }
+    var mensaje = generarMensajeWhatsApp(nombre);
+    abrirWhatsAppMovil(celular, mensaje);
+}
 
 // ================== WHATSAPP CON IMAGEN INDIVIDUAL ==================
 
