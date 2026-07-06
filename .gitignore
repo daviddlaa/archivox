@@ -10,6 +10,9 @@ node_modules/
 # Archivos de uploads temporales
 uploads/*
 
+# Documentación local (no subir a GitHub)
+documentacion/
+
 # Logs
 *.log
 
