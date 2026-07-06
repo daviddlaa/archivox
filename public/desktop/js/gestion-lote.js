@@ -341,8 +341,7 @@ function renderizarSolicitudes(lista) {
         
         // Botones de acción SIEMPRE visibles (independientemente del estado)
         html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
-        // Botón WhatsApp Directo - abre WhatsApp al instante (sin guardar en BD)
-        html += "<button class=\"btn-accion btn-whatsapp-img\" onclick=\"abrirWhatsAppDirecto('" + escaparParaAtributo(sol.celular || '') + "', '" + escaparParaAtributo(sol.nombre || '') + "')\">💬 Directo</button>";
+        html += "<button class=\"btn-accion btn-whatsapp-img\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {
@@ -943,18 +942,6 @@ function exportarExcelGestionLote() {
 // Iniciar
 init();
 
-// ================== WHATSAPP DIRECTO SIN GUARDAR ==================
-
-// Abre WhatsApp Directo con el mensaje predeterminado, sin guardar en BD
-function abrirWhatsAppDirecto(celular, nombre) {
-    if (!celular || celular === '') {
-        alert('Esta solicitud no tiene número de celular');
-        return;
-    }
-    var mensaje = generarMensajeWhatsApp(nombre);
-    abrirWhatsAppDesktop(celular, mensaje);
-}
-
 // ================== WHATSAPP CON IMAGEN INDIVIDUAL ==================
 
 // ================== CONFIGURACIÓN WHATSAPP ==================
@@ -1063,6 +1050,10 @@ function abrirGestionWhatsApp(solicitudId, celular) {
     contenido += '<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">';
     contenido += '<input type="checkbox" id="whatsapp-abrir-web" checked style="width: 18px; height: 18px;">';
     contenido += '<span style="font-size: 13px; color: #374151;">Abrir WhatsApp al enviar</span>';
+    contenido += '</label>';
+    contenido += '<label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 6px;">';
+    contenido += '<input type="checkbox" id="whatsapp-guardar" style="width: 18px; height: 18px;">';
+    contenido += '<span style="font-size: 13px; color: #6b7280;">Guardar gestión en el historial</span>';
     contenido += '</label>';
     contenido += '</div>';
     
@@ -1272,23 +1263,28 @@ async function enviarWhatsApp(solicitudId, celular) {
     btn.textContent = '⏳ Guardando...';
     btn.disabled = true;
     
+    var checkboxGuardar = document.getElementById('whatsapp-guardar');
+    var guardar = checkboxGuardar ? checkboxGuardar.checked : false;
+    
     try {
-        // ===== PASO 1: Guardar gestión =====
-        var response = await fetch('/api/excel/gestiones', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                solicitud_id: solicitudId,
-                tipo_gestion: 'WhatsApp',
-                observacion: mensaje,
-                gestion_maestro_id: gestionId
-            })
-        });
-        
-        var resultado = await response.json();
-        
-        if (!response.ok || resultado.error) {
-            throw new Error(resultado.error || 'Error al guardar gestión');
+        // ===== PASO 1: Guardar gestión SOLO si el checkbox está marcado =====
+        if (guardar) {
+            var response = await fetch('/api/excel/gestiones', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    solicitud_id: solicitudId,
+                    tipo_gestion: 'WhatsApp',
+                    observacion: mensaje,
+                    gestion_maestro_id: gestionId
+                })
+            });
+            
+            var resultado = await response.json();
+            
+            if (!response.ok || resultado.error) {
+                throw new Error(resultado.error || 'Error al guardar gestión');
+            }
         }
         
         // ===== PASO 2: Abrir WhatsApp Web =====
@@ -1296,9 +1292,14 @@ async function enviarWhatsApp(solicitudId, celular) {
             abrirWhatsAppDesktop(celular, mensaje);
         }
         
-        alert('✅ Gestión guardada');
-        cerrarModal();
-        await cargarDatosGestion();
+        if (guardar) {
+            alert('✅ Mensaje enviado y gestión guardada');
+            cerrarModal();
+            await cargarDatosGestion();
+        } else {
+            alert('✅ Mensaje enviado');
+            cerrarModal();
+        }
         
     } catch (error) {
         console.error('[WhatsApp Desktop] Error:', error);

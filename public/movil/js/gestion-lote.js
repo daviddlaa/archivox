@@ -234,8 +234,7 @@ html += '<div class="sol-botones">';
         // Acciones compactas de la tarjeta
         html += '<button class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')">📞</button>';
         html += '<button class="btn-sol btn-sol-primary btn-sol-small" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">Seguimiento</button>';
-        // Botón WhatsApp Directo - abre WhatsApp al instante (sin guardar en BD)
-        html += "<button class=\"btn-sol btn-sol-call btn-sol-small\" onclick=\"abrirWhatsAppDirectoMovil('" + escaparParaAtributo(sol.celular || '') + "', '" + escaparParaAtributo(sol.nombre || '') + "')\">💬 Directo</button>";
+        html += "<button class=\"btn-sol btn-sol-call btn-sol-small\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {
@@ -1081,18 +1080,6 @@ async function eliminarCampañaMovil(id) {
 // Iniciar
 init();
 
-// ================== WHATSAPP DIRECTO SIN GUARDAR (MÓVIL) ==================
-
-// Abre WhatsApp Directo con el mensaje predeterminado, sin guardar en BD (móvil)
-function abrirWhatsAppDirectoMovil(celular, nombre) {
-    if (!celular || celular === '') {
-        alert('Esta solicitud no tiene número de celular');
-        return;
-    }
-    var mensaje = generarMensajeWhatsApp(nombre);
-    abrirWhatsAppMovil(celular, mensaje);
-}
-
 // ================== WHATSAPP CON IMAGEN INDIVIDUAL ==================
 
 // Obtener el nombre completo del cliente para el saludo del mensaje
@@ -1153,6 +1140,10 @@ function abrirGestionWhatsApp(solicitudId, celular) {
     contenido += '<div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">';
     contenido += '<input type="checkbox" id="whatsapp-abrir-web" checked style="width: 18px; height: 18px;">';
     contenido += '<span style="font-size: 12px; color: #374151;">Abrir WhatsApp al enviar</span>';
+    contenido += '</div>';
+    contenido += '<div style="margin-top: 6px; display: flex; align-items: center; gap: 8px;">';
+    contenido += '<input type="checkbox" id="whatsapp-guardar" style="width: 18px; height: 18px;">';
+    contenido += '<span style="font-size: 12px; color: #6b7280;">Guardar gestión en el historial</span>';
     contenido += '</div>';
     contenido += '</div>';
     contenido += '<div class="modal-botones">';
@@ -1247,23 +1238,28 @@ async function enviarWhatsApp(solicitudId, celular) {
     btn.textContent = '⏳ Guardando...';
     btn.disabled = true;
     
+    var checkboxGuardar = document.getElementById('whatsapp-guardar');
+    var guardar = checkboxGuardar ? checkboxGuardar.checked : false;
+    
     try {
-        // ===== PASO 1: Guardar gestión =====
-        var response = await fetch('/api/excel/gestiones', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                solicitud_id: solicitudId,
-                tipo_gestion: 'WhatsApp',
-                observacion: mensaje,
-                gestion_maestro_id: gestionId
-            })
-        });
-        
-        var resultado = await response.json();
-        
-        if (!response.ok || resultado.error) {
-            throw new Error(resultado.error || 'Error al guardar gestión');
+        // ===== PASO 1: Guardar gestión SOLO si el checkbox está marcado =====
+        if (guardar) {
+            var response = await fetch('/api/excel/gestiones', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    solicitud_id: solicitudId,
+                    tipo_gestion: 'WhatsApp',
+                    observacion: mensaje,
+                    gestion_maestro_id: gestionId
+                })
+            });
+            
+            var resultado = await response.json();
+            
+            if (!response.ok || resultado.error) {
+                throw new Error(resultado.error || 'Error al guardar gestión');
+            }
         }
         
         // ===== PASO 2: Abrir WhatsApp app =====
@@ -1271,9 +1267,14 @@ async function enviarWhatsApp(solicitudId, celular) {
             abrirWhatsAppMovil(celular, mensaje);
         }
         
-        alert('✅ Gestión guardada');
-        cerrarModal();
-        await cargarDatosGestionMovil();
+        if (guardar) {
+            alert('✅ Mensaje enviado y gestión guardada');
+            cerrarModal();
+            await cargarDatosGestionMovil();
+        } else {
+            alert('✅ Mensaje enviado');
+            cerrarModal();
+        }
         
     } catch (error) {
         console.error('[WhatsApp Movil] Error:', error);
