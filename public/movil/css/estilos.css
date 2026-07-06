@@ -426,6 +426,72 @@ body {
     white-space: nowrap;
 }
 
+/* ===== APP ICONS GRID (ACCESOS DIRECTOS) ===== */
+.app-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 0 15px 8px;
+}
+
+.app-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px 8px;
+    background: white;
+    border-radius: 16px;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    min-height: 80px;
+}
+
+.app-icon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--app-color);
+    opacity: 0.6;
+}
+
+.app-icon:active {
+    transform: scale(0.95);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.app-icon-emoji {
+    font-size: 28px;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--app-color) 15%, white);
+    transition: all 0.2s ease;
+}
+
+.app-icon:active .app-icon-emoji {
+    transform: scale(0.9);
+}
+
+.app-icon-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #374151;
+    text-align: center;
+    line-height: 1.2;
+    letter-spacing: 0.2px;
+}
+
 /* ===== CONTENEDORES ===== */
 .container {
     padding: 15px;
