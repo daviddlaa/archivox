@@ -310,11 +310,12 @@ function renderizarSolicitudes(lista) {
         var colorFondo = coloresEstado[estado] || '#f3f4f6';
         var gestionada = estado !== 'Pendiente';
         
-        html += '<div class="sol-card ' + (gestionada ? 'gestionada' : 'pendiente') + '">';
+        var destacada = sol.destacado == 1;
+        html += '<div class="sol-card ' + (gestionada ? 'gestionada' : 'pendiente') + (destacada ? ' destacada' : '') + '">';
         
         // Header
         html += '<div class="sol-header">';
-        html += '<span class="sol-id">#' + sol.id_solicitud + '</span>';
+        html += '<span class="sol-id">' + (destacada ? '<span class="sol-destacado-star" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', ' + (destacada ? '0' : '1') + ')" title="Quitar destacado">⭐</span> ' : '<span class="sol-destacado-star sol-destacado-inactive" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1)" title="Destacar tarjeta">☆</span> ') + '#' + sol.id_solicitud + '</span>';
         html += '<span class="sol-estado" style="background:' + colorFondo + ';">' + estado + '</span>';
         html += '</div>';
         
@@ -458,6 +459,13 @@ function abrirGestion(solicitudId, tipo) {
     contenido += '<label>📝 Observación:</label>';
     contenido += '<textarea id="observacion-modal" rows="4" placeholder="Escriba su observación..."></textarea>';
     
+    // Toggle destacar
+    var destacadoActual = sol.destacado == 1;
+    contenido += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;padding:10px 12px;background:' + (destacadoActual ? '#fffbeb' : '#f9fafb') + ';border-radius:8px;border:1px solid ' + (destacadoActual ? '#f59e0b' : '#e5e7eb') + ';">';
+    contenido += '<input type="checkbox" id="toggle-destacar" ' + (destacadoActual ? 'checked' : '') + ' style="width:18px;height:18px;">';
+    contenido += '<span style="font-size:13px;color:' + (destacadoActual ? '#92400e' : '#6b7280') + ';">⭐ Destacar tarjeta</span>';
+    contenido += '</label>';
+    
     contenido += '<div class="modal-botones">';
     contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>';
     contenido += '<button class="btn-guardar" onclick="guardarGestionIndividual(\'' + solicitudId + '\')">💾 Guardar</button>';
@@ -466,6 +474,26 @@ function abrirGestion(solicitudId, tipo) {
     contenido += '</div>';
     
     crearModal(contenido);
+}
+
+// Alternar destacado de una solicitud
+async function toggleDestacado(solicitudId, nuevoEstado) {
+    try {
+        var response = await fetch('/api/excel/solicitudes/' + solicitudId + '/destacar', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ destacado: nuevoEstado })
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok && !resultado.error) {
+            // Refrescar la lista
+            await cargarDatosGestion();
+        }
+    } catch (error) {
+        console.error('Error alternando destacado:', error);
+    }
 }
 
 // Guardar gestión individual
@@ -497,6 +525,19 @@ async function guardarGestionIndividual(solicitudId) {
         var resultado = await response.json();
         
         if (response.ok && !resultado.error) {
+            // Guardar destacado si cambió
+            var checkboxDestacar = document.getElementById('toggle-destacar');
+            if (checkboxDestacar) {
+                var solActual = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
+                var nuevoDestacado = checkboxDestacar.checked ? 1 : 0;
+                if (solActual && nuevoDestacado !== (solActual.destacado || 0)) {
+                    await fetch('/api/excel/solicitudes/' + solicitudId + '/destacar', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ destacado: nuevoDestacado })
+                    });
+                }
+            }
             alert('Gestión guardada correctamente');
             cerrarModal();
             cargarDatosGestion();

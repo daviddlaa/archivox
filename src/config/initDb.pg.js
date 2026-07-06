@@ -36,6 +36,7 @@ const initTables = async () => {
                 ingreso_mensual DECIMAL(12,2),
                 fecha_solicitud TEXT,
                 usuario_id INTEGER,
+                destacado INTEGER DEFAULT 0,
                 fecha_importacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (usuario_id) REFERENCES usuarios(id)

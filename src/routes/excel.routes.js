@@ -134,6 +134,15 @@ router.post(
     excelController.saveConfigBonos
 );
 
+// ================== DESTACAR SOLICITUD ==================
+
+// Actualizar destacado de una solicitud
+router.put(
+    '/solicitudes/:id/destacar',
+    requiresAuth,
+    excelController.destacarSolicitud
+);
+
 // ================== COMPLETAR INFO ==================
 
 // Obtener solicitud con información completa (incluyendo referencias)

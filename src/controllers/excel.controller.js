@@ -846,6 +846,49 @@ try {
 // ================== C�DIGO PLUS ==================
 
 // Actualizar c�digo plus de una solicitud
+// ================== DESTACAR SOLICITUD ==================
+
+// Actualizar destacado de una solicitud
+exports.destacarSolicitud = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { id } = req.params;
+    const { destacado } = req.body;
+    
+    if (!id) {
+        return res.status(400).json({ error: 'ID de solicitud requerido' });
+    }
+    
+    if (destacado === undefined || (destacado !== 0 && destacado !== 1)) {
+        return res.status(400).json({ error: 'El campo destacado debe ser 0 o 1' });
+    }
+    
+    try {
+        const result = await pool.query(
+            `UPDATE solicitudes 
+             SET destacado = $1, fecha_actualizacion = CURRENT_TIMESTAMP
+             WHERE id_solicitud = $2 AND usuario_id = $3
+             RETURNING id_solicitud, destacado`,
+            [destacado, id, usuarioId]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Solicitud no encontrada' });
+        }
+        
+        res.json({ 
+            mensaje: destacado === 1 ? 'Solicitud destacada' : 'Solicitud no destacada', 
+            data: result.rows[0] 
+        });
+    } catch (err) {
+        console.error('Error destacarSolicitud:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // ================== COMPLETAR INFO ==================
 
 // Obtener solicitud con información completa (incluyendo referencias)

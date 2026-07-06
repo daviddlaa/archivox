@@ -32,6 +32,7 @@ db.exec(`
         ingreso_mensual REAL,
         fecha_solicitud TEXT,
         usuario_id INTEGER,
+        destacado INTEGER DEFAULT 0,
         fecha_importacion DATETIME DEFAULT CURRENT_TIMESTAMP,
         fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
