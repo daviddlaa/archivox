@@ -93,6 +93,8 @@ function abrirDrawer() {
     if (drawer && overlay) {
         drawer.classList.add('open');
         overlay.classList.add('open');
+        // Bloquear scroll del body para evitar rebote
+        document.body.style.overflow = 'hidden';
         console.log('Drawer abierto');
     } else {
         console.error('Elementos del drawer no encontrados');
@@ -106,6 +108,8 @@ function cerrarDrawer() {
     if (drawer && overlay) {
         drawer.classList.remove('open');
         overlay.classList.remove('open');
+        // Restaurar scroll del body
+        document.body.style.overflow = '';
         console.log('Drawer cerrado');
     }
 }
