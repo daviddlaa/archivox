@@ -315,8 +315,15 @@ function renderizarSolicitudes(lista) {
         
         // Header
         html += '<div class="sol-header">';
-        html += '<span class="sol-id">' + (destacada ? '<span class="sol-destacado-star" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', ' + (destacada ? '0' : '1') + ')" title="Quitar destacado">⭐</span> ' : '<span class="sol-destacado-star sol-destacado-inactive" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1)" title="Destacar tarjeta">☆</span> ') + '#' + sol.id_solicitud + '</span>';
+        html += '<span class="sol-id">#' + sol.id_solicitud + '</span>';
+        html += '<div class="sol-header-badges">';
+        if (destacada) {
+            html += '<span class="sol-destacado-badge sol-destacado-badge-on" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 0)" title="Quitar destacado">⭐ Destacada</span>';
+        } else {
+            html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1)" title="Destacar tarjeta">☆ Destacar</span>';
+        }
         html += '<span class="sol-estado" style="background:' + colorFondo + ';">' + estado + '</span>';
+        html += '</div>';
         html += '</div>';
         
         // Info
