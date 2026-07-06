@@ -391,104 +391,72 @@ body {
     height: 220px;
 }
 
-/* ===== HERO / BIENVENIDA ===== */
+/* ===== HERO / PANEL DE CONTROL ===== */
 .dashboard-hero {
-    background: linear-gradient(135deg, #1d4ed8 0%, #4f46e5 100%);
+    background: linear-gradient(135deg, #1e40af 0%, #4f46e5 50%, #7c3aed 100%);
     margin: 12px 15px;
-    padding: 14px 16px;
-    border-radius: 14px;
+    padding: 18px 16px 16px;
+    border-radius: 16px;
     color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
 }
 
-.hero-copy h2 {
-    font-size: 16px;
-    margin-bottom: 3px;
+.hero-head {
+    margin-bottom: 14px;
 }
 
-.hero-copy p {
+.hero-head h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+}
+
+.hero-head p {
     font-size: 12px;
-    opacity: 0.9;
+    opacity: 0.8;
+    margin: 0;
     line-height: 1.3;
 }
 
-.hero-action {
-    background: rgba(255,255,255,0.16);
-    color: white;
-    text-decoration: none;
-    padding: 7px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-/* ===== APP ICONS GRID (ACCESOS DIRECTOS) ===== */
-.app-grid {
+.hero-actions {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    padding: 0 15px 8px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
 }
 
-.app-icon {
+.hero-action {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 14px 8px;
-    background: white;
-    border-radius: 16px;
+    gap: 4px;
+    padding: 10px 4px;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
     text-decoration: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    color: white;
     transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
-    min-height: 80px;
+    min-height: 64px;
 }
 
-.app-icon::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--app-color);
-    opacity: 0.6;
+.hero-action:active {
+    background: rgba(255,255,255,0.25);
+    transform: scale(0.93);
 }
 
-.app-icon:active {
-    transform: scale(0.95);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+.ha-icon {
+    font-size: 22px;
+    line-height: 1;
 }
 
-.app-icon-emoji {
-    font-size: 28px;
-    width: 52px;
-    height: 52px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--app-color) 15%, white);
-    transition: all 0.2s ease;
-}
-
-.app-icon:active .app-icon-emoji {
-    transform: scale(0.9);
-}
-
-.app-icon-label {
-    font-size: 10px;
+.ha-label {
+    font-size: 9px;
     font-weight: 600;
-    color: #374151;
     text-align: center;
-    line-height: 1.2;
+    line-height: 1.1;
+    opacity: 0.95;
     letter-spacing: 0.2px;
 }
 
