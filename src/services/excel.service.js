@@ -36,16 +36,36 @@ exports.procesarExcel = async (filePath, usuarioId) => {
 
     const worksheet = workbook.getWorksheet(1);
 
+    // Leer encabezados de la primera fila, manejando celdas vacías
     const headers = [];
 
-    worksheet.getRow(1).eachCell((cell) => {
-        headers.push(String(cell.value).trim());
+    worksheet.getRow(1).eachCell((cell, colNumber) => {
+        let headerName = String(cell.value || '').trim();
+        if (!headerName) {
+            headerName = `COLUMNA_${colNumber}`;
+            console.warn(`[Excel] Header vacío en columna ${colNumber}, renombrado a "${headerName}"`);
+        }
+        headers.push(headerName);
     });
 
     let procesados = 0;
     let inserts = 0;
     let updates = 0;
     const detalles = [];
+
+    // Variable para auto-generar IDs cuando IDSOLICITUD viene vacío
+    // Se inicializa bajo demanda (lazy) cuando se encuentra la primera fila sin ID
+    let siguienteIdAuto = null;
+    const initSiguienteId = async () => {
+        if (isPostgres) {
+            const result = await pool.query('SELECT COALESCE(MAX(id_solicitud), 0) + 1 AS next_id FROM solicitudes');
+            siguienteIdAuto = parseInt(result.rows[0].next_id);
+        } else {
+            const dbDirect = require('../config/database');
+            const row = dbDirect.prepare('SELECT COALESCE(MAX(id_solicitud), 0) + 1 AS next_id FROM solicitudes').get();
+            siguienteIdAuto = row.next_id;
+        }
+    };
 
     for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
 
@@ -56,6 +76,20 @@ exports.procesarExcel = async (filePath, usuarioId) => {
         row.eachCell((cell, colNumber) => {
             registro[headers[colNumber - 1]] = cell.value;
         });
+
+        // ===== NORMALIZAR VALORES VACÍOS =====
+        // Auto-generar ID si IDSOLICITUD viene vacío
+        if (registro.IDSOLICITUD == null || String(registro.IDSOLICITUD).trim() === '') {
+            if (siguienteIdAuto === null) {
+                await initSiguienteId();
+            }
+            registro.IDSOLICITUD = siguienteIdAuto++;
+        }
+        
+        // Asignar "SIN ESTADO" por defecto si ESTADO viene vacío
+        if (!registro.ESTADO || String(registro.ESTADO).trim() === '') {
+            registro.ESTADO = 'SIN ESTADO';
+        }
 
         try {
             if (isPostgres) {

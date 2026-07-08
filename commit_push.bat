@@ -1,11 +1,26 @@
 @echo off
 cd /d c:\Users\david\Desktop\Archivox
+
+:: Verificar que .env no se va a subir (ya está en .gitignore)
+:: El archivo .env contiene credenciales de la BD - NO subir a GitHub
+echo ========================================
+echo  Subiendo cambios a GitHub...
+echo  (el archivo .env esta protegido)
+echo ========================================
+echo.
+
+:: Pedir mensaje de commit
+set /p commit_msg="Mensaje del commit: "
+
+:: Si no escribió nada, usar mensaje por defecto
+if "%commit_msg%"=="" set commit_msg="Actualizacion general"
+
 git add -A
-:: Excluir la carpeta de documentación del commit
- git reset documentacion/
-git add src/config/db.js
-git add src/config/initDb.pg.js
-git add src/controllers/gestionesMaestro.controller.js
-git commit -m "arreglo  drawer de menu mivl"
+git commit -m "%commit_msg%"
 git push origin master
+
+echo.
+echo ========================================
+echo  Hecho! Cambios subidos a GitHub.
+echo ========================================
 pause
