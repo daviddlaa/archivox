@@ -7,6 +7,66 @@ const pool = db;
 // Determinar si es PostgreSQL (producción) o SQLite (local)
 const isPostgres = !!process.env.DATABASE_URL;
 
+/**
+ * Convierte valores de fecha Excel (números seriales, objetos Date o cadenas) a formato DATE ISO (YYYY-MM-DD)
+ */
+function convertirFecha(valor) {
+    if (!valor) return null;
+    
+    // Si es string, verificar si ya es formato válido YYYY-MM-DD
+    if (typeof valor === 'string') {
+        var trimmed = valor.trim();
+        // Si ya es formato ISO, devolver tal cual
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+        
+        // Detectar formato DD/MM/YYYY o DD-MM-YYYY (usado en Ecuador/Latam)
+        // Solo interpretar como DD/MM/YYYY si:
+        //   - día > 12 (no podría ser mes) → ej: 15/01/2024
+        //   - día ≤ 31 y mes > 12 (el mes no puede ser 13+) → ej: 05/15/2024
+        // Si es ambiguo (ambos ≤ 12), new Date() lo interpreta como MM/DD/YYYY
+        // Si el primer número tiene 4 dígitos, es YYYY/MM/DD y lo dejamos a new Date()
+        var matchDMY = trimmed.match(/^(\d{1,4})[\/-](\d{1,2})[\/-](\d{1,4})$/);
+        if (matchDMY && matchDMY[1].length === 2) {
+            var parte1 = parseInt(matchDMY[1], 10);
+            var parte2 = parseInt(matchDMY[2], 10);
+            if (parte1 > 12 || (parte1 <= 31 && parte2 > 12)) {
+                var dia = matchDMY[1].padStart(2, '0');
+                var mes = matchDMY[2].padStart(2, '0');
+                var anio = matchDMY[3].length === 4 ? matchDMY[3] : (parseInt(matchDMY[3]) + 2000).toString();
+                return anio + '-' + mes + '-' + dia;
+            }
+        }
+        
+        // Intentar convertir string a fecha (formato inglés: "Jan 15 2024")
+        var dateFromString = new Date(trimmed);
+        if (!isNaN(dateFromString.getTime())) {
+            return dateFromString.toISOString().split('T')[0];
+        }
+        return trimmed;
+    }
+    
+    // Si es objeto Date (Excel convierte fechas a Date)
+    if (valor instanceof Date && !isNaN(valor.getTime())) {
+        return valor.toISOString().split('T')[0];
+    }
+    
+    // Si es número (fecha serial de Excel), convertir
+    if (typeof valor === 'number') {
+        const epoch = new Date(1899, 11, 30);
+        const fecha = new Date(epoch.getTime() + valor * 86400000);
+        return fecha.toISOString().split('T')[0];
+    }
+    
+    // Último intento: convertir a string y parsear
+    var str = String(valor);
+    var dateAttempt = new Date(str);
+    if (!isNaN(dateAttempt.getTime())) {
+        return dateAttempt.toISOString().split('T')[0];
+    }
+    
+    return null;
+}
+
 // Función para guardar auditoría
 const guardarAuditoria = async (solicitudId, usuarioId, campo, valorAnterior, valorNuevo) => {
     try {
@@ -92,6 +152,9 @@ exports.procesarExcel = async (filePath, usuarioId) => {
         if (!registro.ESTADO || String(registro.ESTADO).trim() === '') {
             registro.ESTADO = 'SIN ESTADO';
         }
+        
+        // Convertir fecha a formato YYYY-MM-DD (tolera cualquier formato: serial, Date, string)
+        registro.FECHASOLICITUD = convertirFecha(registro.FECHASOLICITUD);
 
         try {
             if (isPostgres) {
