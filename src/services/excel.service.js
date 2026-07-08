@@ -78,12 +78,14 @@ exports.procesarExcel = async (filePath, usuarioId) => {
         });
 
         // ===== NORMALIZAR VALORES VACÍOS =====
+        let idFueAutoGenerado = false;
         // Auto-generar ID si IDSOLICITUD viene vacío
         if (registro.IDSOLICITUD == null || String(registro.IDSOLICITUD).trim() === '') {
             if (siguienteIdAuto === null) {
                 await initSiguienteId();
             }
             registro.IDSOLICITUD = siguienteIdAuto++;
+            idFueAutoGenerado = true;
         }
         
         // Asignar "SIN ESTADO" por defecto si ESTADO viene vacío
@@ -95,16 +97,32 @@ exports.procesarExcel = async (filePath, usuarioId) => {
             if (isPostgres) {
                 // PostgreSQL: Usar pool.query async
                 // Verificar si existe
-                const existing = await pool.query(
-                    'SELECT id, estado, segmento FROM solicitudes WHERE id_solicitud = $1',
-                    [registro.IDSOLICITUD]
-                );
+                let existing;
+                if (idFueAutoGenerado && registro.CEDULA && String(registro.CEDULA).trim() !== '') {
+                    // Buscar por CÉDULA para evitar duplicados al re-subir el mismo Excel
+                    existing = await pool.query(
+                        'SELECT id, id_solicitud, estado, segmento FROM solicitudes WHERE cedula = $1 AND usuario_id = $2',
+                        [registro.CEDULA, usuarioId]
+                    );
+                } else {
+                    existing = await pool.query(
+                        'SELECT id, id_solicitud, estado, segmento FROM solicitudes WHERE id_solicitud = $1',
+                        [registro.IDSOLICITUD]
+                    );
+                }
 
                 if (existing.rows.length > 0) {
                     // Update - capturar valores anteriores
                     const oldData = existing.rows[0];
+                    const existingIdSol = oldData.id_solicitud;
                     const oldEstado = oldData.estado;
                     const oldSegmento = oldData.segmento;
+                    
+                    // Si el ID fue auto-generado pero encontramos por CEDULA,
+                    // usar el ID existente para no duplicar
+                    if (idFueAutoGenerado) {
+                        registro.IDSOLICITUD = existingIdSol;
+                    }
                     
                     // Ejecutar update
                     await pool.query(
@@ -128,24 +146,24 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                             registro.PRODUCTO,
                             registro.FECHASOLICITUD,
                             usuarioId,
-                            registro.IDSOLICITUD
+                            existingIdSol
                         ]
                     );
                     
                     // Guardar auditoría si cambió estado o segmento
                     if (oldEstado !== registro.ESTADO) {
-                        await guardarAuditoria(registro.IDSOLICITUD, usuarioId, 'estado', oldEstado, registro.ESTADO);
+                        await guardarAuditoria(existingIdSol, usuarioId, 'estado', oldEstado, registro.ESTADO);
                         detalles.push({
-                            id: registro.IDSOLICITUD,
+                            id: existingIdSol,
                             campo: 'estado',
                             anterior: oldEstado,
                             nuevo: registro.ESTADO
                         });
                     }
                     if (oldSegmento !== registro.SEGMENTO) {
-                        await guardarAuditoria(registro.IDSOLICITUD, usuarioId, 'segmento', oldSegmento, registro.SEGMENTO);
+                        await guardarAuditoria(existingIdSol, usuarioId, 'segmento', oldSegmento, registro.SEGMENTO);
                         detalles.push({
-                            id: registro.IDSOLICITUD,
+                            id: existingIdSol,
                             campo: 'segmento',
                             anterior: oldSegmento,
                             nuevo: registro.SEGMENTO
@@ -178,14 +196,28 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                 // SQLite: Usar módulo directo
                 const dbDirect = require('../config/database');
                 
-                const existing = dbDirect.prepare(
-                    'SELECT id, estado, segmento FROM solicitudes WHERE id_solicitud = ?'
-                ).get(registro.IDSOLICITUD);
+                let existing;
+                if (idFueAutoGenerado && registro.CEDULA && String(registro.CEDULA).trim() !== '') {
+                    existing = dbDirect.prepare(
+                        'SELECT id, id_solicitud, estado, segmento FROM solicitudes WHERE cedula = ? AND usuario_id = ?'
+                    ).get(registro.CEDULA, usuarioId);
+                } else {
+                    existing = dbDirect.prepare(
+                        'SELECT id, id_solicitud, estado, segmento FROM solicitudes WHERE id_solicitud = ?'
+                    ).get(registro.IDSOLICITUD);
+                }
 
                 if (existing) {
                     // Update - capturar valores anteriores
+                    const existingIdSol = existing.id_solicitud;
                     const oldEstado = existing.estado;
                     const oldSegmento = existing.segmento;
+                    
+                    // Si el ID fue auto-generado pero encontramos por CEDULA,
+                    // usar el ID existente para no duplicar
+                    if (idFueAutoGenerado) {
+                        registro.IDSOLICITUD = existingIdSol;
+                    }
                     
                     // Ejecutar update
                     dbDirect.prepare(`
@@ -209,23 +241,23 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                         registro.PRODUCTO,
                         registro.FECHASOLICITUD,
                         usuarioId,
-                        registro.IDSOLICITUD
+                        existingIdSol
                     );
                     
                     // Guardar auditoría si cambió estado o segmento
                     if (oldEstado !== registro.ESTADO) {
-                        await guardarAuditoria(registro.IDSOLICITUD, usuarioId, 'estado', oldEstado, registro.ESTADO);
+                        await guardarAuditoria(existingIdSol, usuarioId, 'estado', oldEstado, registro.ESTADO);
                         detalles.push({
-                            id: registro.IDSOLICITUD,
+                            id: existingIdSol,
                             campo: 'estado',
                             anterior: oldEstado,
                             nuevo: registro.ESTADO
                         });
                     }
                     if (oldSegmento !== registro.SEGMENTO) {
-                        await guardarAuditoria(registro.IDSOLICITUD, usuarioId, 'segmento', oldSegmento, registro.SEGMENTO);
+                        await guardarAuditoria(existingIdSol, usuarioId, 'segmento', oldSegmento, registro.SEGMENTO);
                         detalles.push({
-                            id: registro.IDSOLICITUD,
+                            id: existingIdSol,
                             campo: 'segmento',
                             anterior: oldSegmento,
                             nuevo: registro.SEGMENTO
