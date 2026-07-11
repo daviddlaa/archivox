@@ -23,8 +23,28 @@ const adminLimiter = rateLimit({
 // Todas las rutas requieren: autenticación + rol admin o superadmin
 // ============================================================================
 
-// Middleware de protección para todas las rutas admin
+// Middleware de autenticación para TODAS las rutas admin
 router.use(requiresAuth);
+
+// ============================================================================
+// RUTAS DE NOTIFICACIONES (ACCESIBLES POR TODOS LOS USUARIOS AUTENTICADOS)
+// ============================================================================
+// Estas rutas van ANTES del middleware requiresRole para que usuarios normales
+// puedan ver sus notificaciones. El controlador ya filtra por destinatario.
+// ============================================================================
+
+// Listar notificaciones (filtradas para el usuario si no es admin)
+router.get('/notificaciones', notificacionesController.listar);
+
+// Contar notificaciones no leídas
+router.get('/notificaciones/no-leidas', notificacionesController.contarNoLeidas);
+
+// Marcar notificación como leída
+router.put('/notificaciones/:id/leer', notificacionesController.marcarLeida);
+
+// ============================================================================
+// MIDDLEWARE DE ROL ADMIN (SOLO ADMINISTRADORES DE AHORA EN ADELANTE)
+// ============================================================================
 router.use(requiresRole('admin', 'superadmin'));
 router.use(adminLimiter);
 
@@ -73,24 +93,13 @@ router.get('/estadisticas/listado', estadisticasController.listado);
 router.get('/auditoria', adminController.auditoria);
 
 // ============================================================================
-// NOTIFICACIONES
+// NOTIFICACIONES (solo admin/superadmin)
 // ============================================================================
 
-// IMPORTANTE: Rutas fijas ANTES de rutas con :id para evitar conflictos
-
-// Listar notificaciones
-router.get('/notificaciones', notificacionesController.listar);
-
-// Contar notificaciones no leídas (DEBE ir antes de rutas con :id)
-router.get('/notificaciones/no-leidas', notificacionesController.contarNoLeidas);
-
-// Crear notificación (solo admin/superadmin)
+// Crear notificación
 router.post('/notificaciones', notificacionesController.crear);
 
-// Marcar notificación como leída
-router.put('/notificaciones/:id/leer', notificacionesController.marcarLeida);
-
-// Eliminar notificación (DEBE ir al final para no capturar rutas fijas)
+// Eliminar notificación
 router.delete('/notificaciones/:id', notificacionesController.eliminar);
 
 module.exports = router;

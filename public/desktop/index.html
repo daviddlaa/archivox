@@ -6,6 +6,7 @@
 <title>Dashboard - Archivox</title>
 <link rel="stylesheet" href="/desktop/css/base.css">
     <link rel="stylesheet" href="/desktop/css/dashboard.css">
+    <link rel="stylesheet" href="/css/notificaciones.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -18,7 +19,12 @@
             <div class="dashboard-container">
 <!-- Header Simple -->
             <div class="dashboard-header">
-                <h1>📊 Dashboard</h1>
+                <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+                    <h1 style="margin:0;">📊 Dashboard</h1>
+                    <button class="notif-bell-usuario" onclick="abrirPanelNotificaciones()" title="Notificaciones">
+                        🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
+                    </button>
+                </div>
             </div>
             
 <!-- Quick Links - Navegación Principal -->
@@ -93,7 +99,9 @@
         </main>
     </div>
     
+    <script src="/js/notificaciones-dashboard.js"></script>
     <script src="/desktop/js/dashboard.js"></script>
     <script src="/desktop/js/drawer.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', initNotificaciones);</script>
 </body>
 </html>

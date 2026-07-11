@@ -6,6 +6,7 @@
     <title>Archivox - Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="/movil/css/estilos.css">
+    <link rel="stylesheet" href="/css/notificaciones.css">
 </head>
 <body>
     <!-- Header -->
@@ -14,6 +15,9 @@
             <h1>📊 Archivox</h1>
             <p>Dashboard</p>
         </div>
+        <button class="notif-bell-usuario notif-bell-movil" onclick="abrirPanelNotificaciones()" title="Notificaciones">
+            🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
+        </button>
     </div>
 
     <!-- Contenido -->
@@ -124,7 +128,9 @@
         </a>
     </nav>
 
+    <script src="/js/notificaciones-dashboard.js"></script>
     <script src="/movil/js/drawer.js"></script>
     <script src="/movil/js/dashboard.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', initNotificaciones);</script>
 </body>
 </html>
