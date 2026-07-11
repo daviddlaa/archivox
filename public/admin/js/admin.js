@@ -74,6 +74,7 @@ function cambiarTab(tab) {
 
     if (tab === 'estadisticas') cargarEstadisticas();
     if (tab === 'auditoria') cargarAuditoria();
+    if (tab === 'notificaciones') { cargarNotificaciones(); actualizarBadgeNotif(); }
 }
 
 // ============================================================================
@@ -131,6 +132,7 @@ async function cargarUsuarios() {
                 <td>
                     <div class="action-btns">
                         <button class="action-btn edit" onclick="editarUsuario(${user.id})" title="Editar">✏️</button>
+                        <button class="action-btn stats" data-userid="${user.id}" data-username="${escapeHtml(user.username)}" onclick="verEstadisticasUsuario(this.dataset.userid, this.dataset.username)" title="Estadísticas">📊</button>
                         ${user.locked_until && new Date(user.locked_until) > new Date() ?
                             `<button class="action-btn lock" onclick="desbloquearUsuario(${user.id})" title="Desbloquear">🔓</button>` : ''}
                     </div>
@@ -159,6 +161,7 @@ async function cargarUsuarios() {
                 </div>
                 <div class="user-card-actions">
                     <button class="action-btn edit" onclick="editarUsuario(${user.id})" title="Editar">✏️ Editar</button>
+                    <button class="action-btn stats" data-userid="${user.id}" data-username="${escapeHtml(user.username)}" onclick="verEstadisticasUsuario(this.dataset.userid, this.dataset.username)" title="Estadísticas">📊 Stats</button>
                     ${user.locked_until && new Date(user.locked_until) > new Date() ?
                         `<button class="action-btn lock" onclick="desbloquearUsuario(${user.id})">🔓 Desbloquear</button>` : ''}
                 </div>
@@ -512,6 +515,254 @@ async function cargarAuditoria() {
 function debounceAuditar() {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(cargarAuditoria, 300);
+}
+
+// ============================================================================
+// NOTIFICACIONES
+// ============================================================================
+
+let paginaNotif = 1;
+let searchNotifTimeout;
+
+// Cargar notificaciones desde el servidor
+async function cargarNotificaciones() {
+    const tbody = document.getElementById('notifTableBody');
+    tbody.innerHTML = '<tr><td colspan="8" class="admin-loading">Cargando notificaciones...</td></tr>';
+
+    try {
+        const q = document.getElementById('searchNotif').value;
+        const tipo = document.getElementById('filterNotifTipo').value;
+        const leida = document.getElementById('filterNotifLeida').value;
+
+        let url = `/api/admin/notificaciones?pagina=${paginaNotif}&limite=15`;
+        if (q) url += `&q=${encodeURIComponent(q)}`;
+        if (tipo) url += `&tipo=${tipo}`;
+        if (leida !== '') url += `&leida=${leida}`;
+
+        const res = await fetch(url);
+        if (!res.ok) {
+            tbody.innerHTML = '<tr><td colspan="8" class="admin-loading" style="color:#dc2626">Error ' + res.status + '</td></tr>';
+            return;
+        }
+        const data = await res.json();
+
+        if (!data.data || data.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="admin-loading">No hay notificaciones</td></tr>';
+            document.getElementById('pageInfoNotif').textContent = 'Página 1';
+            return;
+        }
+
+        const tipoIconos = { info: 'ℹ️', warning: '⚠️', success: '✅', danger: '🚨' };
+        const tipoColores = { info: '#3b82f6', warning: '#f59e0b', success: '#10b981', danger: '#ef4444' };
+
+        tbody.innerHTML = data.data.map(n => `
+            <tr class="${n.leida ? '' : 'notif-no-leida'}">
+                <td>${n.leida ? '📖' : '📩'}</td>
+                <td><strong>${escapeHtml(n.titulo)}</strong></td>
+                <td style="white-space:pre-line;font-size:13px">${escapeHtml(n.mensaje)}</td>
+                <td><span style="background:${tipoColores[n.tipo] || '#6b7280'};color:white;padding:3px 8px;border-radius:4px;font-size:11px">${tipoIconos[n.tipo] || 'ℹ️'} ${n.tipo}</span></td>
+                <td>${escapeHtml(n.creador_username || 'Sistema')}</td>
+                <td>${n.destinatario_id ? 'Usuario #' + n.destinatario_id : '🌐 Todos'}</td>
+                <td>${formatearFecha(n.created_at)}</td>
+                <td>
+                    <div class="action-btns">
+                        ${!n.leida ? `<button class="action-btn" onclick="marcarLeida(${n.id})" title="Marcar leída">✅</button>` : ''}
+                        <button class="action-btn" onclick="eliminarNotificacion(${n.id})" title="Eliminar" style="color:#dc2626">🗑️</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+        document.getElementById('pageInfoNotif').textContent = `Página ${paginaNotif}`;
+        document.getElementById('prevPageNotif').disabled = paginaNotif <= 1;
+        document.getElementById('nextPageNotif').disabled = !data.data || data.data.length < 15;
+
+    } catch (err) {
+        console.error('Error notificaciones:', err);
+        tbody.innerHTML = '<tr><td colspan="8" class="admin-loading" style="color:#dc2626">Error al cargar notificaciones</td></tr>';
+    }
+}
+
+function debounceNotificaciones() {
+    clearTimeout(searchNotifTimeout);
+    searchNotifTimeout = setTimeout(() => { paginaNotif = 1; cargarNotificaciones(); }, 300);
+}
+
+function cambiarPaginaNotif(dir) {
+    if (dir === 'next') paginaNotif++;
+    else if (paginaNotif > 1) paginaNotif--;
+    cargarNotificaciones();
+}
+
+// Contar notificaciones no leídas y actualizar badge
+async function actualizarBadgeNotif() {
+    try {
+        const res = await fetch('/api/admin/notificaciones/no-leidas');
+        const data = await res.json();
+        const badge = document.getElementById('notifCount');
+        if (data.no_leidas > 0) {
+            badge.textContent = data.no_leidas;
+            badge.style.display = 'inline';
+        } else {
+            badge.style.display = 'none';
+        }
+    } catch (e) { /* ignora */ }
+}
+
+// Abrir panel de notificaciones (cambiar a tab de notificaciones)
+function abrirPanelNotificaciones() {
+    cambiarTab('notificaciones');
+}
+
+// Marcar notificación como leída
+async function marcarLeida(id) {
+    try {
+        const res = await fetch(`/api/admin/notificaciones/${id}/leer`, { method: 'PUT' });
+        if (res.ok) {
+            cargarNotificaciones();
+            actualizarBadgeNotif();
+            mostrarToast('✅ Marcada como leída');
+        }
+    } catch (err) {
+        console.error('Error marcar leída:', err);
+    }
+}
+
+// Eliminar notificación
+async function eliminarNotificacion(id) {
+    if (!confirm('¿Eliminar esta notificación?')) return;
+    try {
+        const res = await fetch(`/api/admin/notificaciones/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            cargarNotificaciones();
+            mostrarToast('🗑️ Notificación eliminada');
+        }
+    } catch (err) {
+        console.error('Error eliminar:', err);
+    }
+}
+
+// Modal crear notificación
+async function abrirModalCrearNotificacion() {
+    // Cargar usuarios para selector de destinatario
+    try {
+        const res = await fetch('/api/admin/usuarios?limite=100');
+        const data = await res.json();
+        const select = document.getElementById('notifDestinatario');
+        select.innerHTML = '<option value="">🌐 Todos los usuarios</option>';
+        if (data.data) {
+            data.data.forEach(u => {
+                select.innerHTML += `<option value="${u.id}">${escapeHtml(u.username)} (${escapeHtml(u.nombre || u.username)})</option>`;
+            });
+        }
+    } catch (e) { /* si falla, solo mostrar opción de todos */ }
+
+    document.getElementById('notifTitulo').value = '';
+    document.getElementById('notifMensaje').value = '';
+    document.getElementById('notifTipo').value = 'info';
+    document.getElementById('notifModal').classList.add('active');
+    document.getElementById('modalOverlay').classList.add('active');
+}
+
+function cerrarModalNotif() {
+    document.getElementById('notifModal').classList.remove('active');
+    document.getElementById('modalOverlay').classList.remove('active');
+}
+
+async function crearNotificacion() {
+    const titulo = document.getElementById('notifTitulo').value.trim();
+    const mensaje = document.getElementById('notifMensaje').value.trim();
+    const tipo = document.getElementById('notifTipo').value;
+    const destinatario_id = document.getElementById('notifDestinatario').value || null;
+
+    if (!titulo || !mensaje) {
+        return alert('Título y mensaje son requeridos');
+    }
+
+    try {
+        const res = await fetch('/api/admin/notificaciones', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ titulo, mensaje, tipo, destinatario_id })
+        });
+        if (res.ok) {
+            cerrarModalNotif();
+            cargarNotificaciones();
+            mostrarToast('📢 Notificación publicada');
+        } else {
+            const err = await res.json();
+            alert(err.error || 'Error al crear notificación');
+        }
+    } catch (err) {
+        console.error('Error crear notif:', err);
+        alert('Error de conexión');
+    }
+}
+
+// ============================================================================
+// ESTADÍSTICAS POR USUARIO
+// ============================================================================
+
+async function verEstadisticasUsuario(userId, username) {
+    document.getElementById('statsUsuarioTitle').textContent = `📊 Estadísticas: ${username}`;
+    document.getElementById('statsUsuarioContent').innerHTML = '<div class="admin-loading">Cargando estadísticas...</div>';
+    document.getElementById('modalOverlay').classList.add('active');
+    document.getElementById('statsUsuarioModal').classList.add('active');
+
+    try {
+        const res = await fetch(`/api/admin/estadisticas/usuario/${userId}`);
+        if (!res.ok) {
+            document.getElementById('statsUsuarioContent').innerHTML = `<div class="admin-loading" style="color:#dc2626">Error ${res.status}</div>`;
+            return;
+        }
+        const data = await res.json();
+
+        // Info del usuario
+        let html = `
+            <div class="stats-user-header">
+                <div class="stats-user-avatar">👤</div>
+                <div class="stats-user-info">
+                    <h3>${escapeHtml(data.usuario.nombre || data.usuario.username)}</h3>
+                    <span class="role-badge ${data.usuario.is_superadmin ? 'superadmin' : data.usuario.rol}">${rolLabel(data.usuario)}</span>
+                    <div class="stats-user-dates">
+                        <span>📅 Registro: ${formatearFecha(data.usuario.created_at)}</span>
+                        <span>🔑 Último login: ${formatearFecha(data.usuario.last_login) || 'Nunca'}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="stats-metricas-grid">
+        `;
+
+        // Métricas
+        for (const [key, metrica] of Object.entries(data.metricas)) {
+            const porcentaje = metrica.porcentaje > 0 ? 
+                `<div class="stats-porcentaje-bar"><div class="stats-porcentaje-fill" style="width:${Math.min(metrica.porcentaje, 100)}%"></div></div>
+                 <div class="stats-porcentaje-text">${metrica.porcentaje}% del sistema</div>` : '';
+            
+            html += `
+                <div class="stats-metrica-card">
+                    <div class="stats-metrica-icon">${metrica.icon || '📊'}</div>
+                    <div class="stats-metrica-content">
+                        <div class="stats-metrica-label">${metrica.label}</div>
+                        <div class="stats-metrica-value">${metrica.valor.toLocaleString()}</div>
+                        ${porcentaje}
+                    </div>
+                </div>
+            `;
+        }
+
+        html += '</div>';
+        document.getElementById('statsUsuarioContent').innerHTML = html;
+
+    } catch (err) {
+        console.error('Error stats usuario:', err);
+        document.getElementById('statsUsuarioContent').innerHTML = '<div class="admin-loading" style="color:#dc2626">Error al cargar estadísticas</div>';
+    }
+}
+
+function cerrarStatsUsuario() {
+    document.getElementById('statsUsuarioModal').classList.remove('active');
+    document.getElementById('modalOverlay').classList.remove('active');
 }
 
 // ============================================================================

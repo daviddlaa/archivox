@@ -1,14 +1,5 @@
 console.log('Cargando solicitudes.js...');
 
-// Funciones del menú hamburguesa
-function toggleMenu() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.querySelector('.menu-overlay');
-    sidebar.classList.toggle('movil');
-    sidebar.classList.toggle('active');
-    overlay.classList.toggle('active');
-}
-
 // Funciones de selección de filas
 var filasSeleccionadas = [];
 var datosFilas = {}; // Almacenar datos de cada fila por id

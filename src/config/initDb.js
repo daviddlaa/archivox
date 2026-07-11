@@ -1,8 +1,65 @@
 const db = require('./database');
 
-// ================================================================
-// TABLA: usuarios (versión mejorada con Panel de Administración)
-// ================================================================
+// ============================================================================
+// MIGRACIÓN AUTOMÁTICA: Detectar esquema antiguo y migrar
+// ============================================================================
+console.log('[DB] Verificando esquema de base de datos...');
+
+// Verificar si la tabla usuarios existe
+const tablas = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'").all();
+
+if (tablas.length > 0) {
+    // La tabla existe, obtener columnas actuales
+    const columnasActuales = db.prepare('PRAGMA table_info(usuarios)').all().map(c => c.name);
+    console.log('[DB] Columnas existentes en usuarios:', columnasActuales.join(', '));
+
+    // ============================================================================
+    // MIGRACIÓN: Agregar columnas faltantes a la tabla usuarios
+    // ============================================================================
+    const columnasFaltantes = {
+        'email': 'TEXT UNIQUE',
+        'email_verified': 'INTEGER DEFAULT 0',
+        'is_active': 'INTEGER DEFAULT 1',
+        'is_superadmin': 'INTEGER DEFAULT 0',
+        'failed_login_attempts': 'INTEGER DEFAULT 0',
+        'locked_until': 'TEXT',
+        'password_changed_at': `TEXT DEFAULT (datetime('now'))`,
+        'updated_at': `TEXT DEFAULT (datetime('now'))`,
+        'last_login': 'TEXT'
+    };
+
+    let columnasMigradas = 0;
+    for (const [col, tipo] of Object.entries(columnasFaltantes)) {
+        if (!columnasActuales.includes(col)) {
+            try {
+                // Si la columna ultimo_login existe y estamos creando last_login, migrar datos
+                if (col === 'last_login' && columnasActuales.includes('ultimo_login')) {
+                    db.exec(`ALTER TABLE usuarios ADD COLUMN last_login TEXT`);
+                    db.exec(`UPDATE usuarios SET last_login = ultimo_login WHERE ultimo_login IS NOT NULL`);
+                    console.log('[DB] Migrado: ultimo_login → last_login');
+                } else {
+                    db.exec(`ALTER TABLE usuarios ADD COLUMN ${col} ${tipo}`);
+                }
+                console.log('[DB] Columna agregada:', col);
+                columnasMigradas++;
+            } catch (err) {
+                console.log('[DB] Columna ya existe (ignorado):', col);
+            }
+        }
+    }
+
+    if (columnasMigradas > 0) {
+        console.log('[DB] Migración completada:', columnasMigradas, 'columnas agregadas');
+    } else {
+        console.log('[DB] Esquema actualizado, no se requieren migraciones');
+    }
+} else {
+    console.log('[DB] Tabla usuarios no existe (instalación nueva), se creará más adelante');
+}
+
+// ============================================================================
+// CREAR TABLA si no existe (para instalaciones nuevas)
+// ============================================================================
 db.exec(`
     CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -203,22 +260,96 @@ db.exec(`
 `);
 
 // ================================================================
-// ÍNDICES
+// TABLA: notificaciones (centro de notificaciones del sistema)
 // ================================================================
 db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_usuarios_rol ON usuarios(rol)
+    CREATE TABLE IF NOT EXISTS notificaciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        titulo TEXT NOT NULL,
+        mensaje TEXT NOT NULL,
+        tipo TEXT DEFAULT 'info' CHECK(tipo IN ('info', 'warning', 'success', 'danger')),
+        creador_id INTEGER,
+        destinatario_id INTEGER,
+        leida INTEGER DEFAULT 0,
+        leida_at TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (creador_id) REFERENCES usuarios(id),
+        FOREIGN KEY (destinatario_id) REFERENCES usuarios(id)
+    )
 `);
-db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_usuarios_is_active ON usuarios(is_active)
-`);
-db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_audit_log_usuario ON audit_log(usuario_id)
-`);
-db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_audit_log_accion ON audit_log(accion)
-`);
-db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at)
-`);
+
+// ================================================================
+// ASIGNAR SUPERADMIN: Si existe el usuario daviddlaa, asignarlo como superadmin
+// ================================================================
+try {
+    const result = db.prepare("SELECT id, rol, is_superadmin FROM usuarios WHERE username = 'daviddlaa'").get();
+    if (result && (!result.is_superadmin || result.rol !== 'admin')) {
+        // Verificar qué columnas existen para construir UPDATE dinámico
+        const cols = db.prepare('PRAGMA table_info(usuarios)').all().map(c => c.name);
+        let setClauses = ["rol = 'admin'", "is_superadmin = 1"];
+        if (cols.includes('updated_at')) {
+            setClauses.push("updated_at = datetime('now')");
+        }
+        db.prepare(
+            `UPDATE usuarios SET ${setClauses.join(', ')} WHERE username = 'daviddlaa'`
+        ).run();
+        console.log('[DB] Usuario daviddlaa asignado como SUPERADMIN');
+    }
+} catch (e) {
+    console.log('[DB] Asignación superadmin:', e.message);
+}
+
+// ================================================================
+// SEMILLA: Notificación de actualización de email
+// Crea la notificación de bienvenida/recordatorio de email si no existe
+// ================================================================
+try {
+    const notifCount = db.prepare('SELECT COUNT(*) as count FROM notificaciones').get();
+    if (notifCount.count === 0) {
+        // Obtener el primer superadmin o admin como creador
+        const adminUser = db.prepare(
+            "SELECT id FROM usuarios WHERE is_superadmin = 1 OR rol IN ('admin', 'superadmin') ORDER BY id ASC LIMIT 1"
+        ).get();
+        
+        if (adminUser) {
+            db.prepare(`
+                INSERT INTO notificaciones (titulo, mensaje, tipo, creador_id, destinatario_id, created_at)
+                VALUES (
+                    '📧 Actualiza tu correo electrónico',
+                    'El sistema ahora cuenta con mayores medidas de seguridad. Es importante mantener tu correo electrónico actualizado para:\n\n🔐 Recuperar tu contraseña en caso de olvido\n🛡️ Recibir alertas de seguridad\n📬 Mantenerte informado sobre cambios importantes\n\nActualiza tu correo desde la sección de Perfil.',
+                    'warning',
+                    ?, NULL, datetime('now')
+                )
+            `).run(adminUser.id);
+            console.log('[DB] Notificación de actualización de email creada');
+        }
+    }
+} catch (e) {
+    // La tabla podría no existir aún en instalación nueva, ignorar
+    console.log('[DB] Notificación semilla:', e.message);
+}
+
+// ================================================================
+// ÍNDICES (con protección para columnas que puedan no existir)
+// ================================================================
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_usuarios_rol ON usuarios(rol)`);
+} catch (e) { console.log('[DB] Índice idx_usuarios_rol no creado (columna no existe):', e.message); }
+
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_usuarios_is_active ON usuarios(is_active)`);
+} catch (e) { console.log('[DB] Índice idx_usuarios_is_active no creado:', e.message); }
+
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_audit_log_usuario ON audit_log(usuario_id)`);
+} catch (e) { console.log('[DB] Índice idx_audit_log_usuario no creado:', e.message); }
+
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_audit_log_accion ON audit_log(accion)`);
+} catch (e) { console.log('[DB] Índice idx_audit_log_accion no creado:', e.message); }
+
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at)`);
+} catch (e) { console.log('[DB] Índice idx_audit_log_created_at no creado:', e.message); }
 
 module.exports = db;

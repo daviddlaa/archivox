@@ -78,6 +78,15 @@ if (process.env.DATABASE_URL) {
             // CURRENT_TIMESTAMP + INTERVAL 'X days' -> datetime('now', '+X days')
             sqliteSql = sqliteSql.replace(/CURRENT_TIMESTAMP\s*\+\s*INTERVAL\s+'(\d+)\s*days'/gi, 
                 "datetime('now', '+' || '$1' || ' days')");
+            // CURRENT_TIMESTAMP - INTERVAL 'X days' -> datetime('now', '-X days')
+            sqliteSql = sqliteSql.replace(/CURRENT_TIMESTAMP\s*-\s*INTERVAL\s+'(\d+)\s*days'/gi, 
+                "datetime('now', '-' || '$1' || ' days')");
+            // CURRENT_TIMESTAMP - INTERVAL 'X hours' -> datetime('now', '-X hours')
+            sqliteSql = sqliteSql.replace(/CURRENT_TIMESTAMP\s*-\s*INTERVAL\s+'(\d+)\s*hours'/gi, 
+                "datetime('now', '-' || '$1' || ' hours')");
+            // CURRENT_TIMESTAMP - INTERVAL 'X minutes' -> datetime('now', '-X minutes')
+            sqliteSql = sqliteSql.replace(/CURRENT_TIMESTAMP\s*-\s*INTERVAL\s+'(\d+)\s*minutes'/gi, 
+                "datetime('now', '-' || '$1' || ' minutes')");
             
             // Convert TO_CHAR(fecha_solicitud, 'YYYY-MM') to strftime
             sqliteSql = sqliteSql.replace(/TO_CHAR\([^,]+,\s*'YYYY-MM'\)/gi, 

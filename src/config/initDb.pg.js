@@ -214,6 +214,51 @@ const initTables = async () => {
         `);
 
         // ================================================================
+        // TABLA: notificaciones (centro de notificaciones del sistema)
+        // ================================================================
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS notificaciones (
+                id              SERIAL PRIMARY KEY,
+                titulo          TEXT NOT NULL,
+                mensaje         TEXT NOT NULL,
+                tipo            TEXT DEFAULT 'info' CHECK(tipo IN ('info', 'warning', 'success', 'danger')),
+                creador_id      INTEGER REFERENCES usuarios(id),
+                destinatario_id INTEGER REFERENCES usuarios(id),
+                leida           BOOLEAN DEFAULT FALSE,
+                leida_at        TIMESTAMP,
+                created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('   ✅ notificaciones');
+
+        // ================================================================
+        // SEMILLA: Notificación de actualización de email
+        // ================================================================
+        try {
+            const notifCount = await client.query('SELECT COUNT(*) as count FROM notificaciones');
+            if (parseInt(notifCount.rows[0]?.count || 0) === 0) {
+                const adminUser = await client.query(
+                    "SELECT id FROM usuarios WHERE is_superadmin = TRUE OR rol IN ('admin', 'superadmin') ORDER BY id ASC LIMIT 1"
+                );
+                if (adminUser.rows.length > 0) {
+                    await client.query(`
+                        INSERT INTO notificaciones (titulo, mensaje, tipo, creador_id, created_at)
+                        VALUES (
+                            '📧 Actualiza tu correo electrónico',
+                            'El sistema ahora cuenta con mayores medidas de seguridad. Es importante mantener tu correo electrónico actualizado para:\n\n🔐 Recuperar tu contraseña en caso de olvido\n🛡️ Recibir alertas de seguridad\n📬 Mantenerte informado sobre cambios importantes\n\nActualiza tu correo desde la sección de Perfil.',
+                            'warning',
+                            $1,
+                            CURRENT_TIMESTAMP
+                        )
+                    `, [adminUser.rows[0].id]);
+                    console.log('   ✅ Notificación de email creada');
+                }
+            }
+        } catch (e) {
+            console.log('   ⏩ Notificación semilla:', e.message);
+        }
+
+        // ================================================================
         // ÍNDICES
         // ================================================================
         await client.query(`

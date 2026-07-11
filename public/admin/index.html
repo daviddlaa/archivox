@@ -21,6 +21,9 @@
             </div>
             <div class="admin-header-right">
                 <span id="clock" class="admin-clock"></span>
+                <button class="notification-bell" onclick="abrirPanelNotificaciones()" title="Notificaciones">
+                    🔔 <span id="notifCount" class="notif-badge" style="display:none">0</span>
+                </button>
             </div>
         </header>
 
@@ -29,6 +32,7 @@
             <button class="admin-tab active" data-tab="usuarios" onclick="cambiarTab('usuarios')">👥 Usuarios</button>
             <button class="admin-tab" data-tab="estadisticas" onclick="cambiarTab('estadisticas')">📊 Estadísticas</button>
             <button class="admin-tab" data-tab="auditoria" onclick="cambiarTab('auditoria')">📋 Auditoría</button>
+            <button class="admin-tab" data-tab="notificaciones" onclick="cambiarTab('notificaciones')">🔔 Notificaciones</button>
         </div>
 
         <!-- ==================== TAB USUARIOS ==================== -->
@@ -117,6 +121,54 @@
                         <tr><td colspan="6" class="admin-loading">Cargando auditoría...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- ==================== TAB NOTIFICACIONES ==================== -->
+        <div id="tab-notificaciones" class="admin-tab-content">
+            <div class="admin-toolbar">
+                <div class="admin-search">
+                    <input type="text" id="searchNotif" placeholder="Buscar notificaciones..." oninput="debounceNotificaciones()">
+                </div>
+                <div class="admin-filters">
+                    <select id="filterNotifTipo" onchange="cargarNotificaciones()">
+                        <option value="">Todos los tipos</option>
+                        <option value="info">Info</option>
+                        <option value="warning">Advertencia</option>
+                        <option value="success">Éxito</option>
+                        <option value="danger">Alerta</option>
+                    </select>
+                    <select id="filterNotifLeida" onchange="cargarNotificaciones()">
+                        <option value="">Todas</option>
+                        <option value="0">No leídas</option>
+                        <option value="1">Leídas</option>
+                    </select>
+                    <button class="admin-btn admin-btn-primary" onclick="abrirModalCrearNotificacion()">+ Nueva Notificación</button>
+                </div>
+            </div>
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Estado</th>
+                            <th>Título</th>
+                            <th>Mensaje</th>
+                            <th>Tipo</th>
+                            <th>Creado por</th>
+                            <th>Destinatario</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="notifTableBody">
+                        <tr><td colspan="8" class="admin-loading">Cargando notificaciones...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="admin-pagination" id="notifPagination">
+                <button class="admin-btn" onclick="cambiarPaginaNotif('prev')" id="prevPageNotif">← Anterior</button>
+                <span id="pageInfoNotif">Página 1</span>
+                <button class="admin-btn" onclick="cambiarPaginaNotif('next')" id="nextPageNotif">Siguiente →</button>
             </div>
         </div>
     </div>
@@ -212,6 +264,63 @@
             <div class="admin-modal-footer">
                 <button class="admin-btn" onclick="cerrarModalCrear()">Cancelar</button>
                 <button class="admin-btn admin-btn-primary" onclick="crearUsuario()">Crear Usuario</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL NOTIFICACIÓN ==================== -->
+    <div id="notifModal" class="admin-modal">
+        <div class="admin-modal-content">
+            <div class="admin-modal-header">
+                <h2>📢 Crear Notificación</h2>
+                <button class="admin-modal-close" onclick="cerrarModalNotif()">✕</button>
+            </div>
+            <div class="admin-modal-body">
+                <div class="form-group">
+                    <label>Título *</label>
+                    <input type="text" id="notifTitulo" placeholder="Título de la notificación">
+                </div>
+                <div class="form-group">
+                    <label>Mensaje *</label>
+                    <textarea id="notifMensaje" rows="4" placeholder="Escribe el mensaje..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select id="notifTipo">
+                        <option value="info">ℹ️ Información</option>
+                        <option value="warning">⚠️ Advertencia</option>
+                        <option value="success">✅ Éxito</option>
+                        <option value="danger">🚨 Alerta</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Destinatario</label>
+                    <select id="notifDestinatario">
+                        <option value="">🌐 Todos los usuarios</option>
+                    </select>
+                </div>
+            </div>
+            <div class="admin-modal-footer">
+                <button class="admin-btn" onclick="cerrarModalNotif()">Cancelar</button>
+                <button class="admin-btn admin-btn-primary" onclick="crearNotificacion()">📢 Publicar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL ESTADÍSTICAS USUARIO ==================== -->
+    <div id="statsUsuarioModal" class="admin-modal">
+        <div class="admin-modal-content" style="max-width: 800px;">
+            <div class="admin-modal-header">
+                <h2 id="statsUsuarioTitle">📊 Estadísticas de Usuario</h2>
+                <button class="admin-modal-close" onclick="cerrarStatsUsuario()">✕</button>
+            </div>
+            <div class="admin-modal-body">
+                <div id="statsUsuarioContent" class="stats-usuario-grid">
+                    <div class="admin-loading">Cargando estadísticas...</div>
+                </div>
+            </div>
+            <div class="admin-modal-footer">
+                <button class="admin-btn" onclick="cerrarStatsUsuario()">Cerrar</button>
             </div>
         </div>
     </div>
