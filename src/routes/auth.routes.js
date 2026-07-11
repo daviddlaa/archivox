@@ -21,6 +21,9 @@ router.post('/logout', authController.logout);
 // Ruta protegida - verificar sesión
 router.get('/sesion', requiresAuth, authController.verificarSesion);
 
+// Cambiar contraseña (usuario autenticado)
+router.put('/cambiar-password', requiresAuth, authController.cambiarPassword);
+
 // Ruta para listar usuarios (solo admin/superadmin - la validación se hace en el controller)
 router.get('/usuarios', requiresAuth, authController.listarUsuarios);
 

@@ -17,6 +17,9 @@ function initDrawer() {
         crearDrawerDinamico();
     }
     
+    // Verificar acceso admin
+    checkAdminAccess();
+    
     // Agregar evento de teclado
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
@@ -46,6 +49,7 @@ function crearDrawerDinamico() {
 <a href="/gestion-lote" class="drawer-link">📢 Campañas</a>
 <a href="/relaciones" class="drawer-link">📋 Relaciones</a>
                 <a href="/historial" class="drawer-link">🔄 Historial</a>
+                <a href="/admin" class="drawer-link drawer-link-admin" id="adminLink" style="display:none">🛡️ Admin</a>
                 <a href="#" class="drawer-link drawer-link-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
             </nav>
         </aside>
@@ -100,6 +104,18 @@ var Drawer = {
         }
     }
 };
+
+// Mostrar enlace de admin si el usuario tiene rol admin/superadmin
+async function checkAdminAccess() {
+    try {
+        const res = await fetch('/api/auth/sesion');
+        const data = await res.json();
+        if (data.autenticado && (data.usuario.rol === 'admin' || data.usuario.rol === 'superadmin' || data.usuario.is_superadmin)) {
+            var link = document.getElementById('adminLink');
+            if (link) link.style.display = '';
+        }
+    } catch(e) { /* ignora */ }
+}
 
 // Función global para cerrar sesión
 function cerrarSesion() {

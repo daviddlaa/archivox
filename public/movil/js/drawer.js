@@ -63,6 +63,7 @@ function crearDrawer() {
                 <li><a href="/m/relaciones"><span class="drawer-menu-icon">📋</span>Relaciones</a></li>
                 <li><a href="/m/ventas"><span class="drawer-menu-icon">💰</span>Ventas</a></li>
                 <li><a href="/m/historial"><span class="drawer-menu-icon">🔄</span>Historial</a></li>
+                <li><a href="/admin" id="adminLinkMovil" style="display:none"><span class="drawer-menu-icon">🛡️</span>Admin</a></li>
             </ul>
         </div>
 
@@ -82,6 +83,18 @@ function crearDrawer() {
     // Insertar en el body
     document.body.appendChild(overlay);
     document.body.appendChild(drawer);
+}
+
+// Mostrar enlace admin si el usuario es admin
+async function checkAdminAccessMovil() {
+    try {
+        const res = await fetch('/api/auth/sesion');
+        const data = await res.json();
+        if (data.autenticado && (data.usuario.rol === 'admin' || data.usuario.rol === 'superadmin' || data.usuario.is_superadmin)) {
+            var link = document.getElementById('adminLinkMovil');
+            if (link) link.style.display = '';
+        }
+    } catch(e) { /* ignora */ }
 }
 
 // Funciones globales
@@ -158,6 +171,9 @@ document.addEventListener('keydown', function(e) {
         cerrarDrawer();
     }
 });
+
+// Verificar acceso admin
+setTimeout(checkAdminAccessMovil, 500);
 
 // Inicializar cuando el DOM esté listo
 if (document.readyState === 'loading') {

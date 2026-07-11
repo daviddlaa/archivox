@@ -1,7 +1,19 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const adminController = require('../controllers/admin.controller');
 const { requiresAuth, requiresRole } = require('../middleware/auth.middleware');
+
+// ============================================================================
+// SEGURIDAD: Rate limiting específico para rutas admin
+// ============================================================================
+const adminLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minuto
+    max: 30, // máximo 30 solicitudes por minuto
+    message: { error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 // ============================================================================
 // RUTAS DE ADMINISTRACIÓN
@@ -12,6 +24,7 @@ const { requiresAuth, requiresRole } = require('../middleware/auth.middleware');
 // Middleware de protección para todas las rutas admin
 router.use(requiresAuth);
 router.use(requiresRole('admin', 'superadmin'));
+router.use(adminLimiter);
 
 // ============================================================================
 // GESTIÓN DE USUARIOS

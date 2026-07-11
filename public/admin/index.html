@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Archivox</title>
+    <link rel="stylesheet" href="/admin/css/admin.css">
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <!-- Drawer se carga desde drawer.js -->
+    <div id="drawer-wrapper"></div>
+
+    <div class="admin-container">
+        <!-- Header -->
+        <header class="admin-header">
+            <button class="admin-menu-btn" onclick="Drawer.toggle()">☰</button>
+            <div class="admin-header-info">
+                <h1>🛡️ Panel de Administración</h1>
+                <span class="admin-badge" id="userBadge">Cargando...</span>
+            </div>
+            <div class="admin-header-right">
+                <span id="clock" class="admin-clock"></span>
+            </div>
+        </header>
+
+        <!-- Tabs -->
+        <div class="admin-tabs">
+            <button class="admin-tab active" data-tab="usuarios" onclick="cambiarTab('usuarios')">👥 Usuarios</button>
+            <button class="admin-tab" data-tab="estadisticas" onclick="cambiarTab('estadisticas')">📊 Estadísticas</button>
+            <button class="admin-tab" data-tab="auditoria" onclick="cambiarTab('auditoria')">📋 Auditoría</button>
+        </div>
+
+        <!-- ==================== TAB USUARIOS ==================== -->
+        <div id="tab-usuarios" class="admin-tab-content active">
+            <!-- Barra de herramientas -->
+            <div class="admin-toolbar">
+                <div class="admin-search">
+                    <input type="text" id="searchUser" placeholder="Buscar usuario..." oninput="debounceBuscar()">
+                </div>
+                <div class="admin-filters">
+                    <select id="filterRol" onchange="cargarUsuarios()">
+                        <option value="">Todos los roles</option>
+                        <option value="superadmin">Super Admin</option>
+                        <option value="admin">Admin</option>
+                        <option value="user">Usuario</option>
+                    </select>
+                    <select id="filterEstado" onchange="cargarUsuarios()">
+                        <option value="">Todos los estados</option>
+                        <option value="activo">Activos</option>
+                        <option value="inactivo">Inactivos</option>
+                        <option value="bloqueado">Bloqueados</option>
+                    </select>
+                    <button class="admin-btn admin-btn-primary" onclick="abrirModalCrear()">+ Nuevo Usuario</button>
+                </div>
+            </div>
+
+            <!-- Tabla -->
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Registro</th>
+                            <th>Último Login</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr><td colspan="8" class="admin-loading">Cargando usuarios...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            <div class="admin-pagination" id="pagination">
+                <button class="admin-btn" onclick="cambiarPagina('prev')" id="prevPage">← Anterior</button>
+                <span id="pageInfo">Página 1</span>
+                <button class="admin-btn" onclick="cambiarPagina('next')" id="nextPage">Siguiente →</button>
+            </div>
+        </div>
+
+        <!-- ==================== TAB ESTADÍSTICAS ==================== -->
+        <div id="tab-estadisticas" class="admin-tab-content">
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card stat-loading">Cargando estadísticas...</div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB AUDITORÍA ==================== -->
+        <div id="tab-auditoria" class="admin-tab-content">
+            <div class="admin-toolbar">
+                <div class="admin-search">
+                    <input type="text" id="searchAudit" placeholder="Filtrar por acción..." oninput="debounceAuditar()">
+                </div>
+            </div>
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                            <th>Acción</th>
+                            <th>Tipo</th>
+                            <th>IP</th>
+                            <th>Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditTableBody">
+                        <tr><td colspan="6" class="admin-loading">Cargando auditoría...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL USUARIO ==================== -->
+    <div id="userModal" class="admin-modal">
+        <div class="admin-modal-content">
+            <div class="admin-modal-header">
+                <h2 id="modalTitle">Editar Usuario</h2>
+                <button class="admin-modal-close" onclick="cerrarModal()">✕</button>
+            </div>
+            <div class="admin-modal-body">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" id="editUsername" readonly class="form-input-readonly">
+                </div>
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="editNombre">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="editEmail">
+                </div>
+                <div class="form-group">
+                    <label>Rol</label>
+                    <select id="editRol"></select>
+                </div>
+                <div class="form-group">
+                    <label>Estado</label>
+                    <div class="estado-btns">
+                        <button id="btnActivar" class="admin-btn admin-btn-success" onclick="toggleActivo()">Activar</button>
+                        <button id="btnDesactivar" class="admin-btn admin-btn-danger" onclick="toggleActivo()">Desactivar</button>
+                        <button id="btnDesbloquear" class="admin-btn admin-btn-warning" onclick="desbloquear()" style="display:none">Desbloquear</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Info del usuario</label>
+                    <div class="user-info">
+                        <span>Creado: <strong id="infoCreated"></strong></span>
+                        <span>Último login: <strong id="infoLastLogin"></strong></span>
+                        <span>Intentos fallidos: <strong id="infoAttempts"></strong></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Resetear contraseña</label>
+                    <div class="reset-password-row">
+                        <input type="text" id="newPassword" placeholder="Nueva contraseña (mín 8 chars, mayúscula, número)" class="flex-1">
+                        <button class="admin-btn admin-btn-warning" onclick="resetPassword()">Resetear</button>
+                    </div>
+                </div>
+            </div>
+            <div class="admin-modal-footer">
+                <button class="admin-btn" onclick="cerrarModal()">Cancelar</button>
+                <button class="admin-btn admin-btn-primary" onclick="guardarUsuario()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL CREAR USUARIO ==================== -->
+    <div id="createModal" class="admin-modal">
+        <div class="admin-modal-content">
+            <div class="admin-modal-header">
+                <h2>Crear Usuario</h2>
+                <button class="admin-modal-close" onclick="cerrarModalCrear()">✕</button>
+            </div>
+            <div class="admin-modal-body">
+                <div class="form-group">
+                    <label>Usuario *</label>
+                    <input type="text" id="createUsername" placeholder="Nombre de usuario">
+                </div>
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="createNombre" placeholder="Nombre completo">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="createEmail" placeholder="correo@ejemplo.com">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña *</label>
+                    <input type="text" id="createPassword" placeholder="Mín 8 chars, mayúscula y número">
+                </div>
+                <div class="form-group">
+                    <label>Rol</label>
+                    <select id="createRol">
+                        <option value="user">Usuario</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+            </div>
+            <div class="admin-modal-footer">
+                <button class="admin-btn" onclick="cerrarModalCrear()">Cancelar</button>
+                <button class="admin-btn admin-btn-primary" onclick="crearUsuario()">Crear Usuario</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal overlay -->
+    <div id="modalOverlay" class="admin-modal-overlay" onclick="cerrarModal()"></div>
+
+    <script src="/desktop/js/drawer.js"></script>
+    <script src="/admin/js/admin.js"></script>
+</body>
+</html>

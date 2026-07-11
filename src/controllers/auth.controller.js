@@ -276,6 +276,54 @@ exports.logout = (req, res) => {
 };
 
 // ============================================================================
+// CAMBIAR CONTRASEÑA (usuario autenticado)
+// ============================================================================
+// PUT /api/auth/cambiar-password
+exports.cambiarPassword = async (req, res) => {
+    if (!req.session?.usuario) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { password_actual, nueva_password } = req.body;
+
+    if (!password_actual || !nueva_password) {
+        return res.status(400).json({ error: 'Contraseña actual y nueva son requeridas' });
+    }
+
+    // Validar fortaleza
+    const errores = [];
+    if (nueva_password.length < 8) errores.push('Mínimo 8 caracteres');
+    if (!/[A-Z]/.test(nueva_password)) errores.push('Debe contener una mayúscula');
+    if (!/[0-9]/.test(nueva_password)) errores.push('Debe contener un número');
+    if (errores.length > 0) {
+        return res.status(400).json({ error: 'Contraseña débil', detalles: errores });
+    }
+
+    try {
+        const result = await pool.query('SELECT password FROM usuarios WHERE id = $1', [req.session.usuario.id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        if (!bcrypt.compareSync(password_actual, result.rows[0].password)) {
+            return res.status(400).json({ error: 'La contraseña actual no es correcta' });
+        }
+
+        const passwordHash = bcrypt.hashSync(nueva_password, 10);
+        await pool.query(
+            `UPDATE usuarios SET password = $1, password_changed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+            [passwordHash, req.session.usuario.id]
+        );
+
+        await registrarAuditoria(req.session.usuario.id, 'user.password_changed', 'user',
+            req.session.usuario.id, {}, req);
+
+        res.json({ mensaje: 'Contraseña actualizada correctamente' });
+    } catch (err) {
+        console.error('[Auth] Error cambiarPassword:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// ============================================================================
 // VERIFICAR SESIÓN ACTUAL
 // ============================================================================
 exports.verificarSesion = (req, res) => {

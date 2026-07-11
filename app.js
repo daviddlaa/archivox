@@ -169,6 +169,11 @@ app.get('/m/historial', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/historial.html'));
 });
 
+// Ruta de administración (solo admin/superadmin - protegida por rol en el frontend y backend)
+app.get('/admin', requireAuthPage, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/admin/index.html'));
+});
+
 // Rutas de login (públicas)
 app.get('/login', (req, res) => {
     const isMobile = isMobileDevice(req.headers['user-agent']);

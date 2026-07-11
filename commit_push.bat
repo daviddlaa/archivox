@@ -9,7 +9,7 @@ echo ========================================
 echo.
 
 :: Pedir mensaje de commit
-set /p commit_msg="Mensaje del commit: nuevo sistema de roles  "
+set /p commit_msg="Mensaje del commit: "
 
 :: Si no escribió nada, usar mensaje por defecto
 if "%commit_msg%"=="" set commit_msg=Actualizacion general
