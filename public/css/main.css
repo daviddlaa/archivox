@@ -1449,10 +1449,9 @@ h1{
     }
 }
 
-/* Forzar toggle visible en desktop */
-#drawer-toggle {
-    display: block !important;
-}
+/* #drawer-toggle: ya no se fuerza display block aquí para no interferir
+   con admin.css que necesita ocultarlo en el panel de administración.
+   Cada página usa su propio CSS (base.css o admin.css) para controlar la visibilidad. */
 
 /* Ajuste del contenido principal con drawer */
 @media (min-width: 769px) {

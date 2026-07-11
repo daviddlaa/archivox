@@ -108,10 +108,14 @@ async function cargarUsuarios() {
         }
         const data = await res.json();
 
+        console.log('[Admin] Usuarios recibidos:', data.data?.length || 0);
+
         if (!data.data || data.data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" class="admin-loading">No se encontraron usuarios</td></tr>';
             if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading">No se encontraron usuarios</div>';
             document.getElementById('pageInfo').textContent = 'Página 1';
+            document.getElementById('prevPage').disabled = paginaActual <= 1;
+            document.getElementById('nextPage').disabled = true;
             return;
         }
         const rows = data.data.map(user => {
@@ -139,6 +143,9 @@ async function cargarUsuarios() {
                 </td>
             </tr>`;
         }).join('');
+
+        // ASIGNAR filas a la tabla (¡ESTA LÍNEA FALTABA!)
+        tbody.innerHTML = rows;
 
         // Cards para móvil
         cardsDiv.innerHTML = data.data.map(user => {

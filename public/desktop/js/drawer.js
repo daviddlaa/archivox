@@ -28,35 +28,87 @@ function initDrawer() {
     });
 }
 
+// Determinar si estamos en la página de administración
+function esPaginaAdmin() {
+    return window.location.pathname === '/admin' ||
+           window.location.pathname === '/m/admin' ||
+           window.location.pathname.startsWith('/admin/');
+}
+
 // Crear drawer dinámicamente si no existe en HTML
 function crearDrawerDinamico() {
-    var drawerDiv = document.createElement('div');
-    drawerDiv.id = 'drawer-wrapper';
-    drawerDiv.innerHTML = `
-        <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
-        <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
-        <aside id="drawer" class="drawer">
-            <div class="drawer-header">
-                <div class="drawer-logo"><h2>📊 Archivox</h2></div>
-<button class="drawer-close" onclick="Drawer.close()">✕</button>
-            </div>
-            <nav class="drawer-nav">
-                <a href="/" class="drawer-link">📊 Dashboard</a>
-                <a href="/perfil" class="drawer-link">👤 Mi Perfil</a>
-                <a href="/equipo-ventas" class="drawer-link">💰 Control de Ventas</a>
-                <a href="/importar" class="drawer-link">📤 Importar Excel</a>
-                <a href="/solicitudes" class="drawer-link">📋 Solicitudes</a>
-<a href="/gestiones" class="drawer-link">📝 Gestiones</a>
-<a href="/gestion-lote" class="drawer-link">📢 Campañas</a>
-<a href="/relaciones" class="drawer-link">📋 Relaciones</a>
-                <a href="/historial" class="drawer-link">🔄 Historial</a>
-                <a href="/admin" class="drawer-link drawer-link-admin" id="adminLink" style="display:none">🛡️ Admin</a>
-                <a href="#" class="drawer-link drawer-link-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
-            </nav>
-        </aside>
-    `;
+    // Si ya existe un drawer-wrapper en el DOM, reutilizarlo en lugar de crear otro
+    var existingWrapper = document.getElementById('drawer-wrapper');
     
-    if (document.body) {
+    // Determinar si es página admin para usar links adecuados
+    var isAdmin = esPaginaAdmin();
+    
+    var drawerHTML = '';
+    
+    if (isAdmin) {
+        // Drawer con opciones completas de administración
+        // El primer link (Dashboard) es activo por defecto
+        drawerHTML = `
+            <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
+            <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
+            <aside id="drawer" class="drawer">
+                <div class="drawer-header">
+                    <div class="drawer-logo"><h2>🛡️ Admin</h2></div>
+                    <button class="drawer-close" onclick="Drawer.close()">✕</button>
+                </div>
+                <nav class="drawer-nav">
+                    <a href="/admin" class="drawer-link active">📊 Dashboard</a>
+                    <a href="#" class="drawer-link" onclick="cambiarTab('usuarios'); Drawer.close(); return false;">👥 Usuarios</a>
+                    <a href="#" class="drawer-link" onclick="cambiarTab('estadisticas'); Drawer.close(); return false;">📊 Estadísticas</a>
+                    <a href="#" class="drawer-link" onclick="cambiarTab('auditoria'); Drawer.close(); return false;">📋 Auditoría</a>
+                    <a href="#" class="drawer-link" onclick="cambiarTab('notificaciones'); Drawer.close(); return false;">🔔 Notificaciones</a>
+                    <a href="#" class="drawer-link" onclick="alert('Centro de Comunicación - Próximamente'); Drawer.close(); return false;">📢 Centro de Comunicación</a>
+                    <a href="#" class="drawer-link" onclick="alert('Centro de Aprendizaje - Próximamente'); Drawer.close(); return false;">🎓 Centro de Aprendizaje</a>
+                    <a href="#" class="drawer-link" onclick="alert('Configuración - Próximamente'); Drawer.close(); return false;">⚙️ Configuración</a>
+                    <div class="drawer-divider"></div>
+                    <a href="/" class="drawer-link">🏠 Volver al Sistema</a>
+                    <a href="#" class="drawer-link drawer-link-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+                </nav>
+            </aside>
+        `;
+        // Nota: La clase 'active' del Dashboard se actualizará dinámicamente
+        // cuando se implemente la navegación por tabs en el panel admin
+    } else {
+        // Drawer estándar para usuarios
+        drawerHTML = `
+            <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
+            <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
+            <aside id="drawer" class="drawer">
+                <div class="drawer-header">
+                    <div class="drawer-logo"><h2>📊 Archivox</h2></div>
+                    <button class="drawer-close" onclick="Drawer.close()">✕</button>
+                </div>
+                <nav class="drawer-nav">
+                    <a href="/" class="drawer-link">📊 Dashboard</a>
+                    <a href="/perfil" class="drawer-link">👤 Mi Perfil</a>
+                    <a href="/equipo-ventas" class="drawer-link">💰 Control de Ventas</a>
+                    <a href="/importar" class="drawer-link">📤 Importar Excel</a>
+                    <a href="/solicitudes" class="drawer-link">📋 Solicitudes</a>
+                    <a href="/gestiones" class="drawer-link">📝 Gestiones</a>
+                    <a href="/gestion-lote" class="drawer-link">📢 Campañas</a>
+                    <a href="/relaciones" class="drawer-link">📋 Relaciones</a>
+                    <a href="/historial" class="drawer-link">🔄 Historial</a>
+                    <a href="/admin" class="drawer-link drawer-link-admin" id="adminLink" style="display:none">🛡️ Admin</a>
+                    <a href="#" class="drawer-link drawer-link-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
+                </nav>
+            </aside>
+        `;
+    }
+    
+    if (existingWrapper) {
+        // Si ya existe un wrapper (como en admin.html), reemplazar su contenido
+        existingWrapper.innerHTML = drawerHTML;
+        console.log('Drawer insertado en wrapper existente');
+    } else if (document.body) {
+        // Si no existe wrapper, crear uno nuevo al inicio del body
+        var drawerDiv = document.createElement('div');
+        drawerDiv.id = 'drawer-wrapper';
+        drawerDiv.innerHTML = drawerHTML;
         document.body.insertBefore(drawerDiv, document.body.firstChild);
         console.log('Drawer creado dinámicamente');
     }
