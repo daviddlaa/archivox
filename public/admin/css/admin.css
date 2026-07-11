@@ -14,21 +14,35 @@ body {
 /* ============================================================================
    LAYOUT
    ============================================================================ */
+/* Ocultar el drawer-toggle flotante de drawer.js en el admin page,
+   porque el header ya tiene su propio botón de menú */
+#drawer-toggle {
+    display: none !important;
+}
+
 .admin-container {
-    margin-left: 80px;
+    margin-left: 0;
     padding: 20px 30px;
     max-width: 1400px;
+    margin: 0 auto;
 }
 
 .admin-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 16px;
-    padding: 20px 24px;
+    padding: 16px 24px;
     background: white;
     border-radius: 16px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.08);
     margin-bottom: 24px;
+}
+
+.admin-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
 }
 
 .admin-menu-btn {
@@ -41,6 +55,7 @@ body {
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 .admin-menu-btn:hover { background: #e5e7eb; }
 
@@ -50,6 +65,7 @@ body {
     color: #1f2937;
     font-size: 22px;
     font-weight: 700;
+    white-space: nowrap;
 }
 .admin-badge {
     font-size: 12px;
@@ -62,7 +78,13 @@ body {
     font-weight: 600;
 }
 
-.admin-header-right { text-align: right; }
+.admin-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: right;
+    flex-shrink: 0;
+}
 .admin-clock {
     font-size: 14px;
     color: #9ca3af;
