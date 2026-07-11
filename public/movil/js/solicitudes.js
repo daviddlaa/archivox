@@ -54,7 +54,13 @@ function actualizarContador() {
     const btnSeleccionarTodo = document.getElementById('btn-seleccionar-todo');
     if (contador) contador.textContent = filasSeleccionadas.length;
     if (actionsFloating) {
-        actionsFloating.style.display = filasSeleccionadas.length > 0 ? 'flex' : 'none';
+        if (filasSeleccionadas.length > 0) {
+            actionsFloating.classList.remove('hidden');
+            actionsFloating.classList.add('visible');
+        } else {
+            actionsFloating.classList.remove('visible');
+            actionsFloating.classList.add('hidden');
+        }
     }
     // Mostrar/ocultar botón de campañas junto a los otros botones flotantes
     if (btnGestion) {
@@ -261,17 +267,17 @@ function renderizarFiltros() {
     // Estados
     const estados = [...new Set(todosDatos.map(d => d.estado).filter(Boolean))];
     const estadoBtns = document.getElementById('filtro-estado');
-    estadoBtns.innerHTML = '<button class="btn active" data-value="">Todos</button>';
+    estadoBtns.innerHTML = '<button class="filtro-btn active" data-value="">Todos</button>';
     estados.forEach(e => {
-        estadoBtns.innerHTML += `<button class="btn" data-value="${e}">${e}</button>`;
+        estadoBtns.innerHTML += `<button class="filtro-btn" data-value="${e}">${e}</button>`;
     });
     
     // Segmentos
     const segmentos = [...new Set(todosDatos.map(d => d.segmento).filter(Boolean))];
     const segmentoBtns = document.getElementById('filtro-segmento');
-    segmentoBtns.innerHTML = '<button class="btn active" data-value="">Todos</button>';
+    segmentoBtns.innerHTML = '<button class="filtro-btn active" data-value="">Todos</button>';
     segmentos.forEach(s => {
-        segmentoBtns.innerHTML += `<button class="btn" data-value="${s}">${s}</button>`;
+        segmentoBtns.innerHTML += `<button class="filtro-btn" data-value="${s}">${s}</button>`;
     });
     
     // Adjuntar eventos
@@ -345,9 +351,9 @@ function buscarConDebounce() {
 // Adjuntar eventos a los botones - NUEVO: filtra directamente del servidor
 function adjuntarEventos() {
     // Estado buttons
-    document.querySelectorAll('#filtro-estado .btn').forEach(btn => {
+    document.querySelectorAll('#filtro-estado .filtro-btn').forEach(btn => {
         btn.onclick = function() {
-            document.querySelectorAll('#filtro-estado .btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#filtro-estado .filtro-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             filtros.estado = this.dataset.value;
             buscarEnServidor(); // Llama a la función unificada (respeta búsqueda actual)
@@ -355,9 +361,9 @@ function adjuntarEventos() {
     });
     
     // Segmento buttons
-    document.querySelectorAll('#filtro-segmento .btn').forEach(btn => {
+    document.querySelectorAll('#filtro-segmento .filtro-btn').forEach(btn => {
         btn.onclick = function() {
-            document.querySelectorAll('#filtro-segmento .btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#filtro-segmento .filtro-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             filtros.segmento = this.dataset.value;
             buscarEnServidor(); // Llama a la función unificada (respeta búsqueda actual)

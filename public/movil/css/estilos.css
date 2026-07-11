@@ -34,6 +34,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    /* iOS-like safe area */
+    padding-top: max(16px, env(safe-area-inset-top, 16px));
 }
 
 .header-title {
@@ -41,8 +43,16 @@ body {
     flex-direction: column;
 }
 
+.header-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
 .header h1 {
     font-size: 20px;
+    font-weight: 700;
     margin: 0;
 }
 
@@ -219,17 +229,20 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 62px;
+    height: 65px;
     background: white;
     display: flex;
     justify-content: space-around;
     align-items: center;
     padding: 6px 8px;
-    box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+    box-shadow: 0 -2px 16px rgba(0,0,0,0.08);
     z-index: 1000;
+    border-top: 1px solid #f0f0f0;
+    /* iOS-like safe area */
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 6px));
 }
 
-.nav-bottom a {
+.nav-bottom .nav-item {
     text-decoration: none;
     color: var(--text-muted);
     font-size: 8px;
@@ -237,23 +250,49 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    padding: 4px 6px;
-    border-radius: 8px;
-    transition: all 0.2s;
-    min-width: 42px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    min-width: 48px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    position: relative;
 }
 
-.nav-bottom a:hover {
+.nav-bottom .nav-item:hover {
     background: #f3f4f6;
 }
 
-.nav-bottom a.active {
+.nav-bottom .nav-item:active {
+    transform: scale(0.94);
+}
+
+.nav-bottom .nav-item.active {
     color: var(--primary-color);
-    background: #eff6ff;
+}
+
+.nav-bottom .nav-item.active::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 3px;
+    background: var(--primary-color);
+    border-radius: 3px;
+    opacity: 0.7;
 }
 
 .nav-bottom-icon {
-    font-size: 18px;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.nav-bottom-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: inherit;
 }
 
 .nav-bottom-logout {
