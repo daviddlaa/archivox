@@ -447,11 +447,12 @@ function renderizarCards(datos) {
         html += '  </div>';
 
         // FILA 3: Botones (4 en móvil: Gestiones, WhatsApp, Completar, Llamar)
+        // Diseñado con icono + label para touch targets grandes tipo app nativa
         html += '  <div class="card-fila-3">';
-        html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesMovil(\'' + id + '\')">📋 Gestiones</button>';
-        html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); abrirWhatsAppChatMovil(\'' + escaparParaAtributo(item.celular || '') + '\')">💬 WhatsApp</button>';
-        html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletarInfoMovil(\'' + id + '\')">✏️ Completar</button>';
-        html += '    <button class="card-btn btn-llamar" onclick="event.stopPropagation(); llamarCliente(\'' + escaparParaAtributo(item.celular || '') + '\')">📞 Llamar</button>';
+        html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesMovil(\'' + id + '\')"><span class="btn-icon">📋</span><span class="btn-label">Gestiones</span></button>';
+        html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); abrirWhatsAppChatMovil(\'' + escaparParaAtributo(item.celular || '') + '\')"><span class="btn-icon">💬</span><span class="btn-label">WhatsApp</span></button>';
+        html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletarInfoMovil(\'' + id + '\')"><span class="btn-icon">✏️</span><span class="btn-label">Completar</span></button>';
+        html += '    <button class="card-btn btn-llamar" onclick="event.stopPropagation(); llamarCliente(\'' + escaparParaAtributo(item.celular || '') + '\')"><span class="btn-icon">📞</span><span class="btn-label">Llamar</span></button>';
         html += '  </div>';
 
         // FILA 4: Seguimiento
