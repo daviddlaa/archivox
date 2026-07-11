@@ -63,6 +63,7 @@ function crearDrawer() {
                 <li><a href="/m/relaciones"><span class="drawer-menu-icon">📋</span>Relaciones</a></li>
                 <li><a href="/m/ventas"><span class="drawer-menu-icon">💰</span>Ventas</a></li>
                 <li><a href="/m/historial"><span class="drawer-menu-icon">🔄</span>Historial</a></li>
+                <li><a href="/perfil"><span class="drawer-menu-icon">👤</span>Mi Perfil</a></li>
                 <li><a href="/m/admin" id="adminLinkMovil" style="display:none"><span class="drawer-menu-icon">🛡️</span>Admin</a></li>
             </ul>
         </div>

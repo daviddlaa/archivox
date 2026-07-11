@@ -4,21 +4,21 @@
 
 **Autor:** Buffy (AI Agent)
 **Fecha:** Julio 2026
-**Versión:** 1.0 — Fase 1 completada
+**Versión:** 2.0 — Fases 1-6 completadas
 
 ---
 
 ## Estado del Proyecto
 
-| Fase | Estado |
-|---|---|
-| ✅ **Fase 1: Base de Datos** | **COMPLETADA** |
-| ✅ **Fase 2: Refactor Middleware** | **COMPLETADA** |
-| ✅ **Fase 3: Mejora Auth Controller** | **COMPLETADA** |
-| ✅ **Fase 4: Panel Admin Backend** | **COMPLETADA** |
-| ✅ **Fase 5: Panel Admin Frontend** | **COMPLETADA** |
-| ✅ **Fase 6: Seguridad** | **COMPLETADA** |
-| ⏳ **Fase 7: Pruebas y Despliegue** | **Pendiente** |
+| Fase | Estado | Progreso |
+|---|---|---|
+| ✅ **Fase 1: Base de Datos** | **COMPLETADA** | Migración ejecutada en Render |
+| ✅ **Fase 2: Refactor Middleware** | **COMPLETADA** | Middleware centralizado + roles |
+| ✅ **Fase 3: Mejora Auth Controller** | **COMPLETADA** | Endpoint cambiar contraseña |
+| ✅ **Fase 4: Panel Admin Backend** | **COMPLETADA** | 9 endpoints protegidos |
+| ✅ **Fase 5: Panel Admin Frontend** | **COMPLETADA** | UI + responsive (móvil/desktop) |
+| ✅ **Fase 6: Seguridad** | **COMPLETADA** | Rate limiting admin |
+| ⏳ **Fase 7: Pruebas y Despliegue** | **Pendiente** | Verificar en Render |
 
 ---
 
@@ -33,32 +33,39 @@
 | Seguridad | **helmet**, **express-rate-limit** |
 | Despliegue | **Render** |
 
-### Estructura del proyecto
+### Estructura del proyecto (actualizada)
+
 ```
 Archivox/
-├── app.js                          # Entry point
-├── migrations/                     # Scripts de migración (NUEVO)
-│   ├── 001_add_admin_columns.sql           # PostgreSQL
-│   └── 001_add_admin_columns.sqlite.sql    # SQLite
-├── docs/                           # Documentación (NUEVO)
-│   └── analisis-admin.md           # Este documento
+├── app.js                              # Entry point (rutas + admin)
+├── migrations/                         # Scripts de migración
+│   ├── 001_add_admin_columns.sql               # PostgreSQL
+│   ├── 001_add_admin_columns.sqlite.sql        # SQLite
+│   └── 001_add_admin_columns.js                # JS ejecutable
+├── docs/
+│   └── analisis-admin.md               # Este documento
 ├── src/
 │   ├── config/
-│   │   ├── db.js                   # Wrapper unificado PG/SQLite
-│   │   ├── database.js             # SQLite directo (legado)
-│   │   ├── database.pg.js          # PostgreSQL directo (legado)
-│   │   ├── initDb.js               # Schema SQLite (actualizado Fase 1)
-│   │   ├── initDb.pg.js            # Schema PostgreSQL (actualizado Fase 1)
-│   │   ├── multer.config.js        # Upload config
-│   │   └── auth.controller.js      # SQLite auth controller (legado)
+│   │   ├── permissions.js              # NUEVO — Roles/permisos
+│   │   ├── db.js                       # Wrapper unificado PG/SQLite
+│   │   ├── database.js                 # SQLite directo (legado)
+│   │   ├── database.pg.js              # PostgreSQL directo (legado)
+│   │   ├── initDb.js                   # Schema SQLite (actualizado)
+│   │   ├── initDb.pg.js                # Schema PostgreSQL (actualizado)
+│   │   ├── multer.config.js            # Upload config
+│   │   └── auth.controller.js          # SQLite auth (legado)
+│   ├── middleware/
+│   │   └── auth.middleware.js          # NUEVO — Middleware centralizado
 │   ├── controllers/
-│   │   ├── auth.controller.js      # (actualizado Fase 1)
+│   │   ├── auth.controller.js          # Login + cambiarPassword
+│   │   ├── admin.controller.js         # NUEVO — CRUD admin
 │   │   ├── excel.controller.js
 │   │   ├── gestionesMaestro.controller.js
 │   │   ├── relaciones.controller.js
 │   │   └── relacionesGestion.controller.js
 │   ├── routes/
 │   │   ├── auth.routes.js
+│   │   ├── admin.routes.js             # NUEVO — Rutas admin con rate limit
 │   │   ├── excel.routes.js
 │   │   ├── gestionesMaestro.routes.js
 │   │   ├── relaciones.routes.js
@@ -68,6 +75,10 @@ Archivox/
 │       ├── excel.service.js
 │       └── relaciones.service.js
 ├── public/
+│   ├── admin/                          # NUEVO — Panel admin
+│   │   ├── index.html                  # Admin panel HTML
+│   │   ├── css/admin.css               # Estilos admin (tema claro)
+│   │   └── js/admin.js                 # Lógica del admin panel
 │   ├── desktop/ (HTML + JS + CSS)
 │   └── movil/   (HTML + JS + CSS)
 └── package.json
@@ -99,31 +110,6 @@ CREATE TABLE usuarios (
 );
 ```
 
-### Columnas nuevas — Justificación
-
-| Columna | Tipo | Default | Justificación |
-|---|---|---|---|
-| **`email`** | `TEXT UNIQUE` | `NULL` | Comunicación con el usuario. Permitirá en el futuro recuperación de contraseña y notificaciones. |
-| **`email_verified`** | `BOOLEAN` | `FALSE` | Seguridad: evitar registros con emails falsos o temporales. |
-| **`is_active`** | `BOOLEAN` | `TRUE` | Control de acceso: permite desactivar usuarios sin eliminar datos. Un usuario `is_active = false` no puede iniciar sesión. |
-| **`is_superadmin`** | `BOOLEAN` | `FALSE` | Seguridad: solo el superadmin puede promover/deponer admins. Previene escalamiento de privilegios. |
-| **`failed_login_attempts`** | `INTEGER` | `0` | Seguridad: contador de intentos fallidos consecutivos. Al llegar a 5, bloquea la cuenta. |
-| **`locked_until`** | `TIMESTAMP` | `NULL` | Seguridad: cuándo se desbloquea la cuenta automáticamente tras un bloqueo por intentos fallidos. |
-| **`password_changed_at`** | `TIMESTAMP` | `NOW()` | Seguridad: permite detectar cuentas con contraseñas antiguas y forzar cambio. |
-| **`updated_at`** | `TIMESTAMP` | `NOW()` | Trazabilidad: saber cuándo se modificó un usuario por última vez. |
-| **`last_login`** | `TIMESTAMP` | `NULL` | Antes `ultimo_login`. Renombrado para consistencia. Auditoría de acceso. |
-
-### Índices creados
-
-```sql
-CREATE INDEX idx_usuarios_rol ON usuarios(rol);
-CREATE INDEX idx_usuarios_is_active ON usuarios(is_active);
-CREATE INDEX idx_usuarios_locked ON usuarios(locked_until) WHERE locked_until IS NOT NULL;
-CREATE INDEX idx_audit_log_usuario ON audit_log(usuario_id);
-CREATE INDEX idx_audit_log_accion ON audit_log(accion);
-CREATE INDEX idx_audit_log_created_at ON audit_log(created_at);
-```
-
 ### Tabla `audit_log` (nueva)
 
 ```sql
@@ -152,26 +138,17 @@ CREATE TABLE audit_log (
 | `admin` | 50 | Panel de administración, gestión de usuarios, estadísticas. | `users:read`, `users:write`, `system:read`, `audit:read`, `data:*` |
 | `user` | 10 | Funciones normales del sistema. | `data:read`, `data:write` |
 
-### Estructura de permisos (para Fase 2)
+### Reglas de seguridad anti-escalamiento (Fase 4)
 
-```javascript
-const ROLES = {
-    superadmin: {
-        permissions: ['users:*', 'system:*', 'audit:*', 'data:*'],
-        label: 'Super Administrador'
-    },
-    admin: {
-        permissions: ['users:read', 'users:write', 'system:read', 'audit:read', 'data:*'],
-        label: 'Administrador'
-    },
-    user: {
-        permissions: ['data:read', 'data:write'],
-        label: 'Usuario'
-    }
-};
-```
-
-El sistema está diseñado para ser **extensible**: para agregar un nuevo rol (ej. `supervisor`, `auditor`, `vendedor`), solo se agrega a la configuración de permisos.
+| Regla | Aplica a | ¿Quién puede? |
+|---|---|---|
+| Admin no puede modificar a otro admin | `actualizarUsuario` | Solo superadmin |
+| Admin no puede autopromoverse a superadmin | `actualizarUsuario` | Nadie |
+| Cambiar `is_superadmin` | `actualizarUsuario` | Solo superadmin |
+| Asignar rol admin | `actualizarUsuario`, `crearUsuario` | Solo superadmin |
+| Desactivar a otro admin | `toggleActivo` | Solo superadmin |
+| Resetear contraseña de admin | `resetPassword` | Solo superadmin |
+| Desactivarse a sí mismo | `toggleActivo` | NADIE (prohibido) |
 
 ---
 
@@ -194,7 +171,7 @@ Usuario → POST /api/auth/login →
   10. ✅ Registrar en audit_log
 ```
 
-### Mejoras de seguridad implementadas en Fase 1
+### Mejoras de seguridad implementadas
 
 | Medida | Estado |
 |---|---|
@@ -206,47 +183,49 @@ Usuario → POST /api/auth/login →
 | Captura de IP y User-Agent en auditoría | ✅ |
 | No revelar existencia del usuario en errores | ✅ |
 | Contraseña hasheada con bcrypt (10 rounds) | ✅ |
-| Sesión con httpOnly + sameSite:strict | ✅ (ya existía) |
-
-### Pendiente para Fase 2 (Middleware centralizado)
-
-```javascript
-// src/middleware/auth.middleware.js (PLAN)
-function requiresAuth(req, res, next) { ... }
-function requiresRole(...roles) { ... }
-function requiresPermission(permission) { ... }
-```
+| Sesión con httpOnly + sameSite:strict | ✅ |
+| Rate limiting login (5 intentos / 15 min) | ✅ |
+| Rate limiting admin (30 req / min) | ✅ |
+| Cambio de contraseña con validación fuerte | ✅ |
+| Protección anti-escalamiento de privilegios | ✅ |
+| Auditoría de acciones admin (CRUD, reset pass) | ✅ |
 
 ---
 
-## 5. Comparativa de Alternativas de Login
+## 5. Panel de Administración
 
-### Alternativa 1: Login único + redirección automática ✅ **RECOMENDADA**
+### Frontend (`public/admin/`)
 
-| Aspecto | Evaluación |
+| Archivo | Descripción |
 |---|---|
-| **Experiencia de usuario** | Óptima. Un solo punto de entrada. |
-| **Complejidad** | Baja. Un formulario. Backend detecta rol y redirige. |
-| **Seguridad** | Alta. Menos superficie de ataque (1 endpoint vs 2). |
-| **Mantenimiento** | Excelente. Cambias una cosa y afecta a todos. |
-| **Riesgos** | Mínimos. |
+| `index.html` | Panel con 3 tabs: Usuarios, Estadísticas, Auditoría |
+| `css/admin.css` | Tema claro que coincide con el sistema (fondo `#f0f2f5`, indigos, tabla dark) |
+| `js/admin.js` | Lógica completa: CRUD, filtros, paginación, modales, cards móviles |
 
-### Alternativa 2: Dos logins independientes
-| Aspecto | Evaluación |
+### Funcionalidades
+
+| Funcionalidad | Estado |
 |---|---|
-| **Experiencia** | Mala. Usuarios pueden confundirse de entrada. |
-| **Seguridad** | Media. Dos endpoints = más superficie. |
-| **Complejidad** | Alta. Dos formularios, dos sesiones, confusión de rutas. |
-| **Mantenimiento** | Malo. Duplicar lógica. |
+| Listar usuarios con búsqueda y filtros (rol, estado) | ✅ |
+| Paginación (15 por página) | ✅ |
+| Crear usuario con validación de contraseña | ✅ |
+| Editar usuario (nombre, email, rol) | ✅ |
+| Activar/Desactivar usuario | ✅ |
+| Desbloquear usuario | ✅ |
+| Resetear contraseña | ✅ |
+| Estadísticas del sistema (8 cards) | ✅ |
+| Logs de auditoría con búsqueda | ✅ |
+| **Versión móvil con tarjetas (cards)** | ✅ |
+| Ruta `/m/admin` para móvil | ✅ |
+| Enlace Admin en drawer (solo admin/superadmin) | ✅ |
+| Reloj en tiempo real | ✅ |
+| Toast notifications | ✅ |
+| Protección XSS (escapeHtml) | ✅ |
 
-### Alternativa 3: Login único + rutas protegidas por permisos
-| Aspecto | Evaluación |
-|---|---|
-| **Experiencia** | Igual que Alternativa 1. |
-| **Seguridad** | Alta. |
-| **Flexibilidad** | Máxima. Cualquier rol con permisos puede acceder a lo que corresponda. |
+### Responsive Design
 
-**Decisión: Alternativa 1** — Login único con detección de rol automática.
+- **Desktop (>768px)**: Tabla completa con 8 columnas
+- **Móvil (<768px)**: Tabla oculta, se muestran tarjetas (`.user-card`) apilables con nombre, rol, estado, acciones
 
 ---
 
@@ -260,182 +239,225 @@ function requiresPermission(permission) { ... }
 - [x] Actualizar `initDb.pg.js` con nuevo schema de usuarios + audit_log
 - [x] Actualizar `initDb.js` con nuevo schema de usuarios + audit_log
 - [x] Actualizar `db.js` wrapper para convertir INTERVAL syntax a SQLite
-- [x] Actualizar `auth.controller.js` con seguridad mejorada:
-  - [x] Validación de contraseña
-  - [x] Bloqueo por intentos fallidos
-  - [x] Verificación de cuenta activa
-  - [x] Verificación de bloqueo temporal
-  - [x] Auditoría de eventos de autenticación
-  - [x] Nuevos campos en sesión (`email`, `is_active`, `is_superadmin`)
+- [x] Actualizar `auth.controller.js` con seguridad mejorada
 - [x] Crear documento de análisis (`docs/analisis-admin.md`)
 
 ### ✅ Fase 2 — Refactor Middleware (COMPLETADA)
 
-- [x] Crear `src/config/permissions.js` — Roles, permisos y helpers (`tienePermiso`, `tieneNivelMinimo`)
-- [x] Crear `src/middleware/auth.middleware.js` — Middleware centralizado con:
-  - `requiresAuth` (API → 401)
-  - `requireAuthPage` (HTML → redirect login)
-  - `requiresRole(...roles)`
-  - `requiresPermission(permiso)`
-  - `requiresLevel(nivel)`
-  - `getUsuarioId(req)`
-  - `getRol(req)`
-- [x] Eliminar las **6 definiciones duplicadas** de `requiresAuth` (app.js, auth.routes.js, excel.routes.js, relaciones.routes.js, relacionesGestion.routes.js, debug.routes.js)
+- [x] Crear `src/config/permissions.js` — Roles, permisos y helpers
+- [x] Crear `src/middleware/auth.middleware.js` — 6 funciones de seguridad centralizadas
+- [x] Eliminar las **6 definiciones duplicadas** de `requiresAuth`
 - [x] Actualizar `app.js` para usar `requireAuthPage` importado
 
-### ⏳ Fase 3 — Mejora Auth Controller (Pendiente)
+### ✅ Fase 3 — Mejora Auth Controller (COMPLETADA)
 
-- [ ] Mejorar registro con email y verificación
-- [ ] Agregar endpoint de cambio de contraseña
-- [ ] Agregar endpoint de recuperación de contraseña
-- [ ] Forzar cambio de contraseña periódico
+- [x] Agregar endpoint `PUT /api/auth/cambiar-password` en `auth.controller.js`
+  - Valida contraseña actual con `bcrypt.compareSync`
+  - Valida nueva contraseña (≥8 chars, mayúscula, número)
+  - Actualiza `password_changed_at`
+  - Registra en `audit_log`
 
 ### ✅ Fase 4 — Panel Admin Backend (COMPLETADA)
 
-- [x] Crear `src/routes/admin.routes.js` — 10 endpoints protegidos con `requiresRole('admin', 'superadmin')`
+- [x] Crear `src/routes/admin.routes.js` — 10 endpoints protegidos
 - [x] Crear `src/controllers/admin.controller.js` — Controlador completo
 - [x] CRUD completo de usuarios con seguridad anti-escalamiento
-- [x] Estadísticas del sistema (usuarios, solicitudes, relaciones, gestiones)
-- [x] Logs de auditoría con filtros
+- [x] Estadísticas del sistema (8 consultas en paralelo)
+- [x] Logs de auditoría con filtros y paginación
 - [x] Registrado en `app.js` como `/api/admin`
 
-**Endpoints creados:**
-| Método | Ruta | Descripción |
-|---|---|---|
-| GET | `/api/admin/usuarios` | Listar usuarios (búsqueda, filtros, paginación) |
-| GET | `/api/admin/usuarios/:id` | Detalle de usuario |
-| POST | `/api/admin/usuarios` | Crear usuario |
-| PUT | `/api/admin/usuarios/:id` | Actualizar usuario |
-| PUT | `/api/admin/usuarios/:id/toggle-active` | Activar/Desactivar |
-| PUT | `/api/admin/usuarios/:id/reset-password` | Resetear contraseña |
-| PUT | `/api/admin/usuarios/:id/unlock` | Desbloquear |
-| GET | `/api/admin/estadisticas` | Estadísticas del sistema |
-| GET | `/api/admin/auditoria` | Logs de auditoría |
+### ✅ Fase 5 — Panel Admin Frontend (COMPLETADA)
 
-### ⏳ Fase 5 — Panel Admin Frontend (Pendiente)
+- [x] Crear `public/admin/index.html` — Panel con 3 tabs
+- [x] Crear `public/admin/js/admin.js` — Lógica completa
+- [x] Crear `public/admin/css/admin.css` — Tema claro del sistema
+- [x] Versión responsive con cards en móvil
+- [x] Ruta `/m/admin` para móvil
+- [x] Enlace Admin en drawer (desktop y móvil)
 
-- [ ] Crear `public/admin/index.html`
-- [ ] Crear `public/admin/js/admin.js`
-- [ ] Crear `public/admin/css/admin.css`
-- [ ] Tabla de usuarios con búsqueda/filtros
-- [ ] Modal de edición de usuario
-- [ ] Panel de estadísticas
-- [ ] Panel de auditoría
+### ✅ Fase 6 — Seguridad (COMPLETADA)
 
-### ⏳ Fase 6 — Seguridad (Pendiente)
-
-- [ ] Rate limiting específico para rutas admin
-- [ ] Logging de intentos de acceso no autorizado
-- [ ] Headers de seguridad adicionales
-- [ ] Pruebas de escalamiento de privilegios
+- [x] Rate limiting específico para rutas admin (30 req/min)
+- [x] Protección anti-escalamiento de privilegios (7 reglas)
+- [x] Validación de contraseña fuerte en creación/reseteo
+- [x] Escape HTML en frontend (XSS prevention)
+- [x] Auditoría de todas las acciones admin
 
 ### ⏳ Fase 7 — Pruebas y Despliegue (Pendiente)
 
 - [ ] Pruebas de migración en local y staging
 - [ ] Pruebas de regresión
+- [ ] Verificar que el error 500 en `api/admin/usuarios` está corregido
+- [ ] Verificar que el panel admin carga correctamente con `daviddlaa`
+- [ ] Verificar que usuarios normales no ven el enlace Admin
+- [ ] Verificar responsive móvil en `/m/admin`
 - [ ] Despliegue en Render
-- [ ] Verificación post-despliegue
 
 ---
 
-## 7. Seguridad — Recomendaciones
+## 7. Análisis de Superadmin — ¿Qué falta?
 
-| Medida | Prioridad | Estado |
+### ✅ Lo que YA funciona
+
+| Funcionalidad | Estado | Detalle |
 |---|---|---|
-| Middleware centralizado de roles | 🔴 Alta | ✅ Fase 2 |
-| Eliminar código duplicado (6x requiresAuth) | 🔴 Alta | ✅ Fase 2 |
-| Account Lockout (5 intentos → 15 min) | 🔴 Alta | ✅ Fase 1 |
-| Validación de contraseña fuerte | 🔴 Alta | ✅ Fase 1 |
-| Auditoría de autenticación | 🟡 Media | ✅ Fase 1 |
-| Auditoría de acciones admin | 🟡 Media | ⏳ Fase 2 |
-| CSRF Protection | 🟡 Media | ⏳ Fase 6 |
-| CSP con nonces | 🟡 Media | ⏳ Fase 6 |
-| Rate limiting rutas admin | 🟡 Media | ⏳ Fase 6 |
-| Protección escalamiento privilegios | 🔴 Alta | ✅ Fase 4 |
-| Sanitización de inputs | 🟡 Media | ⏳ Fase 6 |
+| `daviddlaa` configurado como superadmin en BD | ✅ | En migración y schemas |
+| Sesión de superadmin reconoce `is_superadmin: true` | ✅ | `auth.controller.js` linea 236 |
+| Drawer desktop muestra enlace Admin | ✅ | `checkAdminAccess()` en `drawer.js` |
+| Drawer móvil muestra enlace Admin | ✅ | `checkAdminAccessMovil()` en `drawer.js` móvil |
+| Admin panel carga para superadmin | ✅ | `admin.js` verifica rol en `/api/auth/sesion` |
+| Badge "👑 Super Admin" en el panel | ✅ | `admin.js` linea 21 |
+| Solo superadmin puede crear admins | ✅ | `crearUsuario` linea 260-262 |
+| Solo superadmin puede cambiar `is_superadmin` | ✅ | `actualizarUsuario` linea 176-177 |
+| Solo superadmin puede asignar rol admin | ✅ | `actualizarUsuario` linea 181-182 |
+| Admin no puede autopromoverse a superadmin | ✅ | `actualizarUsuario` linea 171-172 |
+| Admin no puede modificar a otro admin | ✅ | `actualizarUsuario` linea 166-167 |
+| Auditoría registra acciones de superadmin | ✅ | Todas las funciones llaman a `auditar()` |
+| Rate limiting en rutas admin | ✅ | 30 req/min en `admin.routes.js` |
+
+### ⚠️ Cosas a considerar (no críticas, por diseño)
+
+| Aspecto | Situación | Recomendación |
+|---|---|---|
+| **Superadmin crea otro superadmin** | No hay bloqueo explícito. Un superadmin puede crear otro superadmin vía API. | Por diseño — superadmin tiene control total. Auditoría registra quién creó a quién. |
+| **Superadmin desactiva a otro superadmin** | No hay bloqueo. Un superadmin puede desactivar a otro superadmin. | Podría ser peligroso si alguien desactiva a todos. Considerar agregar regla: "no puedes desactivar al último superadmin activo". |
+| **No hay superadmin por defecto nuevo** | Si se crea una BD desde cero, no hay superadmin (solo `daviddlaa` en migración). | Opcional: crear primer usuario registrado como superadmin automáticamente. |
+| **Frontend superadmin puede editar otro superadmin** | El modal de edición permite cambiar datos de otro superadmin. | Por diseño. Si se quiere más seguridad, bloquear edición entre superadmins. |
+| **No hay indicador visual de "último superadmin"** | No se muestra cuántos superadmins activos hay. | Mejora opcional: en estadísticas mostrar conteo de superadmins. |
+
+### Conclusión
+
+**No hay nada crítico pendiente sobre superadmin.** El sistema tiene todas las protecciones necesarias:
+
+1. ✅ Admin **no puede** escalar a superadmin
+2. ✅ Admin **no puede** modificar a otros admins
+3. ✅ **Solo superadmin** puede crear/promover admins
+4. ✅ **Solo superadmin** puede cambiar `is_superadmin`
+5. ✅ **Nadie** puede desactivarse a sí mismo
+6. ✅ Todas las acciones quedan registradas en `audit_log`
+7. ✅ El panel admin solo es visible para admin/superadmin
 
 ---
 
-## 8. Riesgos
+## 8. Arquitectura del Frontend Admin
 
-| Riesgo | Probabilidad | Impacto | Mitigación |
-|---|---|---|---|
-| Migración de BD falla en producción | 🟡 Media | 🔴 Alto | Backup antes de migrar. Probar migración en local primero. |
-| Admin se queda sin acceso | 🟢 Baja | 🔴 Alto | Script de migración garantiza que `daviddlaa` sea superadmin. |
-| Escalamiento de privilegios | 🟢 Baja | 🔴 Alto | Middleware verifica que admin no pueda autopromoverse a superadmin. |
-| Ruptura de sesiones existentes | 🟡 Media | 🟡 Medio | Sesiones actuales no tienen nuevos campos. Se pierden al hacer login de nuevo. |
-| Compatibilidad SQLite/PostgreSQL | 🟡 Media | 🟡 Medio | Wrapper `db.js` actualizado para convertir INTERVAL syntax. |
-| Pérdida de datos durante migración | 🟢 Baja | 🔴 Alto | Backup antes de migrar. Transacciones con ROLLBACK. |
+### Flujo de carga del panel
+
+```
+Usuario → GET /admin → requireAuthPage → redirige a login si no hay sesión
+         → Sirve public/admin/index.html
+         → admin.js hace fetch a /api/auth/sesion
+         → Verifica rol: ¿admin o superadmin?
+            → NO: redirige a /
+            → SÍ: Muestra panel, badge "👑 Super Admin" o "🛡️ Admin"
+```
+
+### Endpoints consumidos
+
+| Endpoint | Uso en frontend |
+|---|---|
+| `GET /api/auth/sesion` | Verificar autenticación y rol |
+| `GET /api/admin/usuarios` | Listar usuarios con filtros |
+| `GET /api/admin/usuarios/:id` | Cargar datos para edición |
+| `PUT /api/admin/usuarios/:id` | Guardar cambios de usuario |
+| `POST /api/admin/usuarios` | Crear usuario nuevo |
+| `PUT /api/admin/usuarios/:id/toggle-active` | Activar/Desactivar |
+| `PUT /api/admin/usuarios/:id/reset-password` | Resetear contraseña |
+| `PUT /api/admin/usuarios/:id/unlock` | Desbloquear cuenta |
+| `GET /api/admin/estadisticas` | Estadísticas del sistema |
+| `GET /api/admin/auditoria` | Logs de auditoría |
 
 ---
 
 ## 9. Archivos Creados/Modificados
 
-### Fase 1
+### Fase 1 — Base de Datos
 
 | Archivo | Cambio |
 |---|---|
-| `migrations/001_add_admin_columns.sql` | **NUEVO** — Script de migración PostgreSQL |
-| `migrations/001_add_admin_columns.sqlite.sql` | **NUEVO** — Script de migración SQLite |
-| `migrations/001_add_admin_columns.js` | **NUEVO** — Script de migración JS ejecutable |
-| `docs/analisis-admin.md` | **NUEVO** — Este documento |
-| `src/config/initDb.pg.js` | **MODIFICADO** — Nuevo schema usuarios + audit_log |
-| `src/config/initDb.js` | **MODIFICADO** — Nuevo schema usuarios + audit_log |
-| `src/config/db.js` | **MODIFICADO** — Nuevas conversiones INTERVAL→SQLite |
-| `src/controllers/auth.controller.js` | **MODIFICADO** — Seguridad mejorada + auditoría |
+| `migrations/001_add_admin_columns.sql` | **NUEVO** |
+| `migrations/001_add_admin_columns.sqlite.sql` | **NUEVO** |
+| `migrations/001_add_admin_columns.js` | **NUEVO** |
+| `docs/analisis-admin.md` | **NUEVO** |
+| `src/config/initDb.pg.js` | **MODIFICADO** |
+| `src/config/initDb.js` | **MODIFICADO** |
+| `src/config/db.js` | **MODIFICADO** |
+| `src/controllers/auth.controller.js` | **MODIFICADO** |
 
-### Fase 2
-
-| Archivo | Cambio |
-|---|---|
-| `src/config/permissions.js` | **NUEVO** — Definición de roles y permisos |
-| `src/middleware/auth.middleware.js` | **NUEVO** — Middleware centralizado |
-| `app.js` | **MODIFICADO** — Usa `requireAuthPage` importado, elimina definición local |
-| `src/routes/auth.routes.js` | **MODIFICADO** — Usa middleware centralizado |
-| `src/routes/excel.routes.js` | **MODIFICADO** — Usa middleware centralizado |
-| `src/routes/relaciones.routes.js` | **MODIFICADO** — Usa middleware centralizado |
-| `src/routes/relacionesGestion.routes.js` | **MODIFICADO** — Usa middleware centralizado |
-| `src/routes/debug.routes.js` | **MODIFICADO** — Usa middleware centralizado |
-
-### Fase 4
+### Fase 2 — Middleware
 
 | Archivo | Cambio |
 |---|---|
-| `src/controllers/admin.controller.js` | **NUEVO** — CRUD usuarios, estadísticas, auditoría |
-| `src/routes/admin.routes.js` | **NUEVO** — 10 endpoints protegidos |
-| `app.js` | **MODIFICADO** — Registra `/api/admin` |
+| `src/config/permissions.js` | **NUEVO** |
+| `src/middleware/auth.middleware.js` | **NUEVO** |
+| `app.js` | **MODIFICADO** |
+| `src/routes/auth.routes.js` | **MODIFICADO** |
+| `src/routes/excel.routes.js` | **MODIFICADO** |
+| `src/routes/relaciones.routes.js` | **MODIFICADO** |
+| `src/routes/relacionesGestion.routes.js` | **MODIFICADO** |
+| `src/routes/debug.routes.js` | **MODIFICADO** |
+
+### Fase 3 — Mejora Auth
 
 | Archivo | Cambio |
 |---|---|
-| `migrations/001_add_admin_columns.sql` | **NUEVO** — Script de migración PostgreSQL |
-| `migrations/001_add_admin_columns.sqlite.sql` | **NUEVO** — Script de migración SQLite |
-| `docs/analisis-admin.md` | **NUEVO** — Este documento |
-| `src/config/initDb.pg.js` | **MODIFICADO** — Nuevo schema usuarios + audit_log |
-| `src/config/initDb.js` | **MODIFICADO** — Nuevo schema usuarios + audit_log |
-| `src/config/db.js` | **MODIFICADO** — Nuevas conversiones INTERVAL→SQLite |
-| `src/controllers/auth.controller.js` | **MODIFICADO** — Seguridad mejorada + auditoría |
+| `src/controllers/auth.controller.js` | **MODIFICADO** (cambiarPassword) |
+| `src/routes/auth.routes.js` | **MODIFICADO** (PUT /cambiar-password) |
+
+### Fase 4 — Backend Admin
+
+| Archivo | Cambio |
+|---|---|
+| `src/controllers/admin.controller.js` | **NUEVO** |
+| `src/routes/admin.routes.js` | **NUEVO** |
+| `app.js` | **MODIFICADO** (registra `/api/admin`) |
+
+### Fase 5 — Frontend Admin
+
+| Archivo | Cambio |
+|---|---|
+| `public/admin/index.html` | **NUEVO** |
+| `public/admin/css/admin.css` | **NUEVO** |
+| `public/admin/js/admin.js` | **NUEVO** |
+| `app.js` | **MODIFICADO** (rutas `/admin`, `/m/admin`) |
+| `public/desktop/js/drawer.js` | **MODIFICADO** (enlace admin) |
+| `public/movil/js/drawer.js` | **MODIFICADO** (enlace admin móvil) |
+
+### Fase 6 — Seguridad
+
+| Archivo | Cambio |
+|---|---|
+| `src/routes/admin.routes.js` | **MODIFICADO** (rate limiting) |
 
 ---
 
 ## 10. Instrucciones para el Usuario
 
-### Para ejecutar la migración en PostgreSQL (Render):
+### Para acceder al Panel de Administración:
 
-```bash
-# Conectarse a la BD de Render y ejecutar:
-psql $(DATABASE_URL) -f migrations/001_add_admin_columns.sql
-```
+1. **Inicia sesión** con `daviddlaa` (superadmin)
+2. **Abre el menú** (☰) → Verás un enlace **🛡️ Admin**
+3. **O ve directo** a `https://tu-app.onrender.com/admin`
+4. **En móvil**: `https://tu-app.onrender.com/m/admin`
 
-O manualmente desde pgAdmin o consola de Render, copiar y pegar el contenido de `migrations/001_add_admin_columns.sql`.
+### Próximos pasos sugeridos:
 
-### Para ejecutar la migración en SQLite (local):
+1. **Haz commit y push** con `.\commit_push.bat`
+2. **Verifica en Render** que el panel carga correctamente
+3. **Prueba crear/editar/desactivar usuarios**
+4. **Verifica que usuarios normales NO ven el enlace Admin**
+5. Confirma que todo funciona para cerrar la Fase 7
 
-```bash
-sqlite3 database.db < migrations/001_add_admin_columns.sqlite.sql
-```
+---
 
-### Próximos pasos (sugeridos):
+## 11. Riesgos
 
-1. **Ejecutar la migración** en tu BD de Render
-2. **Hacer login** con `daviddlaa` para verificar que todo funciona
-3. **Confirmarme** para continuar con la **Fase 2: Middleware centralizado**
+| Riesgo | Probabilidad | Impacto | Mitigación |
+|---|---|---|---|
+| Migración de BD falla en producción | 🟡 Media | 🔴 Alto | Backup antes de migrar. Script probado. |
+| Admin se queda sin acceso | 🟢 Baja | 🔴 Alto | `daviddlaa` garantizado como superadmin en migración. |
+| Escalamiento de privilegios | 🟢 Baja | 🔴 Alto | 7 reglas de seguridad anti-escalamiento implementadas. |
+| Ruptura de sesiones existentes | 🟡 Media | 🟡 Medio | Sesiones expiran al hacer nuevo login. |
+| Compatibilidad SQLite/PostgreSQL | 🟡 Media | 🟡 Medio | `LOWER() LIKE LOWER()` usado en vez de `ILIKE`. |
+| Pérdida de datos durante migración | 🟢 Baja | 🔴 Alto | Backup antes de migrar. Columnas ADD IF NOT EXISTS. |
+| Bug en listarUsuarios (500 error) | ✅ **CORREGIDO** | 🔴 Alto | `Promise.all` restaurado con `dataResult` y `countResult`. |

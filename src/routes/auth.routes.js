@@ -21,6 +21,10 @@ router.post('/logout', authController.logout);
 // Ruta protegida - verificar sesión
 router.get('/sesion', requiresAuth, authController.verificarSesion);
 
+// Perfil de usuario (usuario autenticado)
+router.get('/perfil', requiresAuth, authController.getPerfil);
+router.put('/perfil', requiresAuth, authController.updatePerfil);
+
 // Cambiar contraseña (usuario autenticado)
 router.put('/cambiar-password', requiresAuth, authController.cambiarPassword);
 

@@ -340,6 +340,114 @@ exports.verificarSesion = (req, res) => {
 };
 
 // ============================================================================
+// OBTENER PERFIL DEL USUARIO AUTENTICADO
+// ============================================================================
+// GET /api/auth/perfil
+exports.getPerfil = async (req, res) => {
+    if (!req.session?.usuario) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    try {
+        const result = await pool.query(
+            `SELECT id, username, nombre, email, email_verified, rol,
+                    is_active, created_at, updated_at, last_login
+             FROM usuarios WHERE id = $1`,
+            [req.session.usuario.id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        const user = result.rows[0];
+        res.json({
+            id: user.id,
+            username: user.username,
+            nombre: user.nombre,
+            email: user.email,
+            email_verified: user.email_verified,
+            rol: user.rol,
+            is_active: user.is_active,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
+            last_login: user.last_login
+        });
+    } catch (err) {
+        console.error('[Auth] Error getPerfil:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// ============================================================================
+// ACTUALIZAR PERFIL DEL USUARIO AUTENTICADO
+// ============================================================================
+// PUT /api/auth/perfil
+exports.updatePerfil = async (req, res) => {
+    if (!req.session?.usuario) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { nombre, email } = req.body;
+    const userId = req.session.usuario.id;
+
+    // Construir UPDATE dinámico
+    const updates = [];
+    const params = [];
+    let paramIndex = 1;
+
+    if (nombre !== undefined) {
+        updates.push(`nombre = $${paramIndex++}`);
+        params.push(nombre);
+    }
+    if (email !== undefined) {
+        // Validar formato de email
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ error: 'Formato de email inválido' });
+        }
+        // Si el email cambió, resetear verificación
+        updates.push(`email = $${paramIndex++}`);
+        params.push(email);
+        updates.push(`email_verified = FALSE`);
+    }
+
+    if (updates.length === 0) {
+        return res.status(400).json({ error: 'No hay campos para actualizar' });
+    }
+
+    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    params.push(userId);
+
+    try {
+        const result = await pool.query(
+            `UPDATE usuarios SET ${updates.join(', ')} WHERE id = $${paramIndex}
+             RETURNING id, username, nombre, email, email_verified, rol`,
+            params
+        );
+
+        // Actualizar sesión
+        if (result.rows[0]) {
+            req.session.usuario.nombre = result.rows[0].nombre;
+            req.session.usuario.email = result.rows[0].email;
+        }
+
+        await registrarAuditoria(userId, 'user.profile_updated', 'user', userId,
+            { cambios: req.body }, req);
+
+        res.json({
+            mensaje: 'Perfil actualizado correctamente',
+            data: result.rows[0]
+        });
+    } catch (err) {
+        if (err.code === '23505' || err.message?.includes('UNIQUE')) {
+            return res.status(400).json({ error: 'El email ya está en uso por otro usuario' });
+        }
+        console.error('[Auth] Error updatePerfil:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// ============================================================================
 // LISTAR USUARIOS (solo admin)
 // ============================================================================
 exports.listarUsuarios = async (req, res) => {

@@ -9,37 +9,57 @@ let searchTimeout;
 // INICIALIZACIÓN
 // ============================================================================
 document.addEventListener('DOMContentLoaded', async function() {
-    // Verificar sesión y rol
-    const sesion = await fetch('/api/auth/sesion').then(r => r.json());
-    if (!sesion.autenticado) {
-        window.location.href = '/login';
-        return;
+    try {
+        // Verificar sesión y rol
+        const sesRes = await fetch('/api/auth/sesion');
+        if (!sesRes.ok) {
+            console.error('[Admin] Error al verificar sesión:', sesRes.status, sesRes.statusText);
+            window.location.href = '/login';
+            return;
+        }
+        const sesion = await sesRes.json();
+
+        if (!sesion.autenticado) {
+            console.log('[Admin] No autenticado, redirigiendo a login');
+            window.location.href = '/login';
+            return;
+        }
+
+        const user = sesion.usuario;
+        console.log('[Admin] Sesión verificada:', user.username, 'rol:', user.rol, 'is_superadmin:', user.is_superadmin);
+
+        const badge = document.getElementById('userBadge');
+        if (user.rol === 'superadmin' || user.is_superadmin) {
+            badge.textContent = '👑 Super Admin';
+        } else if (user.rol === 'admin') {
+            badge.textContent = '🛡️ Admin';
+        } else {
+            console.log('[Admin] No eres admin, redirigiendo a inicio');
+            window.location.href = '/';
+            return;
+        }
+
+        // Reloj
+        actualizarReloj();
+        setInterval(actualizarReloj, 1000);
+
+        // Cargar datos
+        cargarUsuarios();
+    } catch (err) {
+        console.error('[Admin] Error en inicialización:', err);
+        document.getElementById('usersTableBody').innerHTML =
+            '<tr><td colspan="8" class="admin-loading" style="color:#dc2626">Error al cargar: ' + escapeHtml(err.message) + '</td></tr>';
     }
-
-    const user = sesion.usuario;
-    const badge = document.getElementById('userBadge');
-    if (user.rol === 'superadmin' || user.is_superadmin) {
-        badge.textContent = '👑 Super Admin';
-    } else if (user.rol === 'admin') {
-        badge.textContent = '🛡️ Admin';
-    } else {
-        window.location.href = '/';
-        return;
-    }
-
-    // Reloj
-    actualizarReloj();
-    setInterval(actualizarReloj, 1000);
-
-    // Cargar datos
-    cargarUsuarios();
 });
 
 function actualizarReloj() {
-    document.getElementById('clock').textContent = new Date().toLocaleString('es-ES', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-    });
+    const clock = document.getElementById('clock');
+    if (clock) {
+        clock.textContent = new Date().toLocaleString('es-ES', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+    }
 }
 
 // ============================================================================
@@ -75,7 +95,16 @@ async function cargarUsuarios() {
         if (rol) url += `&rol=${rol}`;
         if (estado) url += `&estado=${estado}`;
 
+        console.log('[Admin] GET', url);
         const res = await fetch(url);
+        console.log('[Admin] Respuesta:', res.status);
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({ error: res.statusText }));
+            console.error('[Admin] Error:', errData);
+            tbody.innerHTML = '<tr><td colspan="8" class="admin-loading" style="color:#dc2626">Error ' + res.status + '</td></tr>';
+            if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading" style="color:#dc2626">Error ' + res.status + '</div>';
+            return;
+        }
         const data = await res.json();
 
         if (!data.data || data.data.length === 0) {
@@ -368,7 +397,14 @@ async function cargarEstadisticas() {
     grid.innerHTML = '<div class="stat-card stat-loading">Cargando estadísticas...</div>';
 
     try {
+        console.log('[Admin] Cargando estadísticas...');
         const res = await fetch('/api/admin/estadisticas');
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({ error: res.statusText }));
+            console.error('[Admin] Error estadísticas:', res.status, errData);
+            grid.innerHTML = '<div class="stat-card stat-loading" style="color:#dc2626">Error ' + res.status + '</div>';
+            return;
+        }
         const data = await res.json();
 
         grid.innerHTML = `
@@ -433,7 +469,14 @@ async function cargarAuditoria() {
         let url = '/api/admin/auditoria?limite=50';
         if (q) url += `&accion=${encodeURIComponent(q)}`;
 
+        console.log('[Admin] Cargando auditoría:', url);
         const res = await fetch(url);
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({ error: res.statusText }));
+            console.error('[Admin] Error auditoría:', res.status, errData);
+            tbody.innerHTML = '<tr><td colspan="6" class="admin-loading" style="color:#dc2626">Error ' + res.status + '</td></tr>';
+            return;
+        }
         const data = await res.json();
 
         if (!data.data || data.data.length === 0) {

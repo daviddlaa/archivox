@@ -103,6 +103,7 @@ if (registroForm) {
         
         const username = document.getElementById('regUsername').value;
         const password = document.getElementById('regPassword').value;
+        const email = document.getElementById('regEmail')?.value || '';
         const nombre = document.getElementById('regNombre').value;
         const btn = registroForm.querySelector('.btn-login');
         
@@ -116,7 +117,7 @@ if (registroForm) {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ username, password, nombre })
+                body: JSON.stringify({ username, password, email, nombre })
             });
             
             const data = await response.json();

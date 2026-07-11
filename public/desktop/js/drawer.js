@@ -42,6 +42,7 @@ function crearDrawerDinamico() {
             </div>
             <nav class="drawer-nav">
                 <a href="/" class="drawer-link">📊 Dashboard</a>
+                <a href="/perfil" class="drawer-link">👤 Mi Perfil</a>
                 <a href="/equipo-ventas" class="drawer-link">💰 Control de Ventas</a>
                 <a href="/importar" class="drawer-link">📤 Importar Excel</a>
                 <a href="/solicitudes" class="drawer-link">📋 Solicitudes</a>
