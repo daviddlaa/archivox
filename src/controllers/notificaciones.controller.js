@@ -15,7 +15,7 @@ const notificationBus = require('../services/notificationBus.js');
 // GET /api/admin/notificaciones
 exports.listar = async (req, res) => {
     try {
-        const { pagina = 1, limite = 20, tipo, leida, archivada = '0' } = req.query;
+        const { pagina = 1, limite = 20, tipo, leida } = req.query;
         const usuario = req.session.usuario;
         const offset = (parseInt(pagina) - 1) * parseInt(limite);
         const esAdmin = usuario.rol === 'admin' || usuario.rol === 'superadmin' || usuario.is_superadmin;
@@ -33,13 +33,6 @@ exports.listar = async (req, res) => {
             params.push(usuario.id);
         }
 
-        // Filtro archivadas (por defecto no mostrar archivadas al usuario)
-        if (archivada === '0') {
-            sql += ` AND (n.archivada IS NULL OR n.archivada = 0 OR n.archivada = FALSE)`;
-        } else if (archivada === '1') {
-            sql += ` AND (n.archivada = 1 OR n.archivada = TRUE)`;
-        }
-
         if (tipo) {
             sql += ` AND n.tipo = $${paramIndex++}`;
             params.push(tipo);
@@ -53,7 +46,7 @@ exports.listar = async (req, res) => {
         const [countResult, dataResult] = await Promise.all([
             pool.query(`SELECT COUNT(*) as total FROM (${sql}) as filtrados`, params),
             pool.query(
-                sql + ` ORDER BY n.leida ASC, n.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+                sql + ` ORDER BY n.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
                 [...params, parseInt(limite), offset]
             )
         ]);
@@ -66,7 +59,35 @@ exports.listar = async (req, res) => {
         });
     } catch (err) {
         console.error('[Notificaciones] Error listar:', err);
-        res.status(500).json({ error: err.message });
+        console.warn('[Notificaciones] Usando fallback - verificar migración de columnas en PostgreSQL');
+        // Fallback seguro: respeta filtro de destinatario para usuarios no-admin
+        try {
+            let fallbackSql = `SELECT n.id, n.titulo, n.mensaje, n.tipo, n.leida, n.created_at, u.username as creador_username
+                               FROM notificaciones n
+                               LEFT JOIN usuarios u ON n.creador_id = u.id WHERE 1=1`;
+            const fallbackParams = [];
+            let fbParamIndex = 1;
+
+            if (!esAdmin) {
+                fallbackSql += ` AND (n.destinatario_id IS NULL OR n.destinatario_id = $${fbParamIndex++})`;
+                fallbackParams.push(usuario.id);
+            }
+
+            fallbackSql += ` ORDER BY n.created_at DESC LIMIT $${fbParamIndex++} OFFSET $${fbParamIndex++}`;
+            fallbackParams.push(parseInt(limite), offset);
+
+            const fallback = await pool.query(fallbackSql, fallbackParams);
+            res.json({
+                data: fallback.rows,
+                total: fallback.rows.length,
+                pagina: parseInt(pagina),
+                limite: parseInt(limite),
+                fallback: true
+            });
+        } catch (fallbackErr) {
+            console.error('[Notificaciones] Error listar (fallback):', fallbackErr);
+            res.status(500).json({ error: err.message });
+        }
     }
 };
 
@@ -185,7 +206,7 @@ exports.marcarTodasLeidas = async (req, res) => {
         const usuario = req.session.usuario;
         const esAdmin = usuario.rol === 'admin' || usuario.rol === 'superadmin' || usuario.is_superadmin;
 
-        let sql = `UPDATE notificaciones SET leida = 1, leida_at = CURRENT_TIMESTAMP WHERE (leida = 0 OR leida = FALSE)`;
+        let sql = `UPDATE notificaciones SET leida = 1, leida_at = CURRENT_TIMESTAMP WHERE leida = 0`;
         const params = [];
 
         // Si no es admin, solo marcar sus notificaciones
@@ -238,7 +259,7 @@ exports.contarNoLeidas = async (req, res) => {
         const usuario = req.session.usuario;
         const esAdmin = usuario.rol === 'admin' || usuario.rol === 'superadmin' || usuario.is_superadmin;
 
-        let sql = `SELECT COUNT(*) as total FROM notificaciones WHERE (leida = 0 OR leida = FALSE)`;
+        let sql = `SELECT COUNT(*) as total FROM notificaciones WHERE leida = 0`;
         const params = [];
 
         if (!esAdmin) {
@@ -250,7 +271,7 @@ exports.contarNoLeidas = async (req, res) => {
         res.json({ no_leidas: parseInt(result.rows[0]?.total) || 0 });
     } catch (err) {
         console.error('[Notificaciones] Error contar:', err);
-        res.json({ no_leidas: 0 });
+        res.status(500).json({ error: err.message, no_leidas: 0 });
     }
 };
 
