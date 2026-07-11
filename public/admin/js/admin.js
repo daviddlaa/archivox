@@ -555,7 +555,9 @@ let searchNotifTimeout;
 // Cargar notificaciones desde el servidor
 async function cargarNotificaciones() {
     const tbody = document.getElementById('notifTableBody');
-    tbody.innerHTML = '<tr><td colspan="8" class="admin-loading">Cargando notificaciones...</td></tr>';
+    const cardsDiv = document.getElementById('notifMobileCards');
+    tbody.innerHTML = '<tr><td colspan="10" class="admin-loading">Cargando notificaciones...</td></tr>';
+    if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading">Cargando notificaciones...</div>';
 
     try {
         const q = document.getElementById('searchNotif').value;
@@ -569,14 +571,18 @@ async function cargarNotificaciones() {
 
         const res = await fetch(url);
         if (!res.ok) {
-            tbody.innerHTML = '<tr><td colspan="8" class="admin-loading" style="color:#dc2626">Error ' + res.status + '</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="admin-loading" style="color:#dc2626">Error ' + res.status + '</td></tr>';
+            if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading" style="color:#dc2626">Error ' + res.status + '</div>';
             return;
         }
         const data = await res.json();
 
         if (!data.data || data.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="admin-loading">No hay notificaciones</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="admin-loading">No hay notificaciones</td></tr>';
+            if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading">No hay notificaciones</div>';
             document.getElementById('pageInfoNotif').textContent = 'Página 1';
+            document.getElementById('prevPageNotif').disabled = true;
+            document.getElementById('nextPageNotif').disabled = true;
             return;
         }
 
@@ -584,7 +590,9 @@ async function cargarNotificaciones() {
         const tipoColores = { info: '#3b82f6', warning: '#f59e0b', success: '#10b981', danger: '#ef4444' };
         const prioridadIconos = { baja: '⬇️', normal: '➡️', alta: '⬆️', critica: '🔴' };
         const prioridadColores = { baja: '#9ca3af', normal: '#3b82f6', alta: '#f59e0b', critica: '#dc2626' };
+        const prioridadLabels = { baja: 'Baja', normal: 'Normal', alta: 'Alta', critica: 'Crítica' };
 
+        // Tabla para desktop
         tbody.innerHTML = data.data.map(n => `
             <tr class="${n.leida ? '' : 'notif-no-leida'}">
                 <td>${n.leida ? '📖' : '📩'}</td>
@@ -610,13 +618,70 @@ async function cargarNotificaciones() {
             </tr>
         `).join('');
 
+        // Cards para móvil
+        if (cardsDiv) {
+            cardsDiv.innerHTML = data.data.map(n => {
+                const tipoIcono = tipoIconos[n.tipo] || 'ℹ️';
+                const tipoColor = tipoColores[n.tipo] || '#6b7280';
+                const prioridadIcono = prioridadIconos[n.prioridad] || '➡️';
+                const prioridadLabel = prioridadLabels[n.prioridad] || 'Normal';
+                const leidaStatus = n.leida ? '📖 Leída' : '📩 No leída';
+                const destinatario = n.destinatario_id ? 'Usuario #' + n.destinatario_id : '🌐 Todos';
+
+                return `<div class="notif-admin-card ${n.leida ? 'notif-admin-card-leida' : 'notif-admin-card-no-leida'}">
+                    <div class="notif-admin-card-header">
+                        <div class="notif-admin-card-icon" style="background:${tipoColor}20">
+                            <span>${tipoIcono}</span>
+                        </div>
+                        <div class="notif-admin-card-info">
+                            <div class="notif-admin-card-title">${escapeHtml(n.titulo)}</div>
+                            <div class="notif-admin-card-meta">
+                                <span class="notif-admin-card-tipo" style="background:${tipoColor}20;color:${tipoColor}">${tipoIcono} ${n.tipo}</span>
+                                <span style="color:${prioridadColores[n.prioridad] || '#6b7280'}">${prioridadIcono} ${prioridadLabel}</span>
+                            </div>
+                        </div>
+                        <div class="notif-admin-card-estado">${n.leida ? '📖' : '📩'}</div>
+                    </div>
+                    <div class="notif-admin-card-body">
+                        <div class="notif-admin-card-msg">${escapeHtml(n.mensaje)}</div>
+                        <div class="notif-admin-card-details">
+                            <div class="notif-admin-card-row">
+                                <span class="notif-admin-card-label">👤 Creado por</span>
+                                <span class="notif-admin-card-value">${escapeHtml(n.creador_username || 'Sistema')}</span>
+                            </div>
+                            <div class="notif-admin-card-row">
+                                <span class="notif-admin-card-label">📡 Destinatario</span>
+                                <span class="notif-admin-card-value">${destinatario}</span>
+                            </div>
+                            <div class="notif-admin-card-row">
+                                <span class="notif-admin-card-label">📅 Fecha</span>
+                                <span class="notif-admin-card-value">${formatearFecha(n.created_at)}</span>
+                            </div>
+                            ${n.leida_at ? `
+                            <div class="notif-admin-card-row">
+                                <span class="notif-admin-card-label">✅ Leída el</span>
+                                <span class="notif-admin-card-value">${formatearFecha(n.leida_at)}</span>
+                            </div>` : ''}
+                        </div>
+                    </div>
+                    <div class="notif-admin-card-actions">
+                        ${!n.leida ? `<button class="admin-user-card-btn admin-user-card-btn-secondary" onclick="marcarLeida(${n.id})">✅ Marcar leída</button>` : ''}
+                        <button class="admin-user-card-btn admin-user-card-btn-secondary" onclick="archivarNotificacionAdmin(${n.id})">📦 Archivar</button>
+                        <button class="admin-user-card-btn admin-user-card-btn-danger" onclick="eliminarNotificacion(${n.id})">🗑️ Eliminar</button>
+                        ${n.accion_url ? `<a href="${escapeHtml(n.accion_url)}" target="_blank" class="admin-user-card-btn admin-user-card-btn-primary" style="text-decoration:none;text-align:center">🔗 ${escapeHtml(n.accion_texto || 'Abrir')}</a>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
         document.getElementById('pageInfoNotif').textContent = `Página ${paginaNotif}`;
         document.getElementById('prevPageNotif').disabled = paginaNotif <= 1;
         document.getElementById('nextPageNotif').disabled = !data.data || data.data.length < 15;
 
     } catch (err) {
         console.error('Error notificaciones:', err);
-        tbody.innerHTML = '<tr><td colspan="8" class="admin-loading" style="color:#dc2626">Error al cargar notificaciones</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="admin-loading" style="color:#dc2626">Error al cargar notificaciones</td></tr>';
+        if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading" style="color:#dc2626">Error al cargar notificaciones</div>';
     }
 }
 

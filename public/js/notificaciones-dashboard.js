@@ -158,7 +158,7 @@ function iniciarSSE() {
                 actualizarBadgeNotifUsuario();
 
                 // Si el panel está abierto, recargar
-                if (notifState.isPanelOpen) {
+                if (notifState.isPanelOpen && !notifState._isMarkingRead) {
                     cargarNotificacionesUsuario();
                 }
 
@@ -174,7 +174,8 @@ function iniciarSSE() {
         // Notificación leída
         es.addEventListener('notification.read', function(e) {
             actualizarBadgeNotifUsuario();
-            if (notifState.isPanelOpen) {
+            // Solo recargar si NO estamos en medio de marcar como leída
+            if (notifState.isPanelOpen && !notifState._isMarkingRead) {
                 cargarNotificacionesUsuario();
             }
         });
@@ -402,11 +403,11 @@ function renderizarNotificacion(n, index) {
     // Fecha formateada
     const fechaHTML = formatearFechaNotif(n.created_at);
 
-    // ¿Tiene acción? - Marcar como leída primero, luego navegar
+    // ¿Tiene acción? - Botón de acción rápida
     const accionHTML = (n.accion_url && n.accion_texto) ? `
         <button class="notif-item-action-btn"
            data-notif-action-url="${escapeHtmlNotif(n.accion_url)}"
-           onclick="event.stopPropagation(); marcarLeidaYAccionUsuario(${n.id}, this.dataset.notifActionUrl);">
+           onclick="event.stopPropagation(); marcarLeidaUsuario(${n.id}, this.dataset.notifActionUrl);">
             ${escapeHtmlNotif(n.accion_texto)} →
         </button>
     ` : '';
@@ -414,11 +415,15 @@ function renderizarNotificacion(n, index) {
     // ¿Está expirada?
     const claseExpirada = (n.fecha_expiracion && new Date(n.fecha_expiracion) < new Date()) ? 'notif-item-expirada' : '';
 
+    const dataAccionUrl = n.accion_url ? ` data-accion-url="${escapeHtmlNotif(n.accion_url)}"` : '';
+    const cardOnClick = `marcarLeidaUsuario(${n.id}${n.accion_url ? `, this.dataset.accionUrl` : ''})`;
+
     return `
         <div class="notif-item ${claseNoLeida} ${clasePrioridad} ${claseNew} ${claseExpirada}"
              data-id="${n.id}"
              data-leida="${n.leida ? 'true' : 'false'}"
-             onclick="${esNoLeida ? `marcarLeidaUsuario(${n.id})` : ''}">
+             ${dataAccionUrl}
+             onclick="${cardOnClick}">
             <div class="notif-item-icon-wrapper" style="background:${tipoColor}20">
                 <span>${tipoIcono}</span>
                 <span class="notif-priority-badge notif-priority-${prioridad}" title="Prioridad: ${prioridadLabel}">
@@ -450,32 +455,50 @@ function renderizarNotificacion(n, index) {
 }
 
 // ============================================================================
-// MARCAR COMO LEÍDA (individual)
+// MARCAR COMO LEÍDA (individual) - con navegación a acción si existe
 // ============================================================================
-async function marcarLeidaUsuario(id) {
+async function marcarLeidaUsuario(id, accionUrl) {
+    // Flag para evitar doble recarga por SSE
+    notifState._isMarkingRead = true;
+
     try {
         await fetch(`/api/admin/notificaciones/${id}/leer`, { method: 'PUT' });
-
-        // Actualizar visualmente sin recargar todo
-        const item = document.querySelector(`.notif-item[data-id="${id}"]`);
-        if (item) {
-            item.classList.remove('notif-item-no-leida', 'notif-item-new');
-            item.dataset.leida = 'true';
-            const dot = item.querySelector('.notif-item-dot');
-            if (dot) dot.remove();
-        }
-
-        actualizarBadgeNotifUsuario();
-
-        // Actualizar contador del panel
-        actualizarContadorPanel();
-
-        // Recargar si hay muchas pendientes
-        if (notifState.isPanelOpen) {
-            setTimeout(() => cargarNotificacionesUsuario(), 500);
-        }
     } catch (e) {
-        console.error('[Notificaciones] Error marcar leída:', e);
+        console.warn('[Notificaciones] Error marcando leída:', e);
+    }
+
+    // Actualizar visualmente sin recargar todo
+    const item = document.querySelector(`.notif-item[data-id="${id}"]`);
+    if (item) {
+        item.classList.remove('notif-item-no-leida', 'notif-item-new');
+        item.dataset.leida = 'true';
+        const dot = item.querySelector('.notif-item-dot');
+        if (dot) dot.remove();
+    }
+
+    actualizarBadgeNotifUsuario();
+    actualizarContadorPanel();
+
+    // Liberar flag después de un breve momento
+    setTimeout(() => { notifState._isMarkingRead = false; }, 300);
+
+    // Si hay URL de acción, cerrar panel y navegar
+    if (accionUrl) {
+        cerrarPanelNotificaciones();
+        setTimeout(() => {
+            window.location.href = accionUrl;
+        }, 350); // Esperar que cierre la animación del panel
+        return;
+    }
+
+    // Recargar suavemente (solo si no hay SSE que ya lo haga)
+    if (notifState.isPanelOpen) {
+        // Pequeña actualización local sin recarga completa
+        setTimeout(() => {
+            if (!notifState._isMarkingRead) {
+                cargarNotificacionesUsuario();
+            }
+        }, 600);
     }
 }
 
@@ -510,19 +533,6 @@ async function marcarTodasLeidasUsuario() {
     } catch (e) {
         console.error('[Notificaciones] Error marcar todas:', e);
     }
-}
-
-// ============================================================================
-// MARCAR COMO LEÍDA Y EJECUTAR ACCIÓN (navegar a URL)
-// ============================================================================
-async function marcarLeidaYAccionUsuario(id, url) {
-    try {
-        await fetch(`/api/admin/notificaciones/${id}/leer`, { method: 'PUT' });
-    } catch (e) {
-        console.warn('[Notificaciones] Error marcando leída antes de acción:', e);
-    }
-    // Navegar a la URL de acción
-    window.location.href = url;
 }
 
 // ============================================================================
