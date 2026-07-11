@@ -61,7 +61,9 @@ function cambiarTab(tab) {
 // ============================================================================
 async function cargarUsuarios() {
     const tbody = document.getElementById('usersTableBody');
+    const cardsDiv = document.getElementById('mobileCards');
     tbody.innerHTML = '<tr><td colspan="8" class="admin-loading">Cargando usuarios...</td></tr>';
+    if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading">Cargando usuarios...</div>';
 
     try {
         const q = document.getElementById('searchUser').value;
@@ -78,24 +80,23 @@ async function cargarUsuarios() {
 
         if (!data.data || data.data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" class="admin-loading">No se encontraron usuarios</td></tr>';
+            if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading">No se encontraron usuarios</div>';
             document.getElementById('pageInfo').textContent = 'Página 1';
             return;
         }
-
-        tbody.innerHTML = data.data.map(user => {
+        const rows = data.data.map(user => {
             const estado = user.is_active ?
                 (user.locked_until && new Date(user.locked_until) > new Date() ? 'bloqueado' : 'activo')
                 : 'inactivo';
 
             const rolClass = user.is_superadmin ? 'superadmin' : user.rol;
-            const estadoClass = estado;
 
             return `<tr>
                 <td><span class="admin-username">${escapeHtml(user.username)}</span></td>
                 <td>${escapeHtml(user.nombre || '-')}</td>
                 <td>${escapeHtml(user.email || '-')}</td>
                 <td><span class="role-badge ${rolClass}">${rolLabel(user)}</span></td>
-                <td><span class="estado-badge ${estadoClass}"></span>${estado}</td>
+                <td><span class="estado-indicador"><span class="estado-dot ${estado}"></span>${estado}</span></td>
                 <td>${formatearFecha(user.created_at)}</td>
                 <td>${formatearFecha(user.last_login)}</td>
                 <td>
@@ -108,13 +109,41 @@ async function cargarUsuarios() {
             </tr>`;
         }).join('');
 
+        // Cards para móvil
+        cardsDiv.innerHTML = data.data.map(user => {
+            const estado = user.is_active ?
+                (user.locked_until && new Date(user.locked_until) > new Date() ? 'bloqueado' : 'activo')
+                : 'inactivo';
+            const rolClass = user.is_superadmin ? 'superadmin' : user.rol;
+
+            return `<div class="user-card">
+                <div class="user-card-header">
+                    <span class="user-card-name">${escapeHtml(user.username)}</span>
+                    <span class="role-badge ${rolClass}">${rolLabel(user)}</span>
+                </div>
+                <div class="user-card-body">
+                    <div class="user-card-row"><span>Nombre</span><strong>${escapeHtml(user.nombre || '-')}</strong></div>
+                    <div class="user-card-row"><span>Email</span><strong>${escapeHtml(user.email || '-')}</strong></div>
+                    <div class="user-card-row"><span>Estado</span><strong><span class="estado-dot ${estado}"></span> ${estado}</strong></div>
+                    <div class="user-card-row"><span>Registro</span><strong>${formatearFecha(user.created_at)}</strong></div>
+                    <div class="user-card-row"><span>Último login</span><strong>${formatearFecha(user.last_login) || 'Nunca'}</strong></div>
+                </div>
+                <div class="user-card-actions">
+                    <button class="action-btn edit" onclick="editarUsuario(${user.id})" title="Editar">✏️ Editar</button>
+                    ${user.locked_until && new Date(user.locked_until) > new Date() ?
+                        `<button class="action-btn lock" onclick="desbloquearUsuario(${user.id})">🔓 Desbloquear</button>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+
         document.getElementById('pageInfo').textContent = `Página ${paginaActual}`;
         document.getElementById('prevPage').disabled = paginaActual <= 1;
         document.getElementById('nextPage').disabled = !data.data || data.data.length < 15;
 
     } catch (err) {
         console.error('Error cargar usuarios:', err);
-        tbody.innerHTML = '<tr><td colspan="8" class="admin-loading" style="color:var(--admin-danger)">Error al cargar usuarios</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="admin-loading" style="color:#dc2626">Error al cargar usuarios</td></tr>';
+        if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading" style="color:#dc2626">Error al cargar usuarios</div>';
     }
 }
 

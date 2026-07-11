@@ -173,6 +173,9 @@ app.get('/m/historial', requireAuthPage, (req, res) => {
 app.get('/admin', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/admin/index.html'));
 });
+app.get('/m/admin', requireAuthPage, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/admin/index.html'));
+});
 
 // Rutas de login (públicas)
 app.get('/login', (req, res) => {

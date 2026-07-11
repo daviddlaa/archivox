@@ -68,12 +68,12 @@ exports.listarUsuarios = async (req, res) => {
         const params = [];
         let paramIndex = 1;
 
-        // Búsqueda general
+        // Búsqueda general (LOWER LIKE para compatibilidad SQLite y PostgreSQL)
         if (q && q.trim()) {
             const termino = '%' + q.trim() + '%';
-            sql += ` AND (username ILIKE $${paramIndex}
-                        OR COALESCE(nombre, '') ILIKE $${paramIndex}
-                        OR COALESCE(email, '') ILIKE $${paramIndex})`;
+            sql += ` AND (LOWER(username) LIKE LOWER($${paramIndex})
+                        OR LOWER(COALESCE(nombre, '')) LIKE LOWER($${paramIndex})
+                        OR LOWER(COALESCE(email, '')) LIKE LOWER($${paramIndex}))`;
             params.push(termino);
             paramIndex++;
         }
@@ -94,14 +94,15 @@ exports.listarUsuarios = async (req, res) => {
             sql += ' AND locked_until > CURRENT_TIMESTAMP';
         }
 
-        // Contar total con los mismos filtros
-        const countResult = await pool.query(
-            `SELECT COUNT(*) as total FROM (${sql}) as filtrados`,
-            params
-        );
+        // Ejecutar query de datos y conteo en paralelo
+        const [dataResult, countResult] = await Promise.all([
+            pool.query(sql + ` ORDER BY created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+                [...params, parseInt(limite), offset]),
+            pool.query(`SELECT COUNT(*) as total FROM (${sql}) as filtrados`, params)
+        ]);
 
         res.json({
-            data: result.rows,
+            data: dataResult.rows,
             total: parseInt(countResult.rows[0]?.total) || 0,
             pagina: parseInt(pagina),
             limite: parseInt(limite)
@@ -493,7 +494,7 @@ exports.auditoria = async (req, res) => {
         let paramIndex = 1;
 
         if (accion) {
-            sql += ` AND al.accion ILIKE $${paramIndex++}`;
+            sql += ` AND LOWER(al.accion) LIKE LOWER($${paramIndex++})`;
             params.push('%' + accion + '%');
         }
 
