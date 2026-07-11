@@ -1,198 +1,250 @@
-# Informe Técnico - Corrección del Sistema de Notificaciones
+# Informe Técnico de Consolidación del Sistema
 
-**Fecha:** 11 de julio de 2026
-**Versión:** 2.1
-
----
-
-## Resumen Ejecutivo
-
-Se corrigieron dos problemas críticos en el Sistema de Notificaciones y se modernizó la experiencia móvil del Panel de Administración. El sistema quedó completamente funcional, con navegación correcta desde las notificaciones, marcación como leída consistente, y una interfaz de administración optimizada para dispositivos móviles mediante cards responsivas.
+**Fecha:** Julio 2026
+**Sesión:** Consolidación Visual, Cards de Solicitudes y Estrategia de Escalabilidad
 
 ---
 
-## 1. Causa Raíz: Error de Navegación al Abrir una Notificación
+## 1. Unificación del Footer (Versión Móvil)
 
-### Problema Detectado
+### Problema detectado
+Existían **3 variantes distintas** del componente `nav-bottom` en los archivos HTML móviles:
+- **Variante A** (Dashboard `index.html`): Usaba `class="active"` directamente en `<a>`, sin `.nav-item` ni `.nav-bottom-label`. Tenía `class="nav-bottom-more"` para el botón de menú.
+- **Variante B** (Solicitudes, Relaciones): Usaba `class="nav-item"` + `<span class="nav-bottom-label">`.
+- **Variante C** (Gestiones, Historial, Importar, Ventas, Gestión-Lote): Usaba estructura simple sin `.nav-item` ni `.nav-bottom-label`.
 
-Al hacer clic sobre una notificación en el panel deslizable (drawer de notificaciones), el sistema presentaba dos síntomas:
+### Cambio implementado
+Se unificó **un único componente Footer** para toda la aplicación móvil con la siguiente estructura estándar:
 
-1. **Sin navegación:** La tarjeta de notificación solo ejecutaba `marcarLeidaUsuario(id)`, que únicamente marcaba como leída pero **nunca navegaba** a la URL de acción (`accion_url`).
-2. **Parpadeo / Falsa navegación:** Existía una **doble recarga** del panel:
-   - `marcarLeidaUsuario()` llamaba a `cargarNotificacionesUsuario()` después de 500ms
-   - El evento SSE `notification.read` también disparaba `cargarNotificacionesUsuario()`
-   - Esto causaba que el panel mostrara "Cargando..." dos veces, simulando visualmente una navegación fallida
-
-### Archivos Afectados
-
-- `public/js/notificaciones-dashboard.js` — Lógica principal del panel de notificaciones
-- `public/css/notificaciones.css` — Estilos del panel (sin cambios)
-
----
-
-## 2. Correcciones Realizadas
-
-### 2.1 Navegación desde la Tarjeta de Notificación
-
-**Archivo:** `public/js/notificaciones-dashboard.js`
-
-**Cambio:** Se modificó el `onclick` de la tarjeta (`notif-item`) para que, además de marcar como leída, navegue a la `accion_url` si existe.
-
-```javascript
-// Antes (solo marcaba como leída):
-onclick="${esNoLeida ? `marcarLeidaUsuario(${n.id})` : ''}"
-
-// Después (marca como leída Y navega si hay acción):
-onclick="marcarLeidaUsuario(${n.id}${n.accion_url ? `, this.dataset.accionUrl` : ''})"
+```html
+<nav class="nav-bottom">
+    <a href="/m" class="nav-item [active]">
+        <span class="nav-bottom-icon">📊</span>
+        <span class="nav-bottom-label">Inicio</span>
+    </a>
+    <a href="/m/solicitudes" class="nav-item [active]">
+        <span class="nav-bottom-icon">📋</span>
+        <span class="nav-bottom-label">Solicitudes</span>
+    </a>
+    <a href="#" class="nav-item [active]" onclick="abrirDrawer(); return false;">
+        <span class="nav-bottom-icon">☰</span>
+        <span class="nav-bottom-label">Menú</span>
+    </a>
+</nav>
 ```
 
-**Mecanismo de navegación:**
-- La URL se almacena en el atributo `data-accion-url` del DOM (seguro contra XSS)
-- `marcarLeidaUsuario()` lee `element.dataset.accionUrl` — el DOM decodifica correctamente entidades HTML
-- Si hay URL de acción: cierra el panel (`cerrarPanelNotificaciones()`) y navega mediante `window.location.href` tras 350ms (para permitir la animación de cierre)
-- Si no hay URL: solo marca como leída sin navegar
-
-### 2.2 Prevención de Doble Recarga por SSE
-
-**Archivo:** `public/js/notificaciones-dashboard.js`
-
-**Cambio:** Se agregó un flag `_isMarkingRead` en el estado global `notifState` para evitar que el evento SSE `notification.read` recargue el panel mientras se está procesando una marcación manual.
-
-```javascript
-// Al iniciar marcación:
-notifState._isMarkingRead = true;
-
-// En el handler SSE notification.read:
-if (notifState.isPanelOpen && !notifState._isMarkingRead) {
-    cargarNotificacionesUsuario();
-}
-
-// Liberación del flag tras 300ms:
-setTimeout(() => { notifState._isMarkingRead = false; }, 300);
-```
-
-### 2.3 Unificación de Funciones de Marcación
-
-**Archivo:** `public/js/notificaciones-dashboard.js`
-
-**Cambio:** Se fusionaron `marcarLeidaUsuario()` y `marcarLeidaYAccionUsuario()` en una sola función que acepta un parámetro opcional `accionUrl`. La función `marcarLeidaYAccionUsuario` fue eliminada.
-
-### 2.4 Actualización Visual Inmediata
-
-La marcación como leída actualiza el DOM localmente sin esperar la respuesta del servidor:
-- Remueve la clase `notif-item-no-leida`
-- Remueve el dot azul de no leída
-- Actualiza el `dataset.leida` a `true`
-- Actualiza el badge del panel y el contador
-
-### 2.5 Escape de URLs Seguro
-
-Se corrigió un problema potencial de escaping: la URL ahora se pasa a través del DOM (`data-accion-url`) en lugar de incrustarse directamente en el string del `onclick`. Esto previene ruptura de URLs con caracteres especiales.
-
----
-
-## 3. Panel de Administración - Versión Móvil
-
-### 3.1 Cards de Notificaciones en Móvil
-
-**Archivos modificados:**
-- `public/admin/index.html` — Se agregó contenedor `notifMobileCards`
-- `public/admin/js/admin.js` — Se agregó renderizado de cards para móvil
-- `public/admin/css/admin.css` — Se agregaron estilos para `.notif-admin-card`
-
-**Diseño de cada card:**
-
-| Elemento | Descripción |
-|---|---|
-| **Header** | Icono de tipo (con color), título, tipo, prioridad, estado (leída/no leída) |
-| **Cuerpo** | Mensaje (clamp 3 líneas), detalles: creador, destinatario, fecha, fecha de lectura |
-| **Acciones** | Marcar leída, Archivar, Eliminar, Abrir acción (si existe) |
-
-**Responsividad:**
-- `@media (max-width: 768px)`: Se muestran las cards, la tabla permanece oculta
-- `@media (min-width: 769px)`: Se muestra la tabla, las cards se ocultan
-- Sigue el mismo patrón que la sección de usuarios (`mobile-cards`)
-
-### 3.2 Consistencia Desktop/Móvil
-
-**Estado actual:**
-
-| Componente | Desktop | Móvil | Compartido |
-|---|---|---|---|
-| Panel de notificaciones (usuario) | Slide-out drawer | Slide-out drawer | `notificaciones-dashboard.js` |
-| Admin - Lista notificaciones | Tabla | Cards | `admin.js` (renderiza ambos) |
-| CSS notificaciones | `notificaciones.css` | `notificaciones.css` | Unificado |
-| CSS admin | `admin.css` | `admin.css` | Unificado |
-
-**Decisión de diseño:** Los drawers de navegación (desktop y móvil) tienen HTML y estructuras JavaScript diferentes debido a:
-- Diferentes rutas de navegación (`/xxx` vs `/m/xxx`)
-- Diferentes patrones de interacción (Drawer object vs funciones globales)
-- Diferentes diseños visuales
-
-Se consideró que unificarlos agregaría riesgo de regresión sin beneficio significativo, ya que cada uno está optimizado para su plataforma.
-
----
-
-## 4. Archivos Modificados
-
+### Archivos modificados
 | Archivo | Cambio |
-|---|---|
-| `public/js/notificaciones-dashboard.js` | Navegación desde card, flag anti-doble-recarga, fusión de funciones, escape seguro de URL |
-| `public/admin/index.html` | Agregado contenedor `notifMobileCards` para cards en móvil |
-| `public/admin/js/admin.js` | Renderizado de notificaciones en cards para móvil, manejo de estados (carga/vacío/error) |
-| `public/admin/css/admin.css` | Estilos para `.notif-admin-card`, `.notif-admin-card-no-leida`, botón danger |
+|---------|--------|
+| `public/movil/index.html` | Footer unificado con `.nav-item` + `.nav-bottom-label` |
+| `public/movil/gestiones.html` | Footer unificado con `.nav-item` + `.nav-bottom-label` |
+| `public/movil/historial.html` | Footer unificado con `.nav-item` + `.nav-bottom-label` |
+| `public/movil/importar.html` | Footer unificado con `.nav-item` + `.nav-bottom-label` |
+| `public/movil/ventas.html` | Footer unificado con `.nav-item` + `.nav-bottom-label` |
+| `public/movil/relaciones.html` | Footer unificado con `.nav-item` + `.nav-bottom-label` |
+| `public/movil/gestion-lote.html` | Footer unificado con `.nav-item` + `.nav-bottom-label` |
+
+### No modificado
+- `public/movil/solicitudes.html` — ya tenía la estructura correcta.
+- `public/admin/index.html` — Panel de Administración mantiene su diseño propio.
+
+### CSS involucrado
+Las clases `.nav-item` y `.nav-bottom-label` ya estaban definidas en `public/movil/css/estilos.css`. No se requirieron cambios de CSS.
 
 ---
 
-## 5. Validaciones Realizadas
+## 2. Cards de Solicitudes (Móvil) — Corrección de Layout
 
-### 5.1 Pruebas de Código
+### Problema detectado
+En la tarjeta móvil de solicitudes, la **Fila 1** contenía: `ID + Segmento + Estado`. Cuando el Segmento tenía un nombre largo, empujaba el Estado fuera de alineación y rompía el layout de la tarjeta.
 
-- **Code Review:** Se realizó revisión de código por agente especializado, identificando y corrigiendo un problema de escaping de URLs en el `onclick` inline
-- **Verificación de sintaxis:** Los archivos JavaScript y CSS fueron verificados por el revisor
+### Cambio implementado
 
-### 5.2 Pruebas Funcionales (API)
+#### a) Eliminación del ID en cabecera móvil
+- **Archivo:** `public/movil/js/solicitudes.js`
+- Se eliminó `<span class="card-id">#{{id}}</span>` de la fila 1.
+- La fila 1 ahora contiene solo: `Segmento + Estado`.
 
-Se intentaron pruebas de integración mediante API REST:
+**Antes:**
+```js
+html += '  <div class="card-fila-1">';
+html += '    <span class="card-id">#' + id + '</span>';
+html += '    <span class="card-badge badge-segmento">...</span>';
+html += '    <span class="card-badge badge-estado">...</span>';
+html += '  </div>';
+```
 
-| Prueba | Resultado |
-|---|---|
-| Registro de usuario | ✅ Exitoso |
-| Login de usuario | ⚠️ Limitado por rate limiter (intentos previos) |
-| Asignación superadmin vía DB | ✅ Exitoso |
-| Creación de notificación | Pendiente (rate limit) |
+**Después:**
+```js
+html += '  <div class="card-fila-1">';
+html += '    <span class="card-badge badge-segmento">...</span>';
+html += '    <span class="card-badge badge-estado">...</span>';
+html += '  </div>';
+```
 
-**Nota:** Las pruebas funcionales completas requieren un entorno limpio sin rate limiting. Se recomienda ejecutar `node app.js` en un puerto no utilizado y realizar pruebas manuales desde el navegador.
+#### b) Mejora de CSS (Móvil) — `solicitudes-mobile.css`
+- `.card-fila-1`: Se agregó `overflow: hidden` y `min-width: 0`.
+- `.badge-segmento`: Se cambió a `flex-shrink: 1` (para que pueda encogerse) y `min-width: 0` (para que `text-overflow` funcione correctamente en flex items).
+- Se eliminaron las reglas obsoletas de `.card-id` (ya no se usa en móvil).
 
-### 5.3 Verificación de Flujo Completo
+#### c) Mejora de CSS (Base/Desktop) — `solicitudes.css`
+- `.card-fila-1`: Se agregó `min-width: 0`.
+- `.badge-segmento`: Se agregó `max-width: 180px`, `overflow: hidden`, `text-overflow: ellipsis`, `flex-shrink: 1` y `min-width: 0`.
+- `.badge-estado`: Se agregó `flex-shrink: 0` y `margin-left: auto` para que siempre se mantenga a la derecha, incluso en desktop.
 
-El flujo de notificaciones fue verificado mediante análisis de código:
-
-1. ✅ **Click en notificación** → marca como leída + navega a `accion_url` (si existe)
-2. ✅ **Marcación como leída** → actualiza visualmente + llama al servidor
-3. ✅ **Actualización del contador** → `actualizarBadgeNotifUsuario()` después de marcar
-4. ✅ **Estado visual** → remueve clase `no-leida`, remueve dot azul
-5. ✅ **Redirección** → cierra panel, navega vía `window.location.href`
-6. ✅ **Sin redirección inesperada** → flag `_isMarkingRead` previene recarga SSE concurrente
-7. ✅ **Admin móvil** → cards responsivas con todas las acciones disponibles
-8. ✅ **Sin CSS/JS duplicado** → estilos y lógica compartidos entre escritorio y móvil
+### Resultado
+- El Segmento se **trunca con puntos suspensivos** si es muy largo.
+- El Estado **permanece alineado a la derecha** en todo momento.
+- Ambos elementos se mantienen en **una sola línea** sin desplazarse mutuamente.
+- La tarjeta móvil mantiene una apariencia limpia y consistente.
+- La versión de escritorio conserva el ID visible y el segmento truncado.
 
 ---
 
-## 6. Recomendaciones
+## 3. Estrategia de Paginación y Escalabilidad
 
-1. **Pruebas E2E:** Implementar pruebas automatizadas con Cypress o Playwright para cubrir el flujo completo de notificaciones
-2. **Rate Limiter:** Considerar usar almacenamiento persistente (Redis) para el rate limiter en producción, para evitar reinicios que limpien el estado
-3. **Notificaciones SSE:** Evaluar si el flag `_isMarkingRead` podría convertirse en un contador para soporte de clics rápidos concurrentes
-4. **Drawer unificado:** Si se agregan nuevas rutas en el futuro, considerar unificar los drawers de navegación desktop y móvil en un solo componente parametrizable
+### Estado Actual
+- **Backend:** Ya implementa paginación server-side con parámetros `limite` y `offset` en el endpoint `/api/excel/solicitudes`. Devuelve `{ data, total, limite, offset }`.
+- **Frontend móvil:** Implementa Infinite Scroll via IntersectionObserver con un sentinel. El backend ya soporta esto sin cambios.
+- **Frontend escritorio:** Implementa Infinite Scroll de la misma forma.
+- **Búsqueda/Filtros:** Usan el endpoint `/api/excel/solicitudes/buscar` que soporta `q`, `estado`, `segmento`, `limite`, `offset`.
+
+### Estrategia Recomendada: Paginación Híbrida
+
+**Recomendación técnica:** Combinación de **Paginación clásica** (escritorio) + **Carga incremental (Infinite Scroll)** (móvil), con **filtros server-side** y **caché de resultados**.
+
+#### Justificación
+
+| Estrategia | Ventajas | Desventajas |
+|------------|----------|-------------|
+| Paginación clásica | Control total, URLs compartibles, memoria predecible | Más clicks, menos fluido en móvil |
+| Infinite Scroll | Experiencia fluida tipo app, menor fricción | Dificultad para llegar al footer, pérdida de posición |
+| Load More | Híbrido entre los dos, controlado | Un click extra |
+| Virtualización | Rendimiento extremo con 10k+ registros | Complejidad alta, necesario refactor grande |
+
+Para este sistema con **cientos a miles de registros por usuario**, la combinación óptima es:
+
+#### Arquitectura Propuesta
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   API / Estrategia                    │
+├─────────────────────────────────────────────────────┤
+│ 1. Backend: Paginación server-side (YA IMPLEMENTADO) │
+│    - LIMIT + OFFSET con COUNT(*) separado            │
+│    - Filtros por estado, segmento, búsqueda          │
+│    - Índices en BD para optimizar consultas          │
+├─────────────────────────────────────────────────────┤
+│ 2. Frontend Escritorio: Paginación clásica           │
+│    - Controles: « Anterior | 1 | 2 | 3 | ... | N | Siguiente » │
+│    - 50 registros por página                         │
+│    - Selector de items por página (25/50/100)        │
+├─────────────────────────────────────────────────────┤
+│ 3. Frontend Móvil: Infinite Scroll actual            │
+│    - Mantener IntersectionObserver actual            │
+│    - Agregar botón "Cargar más" como fallback        │
+│    - 100 registros por lote                          │
+├─────────────────────────────────────────────────────┤
+│ 4. Filtros + Búsqueda: Server-side (YA IMPLEMENTADO) │
+│    - Al cambiar filtro → reset a página 1            │
+│    - Búsqueda con debounce + servidor                │
+└─────────────────────────────────────────────────────┘
+```
+
+#### Optimizaciones Futuras
+
+1. **Índices compuestos en BD:**
+   ```sql
+   CREATE INDEX idx_solicitudes_usuario_estado ON solicitudes(usuario_id, estado);
+   CREATE INDEX idx_solicitudes_usuario_segmento ON solicitudes(usuario_id, segmento);
+   ```
+   Esto reduce drásticamente el tiempo de COUNT(*) con filtros.
+
+2. **Caché de totales:**
+   - Cachear `COUNT(*)` con TTL de 30 segundos para evitar contarlo en cada request.
+   - Usar Redis o memoria en Node.js para cache.
+
+3. **Keyset Pagination (Cursor-based):**
+   - Para tablas muy grandes (>100k registros), reemplazar OFFSET por cursor.
+   - Más eficiente porque evita escanear filas descartadas.
+
+4. **Virtualización de lista:**
+   - Para la vista de escritorio, implementar `virtual-scroll` (ej: Clusterize.js) cuando se muestren >500 registros en una página.
+   - Esto evita renderizar DOM para filas no visibles.
+
+5. **Limitación de queries:**
+   - Máximo 1000 registros por request para evitar abusos.
+   - Timeout de 10 segundos en queries de base de datos.
+
+6. **Worker/Streaming para exportación:**
+   - La exportación a Excel debe hacerse en segundo plano para no bloquear la UI.
+   - Usar `Promise.all` limitado a lotes de 500 registros.
+
+### Plan de Implementación Inmediato
+
+La implementación de la paginación clásica en escritorio y el "Load More" en móvil puede realizarse como siguiente fase. El backend ya está preparado — solo requiere cambios en el frontend:
+
+1. **Escritorio (`desktop/js/solicitudes.js`):**
+   - Agregar controles de paginación numérica.
+   - Reemplazar `cargarMas()` por `irAPagina(n)`.
+   - Mostrar `Página X de Y` con botones Anterior/Siguiente.
+
+2. **Móvil (`movil/js/solicitudes.js`):**
+   - Mantener Infinite Scroll actual.
+   - Agregar botón "Cargar más" como fallback para navegadores sin IntersectionObserver.
+   - Mostrar contador "Mostrando X de Y".
+
+3. **Compartir URLs:**
+   - Agregar `?pagina=2&estado=ACTIVADA` en la URL para permitir compartir estado.
 
 ---
 
-## 7. Conclusión
+## 4. Resumen de Archivos Modificados
 
-El sistema de notificaciones queda completamente funcional y confiable:
-- **Navegación correcta** desde notificaciones con enlaces profundos operativos
-- **Notificaciones marcadas como leídas** de forma consistente con actualización visual inmediata
-- **Sin redirecciones inesperadas** gracias a la prevención de doble recarga SSE
-- **Panel de Administración** con experiencia moderna y optimizada para dispositivos móviles mediante cards responsivas
-- **Código unificado** entre escritorio y móvil para la lógica de notificaciones
+| Archivo | Tipo de Cambio | Descripción |
+|---------|---------------|-------------|
+| `public/movil/index.html` | HTML | Footer unificado con nav-item |
+| `public/movil/gestiones.html` | HTML | Footer unificado con nav-item |
+| `public/movil/historial.html` | HTML | Footer unificado con nav-item |
+| `public/movil/importar.html` | HTML | Footer unificado con nav-item |
+| `public/movil/ventas.html` | HTML | Footer unificado con nav-item |
+| `public/movil/relaciones.html` | HTML | Footer unificado con nav-item |
+| `public/movil/gestion-lote.html` | HTML | Footer unificado con nav-item |
+| `public/movil/js/solicitudes.js` | JavaScript | Eliminado ID de cabecera de card móvil |
+| `public/movil/css/solicitudes-mobile.css` | CSS | Mejora truncamiento segmento, overflow hidden en fila-1 |
+| `public/css/solicitudes.css` | CSS | Mejora truncamiento segmento y alineación estado en desktop |
+
+**Total: 10 archivos modificados.**
+
+---
+
+## 5. Pruebas Realizadas
+
+- **Revisión visual de código:** Se verificó que todos los HTML móviles tengan exactamente la misma estructura de footer.
+- **Validación de CSS:** Se confirmó que las reglas de `text-overflow: ellipsis` + `overflow: hidden` + `min-width: 0` son correctas para flex items.
+- **Revisión de conflictos:** No se detectaron conflictos de CSS entre `solicitudes.css` (base) y `solicitudes-mobile.css` (móvil).
+- **Revisión de código:** El code reviewer confirmó que no hay issues críticos y que la solución es sólida.
+
+---
+
+## 6. Recomendaciones para Futuras Versiones
+
+### Inmediatas (Siguiente Sesión)
+1. **Implementar paginación numérica** en escritorio (componente reusable).
+2. **Agregar botón "Cargar más"** como fallback en móvil.
+3. **Unificar el Drawer** (sidebar) de escritorio entre todas las páginas.
+4. **Agregar indicador de loading** en cards cuando se aplican filtros.
+
+### Corto Plazo
+1. Migrar a **componentes reutilizables** para cards, filtros, y paginación (evitar duplicación entre `desktop/js/solicitudes.js` y `movil/js/solicitudes.js`).
+2. Implementar **caché de totales** en el backend.
+3. Agregar **índices compuestos** en la base de datos para optimizar consultas filtradas.
+
+### Mediano Plazo
+1. **Keyset pagination** para cuando la base de datos supere 100k registros.
+2. **Virtual scrolling** en vista de escritorio para rendimiento extremo.
+3. **Dashboard en tiempo real** usando WebSockets o Server-Sent Events.
+
+---
+
+*Este informe fue generado automáticamente como parte de la sesión de consolidación del sistema.*

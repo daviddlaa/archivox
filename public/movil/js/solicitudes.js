@@ -440,9 +440,8 @@ function renderizarCards(datos) {
         var html = '';
         html += '<div class="solicitud-card ' + seleccionado + '" id="card-' + id + '" onclick="toggleCard(\'' + id + '\')">';
 
-        // FILA 1: ID + Segmento + Estado
+        // FILA 1: Segmento + Estado (sin ID para evitar desbordamiento)
         html += '  <div class="card-fila-1">';
-        html += '    <span class="card-id">#' + id + '</span>';
         html += '    <span class="card-badge badge-segmento">' + (item.segmento || 'Sin segmento') + '</span>';
         html += '    <span class="card-badge badge-estado ' + estadoClase + '" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
         html += '  </div>';
