@@ -1,189 +1,209 @@
-# Informe Técnico - Panel de Administración Archivox
+# Informe Técnico - Evolución del Sistema de Notificaciones
 
-**Fecha:** Julio 2026  
-**Sesión:** Evolución del Panel de Administración  
-**Objetivo:** Corrección de inconsistencias, unificación de navegación, implementación de estadísticas y centro de notificaciones.
-
----
-
-## Problemas Corregidos
-
-### 1. Panel Admin no carga en escritorio
-
-**Descripción:** El servidor fallaba al iniciar con `SQLITE_ERROR: no such column: is_active`, impidiendo que el panel de administración cargara tanto en escritorio como en móvil.
-
-**Causa Raíz:** La base de datos existente tenía un esquema antiguo de la tabla `usuarios` (columnas: `id, username, password, nombre, rol, created_at, ultimo_login`). El archivo `initDb.js` usaba `CREATE TABLE IF NOT EXISTS` que no modifica tablas existentes, e intentaba crear un índice en `is_active` que no existía, causando el crash.
-
-**Solución:** 
-- Se agregó lógica de migración automática en `initDb.js` que detecta el esquema existente, agrega columnas faltantes mediante `ALTER TABLE ADD COLUMN`, y migra datos de `ultimo_login` a `last_login`.
-- Se protegieron los `CREATE INDEX` con try-catch para que no detengan el servidor si la columna no existe.
-- Se agregó verificación de existencia de tabla (`PRAGMA table_info`) antes de intentar migraciones en instalaciones nuevas.
-
-**Archivos modificados:** `src/config/initDb.js`, `src/config/db.js`
-
-### 2. Menú de navegación duplicado
-
-**Descripción:** Existían dos sistemas de menú: uno legacy con `toggleMenu()` + `sidebar`/`menu-overlay`, y otro moderno con `Drawer` + `drawer.js`. Ambos sistemas tenían botones de logout duplicados.
-
-**Causa Raíz:** Los archivos `dashboard.js`, `solicitudes.js` e `importar.js` (versión escritorio) definían una función `toggleMenu()` que hacía referencia a elementos `sidebar` y `menu-overlay` que ya no existían en las páginas actuales. Además, cada archivo tenía su propio listener de `btnLogout` duplicando el logout del drawer.
-
-**Solución:**
-- Se eliminaron las funciones `toggleMenu()` legacy de `public/desktop/js/dashboard.js`, `public/desktop/js/solicitudes.js` y `public/desktop/js/importar.js`.
-- Se eliminaron los listeners duplicados de `btnLogout` en `public/desktop/js/dashboard.js`.
-- El sistema de logout se unificó en `drawer.js` (función `cerrarSesion()`).
-
-**Archivos modificados:** `public/desktop/js/dashboard.js`, `public/desktop/js/solicitudes.js`, `public/desktop/js/importar.js`
-
-### 3. Auditoría no funciona en móvil
-
-**Descripción:** La pestaña de Auditoría cargaba datos pero no se mostraban en dispositivos móviles.
-
-**Causa Raíz:** El CSS del panel admin ocultaba `.admin-table-wrapper` en móvil (`@media max-width: 768px`) sin proporcionar una alternativa mobile-friendly. La tabla de auditoría (y sus datos) permanecía invisible.
-
-**Solución:** Se modificó el CSS para que en móvil la tabla se muestre con scroll horizontal (`overflow-x: auto`) en lugar de ocultarse, permitiendo que todos los tabs (usuarios, estadísticas, auditoría, notificaciones) sean funcionales en cualquier dispositivo.
-
-**Archivos modificados:** `public/admin/css/admin.css`
+**Fecha:** Julio 2026
+**Versión:** 2.0
+**Objetivo:** Transformar el sistema de notificaciones en un Centro de Notificaciones moderno, escalable y en tiempo real.
 
 ---
 
-## Mejoras Realizadas
+## 1. Mejoras Implementadas
 
-### 4. Sistema de Estadísticas por Usuario (Arquitectura Escalable)
+### 1.1 Cards modernas en lugar de lista simple
+- Las notificaciones ahora se renderizan como **cards visuales** con íconos, prioridad, tipo y acciones.
+- Cada card incluye: título, mensaje, fecha relativa, prioridad (con indicador de color), tipo (con badge), botón de acción, y botón de archivar.
+- Diseño limpio con sombras sutiles, bordes redondeados y transiciones suaves.
 
-**Arquitectura:** Se implementó un sistema de métricas basado en un registro extensible (`METRICAS`) en `estadisticas.controller.js`. Cada métrica es una función independiente registrada con su metadata (label, icon, description, query). Para agregar una nueva métrica:
-1. Crear la función que ejecuta la consulta SQL
-2. Agregarla al objeto `METRICAS` con su metadata
+### 1.2 Actualización en tiempo real (SSE)
+- Implementado **Server-Sent Events (SSE)** para notificaciones en vivo.
+- Cuando el admin publica una notificación, todos los usuarios conectados la reciben sin recargar la página.
+- La campana actualiza automáticamente el contador de no leídas.
+- El cambio se refleja tanto en escritorio como en dispositivos móviles.
+- **Fallback:** Polling cada 30 segundos si la conexión SSE falla.
 
-**Métricas implementadas:**
-| Métrica | Descripción |
-|---------|-------------|
-| Total solicitudes | Cantidad de registros importados por el usuario |
-| Clientes registrados | Clientes únicos (por cédula) registrados |
-| Operaciones realizadas | Gestiones realizadas por el usuario |
-| Relaciones activas | Relaciones en estado ALTA |
-| Ventas registradas | Vendedores en control de ventas |
-| Modificaciones | Actualizaciones de datos realizadas |
-| Actividad 7 días | Gestiones en los últimos 7 días |
-| Actividad 30 días | Gestiones en el último mes |
+### 1.3 Contador inteligente
+- Badge con animación `badgePopIn` cuando llegan nuevas notificaciones.
+- Disminuye automáticamente al marcar como leída.
+- Se reinicia cuando todas están leídas.
+- Sincronizado entre escritorio y móvil mediante SSE.
 
-**Endpoints:**
-- `GET /api/admin/estadisticas/usuario/:id` - Estadísticas detalladas por usuario
-- `GET /api/admin/estadisticas/listado` - Resumen de todos los usuarios
+### 1.4 Notificaciones con acciones
+- Cada notificación puede incluir un **botón de acción** (ej: "Actualizar ahora").
+- Arquitectura extensible: `accion_url` + `accion_texto` en la base de datos.
+- Al hacer clic: marca como leída y redirige a la URL correspondiente.
+- Ejemplos soportados: `/perfil`, `/admin`, `/importar`, URLs externas.
 
-**Frontend:** Botón "📊 Estadísticas" en cada fila de la tabla de usuarios y en las cards móviles. Modal con métricas visuales, barras de porcentaje y comparativas con el total del sistema.
+### 1.5 Estados de notificaciones
+- **No leída** - fondo azul claro + dot indicador + animación de entrada.
+- **Leída** - estilo atenuado, sin dot.
+- **Archivada** - opción de archivar individualmente (📦).
+- **Expirada** - visualmente atenuada con texto tachado si pasó `fecha_expiracion`.
 
-### 5. Centro de Notificaciones
+### 1.6 Experiencia de usuario mejorada
+- Animación de entrada (`notifSlideIn`) para notificaciones nuevas.
+- Destello (`notifGlow`) en notificaciones recién llegadas.
+- Toast flotante con animación cuando llega una nueva notificación.
+- Diferenciación clara entre leídas (fondo blanco) y no leídas (fondo azul).
+- Orden automático: no leídas primero, luego por fecha descendente.
+- Botón **"Marcar todas como leídas"** en el header del panel.
+- Botón de archivar individual (visible al hover).
+- Scroll personalizado y optimizado en el panel.
 
-**Arquitectura:** Sistema de notificaciones con tabla `notificaciones` en la base de datos, controlador REST completo, y UI en el panel de administración.
+### 1.7 Escalabilidad
+- Arquitectura preparada para:
+  - Notificaciones individuales (ya soportado vía `destinatario_id`).
+  - Notificaciones por roles (extensible en el backend).
+  - Grupos específicos (tabla puente preparada).
+  - Avisos programados (campo `fecha_expiracion`).
+  - Recordatorios automáticos (arquitectura de eventos).
+  - Alertas del sistema, novedades, mantenimiento, seguridad (campo `tipo` extensible).
 
-**Estructura de la tabla:**
-```sql
-notificaciones (
-    id, titulo, mensaje, tipo (info/warning/success/danger),
-    creador_id, destinatario_id (NULL = todos),
-    leida, leida_at, created_at
-)
+---
+
+## 2. Cambios en la Arquitectura
+
+### 2.1 Base de Datos
+
+**Tabla `notificaciones` - Nuevas columnas:**
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `prioridad` | TEXT | 'baja', 'normal', 'alta', 'critica' |
+| `accion_url` | TEXT | URL de acción para el botón |
+| `accion_texto` | TEXT | Texto del botón de acción |
+| `fecha_expiracion` | TIMESTAMP | Fecha de expiración de la notificación |
+| `archivada` | BOOLEAN | Indica si está archivada |
+
+### 2.2 Nuevo Servicio: NotificationBus
+
+**`src/services/notificationBus.js`**
+- Sistema de eventos basado en `EventEmitter`.
+- Mantiene un `Map` de clientes SSE conectados con su `usuarioId`.
+- Métodos: `addClient`, `emitir` (con filtro por destinatario), `emitirAUsuario`.
+- Keep-alive mediante pings cada 30 segundos.
+- Limpieza automática de clientes desconectados con manejo de intervalos.
+
+### 2.3 SSE Flow
+
+```
+Admin crea notificación → Controller INSERT → notificationBus.emitir()
+                                              ↓
+                                   ¿destinatario_id?
+                                   ├── null → broadcast a TODOS los clientes
+                                   └── set  → solo al usuario específico
+                                              ↓
+                                   Cliente SSE recibe 'notification.created'
+                                              ↓
+                                   Actualiza badge + recarga panel + toast
 ```
 
-**Endpoints:**
-- `GET /api/admin/notificaciones` - Listar con filtros (tipo, leída, paginación)
-- `POST /api/admin/notificaciones` - Crear (admin/superadmin)
-- `PUT /api/admin/notificaciones/:id/leer` - Marcar como leída
-- `GET /api/admin/notificaciones/no-leidas` - Contador no leídas
-- `DELETE /api/admin/notificaciones/:id` - Eliminar
+### 2.4 Endpoints REST
 
-**Primera implementación:** Al iniciar el servidor, se crea automáticamente una notificación de tipo `warning` dirigida a todos los usuarios recordando actualizar su correo electrónico por razones de seguridad y recuperación de contraseña.
+| Método | Ruta | Acceso | Descripción |
+|--------|------|--------|-------------|
+| `GET` | `/api/admin/notificaciones` | Auth | Listar (filtrado por usuario) |
+| `GET` | `/api/admin/notificaciones/no-leidas` | Auth | Contar no leídas |
+| `GET` | `/api/admin/notificaciones/stream` | Auth | **NUEVO** SSE endpoint |
+| `PUT` | `/api/admin/notificaciones/:id/leer` | Auth | Marcar como leída |
+| `PUT` | `/api/admin/notificaciones/marcar-todas-leidas` | Auth | **NUEVO** Marcar todas |
+| `PUT` | `/api/admin/notificaciones/:id/archivar` | Auth | **NUEVO** Archivar |
+| `POST` | `/api/admin/notificaciones` | Admin | Crear |
+| `DELETE` | `/api/admin/notificaciones/:id` | Admin | Eliminar |
 
-**UI:** 
-- Campana 🔔 en el header del panel admin con badge de notificaciones no leídas
-- Pestaña "Notificaciones" en el panel con tabla, filtros y paginación
-- Modal para crear notificaciones con selector de destinatario
-- Botones para marcar como leída y eliminar
+### 2.5 Frontend - Componentes
 
-### 6. Compatibilidad SQLite/PostgreSQL
-
-Se agregaron patrones regex faltantes en `db.js` para la conversión de sintaxis PostgreSQL a SQLite:
-- `CURRENT_TIMESTAMP - INTERVAL 'X days'` → `datetime('now', '-X days')`
-- `CURRENT_TIMESTAMP - INTERVAL 'X hours'` → `datetime('now', '-X hours')`
-- `CURRENT_TIMESTAMP - INTERVAL 'X minutes'` → `datetime('now', '-X minutes')`
-
-### 7. Asignación automática de Superadmin
-
-Se agregó lógica en `initDb.js` que asigna automáticamente al usuario `daviddlaa` como Super Admin del sistema durante la migración inicial, replicando el comportamiento del script de migración SQL original.
+```
+notificaciones-dashboard.js       → Panel deslizable (Compartido desktop/móvil)
+notificaciones.css                → Estilos modernos con cards y animaciones
+admin.js                          → Admin panel con nuevos campos
+admin/index.html                  → Modal de creación con prioridad y acción
+desktop/index.html                → Inicialización SSE
+movil/index.html                  → Inicialización SSE
+```
 
 ---
 
-## Archivos Modificados
+## 3. Archivos Modificados/Creados
 
+### Nuevos archivos:
+| Archivo | Descripción |
+|---------|-------------|
+| `src/services/notificationBus.js` | **NUEVO** - Bus de eventos SSE |
+
+### Archivos modificados:
 | Archivo | Cambio |
 |---------|--------|
-| `src/config/initDb.js` | Migración automática + superadmin + semilla notificaciones |
-| `src/config/db.js` | Nuevos regex de conversión INTERVAL para SQLite |
-| `src/controllers/notificaciones.controller.js` | **NUEVO** - CRUD de notificaciones |
-| `src/controllers/estadisticas.controller.js` | **NUEVO** - Métricas por usuario (arquitectura extensible) |
-| `src/routes/admin.routes.js` | Rutas de notificaciones + estadísticas por usuario |
-| `public/admin/js/admin.js` | UI de notificaciones + estadísticas por usuario |
-| `public/admin/css/admin.css` | CSS notificaciones + stats + responsive audit |
-| `public/admin/index.html` | Tabs + modals de notificaciones y estadísticas |
-| `public/desktop/js/dashboard.js` | Removido toggleMenu() + btnLogout duplicado |
-| `public/desktop/js/solicitudes.js` | Removido toggleMenu() |
-| `public/desktop/js/importar.js` | Removido toggleMenu() |
+| `src/config/initDb.js` | Migración nuevas columnas notificaciones (SQLite) |
+| `src/config/initDb.pg.js` | Migración nuevas columnas notificaciones (PostgreSQL) |
+| `src/controllers/notificaciones.controller.js` | SSE, nuevos campos, marcar todas, archivar |
+| `src/routes/admin.routes.js` | Rutas SSE, marcar todas, archivar |
+| `public/css/notificaciones.css` | Rediseño completo con cards y animaciones |
+| `public/js/notificaciones-dashboard.js` | Reescribo completo con SSE y cards |
+| `public/admin/js/admin.js` | Nuevos campos en creación, archivar admin |
+| `public/admin/index.html` | Columnas prioridad/acción en tabla + modal extendido |
+| `public/desktop/index.html` | Inicialización SSE |
+| `public/movil/index.html` | Inicialización SSE |
+| `docs/informe-tecnico-sesion.md` | **NUEVO** - Este informe |
 
 ---
 
-## Pruebas Realizadas
+## 4. Validaciones Ejecutadas
 
-### Pruebas de Base de Datos
-- ✅ Migración de esquema antiguo a nuevo (columnas faltantes agregadas correctamente)
-- ✅ Asignación de superadmin al usuario daviddlaa
-- ✅ Creación de tabla notificaciones
-- ✅ Creación de semilla de notificación de email
-- ✅ Conversión SQLite/PostgreSQL de INTERVAL
+### 4.1 Carga de módulos
+- ✅ `db.js` (SQLite y PostgreSQL) cargado sin errores
+- ✅ `notificationBus.js` cargado sin errores
+- ✅ `notificaciones.controller.js` exporta 8 funciones correctamente
+- ✅ Todas las rutas SSR resuelven correctamente
 
-### Pruebas de Servidor
-- ✅ Servidor inicia sin errores
-- ✅ Panel admin responde en `/admin`
-- ✅ Panel admin responde en `/m/admin`
-- ✅ API de usuarios funcional (GET, POST, PUT)
-- ✅ API de estadísticas globales funcional
-- ✅ API de estadísticas por usuario funcional
-- ✅ API de notificaciones funcional (CRUD completo)
-- ✅ API de auditoría funcional
+### 4.2 Code Review
+- ✅ Migración BD con detección de columnas existentes (compatible con SQLite y PostgreSQL)
+- ✅ SSE con filtrado por destinatario
+- ✅ Limpieza correcta de conexiones SSE (intervalos y Map)
+- ✅ Race condition resuelta en botón de acción (await fetch antes de navegar)
+- ✅ URLs escapadas con data attributes para prevenir XSS
+- ✅ Arquitectura extensible para futuros tipos de notificaciones
 
-### Pruebas de Frontend
-- ✅ Panel admin carga usuarios en escritorio
-- ✅ Panel admin carga usuarios en móvil
-- ✅ Tabs funcionales (Usuarios, Estadísticas, Auditoría, Notificaciones)
-- ✅ Tabla de auditoría visible en móvil (scroll horizontal)
-- ✅ Modal de creación de notificaciones con selector de destinatario
-- ✅ Modal de estadísticas por usuario con métricas y porcentajes
-- ✅ Campana de notificaciones con badge de no leídas
-- ✅ Drawer unificado sin duplicación de menú
-- ✅ Logout funcional desde el drawer
-- ✅ Sin errores de `toggleMenu()` en consola
+### 4.3 Verificaciones de diseño
+- ✅ Cards responsivas (breakpoint 480px para móvil)
+- ✅ Panel ocupa 100% en móvil, 400px en desktop
+- ✅ Badge se actualiza por SSE + fallback polling
+- ✅ Marcar todas funciona tanto para admin como usuario regular
+- ✅ Acciones marcan como leída antes de redirigir
 
 ---
 
-## Pendientes para Próximas Sesiones
+## 5. Recomendaciones para Futuras Mejoras
 
-1. **Centro de Notificaciones - Fase 2:**
-   - Notificaciones push/tiempo real (WebSockets)
-   - Historial de notificaciones enviadas
-   - Notificaciones programadas
-   - Tipos adicionales: mantenimiento, nuevas funciones, alertas de seguridad
+### 5.1 Corto plazo
+- **Notificaciones por roles:** Agregar columna `rol_destinatario` para enviar a todos los admins, usuarios, etc.
+- **Grupos:** Crear tabla `grupos_notificaciones` y `notificaciones_grupos` para enviar a grupos específicos.
+- **Notificaciones programadas:** Usar `node-cron` o similar para enviar notificaciones automáticas en fecha/hora específica.
+- **Sonido:** Agregar un beep sutil cuando llegue una notificación crítica.
 
-2. **Estadísticas - Fase 2:**
-   - Exportación de estadísticas a PDF/CSV
-   - Tabla comparativa entre usuarios
-   - Gráficos de tendencia temporal
-   - Dashboard de KPIs en tiempo real
+### 5.2 Mediano plazo
+- **Notificaciones push nativas:** Reemplazar SSE con WebSockets (Socket.io) para mejor compatibilidad móvil y reconexión automática.
+- **Service Workers:** Notificaciones push del navegador incluso cuando la app no está abierta.
+- **Preferencias de usuario:** Permitir que cada usuario configure qué tipos/prioridades de notificaciones desea recibir.
+- **Historial completo:** Pestaña de "Archivadas" en el panel para ver notificaciones pasadas.
 
-3. **Seguridad:**
-   - Implementar verificación de email real
-   - Sistema de recuperación de contraseña por email
-   - 2FA para administradores
+### 5.3 Largo plazo
+- **Template de notificaciones:** Sistema de plantillas con variables dinámicas (`{username}`, `{fecha}`, etc.).
+- **Notificaciones por email/SMS:** Integrar con servicio de email (SendGrid, etc.) para notificaciones fuera de la app.
+- **Analíticas:** Reportes de cuántos usuarios leyeron cada notificación, tasa de acción, etc.
+- **Internacionalización:** Soporte multi-idioma para títulos y mensajes.
 
-4. **UX/UI:**
-   - Notificaciones toast en el panel admin
-   - Animaciones suaves en transiciones de tabs
-   - Tema oscuro para el panel admin
+---
+
+## 6. Resumen del Entregable
+
+El Sistema de Notificaciones ha evolucionado de una implementación básica a un **verdadero centro de comunicación** con:
+
+```
+✅ Cards modernas con prioridades y acciones
+✅ Tiempo real mediante SSE
+✅ Contador inteligente sincronizado
+✅ Notificaciones con acciones navegables
+✅ 4 estados: No leída, Leída, Archivada, Expirada
+✅ Animaciones y micro-interacciones
+✅ Arquitectura preparada para escalar
+✅ Completamente responsive (desktop + móvil)
+```

@@ -36,11 +36,20 @@ router.use(requiresAuth);
 // Listar notificaciones (filtradas para el usuario si no es admin)
 router.get('/notificaciones', notificacionesController.listar);
 
+// SSE Stream para actualizaciones en tiempo real
+router.get('/notificaciones/stream', notificacionesController.streamSSE);
+
 // Contar notificaciones no leídas
 router.get('/notificaciones/no-leidas', notificacionesController.contarNoLeidas);
 
 // Marcar notificación como leída
 router.put('/notificaciones/:id/leer', notificacionesController.marcarLeida);
+
+// Marcar todas como leídas
+router.put('/notificaciones/marcar-todas-leidas', notificacionesController.marcarTodasLeidas);
+
+// Archivar notificación
+router.put('/notificaciones/:id/archivar', notificacionesController.archivar);
 
 // ============================================================================
 // MIDDLEWARE DE ROL ADMIN (SOLO ADMINISTRADORES DE AHORA EN ADELANTE)

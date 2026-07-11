@@ -561,6 +561,8 @@ async function cargarNotificaciones() {
 
         const tipoIconos = { info: 'ℹ️', warning: '⚠️', success: '✅', danger: '🚨' };
         const tipoColores = { info: '#3b82f6', warning: '#f59e0b', success: '#10b981', danger: '#ef4444' };
+        const prioridadIconos = { baja: '⬇️', normal: '➡️', alta: '⬆️', critica: '🔴' };
+        const prioridadColores = { baja: '#9ca3af', normal: '#3b82f6', alta: '#f59e0b', critica: '#dc2626' };
 
         tbody.innerHTML = data.data.map(n => `
             <tr class="${n.leida ? '' : 'notif-no-leida'}">
@@ -568,12 +570,19 @@ async function cargarNotificaciones() {
                 <td><strong>${escapeHtml(n.titulo)}</strong></td>
                 <td style="white-space:pre-line;font-size:13px">${escapeHtml(n.mensaje)}</td>
                 <td><span style="background:${tipoColores[n.tipo] || '#6b7280'};color:white;padding:3px 8px;border-radius:4px;font-size:11px">${tipoIconos[n.tipo] || 'ℹ️'} ${n.tipo}</span></td>
+                <td>
+                    <span style="color:${prioridadColores[n.prioridad] || '#6b7280'};font-weight:600;font-size:13px">
+                        ${prioridadIconos[n.prioridad] || '➡️'} ${n.prioridad || 'normal'}
+                    </span>
+                </td>
                 <td>${escapeHtml(n.creador_username || 'Sistema')}</td>
                 <td>${n.destinatario_id ? 'Usuario #' + n.destinatario_id : '🌐 Todos'}</td>
+                <td>${n.accion_url ? `<a href="${escapeHtml(n.accion_url)}" target="_blank" style="font-size:12px">🔗 ${escapeHtml(n.accion_texto || 'Ir')}</a>` : '-'}</td>
                 <td>${formatearFecha(n.created_at)}</td>
                 <td>
                     <div class="action-btns">
                         ${!n.leida ? `<button class="action-btn" onclick="marcarLeida(${n.id})" title="Marcar leída">✅</button>` : ''}
+                        <button class="action-btn" onclick="archivarNotificacionAdmin(${n.id})" title="Archivar">📦</button>
                         <button class="action-btn" onclick="eliminarNotificacion(${n.id})" title="Eliminar" style="color:#dc2626">🗑️</button>
                     </div>
                 </td>
@@ -667,6 +676,10 @@ async function abrirModalCrearNotificacion() {
     document.getElementById('notifTitulo').value = '';
     document.getElementById('notifMensaje').value = '';
     document.getElementById('notifTipo').value = 'info';
+    document.getElementById('notifPrioridad').value = 'normal';
+    document.getElementById('notifAccionUrl').value = '';
+    document.getElementById('notifAccionTexto').value = '';
+    document.getElementById('notifFechaExpiracion').value = '';
     document.getElementById('notifModal').classList.add('active');
     document.getElementById('modalOverlay').classList.add('active');
 }
@@ -680,6 +693,10 @@ async function crearNotificacion() {
     const titulo = document.getElementById('notifTitulo').value.trim();
     const mensaje = document.getElementById('notifMensaje').value.trim();
     const tipo = document.getElementById('notifTipo').value;
+    const prioridad = document.getElementById('notifPrioridad').value;
+    const accion_url = document.getElementById('notifAccionUrl').value.trim() || null;
+    const accion_texto = document.getElementById('notifAccionTexto').value.trim() || null;
+    const fecha_expiracion = document.getElementById('notifFechaExpiracion').value || null;
     const destinatario_id = document.getElementById('notifDestinatario').value || null;
 
     if (!titulo || !mensaje) {
@@ -690,7 +707,7 @@ async function crearNotificacion() {
         const res = await fetch('/api/admin/notificaciones', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ titulo, mensaje, tipo, destinatario_id })
+            body: JSON.stringify({ titulo, mensaje, tipo, prioridad, accion_url, accion_texto, fecha_expiracion, destinatario_id })
         });
         if (res.ok) {
             cerrarModalNotif();
@@ -703,6 +720,19 @@ async function crearNotificacion() {
     } catch (err) {
         console.error('Error crear notif:', err);
         alert('Error de conexión');
+    }
+}
+
+// Archivar notificación desde el admin
+async function archivarNotificacionAdmin(id) {
+    try {
+        const res = await fetch(`/api/admin/notificaciones/${id}/archivar`, { method: 'PUT' });
+        if (res.ok) {
+            cargarNotificaciones();
+            mostrarToast('📦 Notificación archivada');
+        }
+    } catch (err) {
+        console.error('Error archivar:', err);
     }
 }
 

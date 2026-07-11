@@ -268,15 +268,45 @@ db.exec(`
         titulo TEXT NOT NULL,
         mensaje TEXT NOT NULL,
         tipo TEXT DEFAULT 'info' CHECK(tipo IN ('info', 'warning', 'success', 'danger')),
+        prioridad TEXT DEFAULT 'normal' CHECK(prioridad IN ('baja', 'normal', 'alta', 'critica')),
         creador_id INTEGER,
         destinatario_id INTEGER,
         leida INTEGER DEFAULT 0,
         leida_at TEXT,
+        archivada INTEGER DEFAULT 0,
+        accion_url TEXT,
+        accion_texto TEXT,
+        fecha_expiracion TEXT,
         created_at TEXT DEFAULT (datetime('now')),
         FOREIGN KEY (creador_id) REFERENCES usuarios(id),
         FOREIGN KEY (destinatario_id) REFERENCES usuarios(id)
     )
 `);
+
+// Migración: agregar columnas nuevas si no existen
+const notifCols = db.prepare('PRAGMA table_info(notificaciones)').all().map(c => c.name);
+const notifNewCols = {
+    'prioridad': "TEXT DEFAULT 'normal'",
+    'archivada': 'INTEGER DEFAULT 0',
+    'accion_url': 'TEXT',
+    'accion_texto': 'TEXT',
+    'fecha_expiracion': 'TEXT'
+};
+let notifMigradas = 0;
+for (const [col, tipo] of Object.entries(notifNewCols)) {
+    if (!notifCols.includes(col)) {
+        try {
+            db.exec(`ALTER TABLE notificaciones ADD COLUMN ${col} ${tipo}`);
+            console.log('[DB] Columna notificaciones.' + col + ' agregada');
+            notifMigradas++;
+        } catch (err) {
+            console.log('[DB] Columna notificaciones.' + col + ' ya existe (ignorado)');
+        }
+    }
+}
+if (notifMigradas > 0) {
+    console.log('[DB] Migración notificaciones completada:', notifMigradas, 'columnas');
+}
 
 // ================================================================
 // ASIGNAR SUPERADMIN: Si existe el usuario daviddlaa, asignarlo como superadmin

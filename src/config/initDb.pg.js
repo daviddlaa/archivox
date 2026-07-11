@@ -222,14 +222,40 @@ const initTables = async () => {
                 titulo          TEXT NOT NULL,
                 mensaje         TEXT NOT NULL,
                 tipo            TEXT DEFAULT 'info' CHECK(tipo IN ('info', 'warning', 'success', 'danger')),
+                prioridad       TEXT DEFAULT 'normal' CHECK(prioridad IN ('baja', 'normal', 'alta', 'critica')),
                 creador_id      INTEGER REFERENCES usuarios(id),
                 destinatario_id INTEGER REFERENCES usuarios(id),
                 leida           BOOLEAN DEFAULT FALSE,
                 leida_at        TIMESTAMP,
+                archivada       BOOLEAN DEFAULT FALSE,
+                accion_url      TEXT,
+                accion_texto    TEXT,
+                fecha_expiracion TIMESTAMP,
                 created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
         console.log('   ✅ notificaciones');
+
+        // Migración: agregar columnas nuevas si no existen
+        for (const [col, tipo] of Object.entries({
+            'prioridad': "TEXT DEFAULT 'normal' CHECK(prioridad IN ('baja','normal','alta','critica'))",
+            'archivada': 'BOOLEAN DEFAULT FALSE',
+            'accion_url': 'TEXT',
+            'accion_texto': 'TEXT',
+            'fecha_expiracion': 'TIMESTAMP'
+        })) {
+            try {
+                await client.query(`ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS ${col} ${tipo}`);
+            } catch (e) {
+                // Fallback para PostgreSQL < 9.6
+                try {
+                    await client.query(`ALTER TABLE notificaciones ADD COLUMN ${col} ${tipo}`);
+                } catch (e2) {
+                    // Columna ya existe, ignorar
+                }
+            }
+        }
+        console.log('   ✅ notificaciones migradas')
 
         // ================================================================
         // SEMILLA: Notificación de actualización de email
