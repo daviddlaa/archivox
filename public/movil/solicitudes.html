@@ -28,6 +28,32 @@
         .client-id { font-size: 12px; font-weight: 600; color: #6b7280; }
         .badge { padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
         
+        /* Badges: Estado + Segmento juntos en la parte superior */
+        .card-badges {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .card-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .badge-estado {
+            background: #dcfce7;
+            color: #065f46;
+        }
+        .badge-segmento {
+            background: #e0e7ff;
+            color: #4338ca;
+            border: 1.5px solid #a5b4fc;
+        }
+        
         .client-name { font-size: 15px; font-weight: 600; color: #1f2937; margin-bottom: 3px; }
         .client-cedula { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
         .tags { display: flex; gap: 5px; flex-wrap: wrap; }

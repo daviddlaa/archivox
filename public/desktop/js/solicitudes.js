@@ -728,11 +728,17 @@ for (var i = 0; i < datos.length; i++) {
         
         html += '<div class="cliente-card ' + seleccionado + '" data-id="' + id + '">';
         
-        // Header con checkbox y estado
+        // Header con checkbox e ID
         html += '  <div class="cliente-header">';
         html += '    <input type="checkbox" class="cliente-checkbox checkbox-fila" value="' + id + '" ' + (seleccionado ? 'checked' : '') + '>';
         html += '    <span class="cliente-id">#' + id + '</span>';
-        html += '    <span class="cliente-estado" style="background:' + colorEstado + ';">' + (item.estado || '') + '</span>';
+        html += '  </div>';
+        
+        // Badges: Estado + Segmento juntos en la misma fila (arriba)
+        var colorSegmento = '#e0e7ff';
+        html += '  <div class="cliente-badges">';
+        html += '    <span class="cliente-badge cliente-estado" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
+        html += '    <span class="cliente-badge cliente-segmento">' + (item.segmento || 'Sin segmento') + '</span>';
         html += '  </div>';
         
         // Nombre del cliente - click para copiar nombre + cédula
@@ -775,9 +781,8 @@ for (var i = 0; i < datos.length; i++) {
             html += '  </div>';
         }
         
-        // Detalles
+        // Detalles (sin segmento, ya está en badges superiores)
         html += '  <div class="cliente-detalle">';
-        html += '    <span class="cliente-tag">🏷️ ' + (item.segmento || '—') + '</span>';
         html += '    <span class="cliente-tag">📦 ' + (item.producto || '—') + '</span>';
         html += '    <span class="cliente-tag">📅 ' + (item.fecha_solicitud || '—') + '</span>';
         html += '  </div>';

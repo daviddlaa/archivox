@@ -413,13 +413,14 @@ function renderizarCards(datos) {
         // Guardar datos para usar después
         datosFilas[d.id_solicitud] = d;
         
-const seleccionado = filasSeleccionadas.indexOf(d.id_solicitud) > -1 ? 'seleccionada' : '';
-        
-return `
+const seleccionado = filasSeleccionadas.indexOf(d.id_solicitud) > -1 ? 'seleccionada' : '';        return `
         <div class="client-card ${seleccionado}" id="card-${d.id_solicitud}" onclick="toggleCard('${d.id_solicitud}')">
             <div class="card-head">
                 <span class="client-id">#${d.id_solicitud}</span>
-                <span class="badge estado-${d.estado}">${d.estado || 'N/A'}</span>
+            </div>
+            <div class="card-badges">
+                <span class="card-badge badge-estado">${d.estado || 'Sin estado'}</span>
+                <span class="card-badge badge-segmento">${d.segmento || 'Sin segmento'}</span>
             </div>
             <div class="client-name" onclick="event.stopPropagation(); copiarNombreCedula('${escaparParaAtributo(d.nombre || '')}', '${escaparParaAtributo(d.cedula || '')}')" style="cursor:pointer;" title="Copiar nombre + cédula">${d.nombre || 'Sin nombre'} 📋</div>
             
@@ -453,9 +454,8 @@ return `
                 <button onclick="event.stopPropagation(); abrirGestionesMovil('${d.id_solicitud}')" style="flex:1; padding: 8px; background: #fef3c7; border: none; border-radius: 6px; font-size: 11px; cursor: pointer;">📋</button>
             </div>
             
-            <!-- Tags compactos -->
+            <!-- Tags compactos (sin segmento, ya está en badges superiores) -->
             <div class="tags" style="display: flex; gap: 5px; flex-wrap: wrap;">
-                <span class="tag">${d.segmento || 'N/A'}</span>
                 <span class="tag">${d.producto || 'N/A'}</span>
                 <span class="tag">${d.fecha_solicitud || 'N/A'}</span>
             </div>
