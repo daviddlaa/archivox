@@ -415,12 +415,10 @@ function renderizarCards(datos) {
         
 const seleccionado = filasSeleccionadas.indexOf(d.id_solicitud) > -1 ? 'seleccionada' : '';        return `
         <div class="client-card ${seleccionado}" id="card-${d.id_solicitud}" onclick="toggleCard('${d.id_solicitud}')">
-            <div class="card-head">
-                <span class="client-id">#${d.id_solicitud}</span>
-            </div>
-            <div class="card-badges">
-                <span class="card-badge badge-estado">${d.estado || 'Sin estado'}</span>
+            <div class="card-head-row">
+                <span class="card-id">#${d.id_solicitud}</span>
                 <span class="card-badge badge-segmento">${d.segmento || 'Sin segmento'}</span>
+                <span class="card-badge badge-estado">${d.estado || 'Sin estado'}</span>
             </div>
             <div class="client-name" onclick="event.stopPropagation(); copiarNombreCedula('${escaparParaAtributo(d.nombre || '')}', '${escaparParaAtributo(d.cedula || '')}')" style="cursor:pointer;" title="Copiar nombre + cédula">${d.nombre || 'Sin nombre'} 📋</div>
             

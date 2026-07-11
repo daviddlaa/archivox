@@ -29,20 +29,33 @@
         .badge { padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
         
         /* Badges: Estado + Segmento juntos en la parte superior */
-        .card-badges {
+        /* ===== CABECERA COMPACTA: ID + SEGMENTO + ESTADO EN UNA SOLA LÍNEA ===== */
+        .card-head-row {
             display: flex;
+            align-items: center;
             gap: 6px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            margin-bottom: 8px;
+            overflow: hidden;
         }
+        
+        .card-id {
+            font-size: 10px;
+            font-weight: 600;
+            color: #9ca3af;
+            flex-shrink: 0;
+        }
+        
         .card-badge {
             display: inline-flex;
             align-items: center;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 11px;
+            padding: 2px 7px;
+            border-radius: 8px;
+            font-size: 9px;
             font-weight: 700;
             white-space: nowrap;
+            flex-shrink: 0;
+            line-height: 1.4;
         }
         .badge-estado {
             background: #dcfce7;
@@ -52,6 +65,14 @@
             background: #e0e7ff;
             color: #4338ca;
             border: 1.5px solid #a5b4fc;
+        }
+        
+        /* Legacy */
+        .card-badges {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
         }
         
         .client-name { font-size: 15px; font-weight: 600; color: #1f2937; margin-bottom: 3px; }

@@ -728,17 +728,12 @@ for (var i = 0; i < datos.length; i++) {
         
         html += '<div class="cliente-card ' + seleccionado + '" data-id="' + id + '">';
         
-        // Header con checkbox e ID
-        html += '  <div class="cliente-header">';
+        // Header compacto: ID (discreto) + Segmento + Estado en UNA sola línea
+        html += '  <div class="card-header-row">';
         html += '    <input type="checkbox" class="cliente-checkbox checkbox-fila" value="' + id + '" ' + (seleccionado ? 'checked' : '') + '>';
-        html += '    <span class="cliente-id">#' + id + '</span>';
-        html += '  </div>';
-        
-        // Badges: Estado + Segmento juntos en la misma fila (arriba)
-        var colorSegmento = '#e0e7ff';
-        html += '  <div class="cliente-badges">';
-        html += '    <span class="cliente-badge cliente-estado" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
-        html += '    <span class="cliente-badge cliente-segmento">' + (item.segmento || 'Sin segmento') + '</span>';
+        html += '    <span class="card-id">#' + id + '</span>';
+        html += '    <span class="card-badge badge-segmento">' + (item.segmento || 'Sin segmento') + '</span>';
+        html += '    <span class="card-badge badge-estado" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
         html += '  </div>';
         
         // Nombre del cliente - click para copiar nombre + cédula

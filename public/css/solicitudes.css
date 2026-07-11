@@ -475,6 +475,46 @@ tr:hover{
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
     
+    /* Cabecera compacta: ID + Segmento + Estado siempre en una línea */
+    .card-header-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: nowrap;
+        margin-bottom: 8px;
+        overflow: hidden;
+    }
+    
+    .card-id {
+        font-size: 10px;
+        font-weight: 600;
+        color: #9ca3af;
+        flex-shrink: 0;
+    }
+    
+    .card-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 8px;
+        font-size: 9px;
+        font-weight: 700;
+        white-space: nowrap;
+        flex-shrink: 0;
+        line-height: 1.4;
+    }
+    
+    .badge-estado {
+        background: #dcfce7;
+        color: #065f46;
+    }
+    
+    .badge-segmento {
+        background: #e0e7ff;
+        color: #4338ca;
+        border: 1.5px solid #a5b4fc;
+    }
+    
     .cliente-header{
         display: flex;
         justify-content: space-between;
@@ -620,7 +660,49 @@ tr:hover{
         font-weight: 700;
     }
     
-    /* Badges: Estado + Segmento juntos en la parte superior */
+    /* ===== CABECERA COMPACTA: ID + SEGMENTO + ESTADO EN UNA SOLA LÍNEA ===== */
+    .card-header-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: nowrap;
+        margin-bottom: 8px;
+        overflow: hidden;
+    }
+    
+    .card-id {
+        font-size: 11px;
+        font-weight: 600;
+        color: #9ca3af;
+        flex-shrink: 0;
+        letter-spacing: 0.3px;
+    }
+    
+    .card-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: 700;
+        white-space: nowrap;
+        flex-shrink: 0;
+        line-height: 1.4;
+        letter-spacing: 0.2px;
+    }
+    
+    .badge-estado {
+        background: #dcfce7;
+        color: #065f46;
+    }
+    
+    .badge-segmento {
+        background: #e0e7ff;
+        color: #4338ca;
+        border: 1.5px solid #a5b4fc;
+    }
+    
+    /* Estilos legacy (mantener compatibilidad) */
     .cliente-badges {
         display: flex;
         gap: 8px;
