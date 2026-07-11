@@ -64,11 +64,20 @@ if (process.env.DATABASE_URL) {
             sqliteSql = sqliteSql.replace(/\$(\d+)/g, '?');
             
             // Convert INTERVAL syntax (PostgreSQL) to SQLite date functions
-            // INTERVAL '90 days' -> 90 days (subtract from date)
+            // CURRENT_DATE - INTERVAL 'X days' -> datetime('now', '-X days')
             sqliteSql = sqliteSql.replace(/CURRENT_DATE\s*-\s*INTERVAL\s+'(\d+)\s*days'/gi, 
                 "datetime('now', '-' || '$1' || ' days')");
             sqliteSql = sqliteSql.replace(/CURRENT_DATE\s*-\s*INTERVAL\s+'(\d+)\s*months'/gi, 
                 "datetime('now', '-' || '$1' || ' months')");
+            // CURRENT_TIMESTAMP + INTERVAL 'X minutes' -> datetime('now', '+X minutes')
+            sqliteSql = sqliteSql.replace(/CURRENT_TIMESTAMP\s*\+\s*INTERVAL\s+'(\d+)\s*minutes'/gi, 
+                "datetime('now', '+' || '$1' || ' minutes')");
+            // CURRENT_TIMESTAMP + INTERVAL 'X hours' -> datetime('now', '+X hours')
+            sqliteSql = sqliteSql.replace(/CURRENT_TIMESTAMP\s*\+\s*INTERVAL\s+'(\d+)\s*hours'/gi, 
+                "datetime('now', '+' || '$1' || ' hours')");
+            // CURRENT_TIMESTAMP + INTERVAL 'X days' -> datetime('now', '+X days')
+            sqliteSql = sqliteSql.replace(/CURRENT_TIMESTAMP\s*\+\s*INTERVAL\s+'(\d+)\s*days'/gi, 
+                "datetime('now', '+' || '$1' || ' days')");
             
             // Convert TO_CHAR(fecha_solicitud, 'YYYY-MM') to strftime
             sqliteSql = sqliteSql.replace(/TO_CHAR\([^,]+,\s*'YYYY-MM'\)/gi, 

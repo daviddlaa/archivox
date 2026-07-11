@@ -4,16 +4,7 @@ const router = express.Router();
 const { imagenes, excel } = require('../config/multer.config');
 const excelController = require('../controllers/excel.controller');
 const gmController = require('../controllers/gestionesMaestro.controller');
-
-// Middleware para verificar autenticación en API
-function requiresAuth(req, res, next) {
-    if (req.session && req.session.usuario) {
-        return next();
-    }
-    return res.status(401).json({
-        error: 'No autenticado'
-    });
-}
+const { requiresAuth } = require('../middleware/auth.middleware');
 
 // Rutas protegidas
 router.post(

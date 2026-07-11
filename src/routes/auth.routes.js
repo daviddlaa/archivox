@@ -1,18 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
-// IMPORTANTE: Usar src/controllers/auth.controller.js que funciona con SQLite y PostgreSQL
 const authController = require('../controllers/auth.controller');
-
-// Middleware para verificar autenticación
-function requiresAuth(req, res, next) {
-    if (req.session && req.session.usuario) {
-        return next();
-    }
-    return res.status(401).json({
-        error: 'No autenticado'
-    });
-}
+const { requiresAuth } = require('../middleware/auth.middleware');
 
 // SEGURIDAD: Rate limiting específico para login
 const loginLimiter = rateLimit({
@@ -31,7 +21,7 @@ router.post('/logout', authController.logout);
 // Ruta protegida - verificar sesión
 router.get('/sesion', requiresAuth, authController.verificarSesion);
 
-// Ruta para listar usuarios (solo admin)
+// Ruta para listar usuarios (solo admin/superadmin - la validación se hace en el controller)
 router.get('/usuarios', requiresAuth, authController.listarUsuarios);
 
 module.exports = router;

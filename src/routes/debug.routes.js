@@ -1,16 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db.js');
+const { requiresAuth } = require('../middleware/auth.middleware');
 
-// Middleware para verificar autenticación
-function requiresAuth(req, res, next) {
-    if (req.session && req.session.usuario) {
-        return next();
-    }
-    return res.status(401).json({ error: 'No autenticado' });
-}
-
-// Verificar состояние de la base de datos (público para diagnóstico)
+// Verificar estado de la base de datos (público para diagnóstico)
 router.get('/health', async (req, res) => {
     try {
         // Probar conexión

@@ -1,16 +1,25 @@
 const db = require('./database');
 
-// better-sqlite3 es sincrono, no necesita serialize()
-// Las tablas se crean directamente
+// ================================================================
+// TABLA: usuarios (versión mejorada con Panel de Administración)
+// ================================================================
 db.exec(`
     CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         nombre TEXT,
+        email TEXT UNIQUE,
+        email_verified INTEGER DEFAULT 0,
         rol TEXT DEFAULT 'user',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        ultimo_login DATETIME
+        is_active INTEGER DEFAULT 1,
+        is_superadmin INTEGER DEFAULT 0,
+        failed_login_attempts INTEGER DEFAULT 0,
+        locked_until TEXT,
+        password_changed_at TEXT DEFAULT (datetime('now')),
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        last_login TEXT
     )
 `);
 
@@ -173,6 +182,43 @@ db.exec(`
 db.exec(`
     CREATE INDEX IF NOT EXISTS idx_gestiones_relaciones_relacion_id 
     ON gestiones_relaciones(relacion_id)
+`);
+
+// ================================================================
+// TABLA: audit_log (auditoría de acciones del sistema)
+// ================================================================
+db.exec(`
+    CREATE TABLE IF NOT EXISTS audit_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        usuario_id INTEGER NOT NULL,
+        accion TEXT NOT NULL,
+        target_type TEXT,
+        target_id INTEGER,
+        detalle TEXT,
+        ip_address TEXT,
+        user_agent TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    )
+`);
+
+// ================================================================
+// ÍNDICES
+// ================================================================
+db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_usuarios_rol ON usuarios(rol)
+`);
+db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_usuarios_is_active ON usuarios(is_active)
+`);
+db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_audit_log_usuario ON audit_log(usuario_id)
+`);
+db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_audit_log_accion ON audit_log(accion)
+`);
+db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at)
 `);
 
 module.exports = db;

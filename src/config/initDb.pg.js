@@ -4,16 +4,26 @@ const initTables = async () => {
     const client = await pool.connect();
     
     try {
-        // Tabla de usuarios
+        // ================================================================
+        // TABLA: usuarios (versión mejorada con Panel de Administración)
+        // ================================================================
         await client.query(`
             CREATE TABLE IF NOT EXISTS usuarios (
-                id SERIAL PRIMARY KEY,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                nombre TEXT,
-                rol TEXT DEFAULT 'user',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                ultimo_login TIMESTAMP
+                id                     SERIAL PRIMARY KEY,
+                username               TEXT UNIQUE NOT NULL,
+                password               TEXT NOT NULL,
+                nombre                 TEXT,
+                email                  TEXT UNIQUE,
+                email_verified         BOOLEAN DEFAULT FALSE,
+                rol                    TEXT DEFAULT 'user',
+                is_active              BOOLEAN DEFAULT TRUE,
+                is_superadmin          BOOLEAN DEFAULT FALSE,
+                failed_login_attempts  INTEGER DEFAULT 0,
+                locked_until           TIMESTAMP,
+                password_changed_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_login             TIMESTAMP
             )
         `);
         
@@ -186,7 +196,47 @@ const initTables = async () => {
             ON gestiones_relaciones(relacion_id)
         `);
 
-console.log('Tablas creadas en PostgreSQL');
+        // ================================================================
+        // TABLA: audit_log (auditoría de acciones del sistema)
+        // ================================================================
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS audit_log (
+                id              SERIAL PRIMARY KEY,
+                usuario_id      INTEGER NOT NULL REFERENCES usuarios(id),
+                accion          TEXT NOT NULL,
+                target_type     TEXT,
+                target_id       INTEGER,
+                detalle         JSONB,
+                ip_address      TEXT,
+                user_agent      TEXT,
+                created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // ================================================================
+        // ÍNDICES
+        // ================================================================
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_usuarios_rol ON usuarios(rol)
+        `);
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_usuarios_is_active ON usuarios(is_active)
+        `);
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_usuarios_locked ON usuarios(locked_until)
+            WHERE locked_until IS NOT NULL
+        `);
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_audit_log_usuario ON audit_log(usuario_id)
+        `);
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_audit_log_accion ON audit_log(accion)
+        `);
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at)
+        `);
+
+        console.log('Tablas creadas en PostgreSQL');
     } catch (err) {
         console.error('Error creando tablas:', err.message);
     } finally {

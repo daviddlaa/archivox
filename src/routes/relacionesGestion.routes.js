@@ -1,13 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/relacionesGestion.controller');
-
-function requiresAuth(req, res, next) {
-    if (req.session && req.session.usuario) {
-        return next();
-    }
-    return res.status(401).json({ error: 'No autenticado' });
-}
+const { requiresAuth } = require('../middleware/auth.middleware');
 
 // POST /api/relaciones/gestiones - Crear gestión
 router.post('/', requiresAuth, controller.crearGestion);

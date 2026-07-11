@@ -2,7 +2,6 @@
 cd /d c:\Users\david\Desktop\Archivox
 
 :: Verificar que .env no se va a subir (ya está en .gitignore)
-:: El archivo .env contiene credenciales de la BD - NO subir a GitHub
 echo ========================================
 echo  Subiendo cambios a GitHub...
 echo  (el archivo .env esta protegido)
@@ -10,10 +9,10 @@ echo ========================================
 echo.
 
 :: Pedir mensaje de commit
-set /p commit_msg="Mensaje del commit: "
+set /p commit_msg="Mensaje del commit: nuevo sistema de roles  "
 
 :: Si no escribió nada, usar mensaje por defecto
-if "%commit_msg%"=="" set commit_msg="Actualizacion general"
+if "%commit_msg%"=="" set commit_msg=Actualizacion general
 
 git add -A
 git commit -m "%commit_msg%"

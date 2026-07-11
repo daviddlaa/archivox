@@ -5,6 +5,7 @@ const path = require('path');
 const session = require('express-session');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { requireAuthPage } = require('./src/middleware/auth.middleware');
 
 // Automático: PostgreSQL en producción (Render), SQLite localmente
 if (process.env.DATABASE_URL) {
@@ -59,26 +60,13 @@ app.use(session({
     }
 }));
 
-// Middleware para verificar autenticación en páginas
-function requiresAuth(req, res, next) {
-    if (req.session && req.session.usuario) {
-        return next();
-    }
-    // Redireccionar a login según el dispositivo
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(req.headers['user-agent']);
-    if (isMobile || req.query.movil === '1') {
-        return res.redirect('/m/login');
-    }
-    return res.redirect('/login');
-}
-
 // Detectar dispositivo móvil
 function isMobileDevice(userAgent) {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
 }
 
 // Rutas para servir HTML según dispositivo (protegidas)
-app.get('/', requiresAuth, (req, res) => {
+app.get('/', requireAuthPage, (req, res) => {
     const isMobile = isMobileDevice(req.headers['user-agent']);
     // Debug: usar ?movil=1 para forzar versión móvil
     if (req.query.movil === '1' || isMobile) {
@@ -89,21 +77,21 @@ app.get('/', requiresAuth, (req, res) => {
 });
 
 // Rutas para móvil (protegidas)
-app.get('/m', requiresAuth, (req, res) => {
+app.get('/m', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/index.html'));
 });
-app.get('/m/importar', requiresAuth, (req, res) => {
+app.get('/m/importar', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/importar.html'));
 });
-app.get('/m/solicitudes', requiresAuth, (req, res) => {
+app.get('/m/solicitudes', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/solicitudes.html'));
 });
-app.get('/m/ventas', requiresAuth, (req, res) => {
+app.get('/m/ventas', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/ventas.html'));
 });
 
 // Rutas protegidas - requieren autenticación
-app.get('/importar', requiresAuth, (req, res) => {
+app.get('/importar', requireAuthPage, (req, res) => {
     const isMobile = isMobileDevice(req.headers['user-agent']);
     if (isMobile) {
         res.sendFile(path.join(__dirname, 'public/movil/importar.html'));
@@ -112,7 +100,7 @@ app.get('/importar', requiresAuth, (req, res) => {
     }
 });
 
-app.get('/solicitudes', requiresAuth, (req, res) => {
+app.get('/solicitudes', requireAuthPage, (req, res) => {
     const isMobile = isMobileDevice(req.headers['user-agent']);
     if (isMobile) {
         res.sendFile(path.join(__dirname, 'public/movil/solicitudes.html'));
@@ -121,12 +109,12 @@ app.get('/solicitudes', requiresAuth, (req, res) => {
     }
 });
 
-app.get('/ventas', requiresAuth, (req, res) => {
+app.get('/ventas', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/desktop/ventas.html'));
 });
 
 // Rutas de Gestiones
-app.get('/gestiones', requiresAuth, (req, res) => {
+app.get('/gestiones', requireAuthPage, (req, res) => {
     const isMobile = isMobileDevice(req.headers['user-agent']);
     if (isMobile || req.query.movil === '1') {
         res.sendFile(path.join(__dirname, 'public/movil/gestiones.html'));
@@ -135,40 +123,40 @@ app.get('/gestiones', requiresAuth, (req, res) => {
     }
 });
 
-app.get('/m/gestiones', requiresAuth, (req, res) => {
+app.get('/m/gestiones', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/gestiones.html'));
 });
 
 // Ruta móvil para Gestión por Lotes
-app.get('/m/gestion-lote', requiresAuth, (req, res) => {
+app.get('/m/gestion-lote', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/gestion-lote.html'));
 });
 
 // Rutas de Relaciones
-app.get('/relaciones', requiresAuth, (req, res) => {
+app.get('/relaciones', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/desktop/relaciones.html'));
 });
 
-app.get('/m/relaciones', requiresAuth, (req, res) => {
+app.get('/m/relaciones', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/relaciones.html'));
 });
 
 // Rutas de Gestión por Lotes
-app.get('/gestion-lote', requiresAuth, (req, res) => {
+app.get('/gestion-lote', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/desktop/gestion-lote.html'));
 });
 
 // Rutas de Control de Ventas del Equipo
-app.get('/equipo-ventas', requiresAuth, (req, res) => {
+app.get('/equipo-ventas', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/desktop/ventas.html'));
 });
 
-app.get('/m/equipo-ventas', requiresAuth, (req, res) => {
+app.get('/m/equipo-ventas', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/ventas.html'));
 });
 
 // Rutas de Historial de Actualizaciones
-app.get('/historial', requiresAuth, (req, res) => {
+app.get('/historial', requireAuthPage, (req, res) => {
     const isMobile = isMobileDevice(req.headers['user-agent']);
     if (isMobile) {
         res.sendFile(path.join(__dirname, 'public/movil/historial.html'));
@@ -177,7 +165,7 @@ app.get('/historial', requiresAuth, (req, res) => {
     }
 });
 
-app.get('/m/historial', requiresAuth, (req, res) => {
+app.get('/m/historial', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/historial.html'));
 });
 
@@ -207,6 +195,7 @@ app.use('/api/debug', require('./src/routes/debug.routes'));
 app.use('/api/gestiones-maestro', require('./src/routes/gestionesMaestro.routes'));
 app.use('/api/relaciones', require('./src/routes/relaciones.routes'));
 app.use('/api/relaciones/gestiones', require('./src/routes/relacionesGestion.routes'));
+app.use('/api/admin', require('./src/routes/admin.routes'));
 
 // Archivos estáticos
 app.use(express.static('public'));
