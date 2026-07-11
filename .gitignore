@@ -6,6 +6,8 @@ node_modules/
 
 # Base de datos
 *.db
+*.db-shm
+*.db-wal
 
 # Archivos de uploads temporales
 uploads/*
@@ -19,3 +21,5 @@ documentacion/
 # Archivos del sistema
 .DS_Store
 Thumbs.db
+# Nombre reservado de Windows que causa error en Git
+nul

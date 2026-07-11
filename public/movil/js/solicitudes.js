@@ -390,7 +390,7 @@ if (filtros.busqueda) {
     renderizarCards(filtrados);
 }
 
-// Renderizar cards de clientes
+// Renderizar cards de clientes (estructura unificada 5 filas)
 function renderizarCards(datos) {
     const container = document.getElementById('cards-container');
     idsVisibles = Array.isArray(datos) ? datos.map(function(d) {
@@ -398,73 +398,89 @@ function renderizarCards(datos) {
     }) : [];
 
     if (!datos.length) {
-        container.innerHTML = '<div class="no-data">No hay solicitudes</div>';
+        container.innerHTML = '<div class="estado-vacio"><div class="vacio-icon">📋</div>No hay solicitudes</div>';
         actualizarContador();
         return;
     }
-    
-    // Limpiar datosFilas al renderizar
+
     datosFilas = {};
-    
-    // Guardar sentinel existente antes de reemplazar
-    var sentinelExistente = document.getElementById('infinite-scroll-sentinel');
-    
-    container.innerHTML = datos.map(d => {
-        // Guardar datos para usar después
-        datosFilas[d.id_solicitud] = d;
-        
-const seleccionado = filasSeleccionadas.indexOf(d.id_solicitud) > -1 ? 'seleccionada' : '';        return `
-        <div class="client-card ${seleccionado}" id="card-${d.id_solicitud}" onclick="toggleCard('${d.id_solicitud}')">
-            <div class="card-head-row">
-                <span class="card-id">#${d.id_solicitud}</span>
-                <span class="card-badge badge-segmento">${d.segmento || 'Sin segmento'}</span>
-                <span class="card-badge badge-estado">${d.estado || 'Sin estado'}</span>
-            </div>
-            <div class="client-name" onclick="event.stopPropagation(); copiarNombreCedula('${escaparParaAtributo(d.nombre || '')}', '${escaparParaAtributo(d.cedula || '')}')" style="cursor:pointer;" title="Copiar nombre + cédula">${d.nombre || 'Sin nombre'} 📋</div>
-            
-            <!-- OPCIÓN A: Compacto - Teléfono + Cédula en misma línea -->
-            <div class="client-info-compact" style="display: flex; gap: 10px; margin: 4px 0; font-size: 12px; color: #6b7280;">
-                <span>📱 ${d.celular || 'N/A'}</span>
-                <span>|</span>
-                <span>Céd: ${d.cedula || 'N/A'}</span>
-            </div>
-            
-            <!-- Última gestión -->
-            <div class="ultima-gestion-movil" style="margin: 6px 0 8px 0; font-size: 11px;">
-                ${d.ultima_gestion_tipo 
-                    ? `<span style="background:#dcfce7;padding:2px 8px;border-radius:10px;font-weight:600;color:#166534;">📋 ${d.ultima_gestion_tipo}</span>`
-                    : `<span style="color:#9ca3af;">Sin gestiones</span>`
-                }
-                ${d.ultima_gestion_fecha 
-                    ? `<span style="color:#6b7280;margin-left:6px;">${new Date(d.ultima_gestion_fecha).toLocaleString('es-ES')}</span>`
-                    : ''
-                }
-                ${d.ultima_gestion_tipo && d.ultima_gestion_obs 
-                    ? `<div style="color:#374151;margin-top:2px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.ultima_gestion_obs.length > 50 ? d.ultima_gestion_obs.substring(0, 50) + '...' : d.ultima_gestion_obs}</div>`
-                    : ''
-                }
-            </div>
-            
-            <!-- OPCIÓN A: Compacto - 3 botones en fila -->
-            <div class="botones-contacto" style="display: flex; gap: 6px; margin: 8px 0;">
-                <button onclick="event.stopPropagation(); llamarCliente('${d.celular}')" style="flex:1; padding: 8px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📞</button>
-                <button onclick="event.stopPropagation(); abrirWhatsAppChatMovil('${d.celular}')" style="flex:1; padding: 8px; background: #25D366; color: white; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">💬</button>
-                <button onclick="event.stopPropagation(); abrirGestionesMovil('${d.id_solicitud}')" style="flex:1; padding: 8px; background: #fef3c7; border: none; border-radius: 6px; font-size: 11px; cursor: pointer;">📋</button>
-            </div>
-            
-            <!-- Tags compactos (sin segmento, ya está en badges superiores) -->
-            <div class="tags" style="display: flex; gap: 5px; flex-wrap: wrap;">
-                <span class="tag">${d.producto || 'N/A'}</span>
-                <span class="tag">${d.fecha_solicitud || 'N/A'}</span>
-            </div>
-            
-            <!-- Botón Completar Info -->
-            <button onclick="event.stopPropagation(); abrirCompletarInfoMovil('${d.id_solicitud}')" style="width:100%;padding:8px;background:#e0e7ff;color:#3730a3;border:none;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600;margin-top:6px;">✏️ Completar Info</button>
-        </div>
-`;
+
+    var coloresEstado = {
+        'ACTIVADA': '#dcfce7',
+        'RECHAZADA': '#fee2e2',
+        'DEVUELTA': '#fef3c7',
+        'APROBADA PARA LIBERACIÓN': '#d1fae5'
+    };
+    var coloresGestion = {
+        'Seguimiento': '#dbeafe',
+        'Cobranza': '#fee2e2',
+        'Llamada': '#d1fae5',
+        'WhatsApp': '#dcfce7',
+        'Reclamo': '#fef3c7',
+        'Cita': '#e0e7ff',
+        'Completada': '#bbf7d0',
+        'Otro': '#f3f4f6'
+    };
+
+    container.innerHTML = datos.map(function(item) {
+        datosFilas[item.id_solicitud] = item;
+        var id = item.id_solicitud || '';
+        var seleccionado = filasSeleccionadas.indexOf(id) > -1 ? 'seleccionada' : '';
+        var estadoClase = 'estado-' + (item.estado || '').replace(/\s+/g, '').toUpperCase();
+        var colorEstado = coloresEstado[item.estado] || '#f3f4f6';
+        var colorGestion = coloresGestion[item.ultima_gestion_tipo] || '#f3f4f6';
+        var fechaGestion = item.ultima_gestion_fecha ? new Date(item.ultima_gestion_fecha).toLocaleString('es-ES') : '';
+
+        var html = '';
+        html += '<div class="solicitud-card ' + seleccionado + '" id="card-' + id + '" onclick="toggleCard(\'' + id + '\')">';
+
+        // FILA 1: ID + Segmento + Estado
+        html += '  <div class="card-fila-1">';
+        html += '    <span class="card-id">#' + id + '</span>';
+        html += '    <span class="card-badge badge-segmento">' + (item.segmento || 'Sin segmento') + '</span>';
+        html += '    <span class="card-badge badge-estado ' + estadoClase + '" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
+        html += '  </div>';
+
+        // FILA 2: Nombre
+        html += '  <div class="card-fila-2" onclick="event.stopPropagation(); copiarNombreCedula(\'' + escaparParaAtributo(item.nombre || '') + '\', \'' + escaparParaAtributo(item.cedula || '') + '\')" title="Copiar nombre + cédula">';
+        html +=      (item.nombre || 'Sin nombre') + ' 📋';
+        html += '  </div>';
+
+        // FILA 3: Botones (4 en móvil: Gestiones, WhatsApp, Completar, Llamar)
+        html += '  <div class="card-fila-3">';
+        html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesMovil(\'' + id + '\')">📋 Gestiones</button>';
+        html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); abrirWhatsAppChatMovil(\'' + escaparParaAtributo(item.celular || '') + '\')">💬 WhatsApp</button>';
+        html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletarInfoMovil(\'' + id + '\')">✏️ Completar</button>';
+        html += '    <button class="card-btn btn-llamar" onclick="event.stopPropagation(); llamarCliente(\'' + escaparParaAtributo(item.celular || '') + '\')">📞 Llamar</button>';
+        html += '  </div>';
+
+        // FILA 4: Seguimiento
+        if (item.ultima_gestion_tipo) {
+            html += '  <div class="card-fila-4">';
+            html += '    <div class="seguimiento-header">';
+            html += '      <span class="seguimiento-badge" style="background:' + colorGestion + ';">📋 ' + item.ultima_gestion_tipo + '</span>';
+            if (fechaGestion) {
+                html += '      <span class="seguimiento-fecha">' + fechaGestion + '</span>';
+            }
+            html += '    </div>';
+            if (item.ultima_gestion_obs) {
+                html += '    <div class="seguimiento-obs" title="' + escaparParaAtributo(item.ultima_gestion_obs) + '">' + item.ultima_gestion_obs + '</div>';
+            }
+            html += '  </div>';
+        } else {
+            html += '  <div class="card-fila-4 vacia">Sin gestiones</div>';
+        }
+
+        // FILA 5: Producto + Fecha
+        html += '  <div class="card-fila-5">';
+        html += '    <span class="card-tag">📦 <span>' + (item.producto || '—') + '</span></span>';
+        html += '    <span class="card-tag">📅 <span>' + (item.fecha_solicitud || '—') + '</span></span>';
+        html += '  </div>';
+
+        html += '</div>';
+        return html;
     }).join('');
-    
-    // Recrear el sentinel para infinite scroll
+
     recrearSentinel();
     actualizarContador();
 }

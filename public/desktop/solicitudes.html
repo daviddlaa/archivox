@@ -3,62 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solicitudes - Archivox</title>
-<link rel="stylesheet" href="/desktop/css/base.css">
+    <title>Solicitudes - Archivox</title>
+    <link rel="stylesheet" href="/desktop/css/base.css">
     <link rel="stylesheet" href="/desktop/css/solicitudes.css">
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', sans-serif;
-            background: #f0f2f5;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 30px;
-        }
-        .header-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            background: white;
-            padding: 20px 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        }
-        .header-actions h1 {
-            margin: 0;
-            color: #1f2937;
-        }
-        .subtitulo {
-            color: #6b7280;
-            margin-top: 5px;
-            margin-bottom: 0;
-        }
-        .btn-principal {
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-        .btn-principal:hover {
-            background: #1d4ed8;
-        }
-        .btn-secundario {
-            background: #f3f4f6;
-            color: #374151;
-            text-decoration: none;
-            padding: 10px 16px;
-            border-radius: 8px;
-            margin-right: 10px;
-        }
-        .btn-secundario:hover {
-            background: #e5e7eb;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/solicitudes.css">
+    <link rel="stylesheet" href="/css/notificaciones.css">
 </head>
 <body>
     <!-- Drawer Toggle -->
@@ -84,91 +33,86 @@
     <div class="layout">
         <main class="contenido">
             <div class="container">
+                <!-- Header -->
                 <div class="header-actions">
-                    <div>
-                        <h1>📋 Solicitudes</h1>
-                        <p class="subtitulo">Consulta y filtra los registros importados ok</p>
-                    </div>
-                    <div>
-                        <a href="/" class="btn-secundario">🏠 Dashboard</a>
-                        <a href="/importar" class="btn-principal">📤 Importar Excel</a>
+                    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+                        <div>
+                            <h1>📋 Solicitudes</h1>
+                            <p class="subtitulo">Consulta y filtra los registros importados</p>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <button class="notif-bell-usuario" onclick="abrirPanelNotificaciones()" title="Notificaciones">
+                                🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
+                            </button>
+                            <a href="/" class="btn-secundario">🏠 Dashboard</a>
+                            <a href="/importar" class="btn-principal">📤 Importar Excel</a>
+                        </div>
                     </div>
                 </div>
                 
-<!-- Fila Superior: TODO en UNA fila horizontal -->
-                <div class="stats-grid">
-                    <!-- KPIs compactas -->
-                    <div class="stat-card stat-total">
-                        <span class="stat-value" id="totalRegistros">0</span>
-                        <span class="stat-label">Total</span>
+<!-- Stats compactos + Filtros -->
+                <div class="stats-grid-unificado">
+                    <div class="stat-card-compacto stat-total-unif">
+                        <span class="stat-valor" id="totalRegistros">0</span>
+                        <span class="stat-etiqueta">Total</span>
                     </div>
-                    <div class="stat-card stat-showing">
-                        <span class="stat-value" id="mostrando">0</span>
-                        <span class="stat-label">Mostrando</span>
+                    <div class="stat-card-compacto stat-showing-unif">
+                        <span class="stat-valor" id="mostrando">0</span>
+                        <span class="stat-etiqueta">Mostrando</span>
                     </div>
-                    <div class="stat-card stat-selected">
-                        <span class="stat-value" id="seleccionadas-count">0</span>
-                        <span class="stat-label">Selecc</span>
+                    <div class="stat-card-compacto stat-selected-unif">
+                        <span class="stat-valor" id="seleccionadas-count">0</span>
+                        <span class="stat-etiqueta">Selecc</span>
                     </div>
-                    <!-- Filtro Estado compacto -->
-                    <div class="filter-column">
-                        <label class="filter-label">📌</label>
-                        <div class="filter-buttons" id="filtro-estado">
-                            <button class="filter-btn active" data-value="">Todos</button>
+                </div>
+
+                <!-- Filtros unificados -->
+                <div class="filtros-unificado">
+                    <div class="filtros-row">
+                        <div class="filtro-grupo">
+                            <span class="filtro-label">📌 Estado</span>
+                            <div class="filtro-botones" id="filtro-estado">
+                                <button class="filtro-btn active" data-value="">Todos</button>
+                            </div>
+                        </div>
+                        <div class="filtro-grupo">
+                            <span class="filtro-label">🏷️ Segmento</span>
+                            <div class="filtro-botones" id="filtro-segmento">
+                                <button class="filtro-btn active" data-value="">Todos</button>
+                            </div>
                         </div>
                     </div>
-                    <!-- Filtro Segmento compacto -->
-                    <div class="filter-column">
-                        <label class="filter-label">🏷️</label>
-                        <div class="filter-buttons" id="filtro-segmento">
-                            <button class="filter-btn active" data-value="">Todos</button>
-                        </div>
+                </div>
+
+                <!-- Buscador -->
+                <div class="buscador-unificado">
+                    <input type="text" id="cedula" placeholder="🔍 Buscar por id, cédula, nombre o teléfono...">
+                </div>
+
+                <!-- Barra de acciones -->
+                <div class="acciones-unificado">
+                    <div class="resumen-texto">
+                        📊 Estado: <strong id="resumen-estado">Todos</strong> | 🏷️ Segmento: <strong id="resumen-segmento">Todos</strong>
                     </div>
-                    <div class="actions-mini">
-                        <button class="btn-action btn-gestion" id="btn-gestion" title="Iniciar Gestión por Lotes" style="display:none;" onclick="abrirModalNuevaGestion()">🚀 Gestión</button>
-                        <button class="btn-action btn-agregar-campana" id="btn-agregar-campana" title="Agregar a campaña existente" style="display:none;" onclick="abrirModalAgregarCampana()">➕ Campaña</button>
+                    <div class="acciones-botones">
+                        <button class="accion-btn" onclick="exportarSeleccionadas()">📥 Exportar</button>
+                        <button class="accion-btn" onclick="marcarSeleccionadas()">✓ Marcar</button>
+                        <button class="accion-btn" onclick="limpiarFiltros()">🧹 Limpiar</button>
+                        <button class="accion-btn peligro" onclick="borrarTodas()">🗑️ Borrar</button>
                     </div>
                 </div>
 
-<!-- Fila de Búsqueda -->
-                <div class="search-row">
-                    <input type="text" id="cedula" placeholder="🔍 Buscar por id de solicitud, cédula, nombres, apellidos o teléfono...">
+                <!-- Toolbar flotante de selección -->
+                <div id="toolbar-flotante" class="toolbar-flotante" style="display:none;">
+                    <span class="toolbar-info"><strong id="seleccionadas-count-toolbar">0</strong> seleccionadas</span>
+                    <button class="toolbar-btn campana" onclick="abrirModalNuevaGestion()">🚀 Crear campaña</button>
+                    <button class="toolbar-btn agregar" onclick="abrirModalAgregarCampana()">➕ Agregar a campaña</button>
                 </div>
 
-                <!-- Fila Resumen + Acciones Rápidas (compacta) -->
-                <div class="resumen-acciones-row">
-                    <div class="resumen-compacto">
-                        <span class="resumen-label">📊 Estado:</span>
-                        <span class="resumen-value" id="resumen-estado">Todos</span>
-                        <span class="resumen-divider">|</span>
-                        <span class="resumen-label">🏷️ Segmento:</span>
-                        <span class="resumen-value" id="resumen-segmento">Todos</span>
-                    </div>
-                    <div class="acciones-fila">
-                        <button class="action-row-btn" onclick="exportarSeleccionadas()">📥 Exportar</button>
-                        <button class="action-row-btn" onclick="marcarSeleccionadas()">✓ Marcar</button>
-                        <button class="action-row-btn" onclick="limpiarFiltros()">🧹 Limpiar</button>
-                        <button class="action-row-btn btn-danger" onclick="borrarTodas()">🗑️ Borrar</button>
-                    </div>
-                </div>
-
-                <!-- Contenido Principal: Solo Cards -->
+                <!-- Contenedor de Cards -->
                 <div class="table-panel">
-                    <!-- Toolbar Inline: Solo botón Crear campaña -->
-                    <div id="actions-inline" class="actions-inline" style="display: none;">
-                        <button class="inline-action-btn btn-gestion" onclick="abrirModalNuevaGestion()" title="Crear campaña">
-                            <span class="inline-icon" aria-hidden="true">🚀</span>
-                            <span class="inline-text">Crear campaña</span>
-                        </button>
-                        <button class="inline-action-btn btn-agregar-campana" id="btn-agregar-campana" onclick="abrirModalAgregarCampana()" title="Agregar a campaña existente">
-                            <span class="inline-icon" aria-hidden="true">➕</span>
-                            <span class="inline-text">Agregar a campaña</span>
-                        </button>
-                        <span class="inline-count"><span id="seleccionadas-inline">0</span> seleccionadas</span>
-                    </div>
-
-                    <!-- Contenedor de Cards para escritorio -->
-                    <div id="cards-container" class="cards-container"></div>
+                    <!-- Contenedor de Cards unificado -->
+                    <div id="cards-container" class="cards-grid-unificado"></div>
                 </div>
             </div>
         </main>
@@ -177,7 +121,13 @@
 <!-- Librería SheetJS para exportar Excel -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
-<script src="/desktop/js/solicitudes.js"></script>
+<script src="/js/notificaciones-dashboard.js"></script>
 <script src="/desktop/js/drawer.js"></script>
+<script src="/desktop/js/solicitudes.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof initNotificaciones === 'function') initNotificaciones();
+    });
+</script>
 </body>
 </html>

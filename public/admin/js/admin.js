@@ -147,30 +147,51 @@ async function cargarUsuarios() {
         // ASIGNAR filas a la tabla (¡ESTA LÍNEA FALTABA!)
         tbody.innerHTML = rows;
 
-        // Cards para móvil
+        // Cards para móvil - versión mejorada responsive
         cardsDiv.innerHTML = data.data.map(user => {
             const estado = user.is_active ?
                 (user.locked_until && new Date(user.locked_until) > new Date() ? 'bloqueado' : 'activo')
                 : 'inactivo';
             const rolClass = user.is_superadmin ? 'superadmin' : user.rol;
+            const estadoColor = estado === 'activo' ? '#10b981' : estado === 'bloqueado' ? '#f59e0b' : '#ef4444';
 
             return `<div class="user-card">
-                <div class="user-card-header">
-                    <span class="user-card-name">${escapeHtml(user.username)}</span>
+                <div class="admin-user-card-header">
+                    <div class="admin-user-card-avatar">${escapeHtml((user.nombre || user.username).charAt(0).toUpperCase())}</div>
+                    <div class="admin-user-card-info">
+                        <div class="admin-user-card-name">${escapeHtml(user.nombre || user.username)}</div>
+                        <div class="admin-user-card-username">@${escapeHtml(user.username)}</div>
+                    </div>
                     <span class="role-badge ${rolClass}">${rolLabel(user)}</span>
                 </div>
-                <div class="user-card-body">
-                    <div class="user-card-row"><span>Nombre</span><strong>${escapeHtml(user.nombre || '-')}</strong></div>
-                    <div class="user-card-row"><span>Email</span><strong>${escapeHtml(user.email || '-')}</strong></div>
-                    <div class="user-card-row"><span>Estado</span><strong><span class="estado-dot ${estado}"></span> ${estado}</strong></div>
-                    <div class="user-card-row"><span>Registro</span><strong>${formatearFecha(user.created_at)}</strong></div>
-                    <div class="user-card-row"><span>Último login</span><strong>${formatearFecha(user.last_login) || 'Nunca'}</strong></div>
-                </div>
-                <div class="user-card-actions">
-                    <button class="action-btn edit" onclick="editarUsuario(${user.id})" title="Editar">✏️ Editar</button>
-                    <button class="action-btn stats" data-userid="${user.id}" data-username="${escapeHtml(user.username)}" onclick="verEstadisticasUsuario(this.dataset.userid, this.dataset.username)" title="Estadísticas">📊 Stats</button>
+                <div class="admin-user-card-body">
+                    <div class="admin-user-card-row">
+                        <span class="admin-user-card-label">📧 Email</span>
+                        <span class="admin-user-card-value">${escapeHtml(user.email || '-')}</span>
+                    </div>
+                    <div class="admin-user-card-row">
+                        <span class="admin-user-card-label">📌 Estado</span>
+                        <span class="admin-user-card-value"><span class="estado-dot ${estado}" style="background:${estadoColor}"></span> ${estado}</span>
+                    </div>
+                    <div class="admin-user-card-row">
+                        <span class="admin-user-card-label">📅 Registro</span>
+                        <span class="admin-user-card-value">${formatearFecha(user.created_at)}</span>
+                    </div>
+                    <div class="admin-user-card-row">
+                        <span class="admin-user-card-label">🔑 Último login</span>
+                        <span class="admin-user-card-value">${formatearFecha(user.last_login) || 'Nunca'}</span>
+                    </div>
                     ${user.locked_until && new Date(user.locked_until) > new Date() ?
-                        `<button class="action-btn lock" onclick="desbloquearUsuario(${user.id})">🔓 Desbloquear</button>` : ''}
+                        `<div class="admin-user-card-row">
+                            <span class="admin-user-card-label">🔒 Bloqueado hasta</span>
+                            <span class="admin-user-card-value" style="color:#f59e0b">${formatearFecha(user.locked_until)}</span>
+                        </div>` : ''}
+                </div>
+                <div class="admin-user-card-actions">
+                    <button class="admin-user-card-btn admin-user-card-btn-primary" onclick="editarUsuario(${user.id})">✏️ Editar</button>
+                    <button class="admin-user-card-btn admin-user-card-btn-secondary" onclick="verEstadisticasUsuario(${user.id}, '${escapeHtml(user.username)}')">📊 Stats</button>
+                    ${user.locked_until && new Date(user.locked_until) > new Date() ?
+                        `<button class="admin-user-card-btn admin-user-card-btn-warning" onclick="desbloquearUsuario(${user.id})">🔓 Desbloquear</button>` : ''}
                 </div>
             </div>`;
         }).join('');

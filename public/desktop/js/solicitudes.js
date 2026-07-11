@@ -75,42 +75,18 @@ function actualizarCheckboxes() {
 
 function actualizarContador() {
     var contador = document.getElementById('seleccionadas-count');
-    var btnGestion = document.getElementById('btn-gestion');
-    var actionsInline = document.getElementById('actions-inline');
-    var contadorInline = document.getElementById('seleccionadas-inline');
-    
+    var toolbar = document.getElementById('toolbar-flotante');
+    var toolbarCount = document.getElementById('seleccionadas-count-toolbar');
+
     if (contador) {
         contador.textContent = filasSeleccionadas.length;
     }
-    
-    // Actualizar contador inline
-    if (contadorInline) {
-        contadorInline.textContent = filasSeleccionadas.length;
-    }
-    
-    // Mostrar/ocultar botón de Gestión y Agregar a Campaña según selección
-    if (btnGestion) {
+    if (toolbar && toolbarCount) {
         if (filasSeleccionadas.length > 0) {
-            btnGestion.style.display = 'inline-flex';
+            toolbarCount.textContent = filasSeleccionadas.length;
+            toolbar.style.display = 'flex';
         } else {
-            btnGestion.style.display = 'none';
-        }
-    }
-    var btnAgregarCampana = document.getElementById('btn-agregar-campana');
-    if (btnAgregarCampana) {
-        if (filasSeleccionadas.length > 0) {
-            btnAgregarCampana.style.display = 'inline-flex';
-        } else {
-            btnAgregarCampana.style.display = 'none';
-        }
-    }
-    
-    // Mostrar/ocultar toolbar inline (arriba de las cards)
-    if (actionsInline) {
-        if (filasSeleccionadas.length > 0) {
-            actionsInline.style.display = 'flex';
-        } else {
-            actionsInline.style.display = 'none';
+            toolbar.style.display = 'none';
         }
     }
 }
@@ -701,16 +677,18 @@ function copiarDatos() {
     });
 }
 
-// Renderizar cards para móvil y escritorio
+// ============================================================================
+// RENDERIZAR CARDS UNIFICADAS (5 FILAS) - Desktop y móvil usan la misma estructura
+// ============================================================================
 function renderizarCards(datos) {
     var container = document.getElementById('cards-container');
     if (!container) return;
-    
-    if (!datos.length) {
-        container.innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280;font-size:16px;grid-column:1/-1;">No se encontraron registros</div>';
+
+    if (!datos || !datos.length) {
+        container.innerHTML = '<div class="estado-vacio"><div class="vacio-icon">📋</div>No se encontraron registros</div>';
         return;
     }
-    
+
     var html = '';
     var coloresEstado = {
         'ACTIVADA': '#dcfce7',
@@ -718,80 +696,79 @@ function renderizarCards(datos) {
         'DEVUELTA': '#fef3c7',
         'APROBADA PARA LIBERACIÓN': '#d1fae5'
     };
-    
-for (var i = 0; i < datos.length; i++) {
+    var coloresGestion = {
+        'Seguimiento': '#dbeafe',
+        'Cobranza': '#fee2e2',
+        'Llamada': '#d1fae5',
+        'WhatsApp': '#dcfce7',
+        'Reclamo': '#fef3c7',
+        'Cita': '#e0e7ff',
+        'Completada': '#bbf7d0',
+        'Otro': '#f3f4f6'
+    };
+
+    for (var i = 0; i < datos.length; i++) {
         var item = datos[i];
-        var estadoClase = (item.estado || '').replace(/ /g, '-').toUpperCase();
-        var colorEstado = coloresEstado[item.estado] || '#f3f4f6';
         var id = item.id_solicitud || '';
-        var seleccionado = filasSeleccionadas.indexOf(id) > -1 ? 'fila-seleccionada' : '';
-        
-        html += '<div class="cliente-card ' + seleccionado + '" data-id="' + id + '">';
-        
-        // Header compacto: ID (discreto) + Segmento + Estado en UNA sola línea
-        html += '  <div class="card-header-row">';
-        html += '    <input type="checkbox" class="cliente-checkbox checkbox-fila" value="' + id + '" ' + (seleccionado ? 'checked' : '') + '>';
+        var seleccionado = filasSeleccionadas.indexOf(id) > -1 ? 'seleccionada' : '';
+        var estadoClase = 'estado-' + (item.estado || '').replace(/\s+/g, '').toUpperCase();
+        var colorEstado = coloresEstado[item.estado] || '#f3f4f6';
+
+        html += '<div class="solicitud-card ' + seleccionado + '" data-id="' + id + '">';
+
+        // Checkbox wrapper
+        html += '  <div class="card-checkbox-wrapper">';
+        html += '    <input type="checkbox" class="card-checkbox checkbox-fila" value="' + id + '" ' + (seleccionado ? 'checked' : '') + '>';
+        html += '  </div>';
+
+        // ===== FILA 1: ID + Segmento + Estado =====
+        html += '  <div class="card-fila-1">';
         html += '    <span class="card-id">#' + id + '</span>';
         html += '    <span class="card-badge badge-segmento">' + (item.segmento || 'Sin segmento') + '</span>';
-        html += '    <span class="card-badge badge-estado" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
+        html += '    <span class="card-badge badge-estado ' + estadoClase + '" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
         html += '  </div>';
-        
-        // Nombre del cliente - click para copiar nombre + cédula
-        html += '  <div class="cliente-nombre" onclick="copiarNombreCedula(\'' + escaparParaAtributo(item.nombre || '') + '\', \'' + escaparParaAtributo(item.cedula || '') + '\')" title="Copiar nombre + cédula" style="cursor:pointer;">' + (item.nombre || '') + ' 📋</div>';
-        
-        // Info row: Cédula y Celular
-        html += '  <div class="cliente-info-row">';
-        html += '    <span>📍 ' + (item.cedula || '—') + '</span>';
-        html += '    <span>📱 ' + (item.celular || '—') + '</span>';
+
+        // ===== FILA 2: Nombre =====
+        html += '  <div class="card-fila-2" onclick="copiarNombreCedula(\'' + escaparParaAtributo(item.nombre || '') + '\', \'' + escaparParaAtributo(item.cedula || '') + '\')" title="Copiar nombre + cédula">';
+        html +=      (item.nombre || 'Sin nombre') + ' 📋';
         html += '  </div>';
-        
-        // Última gestión (si existe)
+
+        // ===== FILA 3: Botones (3 en desktop, 4 en móvil) =====
+        html += '  <div class="card-fila-3">';
+        html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestiones(\'' + id + '\')">📋 Gestiones</button>';
+        html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); abrirWhatsAppChatEscritorio(\'' + escaparParaAtributo(item.celular || '') + '\')">💬 WhatsApp</button>';
+        html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletar(\'' + id + '\')">✏️ Completar</button>';
+        html += '    <button class="card-btn btn-llamar" onclick="event.stopPropagation(); llamarCliente(\'' + escaparParaAtributo(item.celular || '') + '\')">📞 Llamar</button>';
+        html += '  </div>';
+
+        // ===== FILA 4: Seguimiento =====
         if (item.ultima_gestion_tipo) {
-            var coloresGestion = {
-                'Seguimiento': '#dbeafe',
-                'Cobranza': '#fee2e2',
-                'Llamada': '#d1fae5',
-                'WhatsApp': '#dcfce7',
-                'Reclamo': '#fef3c7',
-                'Cita': '#e0e7ff',
-                'Completada': '#bbf7d0',
-                'Otro': '#f3f4f6'
-            };
             var colorGestion = coloresGestion[item.ultima_gestion_tipo] || '#f3f4f6';
             var fechaGestion = item.ultima_gestion_fecha ? new Date(item.ultima_gestion_fecha).toLocaleString('es-ES') : '';
-            var observacionTruncada = item.ultima_gestion_obs ? item.ultima_gestion_obs.substring(0, 60) + (item.ultima_gestion_obs.length > 60 ? '...' : '') : '';
-            
-            html += '  <div class="cliente-ultima-gestion">';
-            html += '    <span class="ultima-gestion-badge" style="background:' + colorGestion + ';">📋 ' + item.ultima_gestion_tipo + '</span>';
+            html += '  <div class="card-fila-4">';
+            html += '    <div class="seguimiento-header">';
+            html += '      <span class="seguimiento-badge" style="background:' + colorGestion + ';">📋 ' + item.ultima_gestion_tipo + '</span>';
             if (fechaGestion) {
-                html += '    <span class="ultima-gestion-fecha">' + fechaGestion + '</span>';
+                html += '      <span class="seguimiento-fecha">' + fechaGestion + '</span>';
             }
-            if (observacionTruncada) {
-                html += '    <div class="ultima-gestion-obs">' + observacionTruncada + '</div>';
+            html += '    </div>';
+            if (item.ultima_gestion_obs) {
+                html += '    <div class="seguimiento-obs" title="' + escaparParaAtributo(item.ultima_gestion_obs) + '">' + item.ultima_gestion_obs + '</div>';
             }
             html += '  </div>';
         } else {
-            html += '  <div class="cliente-ultima-gestion vacia">';
-            html += '    <span class="ultima-gestion-sin">Sin gestiones</span>';
-            html += '  </div>';
+            html += '  <div class="card-fila-4 vacia">Sin gestiones</div>';
         }
-        
-        // Detalles (sin segmento, ya está en badges superiores)
-        html += '  <div class="cliente-detalle">';
-        html += '    <span class="cliente-tag">📦 ' + (item.producto || '—') + '</span>';
-        html += '    <span class="cliente-tag">📅 ' + (item.fecha_solicitud || '—') + '</span>';
+
+        // ===== FILA 5: Producto + Fecha =====
+        html += '  <div class="card-fila-5">';
+        html += '    <span class="card-tag">📦 <span>' + (item.producto || '—') + '</span></span>';
+        html += '    <span class="card-tag">📅 <span>' + (item.fecha_solicitud || '—') + '</span></span>';
         html += '  </div>';
-        
-        // Botones de acciones
-        html += '  <div class="card-actions">';
-        html += '    <button class="card-action-btn card-gestiones-btn" onclick="abrirGestiones(\'' + id + '\')">📋 Gestiones</button>';
-        html += '    <button class="card-action-btn card-whatsapp-btn" onclick="abrirWhatsAppChatEscritorio(\'' + escaparParaAtributo(item.celular || '') + '\')">💬 WhatsApp</button>';
-        html += '    <button class="card-action-btn card-completar-btn" onclick="abrirCompletar(\'' + id + '\')">✏️ Completar</button>';
-        html += '  </div>';
-        
+
         html += '</div>';
     }
-    
+
     container.innerHTML = html;
 }
 

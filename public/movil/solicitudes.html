@@ -5,167 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitudes - Archivox</title>
     <link rel="stylesheet" href="/movil/css/estilos.css">
-    <style>
-        .stats { display: flex; gap: 10px; padding: 15px; background: white; }
-        .stat { flex: 1; background: #f8fafc; padding: 12px; border-radius: 10px; text-align: center; }
-        .stat span { display: block; font-size: 18px; font-weight: bold; color: #1f2937; }
-        .stat small { font-size: 11px; color: #6b7280; }
-        
-        .filters { background: white; padding: 15px; margin-bottom: 10px; }
-        .filtro-label { font-size: 12px; font-weight: 600; color: #374151; display: block; margin-bottom: 8px; }
-        .btns { display: flex; gap: 6px; flex-wrap: wrap; }
-        .btn { background: #f3f4f6; border: 1px solid #e5e7eb; color: #374151; padding: 6px 12px; border-radius: 15px; font-size: 11px; }
-        .btn.active { background: #2563eb; border-color: #2563eb; color: white; }
-        
-        .search { padding: 0 15px; margin-bottom: 15px; display: flex; gap: 8px; align-items: center; }
-        .search input { flex: 1; width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; }
-        .btn-select-all { background: #2563eb; color: white; border: none; border-radius: 999px; padding: 10px 12px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-        .btn-select-all:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .cards-list { padding: 0 15px; display: flex; flex-direction: column; gap: 10px; padding-bottom: 80px; }
-        .client-card { background: white; border-radius: 12px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .client-id { font-size: 12px; font-weight: 600; color: #6b7280; }
-        .badge { padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
-        
-        /* Badges: Estado + Segmento juntos en la parte superior */
-        /* ===== CABECERA COMPACTA: ID + SEGMENTO + ESTADO EN UNA SOLA LÍNEA ===== */
-        .card-head-row {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: nowrap;
-            margin-bottom: 8px;
-            overflow: hidden;
-        }
-        
-        .card-id {
-            font-size: 10px;
-            font-weight: 600;
-            color: #9ca3af;
-            flex-shrink: 0;
-        }
-        
-        .card-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 2px 7px;
-            border-radius: 8px;
-            font-size: 9px;
-            font-weight: 700;
-            white-space: nowrap;
-            flex-shrink: 0;
-            line-height: 1.4;
-        }
-        .badge-estado {
-            background: #dcfce7;
-            color: #065f46;
-        }
-        .badge-segmento {
-            background: #e0e7ff;
-            color: #4338ca;
-            border: 1.5px solid #a5b4fc;
-        }
-        
-        /* Legacy */
-        .card-badges {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .client-name { font-size: 15px; font-weight: 600; color: #1f2937; margin-bottom: 3px; }
-        .client-cedula { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
-        .tags { display: flex; gap: 5px; flex-wrap: wrap; }
-        .tag { background: #f3f4f6; padding: 3px 8px; border-radius: 6px; font-size: 10px; color: #374151; }
-        
-        .no-data { text-align: center; padding: 30px; color: #6b7280; }
-        
-        .actions-floating { position: fixed; bottom: 80px; right: 15px; display: flex; gap: 10px; z-index: 999; }
-        .btn-float {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 56px;
-            min-width: 56px;
-            padding: 0 16px;
-            border-radius: 999px;
-            border: none;
-            font-size: 16px;
-            font-weight: 700;
-            line-height: 1;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: transform 0.2s;
-            color: white;
-            gap: 8px;
-        }
-        .btn-float:hover { transform: scale(1.05); }
-        .btn-float .btn-float-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            line-height: 1;
-            flex-shrink: 0;
-        }
-        .btn-float.btn-whatsapp { background: #25d366; color: white; }
-        .btn-float.btn-copy { background: #6366f1; color: white; }
-        
-        .client-card.seleccionada { border: 2px solid #2563eb; background: #eff6ff; }
-        .card-checkbox { width: 20px; height: 20px; margin-right: 8px; }
-    </style>
+    <link rel="stylesheet" href="/css/solicitudes.css">
+    <link rel="stylesheet" href="/css/notificaciones.css">
 </head>
 <body>
     <!-- Header -->
     <div class="header">
-        <div class="header-title">
+        <div class="header-title" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
             <h1>📋 Solicitudes</h1>
+            <button class="notif-bell-usuario notif-bell-movil" onclick="abrirPanelNotificaciones()" title="Notificaciones">
+                🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
+            </button>
         </div>
     </div>
 
     <!-- Stats -->
-    <div class="stats">
-        <div class="stat"><span id="totalRegistros">0</span><small>Total</small></div>
-        <div class="stat"><span id="mostrando">0</span><small>Mostrando</small></div>
-        <div class="stat"><span id="seleccionadas-count">0</span><small>Seleccionadas</small></div>
-</div>
-    
-<!-- Actions Floating -->
-    <div class="actions-floating" id="actions-floating" style="display:none;">
-        <!-- Botones de campañas -->
-        <button class="btn-float btn-gestion" id="btn-gestion" onclick="abrirModalNuevaGestionMovil()" title="Crear campaña" style="background:#2563eb;">
-            <span class="btn-float-icon" aria-hidden="true">🚀</span>
-            <span>Crear campaña</span>
-        </button>
-        <button class="btn-float" id="btn-agregar-campana-movil" onclick="abrirModalAgregarCampanaMovil()" title="Agregar a campaña existente" style="background:#7c3aed;display:none;">
-            <span class="btn-float-icon" aria-hidden="true">➕</span>
-            <span>Agregar</span>
-        </button>
+    <div class="stats-grid-unificado" style="padding: 12px 15px;">
+        <div class="stat-card-compacto stat-total-unif">
+            <span class="stat-valor" id="totalRegistros">0</span>
+            <span class="stat-etiqueta">Total</span>
+        </div>
+        <div class="stat-card-compacto stat-showing-unif">
+            <span class="stat-valor" id="mostrando">0</span>
+            <span class="stat-etiqueta">Mostrando</span>
+        </div>
+        <div class="stat-card-compacto stat-selected-unif">
+            <span class="stat-valor" id="seleccionadas-count">0</span>
+            <span class="stat-etiqueta">Selecc</span>
+        </div>
     </div>
 
-    <!-- Filters -->
-    <div class="filters">
-        <div style="margin-bottom:10px;">
-            <span class="filtro-label">Estado</span>
-            <div class="btns" id="filtro-estado"><button class="btn active" data-value="">Todos</button></div>
-        </div>
-        <div>
-            <span class="filtro-label">Segmento</span>
-            <div class="btns" id="filtro-segmento"><button class="btn active" data-value="">Todos</button></div>
+    <!-- Filtros unificados -->
+    <div class="filtros-unificado" style="margin: 0 15px 10px;">
+        <div class="filtros-row">
+            <div class="filtro-grupo" style="flex:1;">
+                <span class="filtro-label">📌 Estado</span>
+                <div class="filtro-botones" id="filtro-estado">
+                    <button class="filtro-btn active" data-value="">Todos</button>
+                </div>
+            </div>
+            <div class="filtro-grupo" style="flex:1;">
+                <span class="filtro-label">🏷️ Segmento</span>
+                <div class="filtro-botones" id="filtro-segmento">
+                    <button class="filtro-btn active" data-value="">Todos</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Search -->
-    <div class="search">
-        <input type="text" id="cedula" placeholder="🔍 Buscar por nombre, cédula, teléfono o id solicitud">
-        <button type="button" class="btn-select-all" id="btn-seleccionar-todo" onclick="toggleSeleccionarTodasVisibles()">Seleccionar todo</button>
+    <div class="buscador-unificado" style="padding: 0 15px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="cedula" placeholder="🔍 Buscar por id, cédula, nombre o teléfono..." style="flex:1;">
+            <button type="button" class="filtro-btn active" id="btn-seleccionar-todo" onclick="toggleSeleccionarTodasVisibles()" style="white-space:nowrap;padding:12px 14px;">
+                Seleccionar todo
+            </button>
+        </div>
+    </div>
+
+    <!-- Botones flotantes de campañas -->
+    <div class="actions-floating" id="actions-floating" style="display:none;">
+        <button class="btn-float" id="btn-gestion" onclick="abrirModalNuevaGestionMovil()" title="Crear campaña" style="background:#2563eb;">
+            <span class="btn-float-icon">🚀</span>
+            <span>Crear</span>
+        </button>
+        <button class="btn-float" id="btn-agregar-campana-movil" onclick="abrirModalAgregarCampanaMovil()" title="Agregar a campaña" style="background:#7c3aed;display:none;">
+            <span class="btn-float-icon">➕</span>
+            <span>Agregar</span>
+        </button>
     </div>
 
     <!-- Cards List -->
-    <div class="cards-list" id="cards-container">
-        <div class="no-data">Cargando...</div>
+    <div class="cards-grid-unificado" id="cards-container" style="padding: 10px 15px 80px;">
+        <div class="estado-vacio">Cargando...</div>
     </div>
 
     <!-- Footer -->
@@ -184,10 +96,14 @@
         </a>
     </nav>
 
-<!-- Librería SheetJS para exportar Excel -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-
+<script src="/js/notificaciones-dashboard.js"></script>
 <script src="/movil/js/drawer.js"></script>
 <script src="/movil/js/solicitudes.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof initNotificaciones === 'function') initNotificaciones();
+    });
+</script>
 </body>
 </html>

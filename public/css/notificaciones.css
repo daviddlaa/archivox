@@ -386,11 +386,39 @@
     line-height: 1.4;
     white-space: pre-line;
     margin-bottom: 8px;
-    /* Limitar a 3 líneas */
+    /* Permitir hasta 5 líneas para mensajes largos */
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 5;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+}
+.notif-item-msg.expandido {
+    -webkit-line-clamp: unset;
+    max-height: none;
+}
+.notif-item-msg::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 40px;
+    height: 20px;
+    background: linear-gradient(to right, transparent, white);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.notif-item-msg:not(.expandido)::after {
+    opacity: 1;
+}
+.notif-item:hover .notif-item-msg {
+    -webkit-line-clamp: unset;
+    max-height: none;
+}
+.notif-item:hover .notif-item-msg::after {
+    opacity: 0;
 }
 
 .notif-item-footer {
