@@ -242,7 +242,8 @@ const initTables = async () => {
             'archivada': 'INTEGER DEFAULT 0',
             'accion_url': 'TEXT',
             'accion_texto': 'TEXT',
-            'fecha_expiracion': 'TIMESTAMP'
+            'fecha_expiracion': 'TIMESTAMP',
+            'accion_modulo': 'TEXT'       // 🆕 Deep Link Router
         })) {
             try {
                 await client.query(`ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS ${col} ${tipo}`);
@@ -275,6 +276,45 @@ const initTables = async () => {
         }
 
         console.log('   ✅ notificaciones migradas')
+
+        // Migración: inferir accion_modulo desde accion_url legacy (PostgreSQL)
+        try {
+            const legacyResult = await client.query(`
+                UPDATE notificaciones
+                SET accion_modulo = CASE accion_url
+                    WHEN '/' THEN 'dashboard'
+                    WHEN '/m' THEN 'dashboard'
+                    WHEN '/admin' THEN 'dashboard-admin'
+                    WHEN '/m/admin' THEN 'dashboard-admin'
+                    WHEN '/solicitudes' THEN 'solicitudes'
+                    WHEN '/m/solicitudes' THEN 'solicitudes'
+                    WHEN '/importar' THEN 'importar'
+                    WHEN '/m/importar' THEN 'importar'
+                    WHEN '/historial' THEN 'historial'
+                    WHEN '/m/historial' THEN 'historial'
+                    WHEN '/gestiones' THEN 'gestiones'
+                    WHEN '/m/gestiones' THEN 'gestiones'
+                    WHEN '/gestion-lote' THEN 'gestion-lote'
+                    WHEN '/m/gestion-lote' THEN 'gestion-lote'
+                    WHEN '/relaciones' THEN 'relaciones'
+                    WHEN '/m/relaciones' THEN 'relaciones'
+                    WHEN '/equipo-ventas' THEN 'ventas'
+                    WHEN '/m/ventas' THEN 'ventas'
+                    WHEN '/perfil' THEN 'perfil'
+                    WHEN '/perfil?tab=config' THEN 'perfil-config'
+                    WHEN '/perfil?tab=ayuda' THEN 'perfil-ayuda'
+                    ELSE accion_modulo
+                END
+                WHERE accion_url IS NOT NULL
+                  AND accion_url != ''
+                  AND (accion_modulo IS NULL OR accion_modulo = '')
+            `);
+            if (legacyResult.rowCount > 0) {
+                console.log('   ✅ Migración legacy accion_url → accion_modulo:', legacyResult.rowCount, 'notificaciones');
+            }
+        } catch (e) {
+            console.log('   ⏩ Migración accion_modulo legacy:', e.message.substring(0, 60));
+        }
 
         // ================================================================
         // SEMILLA: Notificación de actualización de email

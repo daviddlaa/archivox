@@ -290,7 +290,8 @@ const notifNewCols = {
     'archivada': 'INTEGER DEFAULT 0',
     'accion_url': 'TEXT',
     'accion_texto': 'TEXT',
-    'fecha_expiracion': 'TEXT'
+    'fecha_expiracion': 'TEXT',
+    'accion_modulo': 'TEXT'         // 🆕 Deep Link Router: identificador lógico del módulo
 };
 let notifMigradas = 0;
 for (const [col, tipo] of Object.entries(notifNewCols)) {
@@ -306,6 +307,55 @@ for (const [col, tipo] of Object.entries(notifNewCols)) {
 }
 if (notifMigradas > 0) {
     console.log('[DB] Migración notificaciones completada:', notifMigradas, 'columnas');
+}
+
+// Migración: inferir accion_modulo desde accion_url legacy
+// Esto permite que notificaciones antiguas con accion_url pero sin accion_modulo
+// sigan funcionando con el nuevo sistema de resolución de rutas.
+try {
+    const legacyNotifs = db.prepare(
+        'SELECT id, accion_url FROM notificaciones WHERE accion_url IS NOT NULL AND accion_url != \'\' AND (accion_modulo IS NULL OR accion_modulo = \'\')'
+    ).all();
+
+    if (legacyNotifs.length > 0) {
+        // Mapeo de URLs conocidas a módulos
+        const urlToModule = {
+            '/': 'dashboard',
+            '/m': 'dashboard',
+            '/admin': 'dashboard-admin',
+            '/m/admin': 'dashboard-admin',
+            '/solicitudes': 'solicitudes',
+            '/m/solicitudes': 'solicitudes',
+            '/importar': 'importar',
+            '/m/importar': 'importar',
+            '/historial': 'historial',
+            '/m/historial': 'historial',
+            '/gestiones': 'gestiones',
+            '/m/gestiones': 'gestiones',
+            '/gestion-lote': 'gestion-lote',
+            '/m/gestion-lote': 'gestion-lote',
+            '/relaciones': 'relaciones',
+            '/m/relaciones': 'relaciones',
+            '/equipo-ventas': 'ventas',
+            '/m/ventas': 'ventas',
+            '/perfil': 'perfil',
+            '/perfil?tab=config': 'perfil-config',
+            '/perfil?tab=ayuda': 'perfil-ayuda'
+        };
+
+        const updateStmt = db.prepare('UPDATE notificaciones SET accion_modulo = ? WHERE id = ?');
+
+        for (const n of legacyNotifs) {
+            const moduleId = urlToModule[n.accion_url];
+            if (moduleId) {
+                updateStmt.run(moduleId, n.id);
+            }
+        }
+
+        console.log('[DB] Migración legacy accion_url → accion_modulo completada:', legacyNotifs.length, 'notificaciones');
+    }
+} catch (e) {
+    console.log('[DB] Migración accion_modulo legacy:', e.message);
 }
 
 // ================================================================

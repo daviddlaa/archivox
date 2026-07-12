@@ -548,28 +548,14 @@ function debounceAuditar() {
 // ============================================================================
 // DEEP LINKS - Configuración centralizada
 // ============================================================================
-// Todos los deep links disponibles para notificaciones.
-// Agregar nuevos módulos aquí para que aparezcan en el selector.
+// Los módulos ahora se definen en public/js/deep-link-router.js (DeepLinkRouter).
+// Aquí solo se usa como referencia para el selector de notificaciones.
+// 
+// 🆕 NUEVA ARQUITECTURA:
+//   - Se usa accion_modulo (identificador lógico) en lugar de URL fija
+//   - DeepLinkRouter resuelve la URL según la plataforma del usuario
+//   - El admin ya NO elige entre Desktop/Mobile, solo el módulo
 // ============================================================================
-const DEEP_LINKS = [
-    { label: '🏠 Dashboard', url: '/' },
-    { label: '📊 Dashboard (Admin)', url: '/admin', rol: 'admin' },
-    { label: '📋 Solicitudes', url: '/solicitudes' },
-    { label: '📱 Solicitudes (Móvil)', url: '/m/solicitudes' },
-    { label: '📤 Importar Excel', url: '/importar' },
-    { label: '📱 Importar (Móvil)', url: '/m/importar' },
-    { label: '🔄 Historial', url: '/historial' },
-    { label: '📱 Historial (Móvil)', url: '/m/historial' },
-    { label: '💰 Control de Ventas', url: '/equipo-ventas' },
-    { label: '💳 Ventas (Móvil)', url: '/m/ventas' },
-    { label: '🔄 Relaciones', url: '/relaciones' },
-    { label: '📱 Relaciones (Móvil)', url: '/m/relaciones' },
-    { label: '🚀 Gestión por Lotes', url: '/gestion-lote' },
-    { label: '📱 Gestión Lotes (Móvil)', url: '/m/gestion-lote' },
-    { label: '👤 Perfil', url: '/perfil' },
-    { label: '⚙️ Configuración', url: '/perfil?tab=config' },
-    { label: '❓ Ayuda / Tutoriales', url: '/perfil?tab=ayuda' },
-];
 
 // ============================================================================
 // NOTIFICACIONES
@@ -770,18 +756,24 @@ async function eliminarNotificacion(id) {
     }
 }
 
-// Actualizar texto del botón de acción según el deep link seleccionado
+// Actualizar texto del botón de acción según el módulo seleccionado
 function actualizarTextoAccion() {
     const select = document.getElementById('notifAccionUrl');
     const textoInput = document.getElementById('notifAccionTexto');
     const selectedOption = select.options[select.selectedIndex];
-    const label = selectedOption ? selectedOption.text : '';
-    if (label && label !== '🌐 Sin acción (solo informativa)') {
-        // Extraer solo el nombre del módulo (sin emoji)
-        const textoLimpio = label.replace(/^[^\s]*\s/, '');
-        textoInput.value = 'Ir a ' + textoLimpio;
-        textoInput.readOnly = true;
-        textoInput.style.background = '#f3f4f6';
+    const moduleId = selectedOption ? selectedOption.value : '';
+
+    if (moduleId && typeof DeepLinkRouter !== 'undefined') {
+        const modulo = DeepLinkRouter.getModulo(moduleId);
+        if (modulo) {
+            textoInput.value = DeepLinkRouter.getTextoAccion(moduleId);
+            textoInput.readOnly = true;
+            textoInput.style.background = '#f3f4f6';
+        } else {
+            textoInput.value = '';
+            textoInput.readOnly = true;
+            textoInput.style.background = '#f3f4f6';
+        }
     } else {
         textoInput.value = '';
         textoInput.readOnly = true;
@@ -791,12 +783,24 @@ function actualizarTextoAccion() {
 
 // Modal crear notificación
 async function abrirModalCrearNotificacion() {
-    // Cargar deep links en el selector
+    // Cargar deep links en el selector (usando módulos lógicos)
     const urlSelect = document.getElementById('notifAccionUrl');
     urlSelect.innerHTML = '<option value="">🌐 Sin acción (solo informativa)</option>';
-    DEEP_LINKS.forEach(function(dl) {
-        urlSelect.innerHTML += '<option value="' + dl.url + '">' + escapeHtml(dl.label) + '</option>';
-    });
+
+    // Obtener módulos de DeepLinkRouter (solo no-admin)
+    // Fallback: si DeepLinkRouter no está disponible, el selector solo muestra "Sin acción"
+    if (typeof DeepLinkRouter !== 'undefined' && DeepLinkRouter.getModulos) {
+        try {
+            var modulos = DeepLinkRouter.getModulos({ incluirAdmin: false });
+            modulos.forEach(function(m) {
+                urlSelect.innerHTML += '<option value="' + m.id + '">' + escapeHtml(m.icon + ' ' + m.label) + '</option>';
+            });
+        } catch (e) {
+            console.warn('[Admin] Error cargando módulos de DeepLinkRouter:', e);
+        }
+    } else {
+        console.warn('[Admin] DeepLinkRouter no disponible. El selector de acciones solo mostrará "Sin acción".');
+    }
 
     // Cargar usuarios para selector de destinatario
     try {
@@ -831,10 +835,25 @@ async function crearNotificacion() {
     const mensaje = document.getElementById('notifMensaje').value.trim();
     const tipo = document.getElementById('notifTipo').value;
     const prioridad = document.getElementById('notifPrioridad').value;
-    const accion_url = document.getElementById('notifAccionUrl').value.trim() || null;
-    const accion_texto = document.getElementById('notifAccionTexto').value.trim() || null;
+    var accion_url = document.getElementById('notifAccionUrl').value.trim() || null;
+    var accion_texto = document.getElementById('notifAccionTexto').value.trim() || null;
     const fecha_expiracion = document.getElementById('notifFechaExpiracion').value || null;
     const destinatario_id = document.getElementById('notifDestinatario').value || null;
+
+    // 🆕 Deep Link Router: el valor del select ahora es un moduleId (no una URL)
+    // Si se seleccionó un módulo, se envía como accion_modulo.
+    // Si accion_url tiene formato de URL directa (legacy), se usa como antes.
+    var accion_modulo = null;
+    if (accion_url) {
+        if (accion_url.startsWith('/')) {
+            // Es una URL directa (legacy) - mantener como accion_url
+            // Esto puede ocurrir si DeepLinkRouter no cargó
+        } else {
+            // Es un moduleId de DeepLinkRouter
+            accion_modulo = accion_url;
+            accion_url = null; // No enviar URL directa, el router la resolverá
+        }
+    }
 
     if (!titulo || !mensaje) {
         return alert('Título y mensaje son requeridos');
@@ -844,7 +863,17 @@ async function crearNotificacion() {
         const res = await fetch('/api/admin/notificaciones', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ titulo, mensaje, tipo, prioridad, accion_url, accion_texto, fecha_expiracion, destinatario_id })
+            body: JSON.stringify({
+                titulo,
+                mensaje,
+                tipo,
+                prioridad,
+                accion_modulo,     // 🆕 Módulo lógico para DeepLinkRouter
+                accion_url,        // Se envía null si se usó módulo
+                accion_texto,
+                fecha_expiracion,
+                destinatario_id
+            })
         });
         if (res.ok) {
             cerrarModalNotif();

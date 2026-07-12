@@ -98,7 +98,7 @@ exports.listar = async (req, res) => {
 exports.crear = async (req, res) => {
     try {
         const adminSession = req.session.usuario;
-        const { titulo, mensaje, tipo = 'info', prioridad = 'normal', destinatario_id, accion_url, accion_texto, fecha_expiracion } = req.body;
+        const { titulo, mensaje, tipo = 'info', prioridad = 'normal', destinatario_id, accion_url, accion_texto, fecha_expiracion, accion_modulo } = req.body;
 
         if (!titulo || !mensaje) {
             return res.status(400).json({ error: 'Título y mensaje son requeridos' });
@@ -109,10 +109,10 @@ exports.crear = async (req, res) => {
         const prioridadFinal = prioridadesValidas.includes(prioridad) ? prioridad : 'normal';
 
         const result = await pool.query(
-            `INSERT INTO notificaciones (titulo, mensaje, tipo, prioridad, creador_id, destinatario_id, accion_url, accion_texto, fecha_expiracion, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
+            `INSERT INTO notificaciones (titulo, mensaje, tipo, prioridad, creador_id, destinatario_id, accion_url, accion_texto, fecha_expiracion, accion_modulo, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP)
              RETURNING id`,
-            [titulo, mensaje, tipo, prioridadFinal, adminSession.id, destinatario_id || null, accion_url || null, accion_texto || null, fecha_expiracion || null]
+            [titulo, mensaje, tipo, prioridadFinal, adminSession.id, destinatario_id || null, accion_url || null, accion_texto || null, fecha_expiracion || null, accion_modulo || null]
         );
 
         const newId = result.rows?.[0]?.id || result.lastInsertRowid;
@@ -141,6 +141,7 @@ exports.crear = async (req, res) => {
                 destinatario_id: destinatario_id || null,
                 accion_url: accion_url || null,
                 accion_texto: accion_texto || null,
+                accion_modulo: accion_modulo || null,  // 🆕 Deep Link Router
                 fecha_expiracion: fecha_expiracion || null,
                 leida: 0,
                 creador_username: adminSession.username,

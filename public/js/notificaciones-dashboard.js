@@ -409,10 +409,14 @@ function renderizarNotificacion(n, index) {
     const fechaHTML = formatearFechaNotif(n.created_at);
 
     // ¿Tiene acción? - Botón de acción rápida
-    const accionHTML = (n.accion_url && n.accion_texto) ? `
+    // 🆕 Deep Link Router: si tiene accion_modulo, usarlo; si no, usar accion_url (legacy)
+    const tieneAccion = (n.accion_modulo || n.accion_url) && n.accion_texto;
+    const dataAttrs = n.accion_modulo ? `data-notif-accion-modulo="${escapeHtmlNotif(n.accion_modulo)}"` : '';
+    const accionHTML = tieneAccion ? `
         <button class="notif-item-action-btn"
-           data-notif-action-url="${escapeHtmlNotif(n.accion_url)}"
-           onclick="event.stopPropagation(); marcarLeidaUsuario(${n.id}, this.dataset.notifActionUrl);">
+           data-notif-action-url="${escapeHtmlNotif(n.accion_url || '')}"
+           ${n.accion_modulo ? `data-notif-accion-modulo="${escapeHtmlNotif(n.accion_modulo)}"` : ''}
+           onclick="event.stopPropagation(); marcarLeidaUsuario(${n.id}, this.dataset.notifActionUrl, this.dataset.notifAccionModulo);">
             ${escapeHtmlNotif(n.accion_texto)} →
         </button>
     ` : '';
@@ -421,13 +425,15 @@ function renderizarNotificacion(n, index) {
     const claseExpirada = (n.fecha_expiracion && new Date(n.fecha_expiracion) < new Date()) ? 'notif-item-expirada' : '';
 
     const dataAccionUrl = n.accion_url ? ` data-accion-url="${escapeHtmlNotif(n.accion_url)}"` : '';
-    const cardOnClick = `marcarLeidaUsuario(${n.id}${n.accion_url ? `, this.dataset.accionUrl` : ''})`;
+    const dataAccionModulo = n.accion_modulo ? ` data-accion-modulo="${escapeHtmlNotif(n.accion_modulo)}"` : '';
+    const cardOnClick = `marcarLeidaUsuario(${n.id}${n.accion_url ? `, this.dataset.accionUrl` : ''}${n.accion_modulo ? `, this.dataset.accionModulo` : ''})`;
 
     return `
         <div class="notif-item ${claseNoLeida} ${clasePrioridad} ${claseNew} ${claseExpirada}"
              data-id="${n.id}"
              data-leida="${n.leida ? 'true' : 'false'}"
              ${dataAccionUrl}
+             ${dataAccionModulo}
              onclick="${cardOnClick}">
             <div class="notif-item-icon-wrapper" style="background:${tipoColor}20">
                 <span>${tipoIcono}</span>
@@ -462,8 +468,10 @@ function renderizarNotificacion(n, index) {
 // ============================================================================
 // MARCAR COMO LEÍDA (individual) - con navegación a acción si existe
 // ============================================================================
-// Versión corregida: elimina race conditions con SSE y asegura estado consistente
-async function marcarLeidaUsuario(id, accionUrl) {
+// Versión corregida: elimina race conditions con SSE y asegura estado consistente.
+// 🆕 Deep Link Router: ahora acepta accionModulo para resolver URLs por plataforma.
+// ============================================================================
+async function marcarLeidaUsuario(id, accionUrl, accionModulo) {
     // Flag para evitar doble recarga por SSE
     notifState._isMarkingRead = true;
     const panelWasOpen = notifState.isPanelOpen;
@@ -490,11 +498,32 @@ async function marcarLeidaUsuario(id, accionUrl) {
     // Liberar flag después de un breve momento
     setTimeout(() => { notifState._isMarkingRead = false; }, 500);
 
-    // Si hay URL de acción, cerrar panel y navegar
-    if (accionUrl) {
+    // ====================================================================
+    // 🆕 RESOLVER URL DE NAVEGACIÓN USANDO DEEP LINK ROUTER
+    // ====================================================================
+    var urlNavegacion = null;
+
+    // 1. Si tenemos accion_modulo, usar DeepLinkRouter para resolver según plataforma
+    if (accionModulo && typeof DeepLinkRouter !== 'undefined') {
+        urlNavegacion = DeepLinkRouter.resolver(accionModulo);
+    }
+
+    // 2. Si no se pudo resolver por módulo, usar accion_url legacy
+    //    Pero verificar que no sea de la plataforma incorrecta
+    if (!urlNavegacion && accionUrl) {
+        if (typeof DeepLinkRouter !== 'undefined') {
+            // Intentar corregir URL legacy si es de plataforma incorrecta
+            urlNavegacion = DeepLinkRouter.corregirUrl(accionUrl);
+        } else {
+            urlNavegacion = accionUrl;
+        }
+    }
+
+    // 3. Navegar si hay URL resuelta
+    if (urlNavegacion) {
         cerrarPanelNotificaciones();
         setTimeout(() => {
-            window.location.href = accionUrl;
+            window.location.href = urlNavegacion;
         }, 400); // Esperar que cierre la animación del panel
         return;
     }
