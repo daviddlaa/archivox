@@ -47,6 +47,9 @@ router.put('/:id/asignar-lider', requiresRole('superadmin'), equiposController.a
 // Remover miembro del equipo
 router.put('/:id/remover-miembro', requiresRole('superadmin'), equiposController.removerMiembro);
 
+// Eliminar equipo
+router.delete('/:id', requiresRole('superadmin'), equiposController.eliminar);
+
 // ============================================================================
 // RUTAS DE GESTIÓN DE AGENTES (líder de su equipo o superadmin)
 // ============================================================================

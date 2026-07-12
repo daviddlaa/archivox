@@ -425,6 +425,16 @@ exports.promoverALider = async (req, res) => {
                     [teamResult.rows[0].id]
                 );
             } else {
+                // 🆕 Antes de crear un nuevo equipo, CERRAR cualquier membresía activa
+                // que el usuario tenga (incluyendo "Sistema") para no violar
+                // el índice único idx_equipo_usuario_unico_activo.
+                await client.query(
+                    `UPDATE equipo_usuarios
+                     SET fecha_salida = CURRENT_TIMESTAMP, motivo_salida = 'promovido_a_lider'
+                     WHERE usuario_id = $1 AND fecha_salida IS NULL`,
+                    [id]
+                );
+
                 // Crear equipo automático (no reusa "Sistema")
                 equipoNombre = `Equipo de ${targetUser.username}`;
                 const newTeam = await client.query(
@@ -439,9 +449,6 @@ exports.promoverALider = async (req, res) => {
                     'INSERT INTO equipo_usuarios (equipo_id, usuario_id, es_lider) VALUES ($1, $2, 1)',
                     [equipoId, id]
                 );
-
-                // NO eliminar la membresía existente en "Sistema" (compatibilidad histórica)
-                // El login y miEquipo ya están corregidos para priorizar equipos donde es_lider=1
             }
 
             // Actualizar rol

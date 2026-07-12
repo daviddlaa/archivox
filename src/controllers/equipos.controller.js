@@ -407,33 +407,60 @@ async function asignarLider(req, res) {
             return res.status(400).json({ error: 'usuario_id es requerido' });
         }
 
-        // Verificar que el usuario pertenece al equipo
-        const check = await pool.query(
-            `SELECT id FROM equipo_usuarios
-             WHERE equipo_id = $1 AND usuario_id = $2 AND fecha_salida IS NULL`,
-            [id, usuario_id]
-        );
-
-        if (check.rows.length === 0) {
-            return res.status(400).json({ error: 'El usuario no pertenece a este equipo o está inactivo' });
-        }
-
-        // Transacción atómica: quitar líder anterior y asignar nuevo
+        // Transacción atómica:
+        // 1. Si el usuario no pertenece al equipo, cerrar su membresía anterior y agregarlo
+        // 2. Quitar líder anterior y asignar nuevo
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
-            await client.query(
-                `UPDATE equipo_usuarios SET es_lider = 0
-                 WHERE equipo_id = $1 AND es_lider = 1 AND fecha_salida IS NULL`,
-                [id]
-            );
-
-            await client.query(
-                `UPDATE equipo_usuarios SET es_lider = 1
-                 WHERE equipo_id = $1 AND usuario_id = $2`,
+            // Verificar si el usuario ya pertenece al equipo (activo)
+            const check = await client.query(
+                `SELECT id FROM equipo_usuarios
+                 WHERE equipo_id = $1 AND usuario_id = $2 AND fecha_salida IS NULL`,
                 [id, usuario_id]
             );
+
+            if (check.rows.length === 0) {
+                // El usuario NO pertenece al equipo — demover líder anterior y cerrar membresía
+
+                // 1. Quitar liderazgo al líder actual del equipo destino
+                await client.query(
+                    `UPDATE equipo_usuarios SET es_lider = 0
+                     WHERE equipo_id = $1 AND es_lider = 1 AND fecha_salida IS NULL`,
+                    [id]
+                );
+
+                // 2. Cerrar membresía anterior del usuario (si existe)
+                await client.query(
+                    `UPDATE equipo_usuarios
+                     SET fecha_salida = CURRENT_TIMESTAMP, motivo_salida = 'reasignado_como_lider'
+                     WHERE usuario_id = $1 AND fecha_salida IS NULL`,
+                    [usuario_id]
+                );
+
+                // 3. Crear nueva membresía en el equipo destino como líder
+                await client.query(
+                    `INSERT INTO equipo_usuarios (equipo_id, usuario_id, es_lider)
+                     VALUES ($1, $2, 1)`,
+                    [id, usuario_id]
+                );
+            } else {
+                // El usuario ya pertenece al equipo — solo actualizar es_lider
+                // Primero quitar liderazgo al líder anterior (si existe)
+                await client.query(
+                    `UPDATE equipo_usuarios SET es_lider = 0
+                     WHERE equipo_id = $1 AND es_lider = 1 AND fecha_salida IS NULL`,
+                    [id]
+                );
+
+                // Asignar como nuevo líder
+                await client.query(
+                    `UPDATE equipo_usuarios SET es_lider = 1
+                     WHERE equipo_id = $1 AND usuario_id = $2`,
+                    [id, usuario_id]
+                );
+            }
 
             await client.query('COMMIT');
         } catch (err) {
@@ -796,6 +823,36 @@ async function campanasEquipo(req, res) {
 }
 
 // ============================================================================
+// ELIMINAR EQUIPO
+// ============================================================================
+// DELETE /api/equipos/:id (solo superadmin)
+async function eliminar(req, res) {
+    try {
+        const { id } = req.params;
+        const usuarioId = getUsuarioId(req);
+
+        // Verificar que el equipo existe
+        const check = await pool.query('SELECT id, nombre FROM equipos WHERE id = $1', [id]);
+        if (check.rows.length === 0) {
+            return res.status(404).json({ error: 'Equipo no encontrado' });
+        }
+
+        const equipoNombre = check.rows[0].nombre;
+
+        // Eliminar el equipo (CASCADE eliminará equipo_usuarios y relaciones asociadas)
+        await pool.query('DELETE FROM equipos WHERE id = $1', [id]);
+
+        await auditar(usuarioId, 'equipo.deleted', 'equipo', parseInt(id),
+            { nombre: equipoNombre }, req);
+
+        res.json({ mensaje: `Equipo "${equipoNombre}" eliminado correctamente` });
+    } catch (err) {
+        console.error('[Equipos] Error eliminar:', err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+// ============================================================================
 // EXPORTAR TODAS LAS FUNCIONES
 // ============================================================================
 module.exports = {
@@ -808,6 +865,7 @@ module.exports = {
     moverUsuario,
     asignarLider,
     removerMiembro,
+    eliminar,
     miEquipo,
     dashboardEquipo,
     gestionesEquipo,
