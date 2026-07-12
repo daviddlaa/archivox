@@ -546,6 +546,32 @@ function debounceAuditar() {
 }
 
 // ============================================================================
+// DEEP LINKS - Configuración centralizada
+// ============================================================================
+// Todos los deep links disponibles para notificaciones.
+// Agregar nuevos módulos aquí para que aparezcan en el selector.
+// ============================================================================
+const DEEP_LINKS = [
+    { label: '🏠 Dashboard', url: '/' },
+    { label: '📊 Dashboard (Admin)', url: '/admin', rol: 'admin' },
+    { label: '📋 Solicitudes', url: '/solicitudes' },
+    { label: '📱 Solicitudes (Móvil)', url: '/m/solicitudes' },
+    { label: '📤 Importar Excel', url: '/importar' },
+    { label: '📱 Importar (Móvil)', url: '/m/importar' },
+    { label: '🔄 Historial', url: '/historial' },
+    { label: '📱 Historial (Móvil)', url: '/m/historial' },
+    { label: '💰 Control de Ventas', url: '/equipo-ventas' },
+    { label: '💳 Ventas (Móvil)', url: '/m/ventas' },
+    { label: '🔄 Relaciones', url: '/relaciones' },
+    { label: '📱 Relaciones (Móvil)', url: '/m/relaciones' },
+    { label: '🚀 Gestión por Lotes', url: '/gestion-lote' },
+    { label: '📱 Gestión Lotes (Móvil)', url: '/m/gestion-lote' },
+    { label: '👤 Perfil', url: '/perfil' },
+    { label: '⚙️ Configuración', url: '/perfil?tab=config' },
+    { label: '❓ Ayuda / Tutoriales', url: '/perfil?tab=ayuda' },
+];
+
+// ============================================================================
 // NOTIFICACIONES
 // ============================================================================
 
@@ -744,8 +770,34 @@ async function eliminarNotificacion(id) {
     }
 }
 
+// Actualizar texto del botón de acción según el deep link seleccionado
+function actualizarTextoAccion() {
+    const select = document.getElementById('notifAccionUrl');
+    const textoInput = document.getElementById('notifAccionTexto');
+    const selectedOption = select.options[select.selectedIndex];
+    const label = selectedOption ? selectedOption.text : '';
+    if (label && label !== '🌐 Sin acción (solo informativa)') {
+        // Extraer solo el nombre del módulo (sin emoji)
+        const textoLimpio = label.replace(/^[^\s]*\s/, '');
+        textoInput.value = 'Ir a ' + textoLimpio;
+        textoInput.readOnly = true;
+        textoInput.style.background = '#f3f4f6';
+    } else {
+        textoInput.value = '';
+        textoInput.readOnly = true;
+        textoInput.style.background = '#f3f4f6';
+    }
+}
+
 // Modal crear notificación
 async function abrirModalCrearNotificacion() {
+    // Cargar deep links en el selector
+    const urlSelect = document.getElementById('notifAccionUrl');
+    urlSelect.innerHTML = '<option value="">🌐 Sin acción (solo informativa)</option>';
+    DEEP_LINKS.forEach(function(dl) {
+        urlSelect.innerHTML += '<option value="' + dl.url + '">' + escapeHtml(dl.label) + '</option>';
+    });
+
     // Cargar usuarios para selector de destinatario
     try {
         const res = await fetch('/api/admin/usuarios?limite=100');
@@ -763,7 +815,6 @@ async function abrirModalCrearNotificacion() {
     document.getElementById('notifMensaje').value = '';
     document.getElementById('notifTipo').value = 'info';
     document.getElementById('notifPrioridad').value = 'normal';
-    document.getElementById('notifAccionUrl').value = '';
     document.getElementById('notifAccionTexto').value = '';
     document.getElementById('notifFechaExpiracion').value = '';
     document.getElementById('notifModal').classList.add('active');

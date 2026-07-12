@@ -1,4 +1,11 @@
-// Solicitudes móvil - cards con buscador en tiempo real
+// ============================================================================
+// SOLICITUDES MÓVIL - VERSIÓN OPTIMIZADA
+// ============================================================================
+// Mejoras: AbortController, cache, persistencia de filtros, carga paralela
+// ============================================================================
+
+console.log('[Solicitudes Móvil] Versión optimizada cargando...');
+
 let todosDatos = [];
 let datosFilas = {};
 let filasSeleccionadas = [];
@@ -48,27 +55,31 @@ function toggleSeleccionarTodasVisibles() {
 
 function actualizarContador() {
     const contador = document.getElementById('seleccionadas-count');
-    const actionsFloating = document.getElementById('actions-floating');
-    
-    const btnGestion = document.getElementById('btn-gestion');
+    const actionBar = document.getElementById('mobile-action-bar');
+    const actionBarCount = document.getElementById('action-bar-count');
     const btnSeleccionarTodo = document.getElementById('btn-seleccionar-todo');
+    
     if (contador) contador.textContent = filasSeleccionadas.length;
-    if (actionsFloating) {
+    
+    // Mostrar/ocultar la bottom action bar con animación
+    if (actionBar && actionBarCount) {
+        actionBarCount.textContent = filasSeleccionadas.length;
         if (filasSeleccionadas.length > 0) {
-            actionsFloating.classList.remove('hidden');
-            actionsFloating.classList.add('visible');
+            // Mostrar la barra con animación slide-up
+            actionBar.style.display = 'block';
+            // Forzar reflow para que la transición funcione
+            void actionBar.offsetWidth;
+            actionBar.classList.add('visible');
         } else {
-            actionsFloating.classList.remove('visible');
-            actionsFloating.classList.add('hidden');
+            // Ocultar con animación
+            actionBar.classList.remove('visible');
+            // Esperar a que termine la animación antes de ocultar
+            setTimeout(function() {
+                if (filasSeleccionadas.length === 0) {
+                    actionBar.style.display = 'none';
+                }
+            }, 350);
         }
-    }
-    // Mostrar/ocultar botón de campañas junto a los otros botones flotantes
-    if (btnGestion) {
-        btnGestion.style.display = filasSeleccionadas.length > 0 ? 'inline-flex' : 'none';
-    }
-    var btnAgregarCampanaMovil = document.getElementById('btn-agregar-campana-movil');
-    if (btnAgregarCampanaMovil) {
-        btnAgregarCampanaMovil.style.display = filasSeleccionadas.length > 0 ? 'inline-flex' : 'none';
     }
 
     if (btnSeleccionarTodo) {
@@ -132,6 +143,28 @@ function copiarDatos() {
 }
 
 // ================== INFINITE SCROLL (COMO TIKTOK) ==================
+
+// AbortController para cancelar peticiones duplicadas
+let activeController = null;
+
+// Cache simple en memoria (TTL 30s)
+const queryCache = new Map();
+const CACHE_TTL = 30000;
+
+function getCacheKey(q, estado, segmento, offset) {
+    return q + '|' + estado + '|' + segmento + '|' + offset;
+}
+function getFromCache(q, estado, segmento, offset) {
+    const key = getCacheKey(q, estado, segmento, offset);
+    const entry = queryCache.get(key);
+    if (entry && Date.now() - entry.timestamp < CACHE_TTL) return entry.data;
+    queryCache.delete(key);
+    return null;
+}
+function setCache(q, estado, segmento, offset, data) {
+    const key = getCacheKey(q, estado, segmento, offset);
+    queryCache.set(key, { data: data, timestamp: Date.now() });
+}
 
 // Variables para infinite scroll
 var currentOffset = 0;
@@ -311,64 +344,64 @@ var debounceBusqueda;
 // Función única para buscar y filtrar: mantiene paginación siempre activa
 
 async function buscarEnServidor(resetOffset = false, extraOffset = null) {
+    // Cancelar petición anterior
+    if (activeController) activeController.abort();
+    activeController = new AbortController();
+    var signal = activeController.signal;
+
     try {
         var inputBusqueda = document.getElementById('cedula');
         var termino = inputBusqueda ? inputBusqueda.value.trim() : '';
         var tieneFiltros = !!(termino || filtros.estado || filtros.segmento);
-        
-        // Determinar offset a usar
         var nuevoOffset = (extraOffset !== null) ? extraOffset : (resetOffset ? 0 : currentOffset);
         
+        // Verificar cache
+        var cached = resetOffset ? getFromCache(termino, filtros.estado, filtros.segmento, 0) : null;
+        if (cached) {
+            todosDatos = cached;
+            currentOffset = cached.length;
+            hasMoreData = currentOffset < (cached.total || 0);
+            document.getElementById('totalRegistros').textContent = cached.total || cached.length;
+            document.getElementById('mostrando').textContent = cached.length;
+            renderizarCards(cached);
+            return;
+        }
+        
         if (tieneFiltros) {
-            // Usar endpoint de búsqueda con paginación
             var url = '/api/excel/solicitudes/buscar?q=' + encodeURIComponent(termino || '%') + '&limite=' + TAMANO_LOTE + '&offset=' + nuevoOffset;
+            if (filtros.estado) url += '&estado=' + encodeURIComponent(filtros.estado);
+            if (filtros.segmento) url += '&segmento=' + encodeURIComponent(filtros.segmento);
             
-            if (filtros.estado) {
-                url += '&estado=' + encodeURIComponent(filtros.estado);
-            }
-            if (filtros.segmento) {
-                url += '&segmento=' + encodeURIComponent(filtros.segmento);
-            }
-            
-            var response = await fetch(url);
+            var response = await fetch(url, { signal: signal });
             var result = await response.json();
-            
             var datosRecibidos = Array.isArray(result) ? result : (result.data || []);
             var total = Array.isArray(result) ? result.length : (result.total || 0);
             
             if (resetOffset) {
                 todosDatos = datosRecibidos;
                 currentOffset = datosRecibidos.length;
+                datosRecibidos.total = total;
+                setCache(termino, filtros.estado, filtros.segmento, 0, datosRecibidos);
             } else {
-                // Agregar al final
-                for (var i = 0; i < datosRecibidos.length; i++) {
-                    todosDatos.push(datosRecibidos[i]);
-                }
+                for (var i = 0; i < datosRecibidos.length; i++) todosDatos.push(datosRecibidos[i]);
                 currentOffset += datosRecibidos.length;
             }
-            
             hasMoreData = currentOffset < total;
             busquedaActiva = true;
-            
             document.getElementById('totalRegistros').textContent = total;
             document.getElementById('mostrando').textContent = todosDatos.length;
-            
             renderizarCards(todosDatos);
         } else {
-            // Sin filtros: usar endpoint regular con paginación
             busquedaActiva = false;
-            if (resetOffset) {
-                currentOffset = 0;
-                todosDatos = [];
-                await cargarLoteInicial();
-            } else if (extraOffset !== null) {
-                await cargarMasSolicitudes();
-            }
+            if (resetOffset) { currentOffset = 0; todosDatos = []; await cargarLoteInicial(); }
+            else if (extraOffset !== null) { await cargarMasSolicitudes(); }
         }
         
         console.log('Búsqueda/filtro:', todosDatos.length, 'resultados - q:', termino || '(ninguno)', 'Estado:', filtros.estado || '(todos)', 'Segmento:', filtros.segmento || '(todos)', 'hasMore:', hasMoreData);
     } catch (error) {
-        console.error('Error en búsqueda unificada:', error);
+        if (error.name !== 'AbortError') console.error('Error en búsqueda unificada:', error);
+    } finally {
+        activeController = null;
     }
 }
 

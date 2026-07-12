@@ -66,52 +66,62 @@
     }
 
     /* ========================================================================
-       FILA 1: Segmento + Estado
-       Distribución tipo app - badges grandes y legibles
-       Si ambos textos son largos, el estado baja a la siguiente línea
+       FILA 1: Checkbox + ID + Segmento + Estado
+       Distribución optimizada - sin wrapping de badges
+       ========================================================================
+       MEJORA: Los badges ya no se envuelven a la siguiente línea.
+       - Se usa flex-shrink controlado para que el segmento se trunque
+       - El estado siempre permanece en la misma línea
+       - Altura uniforme para todas las cards
        ======================================================================== */
     .card-fila-1 {
         display: flex;
-        flex-wrap: wrap;
         align-items: center;
         gap: 6px;
         margin-bottom: 10px;
-        padding-right: 0;
-        overflow: visible;
         min-width: 0;
+        min-height: 32px;
+        flex-wrap: nowrap;
+        overflow: hidden;
     }
 
-    /* Badges: tipo chip grande, redondeado, legible */
+    /* Badges: tipo chip, redondeado, legible - altura fija */
     .card-fila-1 .card-badge {
         display: inline-flex;
         align-items: center;
-        padding: 5px 14px;
+        padding: 4px 10px;
         border-radius: 20px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         white-space: nowrap;
-        line-height: 1.4;
+        line-height: 1.3;
         letter-spacing: 0.2px;
-        min-height: 30px;
+        min-height: 26px;
+        flex-shrink: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
     }
 
     .card-fila-1 .card-badge.badge-segmento {
         background: #eef2ff;
         color: #4338ca;
         border: 1.5px solid #c7d2fe;
-        max-width: 55vw;
-        overflow: hidden;
-        text-overflow: ellipsis;
         flex-shrink: 1;
         min-width: 0;
+        max-width: 40vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
-    /* Badge de Estado: siempre visible, con espacio propio */
+    /* Badge de Estado: siempre visible, tamaño fijo */
     .card-fila-1 .card-badge.badge-estado {
         flex-shrink: 0;
-    }
-
-    .card-fila-1 .card-badge.badge-estado {
+        margin-left: auto;
+        max-width: 50%;
+        font-size: 10px;
+        padding: 4px 8px;
         border: 1.5px solid #6ee7b7;
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
         background: #dcfce7;
@@ -693,7 +703,7 @@
     }
 
     /* ========================================================================
-       BOTONES FLOTANTES (FAB) - Mejora visual
+       BOTONES FLOTANTES (FAB) - Mejora visual (LEGACY)
        ======================================================================== */
     .btn-float-primary {
         background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
@@ -701,6 +711,121 @@
 
     .btn-float-secondary {
         background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+    }
+
+    /* ========================================================================
+       BOTTOM ACTION BAR - Barra inferior al seleccionar
+       Tipo: Barra nativa tipo iOS/Android que sube desde abajo
+       ======================================================================== */
+    .mobile-action-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 9999;
+        background: white;
+        border-top: 1px solid #e5e7eb;
+        box-shadow: 0 -6px 24px rgba(0,0,0,0.15);
+        /* Animación slide up */
+        transform: translateY(100%);
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+        opacity: 0;
+        padding: 10px 16px;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .mobile-action-bar.visible {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    .action-bar-inner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .action-bar-info {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .action-bar-count {
+        font-size: 16px;
+        font-weight: 800;
+        color: #6366f1;
+        background: #eef2ff;
+        min-width: 30px;
+        height: 30px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 8px;
+        line-height: 1;
+    }
+
+    .action-bar-label {
+        font-size: 12px;
+        color: #6b7280;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .action-bar-buttons {
+        display: flex;
+        gap: 8px;
+        flex: 1;
+        justify-content: flex-end;
+    }
+
+    .action-bar-btn {
+        padding: 10px 14px;
+        border: none;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        line-height: 1;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+        letter-spacing: 0.2px;
+    }
+
+    .action-bar-btn:active {
+        transform: scale(0.94);
+    }
+
+    .action-bar-btn.btn-campana {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        box-shadow: 0 3px 10px rgba(99, 102, 241, 0.35);
+    }
+
+    .action-bar-btn.btn-campana:active {
+        box-shadow: 0 1px 4px rgba(99, 102, 241, 0.25);
+    }
+
+    .action-bar-btn.btn-agregar {
+        background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        color: white;
+        box-shadow: 0 3px 10px rgba(124, 58, 237, 0.35);
+    }
+
+    .action-bar-btn.btn-agregar:active {
+        box-shadow: 0 1px 4px rgba(124, 58, 237, 0.25);
     }
 
     /* ========================================================================

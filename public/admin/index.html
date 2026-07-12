@@ -310,12 +310,15 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Acción (URL)</label>
-                    <input type="text" id="notifAccionUrl" placeholder="/perfil">
+                    <label>Acción (URL) - Deep Link</label>
+                    <select id="notifAccionUrl" onchange="actualizarTextoAccion()">
+                        <option value="">🌐 Sin acción (solo informativa)</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Texto del botón de acción</label>
-                    <input type="text" id="notifAccionTexto" placeholder="Actualizar ahora">
+                    <input type="text" id="notifAccionTexto" placeholder="Actualizar ahora" readonly style="background:#f3f4f6;color:#6b7280;">
+                    <small style="color:#6b7280;font-size:11px;display:block;margin-top:4px;">El texto se completa automáticamente según la opción seleccionada</small>
                 </div>
                 <div class="form-group">
                     <label>Fecha de expiración (opcional)</label>

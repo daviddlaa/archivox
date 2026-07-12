@@ -65,16 +65,22 @@
         </div>
     </div>
 
-    <!-- Botones flotantes de campañas (FAB) -->
-    <div class="actions-floating hidden" id="actions-floating">
-        <button class="btn-float btn-float-primary" id="btn-gestion" onclick="abrirModalNuevaGestionMovil()" title="Crear campaña">
-            <span class="btn-float-icon">🚀</span>
-            <span>Crear</span>
-        </button>
-        <button class="btn-float btn-float-secondary" id="btn-agregar-campana-movil" onclick="abrirModalAgregarCampanaMovil()" title="Agregar a campaña" style="display:none;">
-            <span class="btn-float-icon">➕</span>
-            <span>Agregar</span>
-        </button>
+    <!-- Bottom Action Bar - aparece al seleccionar solicitudes -->
+    <div class="mobile-action-bar" id="mobile-action-bar" style="display:none;">
+        <div class="action-bar-inner">
+            <div class="action-bar-info">
+                <span class="action-bar-count" id="action-bar-count">0</span>
+                <span class="action-bar-label">seleccionadas</span>
+            </div>
+            <div class="action-bar-buttons">
+                <button class="action-bar-btn btn-campana" onclick="abrirModalNuevaGestionMovil()" title="Crear campaña con las solicitudes seleccionadas">
+                    🚀 Crear campaña
+                </button>
+                <button class="action-bar-btn btn-agregar" onclick="abrirModalAgregarCampanaMovil()" title="Agregar solicitudes a una campaña existente">
+                    ➕ Agregar
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Cards List -->

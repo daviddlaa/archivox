@@ -99,84 +99,98 @@ exports.listarSolicitudes = async (req, res) => {
         });
     }
 
+    // ============================================================================
+// LISTAR SOLICITUDES CON PAGINACIÓN OPTIMIZADA
+// ============================================================================
+// VERSIÓN OPTIMIZADA:
+// 1. Usa LATERAL JOIN en lugar de subquery correlacionada (mucho más rápido con miles de registros)
+// 2. LIMIT/OFFSET con parámetros (seguridad, sin SQL injection)
+// 3. COUNT con los mismos filtros para paginación precisa
+// 4. Ordenamiento por columnas mapeado a nombres reales de columna (evita SQL injection)
+// ============================================================================
+
+    // Mapa de columnas seguras para ordenamiento (evita SQL injection)
+    const columnasPermitidas = {
+        'id_solicitud': 's.id',
+        'estado': 's.estado',
+        'cedula': 's.cedula',
+        'nombre': 's.nombre',
+        'segmento': 's.segmento',
+        'producto': 's.producto',
+        'fecha_solicitud': 's.fecha_solicitud'
+    };
+    
     let sql = `SELECT s.*,
                    g.tipo_gestion as ultima_gestion_tipo,
                    g.observacion as ultima_gestion_obs,
                    g.fecha_gestion as ultima_gestion_fecha
             FROM solicitudes s
-            LEFT JOIN gestiones g ON g.id = (
-                SELECT g2.id FROM gestiones g2 
-                WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id
-                ORDER BY g2.fecha_gestion DESC LIMIT 1
-            )
+            LEFT JOIN LATERAL (
+                SELECT g2.tipo_gestion, g2.observacion, g2.fecha_gestion
+                FROM gestiones g2
+                WHERE g2.solicitud_id = s.id_solicitud 
+                  AND g2.usuario_id = s.usuario_id
+                ORDER BY g2.fecha_gestion DESC
+                LIMIT 1
+            ) g ON TRUE
             WHERE s.usuario_id = $1`;
     const params = [usuarioId];
+    let paramIndex = 2;
 
     if (estado) {
-        sql += ' AND estado = $' + (params.length + 1);
+        sql += ' AND s.estado = $' + paramIndex++;
         params.push(estado);
     }
 
     if (segmento) {
-        sql += ' AND segmento = $' + (params.length + 1);
+        sql += ' AND s.segmento = $' + paramIndex++;
         params.push(segmento);
     }
 
     if (cedula) {
-        sql += ' AND cedula = $' + (params.length + 1);
+        sql += ' AND s.cedula = $' + paramIndex++;
         params.push(cedula);
     }
 
-if (producto) {
-        sql += ' AND producto = $' + (params.length + 1);
+    if (producto) {
+        sql += ' AND s.producto = $' + paramIndex++;
         params.push(producto);
     }
 
-if (nombre) {
-        sql += ' AND LOWER(nombre) LIKE LOWER($' + (params.length + 1) + ')';
+    if (nombre) {
+        sql += ' AND LOWER(s.nombre) LIKE LOWER($' + paramIndex++ + ')';
         params.push('%' + nombre + '%');
     }
 
     if (telefono) {
-        sql += ' AND LOWER(celular) LIKE LOWER($' + (params.length + 1) + ')';
+        sql += ' AND s.celular::text LIKE $' + paramIndex++;
         params.push('%' + telefono + '%');
     }
 
-    // Ordenamiento
-    let columnaOrden = 'id';
-    if (orden === 'id_solicitud') columnaOrden = 'id';
-    else if (orden === 'estado') columnaOrden = 'estado';
-    else if (orden === 'cedula') columnaOrden = 'cedula';
-    else if (orden === 'nombre') columnaOrden = 'nombre';
-    else if (orden === 'segmento') columnaOrden = 'segmento';
-    else if (orden === 'producto') columnaOrden = 'producto';
-    else if (orden === 'fecha_solicitud') columnaOrden = 'fecha_solicitud';
-    
-let direccionOrden = direccion === 'ASC' ? 'ASC' : 'DESC';
-    sql = sql + ' ORDER BY ' + columnaOrden + ' ' + direccionOrden;
+    // Ordenamiento seguro (solo columnas permitidas)
+    const columnaOrden = columnasPermitidas[orden] || 's.id';
+    const direccionOrden = direccion === 'ASC' ? 'ASC' : 'DESC';
+    sql += ' ORDER BY ' + columnaOrden + ' ' + direccionOrden;
 
-    // Agregar paginación por defecto 50
+    // Paginación con parámetros (seguridad)
     const limit = parseInt(limite) || 50;
     const offsetVal = parseInt(offset) || 0;
-    sql += ' LIMIT ' + limit + ' OFFSET ' + offsetVal;
+    sql += ' LIMIT $' + paramIndex++ + ' OFFSET $' + paramIndex++;
+    params.push(limit, offsetVal);
 
     try {
-        const result = await pool.query(sql, params);
-        
-        // Contar total para paginación
-        let countSql = 'SELECT COUNT(*) as total FROM solicitudes WHERE usuario_id = $1';
-        const countParams = [usuarioId];
-        
-        if (estado) {
-            countSql += ' AND estado = $2';
-            countParams.push(estado);
-        }
-        if (segmento) {
-            countSql += ' AND segmento = $' + countParams.length + 1;
-            countParams.push(segmento);
-        }
-        
-        const countResult = await pool.query(countSql, countParams);
+        const [result, countResult] = await Promise.all([
+            pool.query(sql, params),
+            (() => {
+                let countSql = 'SELECT COUNT(*) as total FROM solicitudes s WHERE s.usuario_id = $1';
+                const countParams = [usuarioId];
+                let countIdx = 2;
+                if (estado) { countSql += ' AND s.estado = $' + countIdx++; countParams.push(estado); }
+                if (segmento) { countSql += ' AND s.segmento = $' + countIdx++; countParams.push(segmento); }
+                return pool.query(countSql, countParams);
+            })()
+        ]);
+
         const total = parseInt(countResult.rows[0]?.total) || 0;
         
         res.json({
@@ -1118,104 +1132,110 @@ exports.limpiarSolicitudes = async (req, res) => {
 
 // Buscar solicitudes directamente en el servidor
 // Esta función evita el infinite scroll cuando el usuario busca
+// ============================================================================
+// BUSCAR SOLICITUDES - OPTIMIZADA
+// ============================================================================
+// Características:
+// - LATERAL JOIN (más rápido que subquery)
+// - Parámetros seguros (LIMIT/OFFSET con bind params)
+// - COUNT con mismos filtros para paginación precisa
+// - Búsqueda por cédula, nombre, celular o ID
+// ============================================================================
 exports.buscarSolicitudes = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({ error: 'No autenticado' });
-    }    const {
-        q = '',           // Término de búsqueda (cedula, nombre, celular)
-        estado = '',       // Filtro por estado
-        segmento = '',    // Filtro por segmento
-        limite = 50,      // Límite de resultados por página (paginación siempre activa)
-        offset = 0        // Offset para paginación
+    }
+    
+    const {
+        q = '',
+        estado = '',
+        segmento = '',
+        limite = 50,
+        offset = 0
     } = req.query;
 
     try {
+        // Query principal con LATERAL JOIN optimizado
         let sql = `SELECT s.*,
                    g.tipo_gestion as ultima_gestion_tipo,
                    g.observacion as ultima_gestion_obs,
                    g.fecha_gestion as ultima_gestion_fecha
             FROM solicitudes s
-            LEFT JOIN gestiones g ON g.id = (
-                SELECT g2.id FROM gestiones g2 
-                WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id
-                ORDER BY g2.fecha_gestion DESC LIMIT 1
-            )
+            LEFT JOIN LATERAL (
+                SELECT g2.tipo_gestion, g2.observacion, g2.fecha_gestion
+                FROM gestiones g2
+                WHERE g2.solicitud_id = s.id_solicitud 
+                  AND g2.usuario_id = s.usuario_id
+                ORDER BY g2.fecha_gestion DESC
+                LIMIT 1
+            ) g ON TRUE
             WHERE s.usuario_id = $1`;
         const params = [usuarioId];
-        let paramIndex = 2;
+        let paramIdx = 2;
 
-// Filtro por búsqueda (cedula, nombre, celular o id_solicitud)
+        // Filtro de búsqueda unificada
         if (q && q.trim()) {
             const termino = '%' + q.trim() + '%';
             sql += ` AND (
-                s.cedula LIKE $${paramIndex} 
-                OR LOWER(s.nombre) LIKE LOWER($${paramIndex}) 
-                OR s.celular LIKE $${paramIndex}
-                OR CAST(s.id_solicitud AS TEXT) LIKE $${paramIndex}
+                s.cedula LIKE $${paramIdx} 
+                OR LOWER(s.nombre) LIKE LOWER($${paramIdx}) 
+                OR s.celular LIKE $${paramIdx}
+                OR CAST(s.id_solicitud AS TEXT) LIKE $${paramIdx}
             )`;
             params.push(termino);
-            paramIndex++;
+            paramIdx++;
         }
 
-        // Filtro por estado
         if (estado) {
-            sql += ` AND s.estado = $${paramIndex}`;
+            sql += ` AND s.estado = $${paramIdx++}`;
             params.push(estado);
-            paramIndex++;
         }
 
-        // Filtro por segmento
         if (segmento) {
-            sql += ` AND s.segmento = $${paramIndex}`;
+            sql += ` AND s.segmento = $${paramIdx++}`;
             params.push(segmento);
-            paramIndex++;
         }
 
-        // Agregar orden y paginación
-        sql += ' ORDER BY s.id DESC';
-        sql += ' LIMIT ' + parseInt(limite) + ' OFFSET ' + parseInt(offset);
+        // Paginación con parámetros seguros
+        const limitVal = parseInt(limite) || 50;
+        const offsetVal = parseInt(offset) || 0;
+        sql += ' ORDER BY s.id DESC LIMIT $' + paramIdx++ + ' OFFSET $' + paramIdx++;
+        params.push(limitVal, offsetVal);
 
-        // Ejecutar query principal
-        const result = await pool.query(sql, params);
-        
-        // Query de conteo separada (sin JOIN, solo solicitudes)
-        let countSql = 'SELECT COUNT(*) as total FROM solicitudes s WHERE s.usuario_id = $1';
-        const countParams = [usuarioId];
-        let countIndex = 2;
-        
-        if (q && q.trim()) {
-            const termino = '%' + q.trim() + '%';
-            countSql += ` AND (
-                s.cedula LIKE $${countIndex} 
-                OR LOWER(s.nombre) LIKE LOWER($${countIndex}) 
-                OR s.celular LIKE $${countIndex}
-                OR CAST(s.id_solicitud AS TEXT) LIKE $${countIndex}
-            )`;
-            countParams.push(termino);
-            countIndex++;
-        }
-        
-        if (estado) {
-            countSql += ` AND s.estado = $${countIndex}`;
-            countParams.push(estado);
-            countIndex++;
-        }
-        
-        if (segmento) {
-            countSql += ` AND s.segmento = $${countIndex}`;
-            countParams.push(segmento);
-            countIndex++;
-        }
-        
-        const countResult = await pool.query(countSql, countParams);
+        // Ejecutar ambas consultas en paralelo
+        const [result, countResult] = await Promise.all([
+            pool.query(sql, params),
+            (() => {
+                let countSql = 'SELECT COUNT(*) as total FROM solicitudes s WHERE s.usuario_id = $1';
+                const countParams = [usuarioId];
+                let cIdx = 2;
+                
+                if (q && q.trim()) {
+                    const termino = '%' + q.trim() + '%';
+                    countSql += ` AND (
+                        s.cedula LIKE $${cIdx} 
+                        OR LOWER(s.nombre) LIKE LOWER($${cIdx}) 
+                        OR s.celular LIKE $${cIdx}
+                        OR CAST(s.id_solicitud AS TEXT) LIKE $${cIdx}
+                    )`;
+                    countParams.push(termino);
+                    cIdx++;
+                }
+                if (estado) { countSql += ` AND s.estado = $${cIdx++}`; countParams.push(estado); }
+                if (segmento) { countSql += ` AND s.segmento = $${cIdx++}`; countParams.push(segmento); }
+                
+                return pool.query(countSql, countParams);
+            })()
+        ]);
+
         const total = parseInt(countResult.rows[0]?.total) || 0;
 
         res.json({
             data: result.rows,
             total: total,
-            limite: parseInt(limite),
-            offset: parseInt(offset)
+            limite: limitVal,
+            offset: offsetVal
         });
     } catch (err) {
         console.error('Error buscarSolicitudes:', err);

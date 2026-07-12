@@ -753,7 +753,7 @@ td .cell-combinado {
 }
 
 /* Estilo de cada Card */
-.cliente-card {
+.solicitud-card {
     background: white;
     border-radius: 12px;
     padding: 16px;
@@ -762,41 +762,84 @@ td .cell-combinado {
     border: 2px solid transparent;
 }
 
-.cliente-card:hover {
+.solicitud-card:hover {
     box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     transform: translateY(-2px);
 }
 
-.cliente-card.fila-seleccionada {
+.solicitud-card.seleccionada,
+.solicitud-card.fila-seleccionada {
     border: 2px solid #2563eb;
     background: #eff6ff;
 }
 
-/* Header del card */
-.cliente-header {
+/* ===== FILA 1: Checkbox + ID + Segmento + Estado (sin wrapping) ===== */
+.card-fila-1 {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 8px;
     margin-bottom: 10px;
+    min-height: 30px;
+    flex-wrap: nowrap;
+    overflow: hidden;
 }
 
-.cliente-header input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
+.card-fila-1 .card-checkbox-wrapper {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+.card-fila-1 .card-checkbox {
+    width: 16px;
+    height: 16px;
     cursor: pointer;
 }
 
-.cliente-id {
-    font-size: 13px;
+.card-fila-1 .card-id {
+    font-size: 12px;
     font-weight: 600;
     color: #6b7280;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
-.cliente-estado {
+.card-fila-1 .card-badge {
+    display: inline-flex;
+    align-items: center;
     padding: 4px 10px;
     border-radius: 20px;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 700;
+    white-space: nowrap;
+    line-height: 1.3;
+    min-height: 24px;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.card-fila-1 .card-badge.badge-segmento {
+    background: #eef2ff;
+    color: #4338ca;
+    border: 1.5px solid #c7d2fe;
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: 35%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.card-fila-1 .card-badge.badge-estado {
+    flex-shrink: 0;
+    margin-left: auto;
+    max-width: 45%;
+    font-size: 10px;
+    padding: 4px 8px;
+    border: 1.5px solid #6ee7b7;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 /* Nombre del cliente */
