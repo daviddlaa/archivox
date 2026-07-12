@@ -20,8 +20,46 @@
 
 | Fecha | Versión | Cambio |
 |------|---------|--------|
-| Jul 2026 | 1.0 → 2.0 | **Optimización de Arquitectura** — Ver detalle abajo |
+| Jul 2026 | 1.0 → 2.1 | 🏗️ **Estandarización Frontend (Fases 2-5)** — Botones, badges, modales, análisis legacy |
+| Jul 2026 | 1.0 → 2.0 | **Optimización de Arquitectura** — Caché, índices, pool, SSE |
 | Jul 2026 | 1.0 | Versión inicial del sistema |
+
+---
+
+## 🚀 Changelog v2.1 — Estandarización Frontend (Julio 2026)
+
+### Resumen
+
+Estandarización completa de la interfaz de usuario: sistema unificado de **botones**, **badges**, **modales**, más análisis de pendientes (página legacy, admin header).
+
+### 🎯 Fase 2 — Botones y Badges (Alta prioridad)
+
+**Sistema unificado de botones** (en `public/desktop/css/base.css` + `public/movil/css/estilos.css`):
+
+| Clase | Propósito |
+|-------|-----------|
+| `.btn` | Botón base (inline-flex, gap, border-radius 8px) |
+| `.btn-primary` | Acción principal (azul #2563eb) |
+| `.btn-secondary` | Acción secundaria (gris) |
+| `.btn-success` | Éxito/confirmación (verde) |
+| `.btn-warning` | Advertencia (amarillo) |
+| `.btn-danger` | Peligro/eliminar (rojo) |
+| `.btn-ghost` | Sutil/transparente |
+| `.btn-outline` | Outline azul |
+| `.btn-sm` / `.btn-lg` / `.btn-block` | Tamaños |
+
+**Sistema unificado de badges** (por color canónico en inglés):
+
+| Canónico | Aliases legacy |
+|----------|---------------|
+| `.badge-green` | `.badge-verde`, `.badge-success` |
+| `.badge-red` | `.badge-rojo`, `.badge-danger` |
+| `.badge-yellow` | `.badge-amarillo`, `.badge-warning` |
+| `.badge-blue` | `.badge-azul`, `.badge-info` |
+| `.badge-purple` | — |
+| `.badge-gray` | `.badge-secondary` |
+
+**Etiquetas de estado** unificadas (`.estado-ACTIVADA`, `-RECHAZADA`, `-DEVUELTA`, `-PENDIENTE`, `-EN_REVISION`) — eliminados duplicados de `main.css`.
 
 ---
 
@@ -94,10 +132,98 @@ El **12 de Julio de 2026** se ejecutó la migración `002_add_compound_indexes.j
 | Pool de conexiones | max 10 (default) | max 20 | **2x capacidad** |
 | Conexiones SSE | Sin límite | 500 total, 5/usuario | **Controlado** |
 
-### Pendiente para Completar
+---
 
-- [ ] Configurar `SESSION_SECRET` como variable de entorno en Render
-- [ ] Verificar que Render se despliegue correctamente con los cambios
+### 🎯 Fase 3 — Sistema Unificado de Modales (Media prioridad)
+
+**Nuevos archivos creados:**
+
+| Archivo | Descripción |
+|---------|-------------|
+| `public/css/modal.css` | Estilos compartidos — overlay, content, header, body, footer, animaciones, responsive |
+| `public/js/modal.js` | API unificada con backward compatibility |
+
+**API de Modal:**
+```javascript
+Modal.abrir(html, { ancho: 'wide'|'narrow' })   // Modal genérico
+Modal.cerrar()                                    // Cerrar con animación
+Modal.confirmar({ titulo, mensaje, icono, onConfirm })  // Confirmación
+Modal.formulario({ titulo, html, onGuardar })     // Formulario con header+footer
+```
+
+**Archivos migrados (eliminado inline `crearModal`/`cerrarModal`):**
+
+| Archivo | Líneas eliminadas | Sistema anterior |
+|---------|:-----------------:|-----------------|
+| `desktop/js/solicitudes.js` | ~15 | `crearModal()` inline con `modal-overlay` |
+| `desktop/js/gestiones.js` | ~28 | `crearModal()` inline con ID `modal-gestiones` |
+| `desktop/js/relaciones.js` | ~16 | `crearModal()` inline con estilo inline |
+| `desktop/js/gestion-lote.js` | ~30 | `crearModal()` inline con estilo inline |
+
+**SweetAlert2 reemplazado:**
+- `public/desktop/js/ventas.js` — `Swal.fire()` → `Modal.formulario()` + `alert()`
+- `public/desktop/ventas.html` — CDN `sweetalert2@11` eliminado
+
+**Páginas actualizadas con `modal.css` + `modal.js`:**
+`solicitudes.html`, `gestiones.html`, `relaciones.html`, `gestion-lote.html`, `ventas.html`
+
+**Excepción documentada:** Panel Admin (`admin/index.html`) mantiene su propio sistema de modales (HTML en DOM + clase `.active` + overlay compartido). No se migró porque:
+- Tiene 4 modales con lógica compleja (validación, AJAX, reset de campos)
+- Tiene overlay compartido entre múltiples modales
+- Es más seguro mantenerlo estable que refactorizarlo
+
+---
+
+### 🎯 Fase 4 — Análisis Página Legacy (`public/index.html`)
+
+**Estado actual:**
+- Sidebar antiguo (`sidebar.movable` con `toggleMenu()`)
+- Sin autenticación (links a `/login`)
+- Sin Drawer, sin notificaciones, sin `.page-header`
+- Usa `css/main.css` (~2000 líneas)
+- Usa `js/dashboard.js` independiente
+- Sin versión responsive funcional
+
+**Estrategia de migración (estimado ~45 min):**
+1. Reemplazar `<aside class="sidebar movable">` por `<div id="drawer-wrapper">`
+2. Cambiar `css/main.css` por `desktop/css/base.css` + `css/drawer.css`
+3. Eliminar `toggleMenu()` y su JS asociado
+4. Agregar `.page-header` con título y campanita de notificaciones
+5. Cargar `drawer.js` + `notificaciones-dashboard.js`
+6. Migrar dashboard stats a `desktop/js/dashboard.js`
+
+**Riesgo:** Bajo — la página es un placeholder simple sin funcionalidad real.
+
+---
+
+### 🎯 Fase 5 — Análisis Admin Header (Baja prioridad)
+
+**Decisión: NO unificar.** El `admin-header` tiene funcionalidades que `.page-header` no soporta:
+- Botón de menú específico (`.admin-menu-btn`)
+- Reloj en vivo (`.admin-clock`)
+- Badge de rol (`.admin-badge`: "Super Admin" / "Admin")
+- Layout con tabs debajo del header
+
+**Recomendación futura:** En un rediseño del panel admin, `.admin-header` podría heredar de `.page-header` con extensiones CSS. También se podría eliminar ~100 líneas de CSS duplicado de modales en `admin.css` importando `modal.css`.
+
+---
+
+### 📊 Resumen de cambios — Sesión Estandarización Frontend
+
+| Concepto | Antes | Después |
+|---------|-------|---------|
+| Sistemas de botones | ~50 clases en ~12 archivos CSS | 1 sistema unificado (8 variantes) en `base.css` + `estilos.css` |
+| Sistemas de badges | 3 sistemas independientes | 1 sistema por color con aliases legacy |
+| Sistemas de modales | 4 implementaciones inline + SweetAlert2 | 1 compartido (`modal.js` + `modal.css`) + 1 excepción (admin) |
+| SweetAlert2 | CDN externo en ventas.html | Eliminado (reemplazado por Modal) |
+| Código eliminado | ~160+ líneas (inline crearModal + Swal + script temp) | Código más limpio y mantenible |
+
+### 📌 Pendientes para próximas fases
+
+- [ ] Integrar `modal.js` en `drawer.js` para auto-carga en nuevas páginas
+- [ ] Unificar CSS de modales admin con `modal.css` (~100 líneas duplicadas)
+- [ ] Migrar `public/index.html` legacy (~45 min)
+- [ ] Rediseñar panel admin (incluye header + modales)
 
 ---
 
