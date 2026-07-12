@@ -56,6 +56,14 @@ function renderCharts(datos, segmentos) {
     }
 }
 
+// Función para abrir nueva solicitud desde el dashboard móvil
+function abrirNuevaSolicitudDesdeDash() {
+    // Navegar a solicitudes y automáticamente abrir el modal después de cargar
+    sessionStorage.setItem('abrirNuevaSolicitud', 'true');
+    window.location.href = '/m/solicitudes';
+    return false;
+}
+
 window.addEventListener('DOMContentLoaded', cargarDatos);
 
 // Botón cerrar sesión

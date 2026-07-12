@@ -103,6 +103,17 @@
     box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
 }
 
+.dashboard-quick-links .btn-nueva-solicitud-dash {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: white;
+}
+
+.dashboard-quick-links .btn-nueva-solicitud-dash:hover {
+    background: #047857;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+}
+
 /* ===== STATS ROW - COMPACTO ===== */
 .dashboard-stats {
     display: grid;

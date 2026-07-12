@@ -157,6 +157,15 @@ router.put(
     excelController.actualizarCompletarInfo
 );
 
+// ================== ELIMINAR SOLICITUD ==================
+
+// Eliminar una solicitud específica
+router.delete(
+    '/solicitudes/:id',
+    requiresAuth,
+    excelController.eliminarSolicitud
+);
+
 // ================== CÓDIGO PLUS ==================
 
 // Obtener una solicitud por ID

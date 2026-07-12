@@ -537,6 +537,14 @@ function renderizarCards(datos) {
         html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); abrirWhatsAppChatMovil(\'' + escaparParaAtributo(item.celular || '') + '\')"><span class="btn-icon">💬</span><span class="btn-label">WhatsApp</span></button>';
         html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletarInfoMovil(\'' + id + '\')"><span class="btn-icon">✏️</span><span class="btn-label">Completar</span></button>';
         html += '    <button class="card-btn btn-llamar" onclick="event.stopPropagation(); llamarCliente(\'' + escaparParaAtributo(item.celular || '') + '\')"><span class="btn-icon">📞</span><span class="btn-label">Llamar</span></button>';
+        html += '    <div class="card-actions-more-movil" onclick="event.stopPropagation();">';
+        html += '      <button class="card-btn btn-more-movil" onclick="toggleCardMenuMovil(event, \'' + id + '\')" title="Más acciones">⋮</button>';
+        html += '      <div class="card-dropdown-menu-movil" id="card-menu-movil-' + id + '">';
+        html += '        <button class="dropdown-item" onclick="event.stopPropagation(); abrirCompletarInfoMovil(\'' + id + '\'); cerrarTodosLosMenusMovil()">✏️ Editar</button>';
+        html += '        <div class="dropdown-divider"></div>';
+        html += '        <button class="dropdown-item dropdown-item-danger" onclick="event.stopPropagation(); confirmarEliminarSolicitudMovil(\'' + id + '\'); cerrarTodosLosMenusMovil()">🗑️ Eliminar</button>';
+        html += '      </div>';
+        html += '    </div>';
         html += '  </div>';
 
         // FILA 4: Seguimiento
@@ -1754,51 +1762,50 @@ async function abrirModalNuevaSolicitudMovil() {
     // Advertencia de duplicado
     html += '    <div class="ns-movil-duplicado-warning" id="ns-movil-duplicado-warning">⚠️ <span id="ns-movil-duplicado-msg"></span></div>';
 
-    // Sección: Información del Cliente
-    html += '    <div class="ns-movil-section">';
-    html += '      <div class="ns-movil-section-title">👤 Información del Cliente</div>';
-    html += '      <div class="ns-movil-field">';
-    html += '        <label>📝 Nombre <span class="required">*</span></label>';
-    html += '        <input type="text" id="ns-movil-nombre" placeholder="Nombre completo" oninput="validarNombreMovil()">';
-    html += '        <div class="validation-feedback" id="ns-movil-nombre-feedback"></div>';
-    html += '      </div>';
+    // Sección: Información Principal (campos más importantes primero)
+    html += '    <div class="ns-movil-section ns-movil-section-primary">';
+    html += '      <div class="ns-movil-section-title">📋 Información Principal</div>';
     html += '      <div class="ns-movil-field">';
     html += '        <label>🆔 Cédula <span class="required">*</span></label>';
     html += '        <input type="text" id="ns-movil-cedula" placeholder="10 dígitos" maxlength="10" inputmode="numeric" oninput="validarCedulaMovil()" onblur="verificarDuplicadoCedulaMovil()">';
     html += '        <div class="validation-feedback" id="ns-movil-cedula-feedback"></div>';
     html += '      </div>';
     html += '      <div class="ns-movil-field">';
-    html += '        <label>📞 Celular <span class="required">*</span></label>';
+    html += '        <label>📝 Nombre <span class="required">*</span></label>';
+    html += '        <input type="text" id="ns-movil-nombre" placeholder="Nombre completo" oninput="validarNombreMovil()">';
+    html += '        <div class="validation-feedback" id="ns-movil-nombre-feedback"></div>';
+    html += '      </div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>📞 Teléfono <span class="required">*</span></label>';
     html += '        <input type="tel" id="ns-movil-celular" placeholder="0991234567" maxlength="10" inputmode="numeric" oninput="validarCelularMovil()">';
     html += '        <div class="validation-feedback" id="ns-movil-celular-feedback"></div>';
-    html += '      </div>';
-    html += '      <div class="ns-movil-field">';
-    html += '        <label>📧 Correo Electrónico</label>';
-    html += '        <input type="email" id="ns-movil-correo" placeholder="cliente@ejemplo.com" inputmode="email" oninput="validarCorreoMovil()">';
-    html += '        <div class="validation-feedback" id="ns-movil-correo-feedback"></div>';
-    html += '      </div>';
-    html += '    </div>';
-
-    // Sección: Datos del Producto
-    html += '    <div class="ns-movil-section">';
-    html += '      <div class="ns-movil-section-title">📦 Datos del Producto</div>';
-    html += '      <div class="ns-movil-field">';
-    html += '        <label>📦 Producto</label>';
-    html += '        <input type="text" id="ns-movil-producto" placeholder="Ej: Crédito">';
     html += '      </div>';
     html += '      <div class="ns-movil-field">';
     html += '        <label>🏷️ Segmento</label>';
     html += '        <select id="ns-movil-segmento">' + segmentosOptions + '</select>';
     html += '      </div>';
     html += '      <div class="ns-movil-field">';
-    html += '        <label>🔢 Código Plus</label>';
-    html += '        <input type="text" id="ns-movil-codigo-plus" placeholder="Código interno">';
+    html += '        <label>📌 Estado <span class="required">*</span></label>';
+    html += '        <select id="ns-movil-estado">' + estadosOptions + '</select>';
     html += '      </div>';
     html += '    </div>';
 
-    // Sección: Información Adicional
-    html += '    <div class="ns-movil-section">';
-    html += '      <div class="ns-movil-section-title">📍 Información Adicional</div>';
+    // Sección: Información Adicional (campos secundarios / opcionales)
+    html += '    <div class="ns-movil-section ns-movil-section-secondary">';
+    html += '      <div class="ns-movil-section-title">📦 Más Información <span class="optional-badge">Opcional</span></div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>📦 Producto</label>';
+    html += '        <input type="text" id="ns-movil-producto" placeholder="Ej: Crédito">';
+    html += '      </div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>🔢 Código Plus</label>';
+    html += '        <input type="text" id="ns-movil-codigo-plus" placeholder="Código interno">';
+    html += '      </div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>📧 Correo Electrónico</label>';
+    html += '        <input type="email" id="ns-movil-correo" placeholder="cliente@ejemplo.com" inputmode="email" oninput="validarCorreoMovil()">';
+    html += '        <div class="validation-feedback" id="ns-movil-correo-feedback"></div>';
+    html += '      </div>';
     html += '      <div class="ns-movil-field">';
     html += '        <label>📍 Dirección</label>';
     html += '        <input type="text" id="ns-movil-direccion" placeholder="Dirección domiciliaria">';
@@ -1810,15 +1817,6 @@ async function abrirModalNuevaSolicitudMovil() {
     html += '      <div class="ns-movil-field">';
     html += '        <label>💰 Ingreso Mensual</label>';
     html += '        <input type="number" id="ns-movil-ingreso" placeholder="0.00" step="0.01" min="0" inputmode="decimal">';
-    html += '      </div>';
-    html += '    </div>';
-
-    // Sección: Estado Inicial
-    html += '    <div class="ns-movil-section">';
-    html += '      <div class="ns-movil-section-title">📌 Estado Inicial</div>';
-    html += '      <div class="ns-movil-field">';
-    html += '        <label>📌 Estado <span class="required">*</span></label>';
-    html += '        <select id="ns-movil-estado">' + estadosOptions + '</select>';
     html += '      </div>';
     html += '    </div>';
 
@@ -2032,7 +2030,75 @@ async function guardarNuevaSolicitudMovil() {
     }
 }
 
+// ============================================================================
+// MENÚ CONTEXTUAL MÓVIL (⋮) - Editar / Eliminar en Cards
+// ============================================================================
+
+function toggleCardMenuMovil(event, id) {
+    event.stopPropagation();
+    cerrarTodosLosMenusMovil(id);
+    var menu = document.getElementById('card-menu-movil-' + id);
+    if (menu) {
+        menu.classList.toggle('visible');
+    }
+}
+
+function cerrarTodosLosMenusMovil(excludeId) {
+    document.querySelectorAll('.card-dropdown-menu-movil').forEach(function(m) {
+        if (excludeId && m.id === 'card-menu-movil-' + excludeId) return;
+        m.classList.remove('visible');
+    });
+}
+
+if (!window._cardMenuMovilListenerAttached) {
+    window._cardMenuMovilListenerAttached = true;
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.card-actions-more-movil')) {
+            cerrarTodosLosMenusMovil();
+        }
+    });
+}
+
+function confirmarEliminarSolicitudMovil(id) {
+    var datos = datosFilas[id];
+    var nombre = datos ? (datos.nombre || 'desconocido') : 'desconocido';
+    
+    if (!confirm('¿Eliminar solicitud #' + id + ' de ' + nombre + '?\n\nEsta acción NO se puede deshacer.')) {
+        return;
+    }
+    
+    eliminarSolicitudMovil(id);
+}
+
+async function eliminarSolicitudMovil(id) {
+    try {
+        var response = await fetch('/api/excel/solicitudes/' + id, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        var resultado = await response.json();
+        
+        if (response.ok) {
+            alert('✅ Solicitud eliminada');
+            if (typeof init === 'function') init();
+        } else {
+            alert('❌ Error: ' + (resultado.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('❌ Error al eliminar');
+    }
+}
+
 // Iniciar al cargar página
 window.addEventListener('DOMContentLoaded', function() {
     init();
+    
+    // Auto-abrir modal si viene del dashboard
+    if (sessionStorage.getItem('abrirNuevaSolicitud') === 'true') {
+        sessionStorage.removeItem('abrirNuevaSolicitud');
+        setTimeout(function() {
+            abrirModalNuevaSolicitudMovil();
+        }, 500);
+    }
 });

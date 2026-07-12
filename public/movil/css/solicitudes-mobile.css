@@ -205,6 +205,92 @@
         transform: scale(0.93);
     }
 
+    /* Menú contextual móvil (⋮) */
+    .card-actions-more-movil {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .card-btn.btn-more-movil {
+        min-width: 36px;
+        min-height: 36px;
+        padding: 8px 4px;
+        background: #f3f4f6;
+        color: #6b7280;
+        font-weight: 700;
+        font-size: 16px;
+        letter-spacing: 2px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        padding: 0;
+        width: 36px;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    .card-btn.btn-more-movil:active {
+        background: #e5e7eb;
+    }
+
+    .card-dropdown-menu-movil {
+        position: absolute;
+        bottom: calc(100% + 4px);
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        border: 1px solid #e5e7eb;
+        min-width: 150px;
+        z-index: 100;
+        display: none;
+        overflow: hidden;
+    }
+
+    .card-dropdown-menu-movil.visible {
+        display: block;
+    }
+
+    .card-dropdown-menu-movil .dropdown-item {
+        display: block;
+        width: 100%;
+        padding: 12px 14px;
+        border: none;
+        background: white;
+        color: #374151;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        text-align: left;
+        line-height: 1.3;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    .card-dropdown-menu-movil .dropdown-item:active {
+        background: #f3f4f6;
+    }
+
+    .card-dropdown-menu-movil .dropdown-item-danger {
+        color: #dc2626;
+    }
+
+    .card-dropdown-menu-movil .dropdown-item-danger:active {
+        background: #fef2f2;
+    }
+
+    .card-dropdown-menu-movil .dropdown-divider {
+        height: 1px;
+        background: #e5e7eb;
+        margin: 2px 0;
+    }
+
     /* Botón Gestiones */
     .card-fila-3 .btn-gestiones {
         background: #eef2ff;
@@ -675,6 +761,13 @@
         margin: 0;
     }
 
+    /* Contenedor de acciones en el header móvil */
+    .solicitudes-header .header-actions-movil {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
     .notif-bell-header {
         background: rgba(255, 255, 255, 0.12);
         border: 1px solid rgba(255, 255, 255, 0.15);
@@ -700,6 +793,35 @@
     .notif-bell-header .notif-bell-icon {
         font-size: 18px;
         line-height: 1;
+    }
+
+    /* Botón Nueva Solicitud en el header móvil */
+    .btn-nueva-solicitud-movil-header {
+        background: linear-gradient(135deg, #059669, #047857);
+        border: none;
+        border-radius: 12px;
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        padding: 0;
+        box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+    }
+
+    .btn-nueva-solicitud-movil-header:active {
+        transform: scale(0.92);
+        background: linear-gradient(135deg, #047857, #065f46);
+    }
+
+    .btn-nueva-solicitud-movil-header .btn-icon {
+        font-size: 18px;
+        line-height: 1;
+        color: white;
     }
 
     /* ========================================================================
@@ -1132,6 +1254,37 @@
         display: flex;
         align-items: center;
         gap: 6px;
+    }
+
+    .ns-movil-section-title .optional-badge {
+        font-size: 9px;
+        font-weight: 600;
+        background: #e5e7eb;
+        color: #6b7280;
+        padding: 2px 8px;
+        border-radius: 8px;
+        margin-left: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .ns-movil-section-primary {
+        border-color: #6366f1;
+        background: #f8faff;
+    }
+
+    .ns-movil-section-primary .ns-movil-section-title {
+        color: #4338ca;
+        border-bottom-color: #c7d2fe;
+    }
+
+    .ns-movil-section-secondary {
+        border-color: #e5e7eb;
+        background: #fafafa;
+    }
+
+    .ns-movil-section-secondary .ns-movil-section-title {
+        color: #6b7280;
     }
 
     .ns-movil-field {

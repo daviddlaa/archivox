@@ -381,6 +381,16 @@ function actualizarContador() {
 // ============================================================================
 // FLOATING ACTION PANEL - Panel contextual que sigue al usuario al hacer scroll
 // ============================================================================
+// MEJORA ANTI-FLICKER:
+// - Hysteresis: buffer de 80px para evitar toggle en el borde
+// - Máquina de estados para eliminar transiciones duplicadas
+// - Debounce más estable (120ms)
+// - Eliminación de race conditions en setTimeout
+// ============================================================================
+
+// Estados posibles del panel flotante
+var _fabState = 'hidden'; // 'hidden' | 'visible' | 'animating-out'
+
 function actualizarFloatingPanel() {
     var panel = document.getElementById('floating-actions-panel');
     var countNum = document.getElementById('floating-count-num');
@@ -390,54 +400,65 @@ function actualizarFloatingPanel() {
     countNum.textContent = filasSeleccionadas.length;
     
     if (filasSeleccionadas.length > 0) {
-        // Verificar si la selection bar está visible en pantalla
-        // Si está fuera de la vista, mostramos el FAB
         var selectionBar = document.getElementById('selection-bar');
-        var mostrarPanel = false;
+        var debeMostrar = false;
         
         if (selectionBar && selectionBar.style.display !== 'none') {
             var rect = selectionBar.getBoundingClientRect();
-            // Si la barra superior está fuera de la vista (scrolleada hacia arriba)
-            if (rect.bottom < 0 || rect.top > window.innerHeight) {
-                mostrarPanel = true;
+            // HYSTERESIS: buffer de 80px para evitar parpadeo en el borde
+            // Solo mostrar si la barra está COMPLETAMENTE fuera de vista
+            if (rect.bottom < -80 || rect.top > window.innerHeight + 80) {
+                debeMostrar = true;
             }
         } else {
-            mostrarPanel = true;
+            debeMostrar = true;
         }
         
-        if (mostrarPanel) {
-            mostrarFloatingPanel();
-        } else {
-            ocultarFloatingPanel();
+        // Máquina de estados: solo actuar si cambia el estado
+        if (debeMostrar && _fabState !== 'visible') {
+            _fabState = 'visible';
+            mostrarFloatingPanel(panel);
+        } else if (!debeMostrar && _fabState === 'visible') {
+            _fabState = 'animating-out';
+            ocultarFloatingPanel(panel);
         }
-    } else {
-        ocultarFloatingPanel();
+    } else if (_fabState !== 'hidden') {
+        _fabState = 'hidden';
+        ocultarFloatingPanel(panel);
     }
 }
 
-function mostrarFloatingPanel() {
-    var panel = document.getElementById('floating-actions-panel');
+function mostrarFloatingPanel(panel) {
+    if (!panel) panel = document.getElementById('floating-actions-panel');
     if (!panel) return;
-    if (panel.style.display === 'block' && !panel.classList.contains('closing')) return;
     panel.classList.remove('closing', 'hidden');
     panel.style.display = 'block';
     void panel.offsetWidth;
+    panel.style.opacity = '1';
 }
 
-function ocultarFloatingPanel() {
-    var panel = document.getElementById('floating-actions-panel');
+function ocultarFloatingPanel(panel) {
+    if (!panel) panel = document.getElementById('floating-actions-panel');
     if (!panel || panel.style.display !== 'block') return;
     panel.classList.remove('hidden');
     panel.classList.add('closing');
-    setTimeout(function() {
-        panel.classList.remove('closing');
-        if (filasSeleccionadas.length === 0) {
+    panel.style.opacity = '0';
+    // Usar un solo setTimeout sin reevaluación para evitar race conditions
+    var hideTimer = setTimeout(function() {
+        if (_fabState === 'hidden' || filasSeleccionadas.length === 0) {
             panel.style.display = 'none';
-        } else {
-            // Si aún hay selecciones, reevaluamos visibilidad
-            actualizarFloatingPanel();
+            panel.classList.remove('closing');
+            panel.style.opacity = '';
+        } else if (_fabState === 'animating-out') {
+            // Si durante la animación se reactivó, restaurar
+            _fabState = 'visible';
+            panel.style.display = 'block';
+            panel.classList.remove('closing');
+            panel.style.opacity = '1';
         }
     }, 250);
+    // Guardar referencia para cancelar si es necesario
+    panel._hideTimer = hideTimer;
 }
 
 // Variable para controlar el listener de scroll
@@ -454,7 +475,7 @@ function initScrollAwareFAB() {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(function() {
             actualizarFloatingPanel();
-        }, 50);
+        }, 120); // Aumentado de 50ms a 120ms para mayor estabilidad
     }
     
     window.addEventListener('scroll', handleFabUpdate, { passive: true });
@@ -772,6 +793,14 @@ function renderizarCards(datos) {
         html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); abrirWhatsAppChatEscritorio(\'' + escaparParaAtributo(item.celular || '') + '\')">💬 WhatsApp</button>';
         html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletar(\'' + id + '\')">✏️ Completar</button>';
         html += '    <button class="card-btn btn-llamar" onclick="event.stopPropagation(); llamarCliente(\'' + escaparParaAtributo(item.celular || '') + '\')">📞 Llamar</button>';
+        html += '    <div class="card-actions-more" onclick="event.stopPropagation();">';
+        html += '      <button class="card-btn btn-more" onclick="toggleCardMenu(event, \'' + id + '\')" title="Más acciones">⋮</button>';
+        html += '      <div class="card-dropdown-menu" id="card-menu-' + id + '">';
+        html += '        <button class="dropdown-item" onclick="event.stopPropagation(); editarSolicitud(\'' + id + '\'); cerrarTodosLosMenus()">✏️ Editar</button>';
+        html += '        <div class="dropdown-divider"></div>';
+        html += '        <button class="dropdown-item dropdown-item-danger" onclick="event.stopPropagation(); confirmarEliminarSolicitud(\'' + id + '\'); cerrarTodosLosMenus()">🗑️ Eliminar</button>';
+        html += '      </div>';
+        html += '    </div>';
         html += '  </div>';
         // FILA 4: Seguimiento
         if (item.ultima_gestion_tipo) {
@@ -1268,6 +1297,16 @@ if (!_solicitudesChangeListenerAttached) {
 window.addEventListener('DOMContentLoaded', function() {
     var inputBusqueda = document.getElementById('cedula');
     if (inputBusqueda) setTimeout(function() { inputBusqueda.focus(); }, 100);
+    
+    // Auto-abrir modal si viene del dashboard
+    if (sessionStorage.getItem('abrirNuevaSolicitud') === 'true') {
+        sessionStorage.removeItem('abrirNuevaSolicitud');
+        setTimeout(function() {
+            if (typeof abrirModalNuevaSolicitud === 'function') {
+                abrirModalNuevaSolicitud();
+            }
+        }, 500);
+    }
 });
 
 // ============================================================================
@@ -1325,56 +1364,53 @@ async function abrirModalNuevaSolicitud() {
     // Advertencia de duplicado
     html += '      <div class="ns-duplicado-warning" id="ns-duplicado-warning">⚠️ <span id="ns-duplicado-msg"></span></div>';
     
-    // Sección: Información del Cliente
-    html += '      <div class="ns-section">';
-    html += '        <h3 class="ns-section-title">👤 Información del Cliente</h3>';
+    // Sección: Información Principal (campos más importantes primero)
+    html += '      <div class="ns-section ns-section-primary">';
+    html += '        <h3 class="ns-section-title">📋 Información Principal</h3>';
     html += '        <div class="ns-grid-2">';
-    html += '          <div class="ns-field">';
-    html += '            <label>📝 Nombre <span class="required">*</span></label>';
-    html += '            <input type="text" id="ns-nombre" placeholder="Nombre completo" oninput="validarNombre()">';
-    html += '            <div class="validation-feedback" id="ns-nombre-feedback"></div>';
-    html += '          </div>';
     html += '          <div class="ns-field">';
     html += '            <label>🆔 Cédula <span class="required">*</span></label>';
     html += '            <input type="text" id="ns-cedula" placeholder="10 dígitos" maxlength="10" oninput="validarCedula()" onblur="verificarDuplicadoCedula()">';
     html += '            <div class="validation-feedback" id="ns-cedula-feedback"></div>';
     html += '          </div>';
     html += '          <div class="ns-field">';
-    html += '            <label>📞 Celular <span class="required">*</span></label>';
+    html += '            <label>📝 Nombre <span class="required">*</span></label>';
+    html += '            <input type="text" id="ns-nombre" placeholder="Nombre completo" oninput="validarNombre()">';
+    html += '            <div class="validation-feedback" id="ns-nombre-feedback"></div>';
+    html += '          </div>';
+    html += '          <div class="ns-field">';
+    html += '            <label>📞 Teléfono <span class="required">*</span></label>';
     html += '            <input type="tel" id="ns-celular" placeholder="0991234567" maxlength="10" oninput="validarCelular()">';
     html += '            <div class="validation-feedback" id="ns-celular-feedback"></div>';
     html += '          </div>';
     html += '          <div class="ns-field">';
-    html += '            <label>📧 Correo Electrónico</label>';
-    html += '            <input type="email" id="ns-correo" placeholder="cliente@ejemplo.com" oninput="validarCorreo()">';
-    html += '            <div class="validation-feedback" id="ns-correo-feedback"></div>';
+    html += '            <label>🏷️ Segmento</label>';
+    html += '            <select id="ns-segmento">' + segmentosOptions + '</select>';
+    html += '          </div>';
+    html += '          <div class="ns-field ns-field-full">';
+    html += '            <label>📌 Estado <span class="required">*</span></label>';
+    html += '            <select id="ns-estado">' + estadosOptions + '</select>';
     html += '          </div>';
     html += '        </div>';
     html += '      </div>';
     
-    // Sección: Datos del Producto
-    html += '      <div class="ns-section">';
-    html += '        <h3 class="ns-section-title">📦 Datos del Producto</h3>';
+    // Sección: Información Adicional (campos secundarios / opcionales)
+    html += '      <div class="ns-section ns-section-secondary">';
+    html += '        <h3 class="ns-section-title">📦 Información Adicional <span class="optional-badge">Opcional</span></h3>';
     html += '        <div class="ns-grid-2">';
     html += '          <div class="ns-field">';
     html += '            <label>📦 Producto</label>';
     html += '            <input type="text" id="ns-producto" placeholder="Ej: Crédito, Seguro...">';
     html += '          </div>';
     html += '          <div class="ns-field">';
-    html += '            <label>🏷️ Segmento</label>';
-    html += '            <select id="ns-segmento">' + segmentosOptions + '</select>';
-    html += '          </div>';
-    html += '          <div class="ns-field">';
     html += '            <label>🔢 Código Plus</label>';
     html += '            <input type="text" id="ns-codigo-plus" placeholder="Código interno">';
     html += '          </div>';
-    html += '        </div>';
-    html += '      </div>';
-    
-    // Sección: Información Adicional
-    html += '      <div class="ns-section">';
-    html += '        <h3 class="ns-section-title">📍 Información Adicional</h3>';
-    html += '        <div class="ns-grid-2">';
+    html += '          <div class="ns-field">';
+    html += '            <label>📧 Correo Electrónico</label>';
+    html += '            <input type="email" id="ns-correo" placeholder="cliente@ejemplo.com" oninput="validarCorreo()">';
+    html += '            <div class="validation-feedback" id="ns-correo-feedback"></div>';
+    html += '          </div>';
     html += '          <div class="ns-field">';
     html += '            <label>📍 Dirección</label>';
     html += '            <input type="text" id="ns-direccion" placeholder="Dirección domiciliaria">';
@@ -1386,17 +1422,6 @@ async function abrirModalNuevaSolicitud() {
     html += '          <div class="ns-field">';
     html += '            <label>💰 Ingreso Mensual</label>';
     html += '            <input type="number" id="ns-ingreso" placeholder="0.00" step="0.01" min="0">';
-    html += '          </div>';
-    html += '        </div>';
-    html += '      </div>';
-    
-    // Sección: Estado Inicial
-    html += '      <div class="ns-section">';
-    html += '        <h3 class="ns-section-title">📌 Estado Inicial</h3>';
-    html += '        <div class="ns-grid-1">';
-    html += '          <div class="ns-field">';
-    html += '            <label>📌 Estado <span class="required">*</span></label>';
-    html += '            <select id="ns-estado">' + estadosOptions + '</select>';
     html += '          </div>';
     html += '        </div>';
     html += '      </div>';
@@ -1414,9 +1439,9 @@ async function abrirModalNuevaSolicitud() {
     if (modalExistente) modalExistente.remove();
     document.body.insertAdjacentHTML('beforeend', html);
     
-    // Foco inicial
+    // Foco inicial en Cédula (primer campo)
     setTimeout(function() { 
-        var input = document.getElementById('ns-nombre');
+        var input = document.getElementById('ns-cedula');
         if (input) input.focus();
     }, 100);
 }
@@ -1637,6 +1662,87 @@ async function guardarNuevaSolicitud() {
         if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Solicitud'; }
     }
 }
+
+// ============================================================================
+// MENÚ CONTEXTUAL (⋮) - Editar / Eliminar en Cards
+// ============================================================================
+
+// Toggle dropdown menu en card
+function toggleCardMenu(event, id) {
+    event.stopPropagation();
+    cerrarTodosLosMenus(id);
+    var menu = document.getElementById('card-menu-' + id);
+    if (menu) {
+        menu.classList.toggle('visible');
+    }
+}
+
+// Cerrar todos los menús desplegables
+function cerrarTodosLosMenus(excludeId) {
+    document.querySelectorAll('.card-dropdown-menu').forEach(function(m) {
+        if (excludeId && m.id === 'card-menu-' + excludeId) return;
+        m.classList.remove('visible');
+    });
+}
+
+// Cerrar menús al hacer clic fuera
+if (!window._cardMenuListenerAttached) {
+    window._cardMenuListenerAttached = true;
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.card-actions-more')) {
+            cerrarTodosLosMenus();
+        }
+    });
+}
+
+// Editar solicitud - abre el modal con datos precargados
+async function editarSolicitud(id) {
+    var datos = datosFilas[id];
+    if (!datos) {
+        alert('No se encontraron datos para esta solicitud');
+        return;
+    }
+    
+    // Abrir el modal de completar información (ya existente)
+    abrirCompletar(id);
+}
+
+// Confirmar y eliminar solicitud
+function confirmarEliminarSolicitud(id) {
+    var datos = datosFilas[id];
+    var nombre = datos ? (datos.nombre || 'desconocido') : 'desconocido';
+    
+    if (!confirm('¿Estás seguro de eliminar la solicitud #' + id + ' de ' + nombre + '?\n\nSe eliminarán también todas las gestiones asociadas.\n\nEsta acción NO se puede deshacer.')) {
+        return;
+    }
+    
+    eliminarSolicitud(id);
+}
+
+async function eliminarSolicitud(id) {
+    try {
+        var response = await fetch('/api/excel/solicitudes/' + id, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        var resultado = await response.json();
+        
+        if (response.ok) {
+            alert('✅ Solicitud #' + id + ' eliminada correctamente');
+            // Recargar datos
+            if (typeof init === 'function') init();
+        } else {
+            alert('❌ Error: ' + (resultado.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error eliminando solicitud:', error);
+        alert('❌ Error al eliminar la solicitud: ' + error.message);
+    }
+}
+
+// ============================================================================
+// CARGA INICIAL
+// ============================================================================
 
 // Inicializar con carga paralela optimizada (UNA SOLA LLAMADA)
 // init() maneja: cargarLoteInicial, cargarTotales, cargarEstados, cargarSegmentos

@@ -72,6 +72,52 @@
     background: #e5e7eb;
 }
 
+/* Botón Nueva Solicitud en el header */
+.btn-nueva-solicitud-header {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: white;
+    text-decoration: none;
+    padding: 14px 22px;
+    border-radius: 10px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-nueva-solicitud-header:hover {
+    background: linear-gradient(135deg, #047857, #065f46);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+}
+
+/* Botón Importar Excel en el header */
+.btn-excel-header {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    text-decoration: none;
+    padding: 14px 22px;
+    border-radius: 10px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-excel-header:hover {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+}
+
 /* ===== STATS GRID - TODO EN UNA FILA HORIZONTAL ===== */
 .stats-grid {
     display: grid;
@@ -1781,6 +1827,103 @@ td .cell-combinado {
     border-color: #c7d2fe;
 }
 
+/* ===== MENÚ CONTEXTUAL (⋮) EN CARDS ===== */
+.card-actions-more {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.card-btn.btn-more {
+    min-width: 36px;
+    padding: 8px 4px;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 2px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.card-btn.btn-more:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+/* Dropdown menu */
+.card-dropdown-menu {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    right: 0;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    border: 1px solid #e5e7eb;
+    min-width: 160px;
+    z-index: 100;
+    display: none;
+    overflow: hidden;
+    animation: dropDownIn 0.15s ease;
+}
+
+@keyframes dropDownIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card-dropdown-menu.visible {
+    display: block;
+}
+
+.card-dropdown-menu .dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    border: none;
+    background: white;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+    line-height: 1.3;
+}
+
+.card-dropdown-menu .dropdown-item:hover {
+    background: #f3f4f6;
+}
+
+.card-dropdown-menu .dropdown-item:active {
+    background: #e5e7eb;
+}
+
+.card-dropdown-menu .dropdown-item-danger {
+    color: #dc2626;
+}
+
+.card-dropdown-menu .dropdown-item-danger:hover {
+    background: #fef2f2;
+}
+
+.card-dropdown-menu .dropdown-divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 2px 0;
+}
+
 /* ========================================================================
    FLOATING ACTION PANEL - Panel contextual al seleccionar + scroll
    ========================================================================
@@ -1963,51 +2106,7 @@ td .cell-combinado {
     display: none !important;
 }
 
-/* ========================================================================
-   FAB NUEVA SOLICITUD - Botón flotante siempre visible
-   ======================================================================== */
-.fab-new-solicitud {
-    position: fixed;
-    bottom: 24px;
-    left: 24px;
-    z-index: 9998;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 14px 20px;
-    background: linear-gradient(135deg, #059669, #047857);
-    color: white;
-    border: none;
-    border-radius: 999px;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 6px 24px rgba(5, 150, 105, 0.4);
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    line-height: 1;
-    white-space: nowrap;
-}
-
-.fab-new-solicitud:hover {
-    transform: translateY(-3px) scale(1.03);
-    box-shadow: 0 8px 32px rgba(5, 150, 105, 0.5);
-}
-
-.fab-new-solicitud:active {
-    transform: translateY(-1px) scale(1);
-}
-
-.fab-new-solicitud .fab-new-icon {
-    font-size: 18px;
-    line-height: 1;
-    flex-shrink: 0;
-}
-
-.fab-new-solicitud .fab-new-text {
-    font-size: 14px;
-}
-
-/* ========================================================================
+/* =======================================================================
    FORMULARIO NUEVA SOLICITUD - Modal en 2 columnas
    ======================================================================== */
 .nueva-solicitud-overlay {
@@ -2243,6 +2342,41 @@ td .cell-combinado {
     box-shadow: none;
 }
 
+.ns-section-primary {
+    border-color: #6366f1;
+    background: #f8faff;
+}
+
+.ns-section-primary .ns-section-title {
+    color: #4338ca;
+    border-bottom-color: #c7d2fe;
+}
+
+.ns-section-secondary {
+    border-color: #e5e7eb;
+    background: #fafafa;
+}
+
+.ns-section-secondary .ns-section-title {
+    color: #6b7280;
+}
+
+.ns-section-secondary .ns-section-title .optional-badge {
+    font-size: 10px;
+    font-weight: 600;
+    background: #e5e7eb;
+    color: #6b7280;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.ns-field-full {
+    grid-column: 1 / -1;
+}
+
 .ns-duplicado-warning {
     background: #fffbeb;
     border: 2px solid #f59e0b;
@@ -2272,17 +2406,6 @@ td .cell-combinado {
     }
     .ns-header {
         border-radius: 0;
-    }
-}
-
-@media (min-width: 769px) and (max-width: 900px) {
-    .fab-new-solicitud .fab-new-text {
-        display: none;
-    }
-    .fab-new-solicitud {
-        padding: 14px;
-        min-width: 52px;
-        justify-content: center;
     }
 }
 

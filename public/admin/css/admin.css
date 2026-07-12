@@ -932,9 +932,20 @@ body {
     .admin-pagination { flex-wrap: wrap; }
     .reset-password-row { flex-direction: column; }
     
-    /* Mobile: ocultar tabla, mostrar solo cards */
-    .admin-table-wrapper {
+    /* Mobile: ocultar tabla de usuarios, mostrar cards */
+    /* Auditoría usa tabla en móvil por su estructura tabular */
+    #tab-usuarios .admin-table-wrapper {
         display: none !important;
+    }
+    #tab-auditoria .admin-table-wrapper {
+        display: block !important;
+        overflow-x: auto;
+    }
+    #tab-notificaciones .admin-table-wrapper {
+        display: none !important;
+    }
+    #tab-auditoria .admin-table {
+        min-width: 600px;
     }
     .admin-table {
         min-width: 700px;

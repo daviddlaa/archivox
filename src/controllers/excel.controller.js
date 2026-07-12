@@ -1072,7 +1072,52 @@ exports.getSolicitud = async (req, res) => {
         console.error('Error getSolicitud:', err);
         res.status(500).json({ error: err.message });
     }
-};// ================== CREAR SOLICITUD MANUAL ==================
+};// ================== ELIMINAR SOLICITUD INDIVIDUAL ==================
+
+// Eliminar una solicitud específica (con sus gestiones y referencias)
+exports.eliminarSolicitud = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    
+    const { id } = req.params;
+    
+    if (!id) {
+        return res.status(400).json({ error: 'ID de solicitud requerido' });
+    }
+    
+    try {
+        // Eliminar gestiones asociadas primero (foreign key)
+        await pool.query(
+            'DELETE FROM gestiones WHERE solicitud_id = $1 AND usuario_id = $2',
+            [id, usuarioId]
+        );
+        
+        // Eliminar referencias
+        await pool.query(
+            'DELETE FROM solicitudes_referencias WHERE id_solicitud = $1',
+            [id]
+        );
+        
+        // Eliminar la solicitud
+        const result = await pool.query(
+            'DELETE FROM solicitudes WHERE id_solicitud = $1 AND usuario_id = $2 RETURNING id_solicitud',
+            [id, usuarioId]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Solicitud no encontrada' });
+        }
+        
+        res.json({ mensaje: 'Solicitud eliminada correctamente', id_solicitud: id });
+    } catch (err) {
+        console.error('Error eliminarSolicitud:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// ================== CREAR SOLICITUD MANUAL ==================
 
 // Crear una solicitud manualmente (no por importación Excel)
 exports.crearSolicitudManual = async (req, res) => {
