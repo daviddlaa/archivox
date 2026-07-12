@@ -6,6 +6,134 @@ let paginaActual = 1;
 let searchTimeout;
 
 // ============================================================================
+// SISTEMA DE GUARDA DE MODALES - Previene apertura múltiple y ghost clicks
+// ============================================================================
+// En móvil los eventos táctiles pueden generar múltiples onclick si no hay
+// control de estado. Este sistema garantiza que solo un modal esté abierto.
+// ============================================================================
+let _modalAbiertoId = null; // ID del modal actualmente abierto
+
+// Cache de elementos del DOM de modales para evitar búsquedas repetidas
+const _MODALES = {
+    overlay: 'modalOverlay',
+    user: 'userModal',
+    createUser: 'createModal',
+    notif: 'notifModal',
+    statsUser: 'statsUsuarioModal',
+    createEquipo: 'createEquipoModal',
+    asignarLider: 'asignarLiderModal',
+    createAgente: 'createAgenteModal',
+    moverUsuario: 'moverUsuarioModal',
+    eliminarEquipo: 'eliminarEquipoModal'
+};
+
+/**
+ * Abre un modal de forma segura:
+ * 1. Cierra cualquier modal abierto previamente
+ * 2. Marca el nuevo modal como abierto
+ * 3. Previene aperturas duplicadas por ghost clicks
+ */
+function _abrirModal(modalId) {
+    // Si ya hay un modal abierto, cerrarlo primero
+    if (_modalAbiertoId && _modalAbiertoId !== modalId) {
+        _cerrarModal(_modalAbiertoId);
+    }
+    // Si es el mismo modal ya abierto, ignorar (ghost click)
+    if (_modalAbiertoId === modalId) return;
+
+    _modalAbiertoId = modalId;
+    document.getElementById(modalId).classList.add('active');
+    document.getElementById(_MODALES.overlay).classList.add('active');
+}
+
+/**
+ * Cierra un modal específico:
+ * 1. Remueve la clase active del modal
+ * 2. Si era el último modal activo, también oculta el overlay
+ * 3. Limpia el estado
+ * 4. Verifica que no queden otros modales activos (defensa)
+ */
+function _cerrarModal(modalId) {
+    const el = document.getElementById(modalId);
+    if (el) el.classList.remove('active');
+
+    if (_modalAbiertoId === modalId) {
+        _modalAbiertoId = null;
+    }
+
+    // Verificar si hay otros modales activos (por si cerrarTodosLosModales ya los limpió)
+    var hayOtroModal = false;
+    for (var key in _MODALES) {
+        if (key === 'overlay') continue;
+        var otro = document.getElementById(_MODALES[key]);
+        if (otro && otro !== el && otro.classList.contains('active')) {
+            hayOtroModal = true;
+            break;
+        }
+    }
+
+    if (!hayOtroModal) {
+        document.getElementById(_MODALES.overlay).classList.remove('active');
+    }
+}
+
+// ============================================================================
+// SISTEMA DE DELEGACIÓN DE EVENTOS PARA BOTONES DE ACCIÓN
+// ============================================================================
+// Los botones generados dinámicamente (cards de usuarios, miembros de equipo)
+// usan un solo escuchador delegado en lugar de inline onclick, para evitar
+// duplicación de listeners en cada render y problemas de quoting.
+//
+// Convención: data-action="nombre-accion" + data-* para parámetros
+// ============================================================================
+
+/**
+ * Protege contra ghost clicks evitando que clicks en el overlay
+ * del admin se propaguen a otros elementos.
+ *
+ * ⚠️ NOTA: NO se usa stopPropagation global porque eso impediría
+ * que los onclick inline (fase target) se ejecuten.
+ *
+ * En móvil, la protección principal contra ghost clicks es:
+ * - CSS touch-action: manipulation (elimina retardo 300ms)
+ * - Guarda _abrirModal (ignora aperturas duplicadas)
+ *
+ * Esta función solo asegura que clicks dentro de modales no
+ * se propaguen al overlay (que cierra todos los modales).
+ */
+function _initGhostClickProtection() {
+    // ================================================================
+    // PROTEGER el overlay: clicks dentro de modales no deben cerrarlos
+    // ================================================================
+    document.addEventListener('click', function(e) {
+        // Si el click fue dentro de un modal-content (no en el overlay),
+        // evitar que el evento llegue al overlay
+        var target = e.target;
+        while (target && target !== document) {
+            if (target.classList && target.classList.contains('admin-modal-content')) {
+                // Click dentro del contenido del modal - no propagar al overlay
+                e.stopPropagation();
+                return;
+            }
+            // No interferir con el drawer.js MobileMenu
+            if (target.id === 'drawer-wrapper' ||
+                (target.classList && target.classList.contains('mm-overlay'))) {
+                return;
+            }
+            target = target.parentElement;
+        }
+    }, false); // Fase bubbling: el onclick del botón ya se ejecutó
+}
+
+// Inicializar al cargar (una sola vez)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _initGhostClickProtection);
+} else {
+    _initGhostClickProtection();
+}
+
+
+// ============================================================================
 // INICIALIZACIÓN
 // ============================================================================
 document.addEventListener('DOMContentLoaded', async function() {
@@ -272,8 +400,7 @@ async function editarUsuario(id) {
             (user.locked_until && new Date(user.locked_until) > new Date()) ? 'inline-block' : 'none';
 
         document.getElementById('modalTitle').textContent = `Editar: ${user.username}`;
-        document.getElementById('modalOverlay').classList.add('active');
-        document.getElementById('userModal').classList.add('active');
+        _abrirModal(_MODALES.user);
 
     } catch (err) {
         console.error('Error editar usuario:', err);
@@ -282,8 +409,7 @@ async function editarUsuario(id) {
 }
 
 function cerrarModal() {
-    document.getElementById('modalOverlay').classList.remove('active');
-    document.getElementById('userModal').classList.remove('active');
+    _cerrarModal(_MODALES.user);
 }
 
 async function guardarUsuario() {
@@ -438,17 +564,15 @@ async function resetPassword() {
 // CREAR USUARIO
 // ============================================================================
 function abrirModalCrear() {
-    document.getElementById('createModal').classList.add('active');
-    document.getElementById('modalOverlay').classList.add('active');
     document.getElementById('createUsername').value = '';
     document.getElementById('createNombre').value = '';
     document.getElementById('createEmail').value = '';
     document.getElementById('createPassword').value = '';
+    _abrirModal(_MODALES.createUser);
 }
 
 function cerrarModalCrear() {
-    document.getElementById('createModal').classList.remove('active');
-    document.getElementById('modalOverlay').classList.remove('active');
+    _cerrarModal(_MODALES.createUser);
 }
 
 async function crearUsuario() {
@@ -932,13 +1056,11 @@ async function abrirModalCrearNotificacion() {
     document.getElementById('notifPrioridad').value = 'normal';
     document.getElementById('notifAccionTexto').value = '';
     document.getElementById('notifFechaExpiracion').value = '';
-    document.getElementById('notifModal').classList.add('active');
-    document.getElementById('modalOverlay').classList.add('active');
+    _abrirModal(_MODALES.notif);
 }
 
 function cerrarModalNotif() {
-    document.getElementById('notifModal').classList.remove('active');
-    document.getElementById('modalOverlay').classList.remove('active');
+    _cerrarModal(_MODALES.notif);
 }
 
 async function crearNotificacion() {
@@ -1020,8 +1142,7 @@ async function archivarNotificacionAdmin(id) {
 async function verEstadisticasUsuario(userId, username) {
     document.getElementById('statsUsuarioTitle').textContent = `📊 Estadísticas: ${username}`;
     document.getElementById('statsUsuarioContent').innerHTML = '<div class="admin-loading">Cargando estadísticas...</div>';
-    document.getElementById('modalOverlay').classList.add('active');
-    document.getElementById('statsUsuarioModal').classList.add('active');
+    _abrirModal(_MODALES.statsUser);
 
     try {
         const res = await fetch(`/api/admin/estadisticas/usuario/${userId}`);
@@ -1075,8 +1196,7 @@ async function verEstadisticasUsuario(userId, username) {
 }
 
 function cerrarStatsUsuario() {
-    document.getElementById('statsUsuarioModal').classList.remove('active');
-    document.getElementById('modalOverlay').classList.remove('active');
+    _cerrarModal(_MODALES.statsUser);
 }
 
 // ============================================================================
@@ -1425,13 +1545,11 @@ async function abrirModalCrearEquipo() {
         }
     } catch (e) { /* seguir sin opciones */ }
 
-    document.getElementById('createEquipoModal').classList.add('active');
-    document.getElementById('modalOverlay').classList.add('active');
+    _abrirModal(_MODALES.createEquipo);
 }
 
 function cerrarModalCrearEquipo() {
-    document.getElementById('createEquipoModal').classList.remove('active');
-    document.getElementById('modalOverlay').classList.remove('active');
+    _cerrarModal(_MODALES.createEquipo);
 }
 
 async function crearEquipo() {
@@ -1492,13 +1610,11 @@ async function abrirModalAsignarLider() {
         liderSelect.innerHTML = '<option value="">Error al cargar miembros</option>';
     }
 
-    document.getElementById('asignarLiderModal').classList.add('active');
-    document.getElementById('modalOverlay').classList.add('active');
+    _abrirModal(_MODALES.asignarLider);
 }
 
 function cerrarModalAsignarLider() {
-    document.getElementById('asignarLiderModal').classList.remove('active');
-    document.getElementById('modalOverlay').classList.remove('active');
+    _cerrarModal(_MODALES.asignarLider);
 }
 
 async function asignarLider() {
@@ -1560,13 +1676,11 @@ async function abrirModalCrearAgente() {
     document.getElementById('createAgenteNombre').value = '';
     document.getElementById('createAgentePassword').value = '';
 
-    document.getElementById('createAgenteModal').classList.add('active');
-    document.getElementById('modalOverlay').classList.add('active');
+    _abrirModal(_MODALES.createAgente);
 }
 
 function cerrarModalCrearAgente() {
-    document.getElementById('createAgenteModal').classList.remove('active');
-    document.getElementById('modalOverlay').classList.remove('active');
+    _cerrarModal(_MODALES.createAgente);
 }
 
 async function crearAgente() {
@@ -1646,13 +1760,11 @@ async function abrirModalMoverUsuario() {
         destSelect.innerHTML = '<option value="">Error al cargar</option>';
     }
 
-    document.getElementById('moverUsuarioModal').classList.add('active');
-    document.getElementById('modalOverlay').classList.add('active');
+    _abrirModal(_MODALES.moverUsuario);
 }
 
 function cerrarModalMoverUsuario() {
-    document.getElementById('moverUsuarioModal').classList.remove('active');
-    document.getElementById('modalOverlay').classList.remove('active');
+    _cerrarModal(_MODALES.moverUsuario);
 }
 
 async function moverUsuario() {
@@ -1716,13 +1828,11 @@ function removerMiembro(equipoId, usuarioId, username) {
 function eliminarEquipo() {
     if (!equipoActualId) return;
     document.getElementById('eliminarEquipoNombre').textContent = equipoActualNombre;
-    document.getElementById('eliminarEquipoModal').classList.add('active');
-    document.getElementById('modalOverlay').classList.add('active');
+    _abrirModal(_MODALES.eliminarEquipo);
 }
 
 function cerrarModalEliminarEquipo() {
-    document.getElementById('eliminarEquipoModal').classList.remove('active');
-    document.getElementById('modalOverlay').classList.remove('active');
+    _cerrarModal(_MODALES.eliminarEquipo);
 }
 
 async function confirmarEliminarEquipo() {
@@ -1789,21 +1899,15 @@ window.cambiarTab = function(tab) {
 // ============================================================================
 
 function cerrarTodosLosModales() {
-    // Modales existentes
-    cerrarModal();                      // userModal
-    cerrarModalCrear();                 // createModal (usuario)
-    cerrarModalNotif();                 // notifModal
-    cerrarStatsUsuario();               // statsUsuarioModal
-
-    // Modales de equipos
-    cerrarModalCrearEquipo();           // createEquipoModal
-    cerrarModalAsignarLider();          // asignarLiderModal
-    cerrarModalCrearAgente();           // createAgenteModal
-    cerrarModalMoverUsuario();          // moverUsuarioModal
-    cerrarModalEliminarEquipo();        // eliminarEquipoModal
-
-    // Quitar overlay por si alguna función no lo hizo
-    document.getElementById('modalOverlay').classList.remove('active');
+    // Cerrar todos los modales de forma ordenada
+    for (var key in _MODALES) {
+        if (key === 'overlay') continue;
+        _cerrarModal(_MODALES[key]);
+    }
+    // Forzar limpieza del overlay
+    var overlay = document.getElementById(_MODALES.overlay);
+    if (overlay) overlay.classList.remove('active');
+    _modalAbiertoId = null;
 }
 
 // Toast notifications

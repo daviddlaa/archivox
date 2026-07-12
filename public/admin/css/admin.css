@@ -1030,6 +1030,26 @@ body {
 /* ============================================================================
    RESPONSIVE - Mobile First
    ============================================================================ */
+
+/* ============================================================================
+   GHOST CLICK PREVENTION - Móvil
+   ============================================================================ */
+/* touch-action: manipulation elimina el retardo de 300ms del doble-tap
+   y previene ghost clicks generados por gestos táctiles en móvil */
+.admin-btn,
+.admin-tab,
+.admin-user-card-btn,
+.action-btn,
+.admin-modal-close,
+.admin-menu-btn,
+.notification-bell,
+.admin-filters select,
+.admin-filters .admin-btn,
+.admin-tab.active {
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+}
+
 @media (max-width: 768px) {
     .admin-container {
         margin-left: 0;
