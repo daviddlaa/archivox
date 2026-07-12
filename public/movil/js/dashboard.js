@@ -64,6 +64,8 @@ function abrirNuevaSolicitudDesdeDash() {
     return false;
 }
 
+// Polling reducido: el dashboard móvil solo carga al iniciar y al volver a la página
+// No hay setInterval porque en móvil se recarga al navegar
 window.addEventListener('DOMContentLoaded', cargarDatos);
 
 // Botón cerrar sesión

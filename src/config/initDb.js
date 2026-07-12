@@ -382,4 +382,38 @@ try {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at)`);
 } catch (e) { console.log('[DB] Índice idx_audit_log_created_at no creado:', e.message); }
 
+// ================================================================
+// ÍNDICES COMPUESTOS — SQLite
+// ================================================================
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_solicitudes_usuario_id_desc ON solicitudes(usuario_id, id_solicitud DESC)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_solicitudes_usuario_estado ON solicitudes(usuario_id, estado)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_solicitudes_usuario_segmento ON solicitudes(usuario_id, segmento)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_solicitudes_usuario_fecha ON solicitudes(usuario_id, fecha_solicitud)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_solicitudes_cedula ON solicitudes(cedula)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_gestiones_solicitud_usuario_fecha ON gestiones(solicitud_id, usuario_id, fecha_gestion DESC)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_gestiones_usuario_created ON gestiones(usuario_id, created_at)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_gestiones_maestro_id_solicitud ON gestiones(gestion_maestro_id, solicitud_id)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_notificaciones_destinatario_leida ON notificaciones(destinatario_id, leida, created_at DESC)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_historial_usuario_fecha ON historial_actualizaciones(usuario_id, fecha_actualizacion DESC)`);
+} catch (e) { /* ignorar */ }
+
 module.exports = db;

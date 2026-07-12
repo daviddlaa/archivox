@@ -3,6 +3,7 @@ const router = express.Router();
 
 const { imagenes, excel } = require('../config/multer.config');
 const excelController = require('../controllers/excel.controller');
+const dashboardController = require('../controllers/dashboard.controller');
 const gmController = require('../controllers/gestionesMaestro.controller');
 const { requiresAuth } = require('../middleware/auth.middleware');
 
@@ -47,7 +48,8 @@ router.get(
 
 router.get(
     '/dashboard',
-    excelController.dashboard
+    requiresAuth,
+    dashboardController.dashboard
 );
 
 // ================== GESTIONES GLOBAL ==================
@@ -60,39 +62,39 @@ router.get(
 
 router.get(
     '/dashboard/segmentos',
-    excelController.dashboardSegmentos
+    dashboardController.dashboardSegmentos
 );
 router.get(
     '/dashboard/estados',
-    excelController.dashboardEstados
+    dashboardController.dashboardEstados
 );
 
 // Rutas filtradas para filtros en cascada
 router.get(
     '/dashboard/segmentos/filtrado',
-    excelController.dashboardSegmentosFiltrado
+    dashboardController.dashboardSegmentosFiltrado
 );
 
 router.get(
     '/dashboard/estados/filtrado',
-    excelController.dashboardEstadosFiltrado
+    dashboardController.dashboardEstadosFiltrado
 );
 
 // Rutas de promedio
 router.get(
     '/dashboard/promedio/mes',
-    excelController.dashboardPromedioMes
+    dashboardController.dashboardPromedioMes
 );
 
 router.get(
     '/dashboard/promedio/semana',
-    excelController.dashboardPromedioSemana
+    dashboardController.dashboardPromedioSemana
 );
 
 // Rutas de ventas mensuales
 router.get(
     '/dashboard/ventas-mensuales',
-    excelController.dashboardVentasMensuales
+    dashboardController.dashboardVentasMensuales
 );
 
 // ================== CONTROL DE VENTAS DEL EQUIPO ==================

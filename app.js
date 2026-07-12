@@ -213,6 +213,27 @@ app.use('/api/admin', require('./src/routes/admin.routes'));
 // Archivos estáticos
 app.use(express.static('public'));
 
+// ========================================================================
+// MIDDLEWARE GLOBAL DE ERRORES (ÚNICO PUNTO DE GESTIÓN)
+// ========================================================================
+// Captura cualquier error no manejado y devuelve una respuesta JSON
+// consistente. En producción NO expone detalles internos.
+// ========================================================================
+app.use((err, req, res, next) => {
+    console.error('[Error Global]', err.stack || err.message);
+
+    // Determinar si el error es conocido (tiene status) o inesperado
+    const statusCode = err.status || err.statusCode || 500;
+    const isInternal = statusCode >= 500;
+
+    res.status(statusCode).json({
+        error: isInternal && process.env.NODE_ENV === 'production'
+            ? 'Error interno del servidor'
+            : err.message || 'Error interno del servidor',
+        ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });

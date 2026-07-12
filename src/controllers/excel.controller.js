@@ -1,5 +1,6 @@
 const excelService = require('../services/excel.service');
 const pool = require('../config/db.js');
+const cache = require('../config/cache.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -47,8 +48,11 @@ exports.uploadExcel = async (req, res) => {
 
         }
 
-        // Preparar mensaje seg�n tipo de carga
-        let mensaje = 'Importaci�n exitosa';
+        // Invalidar caché del dashboard del usuario
+        try { cache.invalidateDashboard(usuarioId); } catch(e) { /* silencioso */ }
+
+        // Preparar mensaje según tipo de carga
+        let mensaje = 'Importación exitosa';
         if (totalUpdates > 0) {
             mensaje = `Se actualizaron ${totalUpdates} registros`;
         }
@@ -205,289 +209,6 @@ exports.listarSolicitudes = async (req, res) => {
     }
 
 };
-
-exports.dashboard = async (req, res) => {
-
-    // Obtener ID del usuario de la sesi�n
-    const usuarioId = req.session.usuario?.id;
-    if (!usuarioId) {
-        return res.status(401).json({
-            error: 'No autenticado'
-        });
-    }
-
-    const sql = `
-        SELECT
-            COUNT(*) as total,
-            SUM(CASE WHEN estado = 'ACTIVADA' THEN 1 ELSE 0 END) as activadas,
-            SUM(CASE WHEN estado = 'RECHAZADA' THEN 1 ELSE 0 END) as rechazadas,
-            SUM(CASE WHEN estado = 'DEVUELTA' THEN 1 ELSE 0 END) as devueltas,
-            SUM(CASE WHEN estado = 'APROBADA PARA LIBERACI�N' THEN 1 ELSE 0 END) as pendientes
-        FROM solicitudes
-        WHERE usuario_id = $1
-    `;
-
-try {
-        const result = await pool.query(sql, [usuarioId]);
-        const data = result.rows[0] || {};
-        // Convertir null a 0 para evitar errores en el frontend
-        res.json({
-            total: Number(data.total) || 0,
-            activadas: Number(data.activadas) || 0,
-            rechazadas: Number(data.rechazadas) || 0,
-            devueltas: Number(data.devueltas) || 0,
-            pendientes: Number(data.pendientes) || 0
-        });
-    } catch (err) {
-        return res.status(500).json({
-            error: err.message
-        });
-    }
-
-};
-
-exports.dashboardSegmentos = async (req, res) => {
-
-    // Obtener ID del usuario de la sesi�n
-    const usuarioId = req.session.usuario?.id;
-    if (!usuarioId) {
-        return res.status(401).json({
-            error: 'No autenticado'
-        });
-    }
-
-    const sql = `
-        SELECT
-            segmento,
-            COUNT(*) as total
-        FROM solicitudes
-        WHERE usuario_id = $1
-        GROUP BY segmento
-        ORDER BY total DESC
-    `;
-
-    try {
-        const result = await pool.query(sql, [usuarioId]);
-        res.json(result.rows);
-    } catch (err) {
-        return res.status(500).json({
-            error: err.message
-        });
-    }
-
-};
-
-exports.dashboardEstados = async (req, res) => {
-
-    // Obtener ID del usuario de la sesi�n
-    const usuarioId = req.session.usuario?.id;
-    if (!usuarioId) {
-        return res.status(401).json({
-            error: 'No autenticado'
-        });
-    }
-
-    const sql = `
-        SELECT
-            estado,
-            COUNT(*) as total
-        FROM solicitudes
-        WHERE usuario_id = $1
-        GROUP BY estado
-        ORDER BY total DESC
-    `;
-
-    try {
-        const result = await pool.query(sql, [usuarioId]);
-        res.json(result.rows);
-    } catch (err) {
-        return res.status(500).json({
-            error: err.message
-        });
-    }
-
-};
-
-// Segmentos filtrados por estado
-exports.dashboardSegmentosFiltrado = async (req, res) => {
-    const { estado } = req.query;
-    
-    // Obtener ID del usuario de la sesi�n
-    const usuarioId = req.session.usuario?.id;
-    if (!usuarioId) {
-        return res.status(401).json({
-            error: 'No autenticado'
-        });
-    }
-    
-    let sql = `
-        SELECT
-            segmento,
-            COUNT(*) as total
-        FROM solicitudes
-        WHERE usuario_id = $1
-    `;
-    const params = [usuarioId];
-    
-    if (estado) {
-        sql += ' AND estado = $' + (params.length + 1);
-        params.push(estado);
-    }
-    
-    sql += ' GROUP BY segmento ORDER BY total DESC';
-
-    try {
-        const result = await pool.query(sql, params);
-        res.json(result.rows);
-    } catch (err) {
-        return res.status(500).json({
-            error: err.message
-        });
-    }
-
-};
-
-// Estados filtrados por segmento
-exports.dashboardEstadosFiltrado = async (req, res) => {
-    const { segmento } = req.query;
-    
-    // Obtener ID del usuario de la sesi�n
-    const usuarioId = req.session.usuario?.id;
-    if (!usuarioId) {
-        return res.status(401).json({
-            error: 'No autenticado'
-        });
-    }
-    
-    let sql = `
-        SELECT
-            estado,
-            COUNT(*) as total
-        FROM solicitudes
-        WHERE usuario_id = $1
-    `;
-    const params = [usuarioId];
-    
-    if (segmento) {
-        sql += ' AND segmento = $' + (params.length + 1);
-        params.push(segmento);
-    }
-    
-    sql += ' GROUP BY estado ORDER BY total DESC';
-
-    try {
-        const result = await pool.query(sql, params);
-        res.json(result.rows);
-    } catch (err) {
-        return res.status(500).json({
-            error: err.message
-        });
-    }
-
-};
-
-// Promedio de solicitudes por mes (�ltimos 3 meses)
-// C�lculo: contar solicitudes �ltimos 90 d�as y dividir por 3
-exports.dashboardPromedioMes = async (req, res) => {
-    const usuarioId = req.session.usuario?.id;
-    if (!usuarioId) {
-        return res.status(401).json({
-            error: 'No autenticado'
-        });
-    }
-    
-    try {
-        // Contar solicitudes �ltimos 90 d�as
-        const result = await pool.query(
-            `SELECT COUNT(*) as total 
-             FROM solicitudes 
-             WHERE usuario_id = $1 
-               AND fecha_solicitud >= CURRENT_DATE - INTERVAL '90 days'`,
-            [usuarioId]
-        );
-        
-        const total = parseInt(result.rows[0]?.total) || 0;
-        
-        // Dividir por 3 meses
-        const promedio = Math.round(total / 3);
-        
-        res.json({
-            promedio: promedio,
-            datos: []
-        });
-    } catch (err) {
-        console.error('Error dashboardPromedioMes:', err);
-        res.json({ promedio: 0, datos: [] });
-    }
-};
-
-// Promedio de solicitudes por semana (�ltimas 9 semanas)
-// C�lculo: contar solicitudes �ltimos 63 d�as y dividir por 9
-exports.dashboardPromedioSemana = async (req, res) => {
-    const usuarioId = req.session.usuario?.id;
-    if (!usuarioId) {
-        return res.status(401).json({
-            error: 'No autenticado'
-        });
-    }
-    
-    try {
-        // Contar solicitudes �ltimos 63 d�as
-        const result = await pool.query(
-            `SELECT COUNT(*) as total 
-             FROM solicitudes 
-             WHERE usuario_id = $1 
-               AND fecha_solicitud >= CURRENT_DATE - INTERVAL '63 days'`,
-            [usuarioId]
-        );
-        
-        const total = parseInt(result.rows[0]?.total) || 0;
-        
-        // Dividir por 9 semanas
-        const promedio = Math.round(total / 9);
-        
-        res.json({
-            promedio: promedio,
-            datos: []
-        });
-    } catch (err) {
-        console.error('Error dashboardPromedioSemana:', err);
-        res.json({ promedio: 0, datos: [] });
-    }
-};
-
-// Ventas mensuales
-exports.dashboardVentasMensuales = async (req, res) => {
-    const usuarioId = req.session.usuario?.id;
-    if (!usuarioId) {
-        return res.status(401).json({
-            error: 'No autenticado'
-        });
-    }
-    
-    try {
-        // Obtener ventas de los �ltimos 12 meses (solo estado ACTIVADA)
-        const result = await pool.query(
-            `SELECT 
-                TO_CHAR(fecha_solicitud, 'YYYY-MM') as mes,
-                TO_CHAR(fecha_solicitud, 'Mon YYYY') as mes_formato,
-                COUNT(*) as total
-             FROM solicitudes
-             WHERE usuario_id = $1 
-               AND estado = 'ACTIVADA'
-               AND fecha_solicitud >= CURRENT_DATE - INTERVAL '12 months'
-             GROUP BY TO_CHAR(fecha_solicitud, 'YYYY-MM')
-             ORDER BY mes ASC`,
-            [usuarioId]
-        );
-        
-        res.json(result.rows);
-    } catch (err) {
-        console.error('Error dashboardVentasMensuales:', err);
-        res.json([]);
-    }
-};
-
 // ================== CONTROL DE VENTAS DEL EQUIPO ==================
 
 // Obtener ventas del equipo por mes
@@ -940,10 +661,10 @@ exports.actualizarSolicitudEditar = async (req, res) => {
                 } catch (auditErr) {
                     console.error('Error guardando auditoria de segmento:', auditErr.message);
                 }
-            }
+            }            // Invalidar caché del dashboard
+            try { cache.invalidateDashboard(usuarioId); } catch(e) { /* silencioso */ }
 
-            res.json({
-                mensaje: 'Solicitud actualizada correctamente',
+            res.json({ mensaje: 'Solicitud actualizada correctamente',
                 data: updateResult.rows[0]
             });
         } else {
@@ -1217,6 +938,9 @@ exports.eliminarSolicitud = async (req, res) => {
             return res.status(404).json({ error: 'Solicitud no encontrada' });
         }
         
+        // Invalidar caché del dashboard
+        try { cache.invalidateDashboard(usuarioId); } catch(e) { /* silencioso */ }
+
         res.json({ mensaje: 'Solicitud eliminada correctamente', id_solicitud: id });
     } catch (err) {
         console.error('Error eliminarSolicitud:', err);
@@ -1309,44 +1033,50 @@ exports.crearSolicitudManual = async (req, res) => {
                 ]
             );
             
-            res.status(201).json({
-                id_solicitud: result.rows[0].id_solicitud,
-                mensaje: 'Solicitud creada correctamente',
-                duplicado_advertencia: duplicado ? {
-                    id_solicitud: duplicado.id_solicitud,
-                    nombre: duplicado.nombre
-                } : null
-            });
-        } else {
-            const dbDirect = require('../config/database');
-            dbDirect.prepare(`
-                INSERT INTO solicitudes (
-                    id_solicitud, estado, cedula, nombre, celular,
-                    segmento, producto, codigo_plus, correo_electronico,
-                    direccion, direccion_trabajo, ocupacion, ingreso_mensual,
-                    fecha_solicitud, usuario_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(
-                nextId, estadoFinal, cedula.trim(), nombre.trim(), celular.trim(),
-                segmento || null, producto || null, codigo_plus || null,
-                correo_electronico || null, direccion || null, direccion_trabajo || null,
-                ocupacion || null, ingreso_mensual || null, fechaActual, usuarioId
-            );
-            
-            res.status(201).json({
-                id_solicitud: nextId,
-                mensaje: 'Solicitud creada correctamente',
-                duplicado_advertencia: duplicado ? {
-                    id_solicitud: duplicado.id_solicitud,
-                    nombre: duplicado.nombre
-                } : null
-            });
-        }
+        // Invalidar caché del dashboard
+        try { cache.invalidateDashboard(usuarioId); } catch(e) { /* silencioso */ }
 
-    } catch (err) {
-        console.error('Error crearSolicitudManual:', err);
-        res.status(500).json({ error: err.message });
+        res.status(201).json({
+            id_solicitud: result.rows[0].id_solicitud,
+            mensaje: 'Solicitud creada correctamente',
+            duplicado_advertencia: duplicado ? {
+                id_solicitud: duplicado.id_solicitud,
+                nombre: duplicado.nombre
+            } : null
+        });
+    } else {
+        const dbDirect = require('../config/database');
+        dbDirect.prepare(`
+            INSERT INTO solicitudes (
+                id_solicitud, estado, cedula, nombre, celular,
+                segmento, producto, codigo_plus, correo_electronico,
+                direccion, direccion_trabajo, ocupacion, ingreso_mensual,
+                fecha_solicitud, usuario_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            nextId, estadoFinal, cedula.trim(), nombre.trim(), celular.trim(),
+            segmento || null, producto || null, codigo_plus || null,
+            correo_electronico || null, direccion || null, direccion_trabajo || null,
+            ocupacion || null, ingreso_mensual || null, fechaActual, usuarioId
+        );
+
+        // Invalidar caché del dashboard
+        try { cache.invalidateDashboard(usuarioId); } catch(e) { /* silencioso */ }
+
+        res.status(201).json({
+            id_solicitud: nextId,
+            mensaje: 'Solicitud creada correctamente',
+            duplicado_advertencia: duplicado ? {
+                id_solicitud: duplicado.id_solicitud,
+                nombre: duplicado.nombre
+            } : null
+        });
     }
+
+} catch (err) {
+    console.error('Error crearSolicitudManual:', err);
+    res.status(500).json({ error: err.message });
+}
 };
 
 // ================== LIMPIAR SOLICITUDES ==================
@@ -1389,6 +1119,9 @@ exports.limpiarSolicitudes = async (req, res) => {
         );
 
         console.log('DEBUG limpiarSolicitudes - eliminadas:', result.rowCount, 'por usuario:', usuarioId);
+
+        // Invalidar caché del dashboard
+        try { cache.invalidateDashboard(usuarioId); } catch(e) { /* silencioso */ }
 
         res.json({
             mensaje: 'Solicitudes eliminadas correctamente',

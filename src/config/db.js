@@ -9,8 +9,18 @@ if (process.env.DATABASE_URL) {
     const { Pool } = require('pg');
     pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: false },
+        max: 20,                    // Máximo 20 conexiones concurrentes
+        idleTimeoutMillis: 30000,   // Cerrar conexiones inactivas después de 30s
+        connectionTimeoutMillis: 5000, // Timeout de conexión: 5s
     });
+
+    // Monitoreo básico del pool (cada 5 min en producción)
+    if (process.env.NODE_ENV === 'production') {
+        setInterval(() => {
+            console.log('[Pool] total:', pool.totalCount, 'idle:', pool.idleCount, 'waiting:', pool.waitingCount);
+        }, 300000);
+    }
 
     // Wrap the pool to convert SQLite ? placeholders to PostgreSQL $N placeholders
     const originalQuery = pool.query.bind(pool);

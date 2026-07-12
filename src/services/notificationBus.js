@@ -7,10 +7,14 @@
 
 const EventEmitter = require('events');
 
+// Máximo de conexiones SSE por usuario (evita abuso/conexiones zombie)
+const MAX_CONNECTIONS_PER_USER = 5;
+// Máximo total de clientes SSE
+const MAX_TOTAL_CLIENTS = 500;
+
 class NotificationBus extends EventEmitter {
     constructor() {
         super();
-        this.setMaxListeners(200); // Soportar muchos clientes conectados
         this.clients = new Map();  // clientId -> { res, usuarioId }
         this.clientIdCounter = 0;
     }
@@ -19,8 +23,23 @@ class NotificationBus extends EventEmitter {
     // AGREGAR CLIENTE SSE
     // ========================================================================
     addClient(res, usuarioId) {
+        // Limitar conexiones totales
+        if (this.clients.size >= MAX_TOTAL_CLIENTS) {
+            console.warn(`[SSE] Límite total alcanzado (${MAX_TOTAL_CLIENTS}), rechazando nueva conexión`);
+            res.status(503).json({ error: 'Servicio de notificaciones saturado' });
+            return null;
+        }
+
+        // Limitar conexiones por usuario
+        const userConnections = this._getUserConnectionCount(usuarioId);
+        if (userConnections >= MAX_CONNECTIONS_PER_USER) {
+            console.warn(`[SSE] Usuario #${usuarioId} tiene ${userConnections} conexiones, máximo ${MAX_CONNECTIONS_PER_USER}`);
+            // Cerrar la conexión más antigua de este usuario
+            this._removeOldestUserConnection(usuarioId);
+        }
+
         const clientId = ++this.clientIdCounter;
-        const client = { res, usuarioId };
+        const client = { res, usuarioId, _createdAt: Date.now() };
         this.clients.set(clientId, client);
 
         // Configurar headers SSE
@@ -49,6 +68,34 @@ class NotificationBus extends EventEmitter {
         });
 
         return clientId;
+    }
+
+    // ========================================================================
+    // CONTAR CONEXIONES DE UN USUARIO
+    // ========================================================================
+    _getUserConnectionCount(usuarioId) {
+        let count = 0;
+        for (const [, client] of this.clients) {
+            if (client.usuarioId === usuarioId) count++;
+        }
+        return count;
+    }
+
+    // ========================================================================
+    // ELIMINAR LA CONEXIÓN MÁS ANTIGUA DE UN USUARIO
+    // ========================================================================
+    _removeOldestUserConnection(usuarioId) {
+        let oldestId = null;
+        let oldestTimestamp = Infinity;
+        for (const [clientId, client] of this.clients) {
+            if (client.usuarioId === usuarioId && client._createdAt < oldestTimestamp) {
+                oldestId = clientId;
+                oldestTimestamp = client._createdAt;
+            }
+        }
+        if (oldestId !== null) {
+            this._removeClient(oldestId);
+        }
     }
 
     // ========================================================================

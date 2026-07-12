@@ -304,29 +304,84 @@ const initTables = async () => {
         }
 
         // ================================================================
-        // ÍNDICES
+        // ÍNDICES EXISTENTES (mantenidos por compatibilidad)
         // ================================================================
-        await client.query(`
-            CREATE INDEX IF NOT EXISTS idx_usuarios_rol ON usuarios(rol)
-        `);
-        await client.query(`
-            CREATE INDEX IF NOT EXISTS idx_usuarios_is_active ON usuarios(is_active)
-        `);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_usuarios_rol ON usuarios(rol)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_usuarios_is_active ON usuarios(is_active)`);
         await client.query(`
             CREATE INDEX IF NOT EXISTS idx_usuarios_locked ON usuarios(locked_until)
             WHERE locked_until IS NOT NULL
         `);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_audit_log_usuario ON audit_log(usuario_id)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_audit_log_accion ON audit_log(accion)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at)`);
+
+        // ================================================================
+        // ÍNDICES COMPUESTOS — Optimización de consultas frecuentes
+        // Basado en auditoría de rendimiento (Julio 2026)
+        // ================================================================
+
+        // Solicitudes: listado principal (filtro por usuario + ORDER BY id DESC)
         await client.query(`
-            CREATE INDEX IF NOT EXISTS idx_audit_log_usuario ON audit_log(usuario_id)
-        `);
-        await client.query(`
-            CREATE INDEX IF NOT EXISTS idx_audit_log_accion ON audit_log(accion)
-        `);
-        await client.query(`
-            CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at)
+            CREATE INDEX IF NOT EXISTS idx_solicitudes_usuario_id_desc
+            ON solicitudes(usuario_id, id_solicitud DESC)
         `);
 
-        console.log('Tablas creadas en PostgreSQL');
+        // Solicitudes: dashboard (filtro por usuario + GROUP BY estado)
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_solicitudes_usuario_estado
+            ON solicitudes(usuario_id, estado)
+        `);
+
+        // Solicitudes: dashboard (filtro por usuario + GROUP BY segmento)
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_solicitudes_usuario_segmento
+            ON solicitudes(usuario_id, segmento)
+        `);
+
+        // Solicitudes: promedios (filtro por usuario + rango de fechas)
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_solicitudes_usuario_fecha
+            ON solicitudes(usuario_id, fecha_solicitud)
+        `);
+
+        // Solicitudes: búsqueda por cédula exacta
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_solicitudes_cedula
+            ON solicitudes(cedula)
+        `);
+
+        // Gestiones: LATERAL JOIN (la consulta más frecuente del sistema)
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_gestiones_solicitud_usuario_fecha
+            ON gestiones(solicitud_id, usuario_id, fecha_gestion DESC)
+        `);
+
+        // Gestiones: dashboard actividad (7 y 30 días)
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_gestiones_usuario_created
+            ON gestiones(usuario_id, created_at)
+        `);
+
+        // Gestiones: consulta de campañas
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_gestiones_maestro_id_solicitud
+            ON gestiones(gestion_maestro_id, solicitud_id)
+        `);
+
+        // Notificaciones: listado por usuario
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_notificaciones_destinatario_leida
+            ON notificaciones(destinatario_id, leida, created_at DESC)
+        `);
+
+        // Historial: consulta por usuario
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_historial_usuario_fecha
+            ON historial_actualizaciones(usuario_id, fecha_actualizacion DESC)
+        `);
+
+        console.log('✅ Tablas e índices creados en PostgreSQL');
     } catch (err) {
         console.error('Error creando tablas:', err.message);
     } finally {

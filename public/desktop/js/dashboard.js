@@ -174,7 +174,10 @@ async function iniciarDashboard() {
 
 iniciarDashboard();
 
+// Polling reducido: cada 60 segundos (antes era 5s)
+// Para 50 usuarios concurrentes, esto reduce el tráfico del dashboard
+// de ~10 req/s a ~0.83 req/s
 setInterval(() => {
     cargarDashboard();
-}, 5000);
+}, 60000);
 
