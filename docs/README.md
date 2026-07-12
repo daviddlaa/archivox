@@ -229,18 +229,70 @@ Modal.formulario({ titulo, html, onGuardar })     // Formulario con header+foote
 
 ---
 
-## 📋 Arquitectura del Sistema
+## 📋 Arquitectura del Sistema (v2.1 → v3.0)
+
+### Visión General
+
+**ANTES (v2.1): Sistema plano sin equipos**
+```
+Frontend (HTML/CSS/JS Vanilla)         Frontend (Desktop + Móvil + Admin)
+    Desktop  ───  Móvil  ───  Admin         ↕ HTTP REST + SSE (NotificationBus)
+        ↕ HTTP REST + SSE              Backend (Express.js 5)
+Backend (Express.js 5)                      Routes → Middleware (auth) → Controllers → Services → DB
+    Routes → Middleware → Controllers → DB     ↕ SQL parametrizado + Pool de conexiones
+        ↕ SQL parametrizado + Pool          PostgreSQL (producción) / SQLite (local)
+PostgreSQL (producción) / SQLite (local)      • 18 tablas (12 originales + 6 nuevas)
+    • 12 tablas • 26 índices • WAL mode          • 43 índices (26 originales + 17 nuevos)
+```                                         • Capa organizacional multi-equipo
+
+### 🆕 Arquitectura Multi-Equipo (v3.0)
 
 ```
-Frontend (HTML/CSS/JS Vanilla)
-    Desktop  ───  Móvil  ───  Admin
-        ↕ HTTP REST + SSE (NotificationBus)
-Backend (Express.js 5)
-    Routes → Middleware (auth) → Controllers → Services → DB
-        ↕ SQL parametrizado + Pool de conexiones
-PostgreSQL (producción) / SQLite (local)
-    • 12 tablas • 26 índices • WAL mode (SQLite)
+                    ┌─────────────────────┐
+                    │     SUPERADMIN       │
+                    └──────────┬──────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+    ┌─────────┴─────────┐  ┌──┴──────────┐  ┌──┴──────────┐
+    │   EQUIPO "VENTAS"  │  │ EQUIPO "COB" │  │EQUIPO "SISTEMA"│
+    │  (Nuevo)           │  │ (Nuevo)      │  │(Migración auto)│
+    └─────────┬─────────┘  └──┬──────────┘  └──┬──────────┘
+              │                │                │
+    ┌─────────┴─────────┐  ┌──┴──────────┐  ┌──┴──────────┐
+    │  LÍDER: Carlos    │  │ LÍDER: María │  │  SUPERADMIN  │
+    └─────────┬─────────┘  └──┬──────────┘  └──────┬───────┘
+              │                │                     │
+    ┌─────────┴─────────┐  ┌──┴──────────┐     Usuarios
+    │ AGENTE: Pedro     │  │AGENTE: Juan  │    actuales
+    │ AGENTE: Ana       │  │AGENTE: Luis  │
+    └───────────────────┘  └──────────────┘
 ```
+
+### Estructura del Sistema
+
+```
+SUPERADMIN → EQUIPOS → LÍDER → AGENTES → CAMPAÑAS → SOLICITUDES → GESTIONES
+```
+
+### Filosofía: Separación de Conceptos
+
+| Concepto | Qué determina | Dónde se almacena |
+|----------|---------------|-------------------|
+| **ROL** | Quién es el usuario | `usuarios.rol` (existente) |
+| **EQUIPO** | Con quién trabaja | `equipo_usuarios` (NUEVA) |
+| **PERMISOS** | Qué puede hacer | `permisos_roles` (NUEVA) |
+| **ASIGNACIONES** | Sobre qué solicitudes trabaja | `asignaciones_solicitudes` (NUEVA) |
+
+### Roles del Sistema
+
+| Rol | Level | ¿Puede crear? | ¿Puede asignar? | ¿Qué ve? |
+|-----|:-----:|---------------|-----------------|----------|
+| **superadmin** | 100 | Equipos, Líderes, Admins | Todo | Todo el sistema |
+| **admin** | 50 | Usuarios (no admins) | No | Sistema completo |
+| **lider** | 30 | Agentes (solo en su equipo) | Solicitudes a sus agentes | Solo su equipo |
+| **agente** | 20 | Nada | Nada | Sus campañas, solicitudes, gestiones |
+| **user** | 10 | Nada | Nada | Sus propios datos (legacy) |
 
 ### Capa de Caché
 
@@ -252,6 +304,274 @@ Cliente → API → Cache (node-cache, RAM)
 Invalidación: uploadExcel, crearSolicitudManual, eliminarSolicitud, 
               limpiarSolicitudes, actualizarSolicitudEditar
 ```
+
+---
+
+## 🗄️ Modelo de Datos Multi-Equipo
+
+### 6 Tablas Nuevas
+
+| # | Tabla | Propósito | FK |
+|---|-------|-----------|:--:|
+| 1 | `equipos` | Catálogo de equipos organizacionales | — |
+| 2 | `equipo_usuarios` | Membresía usuario↔equipo con historial | equipos, usuarios |
+| 3 | `permisos_roles` | Permisos por rol (extensible) | — |
+| 4 | `permisos_equipo` | Permisos extras por equipo | equipos |
+| 5 | `asignaciones_solicitudes` | **Corazón del sistema**: qué solicitud→qué equipo/agente | equipos, usuarios |
+| 6 | `campañas_equipo` | Asociación campaña↔equipo | equipos |
+
+### 1 Tabla Modificada
+
+| Tabla | Cambio | Default |
+|-------|--------|:-------:|
+| `gestiones_maestro` | + `equipo_id` (INTEGER, nullable) | `NULL` = comportamiento actual |
+
+### 17 Nuevos Índices
+
+| Tabla | Índice | Columnas |
+|-------|--------|----------|
+| `equipos` | `idx_equipos_activo` | activo |
+| `equipo_usuarios` | `idx_equipo_usuarios_usuario_activo` | (usuario_id, fecha_salida) |
+| `equipo_usuarios` | `idx_equipo_usuarios_equipo` | (equipo_id, es_lider, fecha_salida) |
+| `equipo_usuarios` | `idx_equipo_usuarios_lider` | (equipo_id, es_lider) WHERE líder activo |
+| `permisos_roles` | `idx_permisos_roles_rol` | (rol) |
+| `permisos_equipo` | `idx_permisos_equipo_equipo` | equipo_id |
+| `asignaciones_solicitudes` | `idx_asignaciones_solicitud_activa` | (solicitud_id, fecha_desasignacion) |
+| `asignaciones_solicitudes` | `idx_asignaciones_usuario_activas` | (usuario_id, fecha_desasignacion) |
+| `asignaciones_solicitudes` | `idx_asignaciones_equipo_activas` | (equipo_id, fecha_desasignacion) |
+| `asignaciones_solicitudes` | `idx_asignaciones_campaña` | (desde_campaña_id, fecha_desasignacion) |
+| `asignaciones_solicitudes` | `idx_asignaciones_fecha` | fecha_asignacion DESC |
+| `campañas_equipo` | `idx_campañas_equipo_equipo` | equipo_id |
+| `gestiones_maestro` | `idx_gestiones_maestro_equipo` | equipo_id |
+
+### 47 Permisos por Rol
+
+| Rol | Permisos |
+|-----|----------|
+| **líder** (20) | equipo:ver/gestionar, agentes:ver/crear/editar, campañas:ver/crear/gestionar/asignar, solicitudes:importar/ver-equipo/asignar/reasignar, dashboard:ver-equipo/ver-agentes, gestiones:ver-equipo, relaciones:ver-equipo, historial:ver-equipo |
+| **agente** (12) | campañas:ver-propias, solicitudes:ver-asignadas/gestionar/editar-estado/completar-info, gestiones:crear/ver-propias/editar, relaciones:gestionar, historial:ver-propio, perfil:ver/editar |
+| **user** (15) | solicitudes:importar/ver-propias/gestionar, campañas:crear/gestionar, gestiones:crear/ver-propias/editar, relaciones:gestionar, ventas:gestionar, historial:ver-propio, perfil:ver/editar |
+
+---
+
+## 🔐 Flujo de Permisos
+
+```
+Petición del usuario
+        │
+        ▼
+Middleware: requiresAuth
+        │
+    ┌───┴───┐
+    │       │
+  NO (401) SÍ (continúa)
+    │       │
+    ▼       ▼
+¿Requiere permiso específico?
+    │       │
+  NO (pasa) SÍ (verificar)
+                │
+        ┌──────┴──────┐
+        │             │
+    SUPERADMIN?    NO → Buscar en permisos_roles
+        │                  (según su rol)
+        │             │
+      ✅ PASA        Buscar en permisos_equipo
+                         (según su equipo)
+                          │
+                    ┌─────┴─────┐
+                    │           │
+                  SÍ (✅)    NO (403)
+```
+
+---
+
+## 🔄 Flujo de Asignaciones
+
+```
+LÍDER importa Excel o crea solicitud
+        │
+        ▼
+  Solicitud INSERT en DB
+  (usuario_id = líder)
+        │
+        ▼
+  Asignación automática al equipo del líder
+  (sin agente específico)
+        │
+    ┌───┴───┐
+    │       │
+  Directa  Campaña
+    │       │
+    ▼       ▼
+  INSERT INTO    LÍDER asigna campaña
+  asignaciones   a agente(s)
+    │            │
+    └────┬───────┘
+         │
+         ▼
+  AGENTE ve solicitud asignada
+         │
+         ▼
+  AGENTE realiza gestiones
+         │
+         ▼
+  LÍDER monitorea progreso
+  desde dashboard del equipo
+```
+
+---
+
+## 🌐 Endpoints API Multi-Equipo
+
+| Método | Ruta | Propósito | Acceso |
+|--------|------|-----------|:------:|
+| GET | `/api/equipos` | Listar equipos | Autenticado |
+| GET | `/api/equipos/mi-equipo` | Info del equipo del usuario | Autenticado |
+| GET | `/api/equipos/:id` | Ver equipo con detalle | requiresEquipo |
+| POST | `/api/equipos` | Crear equipo | superadmin |
+| PUT | `/api/equipos/:id` | Actualizar equipo | superadmin |
+| DELETE | `/api/equipos/:id` | Eliminar equipo | superadmin |
+| GET | `/api/equipos/:id/miembros` | Listar miembros del equipo | Autenticado |
+| GET | `/api/equipos/:id/dashboard` | Dashboard del equipo | requiresEquipo |
+| GET | `/api/equipos/:id/gestiones` | Gestiones del equipo | requiresEquipo |
+| GET | `/api/equipos/:id/campanas` | Campañas del equipo | Autenticado |
+| POST | `/api/equipos/:id/agentes` | Crear agente en equipo | requiresPermissionAsync('agentes:crear') |
+| PUT | `/api/equipos/:id/asignar-lider` | Asignar líder del equipo | superadmin |
+| PUT | `/api/equipos/:id/remover-miembro` | Remover miembro del equipo | superadmin |
+| POST | `/api/equipos/:id/mover-usuario` | Mover usuario entre equipos | superadmin |
+
+---
+
+## 📱 Frontend — Páginas Multi-Equipo
+
+| Ruta | Página | Para quién |
+|------|--------|:----------:|
+| `/` | Dashboard con card "Mi Equipo" | Todos (con equipo) |
+| `/equipo` (nueva) | Panel del Líder | Líderes / Admins |
+| `/admin` → pestaña Equipos | Gestión de equipos | SuperAdmin |
+
+### Panel del Líder (`/equipo`)
+- Dashboard con stats (agentes, asignaciones, campañas, gestiones)
+- Acciones rápidas (crear agente, importar Excel, crear campaña)
+- Tabla de agentes con asignaciones y gestiones 7d
+- Tabla de campañas con barras de progreso
+- Gestiones recientes del equipo
+- Modal para crear agente
+- Modal para ver asignaciones por agente
+
+### Card "Mi Equipo" en Dashboard
+- Visible para todos los usuarios con equipo
+- Muestra: nombre del equipo, líder, agentes totales, asignaciones activas
+- Badge de rol (líder/agente/miembro)
+
+---
+
+## 📁 Migraciones Ejecutadas
+
+| Migración | Archivo | Descripción | Fecha |
+|-----------|---------|-------------|:----:|
+| 002 | `migrations/002_add_compound_indexes.js` | 11 índices compuestos de rendimiento | Jul 2026 |
+| 003a | `migrations/003_create_team_tables.js` | 6 tablas multi-equipo + modificar gestiones_maestro | Jul 2026 |
+| 003b | `migrations/003_seed_team_data.js` | Seed: equipo Sistema, 9 usuarios, 47 permisos | Jul 2026 |
+
+---
+
+## 📊 Archivos del Proyecto (v3.0)
+
+### Backend (`src/`)
+
+| Ruta | Archivos | Propósito |
+|------|----------|-----------|
+| `src/config/` | `db.js`, `cache.js`, `permissions.js`, `initDb*.js`, `multer.config.js`, `database*.js` | Configuración global, pool BD, caché, roles |
+| `src/controllers/` | `auth`, `excel`, `dashboard`, `admin`, `estadisticas`, `equipos` (🆕), `gestionesMaestro`, `notificaciones`, `relaciones`, `relacionesGestion` | Lógica de negocio |
+| `src/middleware/` | `auth.middleware.js` | Autenticación, autorización, sesión |
+| `src/routes/` | `auth`, `admin`, `equipos` (🆕), `excel`, `gestionesMaestro`, `relaciones`, `relacionesGestion`, `debug` | Definición de rutas API |
+| `src/services/` | `excel.service.js`, `relaciones.service.js`, `notificationBus.js` | Lógica reutilizable |
+
+### Frontend (`public/`)
+
+| Ruta | Propósito |
+|------|-----------|
+| `public/desktop/` | Versión escritorio (+ `equipo.html` 🆕) |
+| `public/movil/` | Versión móvil |
+| `public/admin/` | Panel de administración (+ pestaña Equipos 🆕) |
+| `public/desktop/css/equipo.css` 🆕 | Estilos del Panel del Líder |
+| `public/desktop/js/equipo.js` 🆕 | JS del Panel del Líder |
+| `public/css/` | Estilos compartidos |
+| `public/js/` | JS compartido, drawer.js (🆕 enlace líder), deep-link-router.js |
+
+### Migraciones (`migrations/`)
+
+| Archivo | Descripción |
+|---------|-------------|
+| `001_add_admin_columns.*` | Columnas admin + audit_log |
+| `002_add_compound_indexes.*` | 11 índices compuestos ( ⚡ejecutado en producción) |
+| `003_create_team_tables.*` 🆕 | 6 tablas multi-equipo ( ⚡ejecutado en producción) |
+| `003_seed_team_data.*` 🆕 | Seed datos iniciales ( ⚡ejecutado en producción) |
+| `003_rollback_team_tables.*` 🆕 | Rollback completo |
+
+### Documentación (`docs/`)
+
+| Archivo | Descripción |
+|---------|-------------|
+| `README.md` | **Este archivo** — índice central actualizado v3.0 |
+| `informe-arquitectura-multi-equipo.md` 🆕 | Diseño completo de arquitectura multi-equipo |
+| `informe-modelo-datos-multi-equipo.md` 🆕 | Especificación detallada del modelo de datos |
+| `progreso-multi-equipo.md` 🆕 | Seguimiento de progreso del proyecto v3.0 |
+| `informe-auditoria-rendimiento.md` | Auditoría de rendimiento (v2.0) |
+| `informe-optimizacion-arquitectura.md` | Optimización de arquitectura (v2.0) |
+| `anteriores/` | Documentación de sesiones anteriores |
+
+---
+
+## 🔐 Comandos Útiles
+
+```bash
+# Iniciar servidor local
+node app.js
+
+# Migrar a PostgreSQL (ejecutado en producción)
+DATABASE_URL=postgresql://... node migrations/002_add_compound_indexes.js
+DATABASE_URL=postgresql://... node migrations/003_create_team_tables.js
+DATABASE_URL=postgresql://... node migrations/003_seed_team_data.js
+
+# Rollback multi-equipo (solo si es necesario)
+# Ejecutar script SQL: migrations/003_rollback_team_tables.sql
+
+# Commit y push
+git add .
+git commit -m "Actualizacion general"
+git push
+```
+
+---
+
+## ✅ Resumen Fases del Proyecto v3.0
+
+| Fase | Descripción | Archivos clave |
+|:----:|-------------|----------------|
+| **0** | Auditoría completa del sistema | Sin cambios de código |
+| **1** | Diseño de arquitectura multi-equipo | `docs/informe-arquitectura-multi-equipo.md` |
+| **2** | Diseño del modelo de datos | `docs/informe-modelo-datos-multi-equipo.md` |
+| **3** | Migraciones generadas (PG + SQLite + rollback) | 8 archivos en `migrations/003_*` |
+| **4** | Migraciones ejecutadas en producción | 6 tablas, 9 usuarios, 47 permisos |
+| **5** | Backend: controllers, middleware, permisos | `permissions.js`, `auth.middleware.js`, `equipos.controller.js` |
+| **6** | Panel SuperAdmin: gestión de equipos | `admin/index.html` + pestaña Equipos |
+| **7** | Panel del Líder: dashboard + agentes + campañas | `desktop/equipo.html` + JS/CSS |
+| **8** | Panel del Agente: card Mi Equipo | `desktop/index.html` + card en dashboard |
+| **9** | Pruebas de regresión | 28 módulos OK, 20 endpoints OK, 22 HTML OK, 18 JS OK |
+
+---
+
+## 📌 Notas de Producción (Render)
+
+- Base de datos PostgreSQL se actualiza automáticamente al iniciar (`initDb.pg.js`)
+- Las migraciones multi-equipo ya se ejecutaron en producción (FASE 4)
+- `SESSION_SECRET` debe configurarse como variable de entorno
+- Plan Free Render: 512MB RAM — suficiente para 50 usuarios concurrentes
+- Pool de conexiones: `max: 20`, `idleTimeoutMillis: 30000`
+- Caché en RAM: dashboard TTL 30s, datos globales TTL 300s
 
 ---
 
