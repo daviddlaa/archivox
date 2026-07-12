@@ -1296,7 +1296,8 @@ body {
         left: 0;
         transform: none;
         border-radius: 0;
-        display: flex;
+        /* display NO se sobrescribe aquí: hereda display:none del CSS base.
+           Solo el modal activo tendrá display:flex. */
         align-items: flex-end;
         z-index: 1001;
         pointer-events: none;
