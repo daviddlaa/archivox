@@ -1072,6 +1072,129 @@ exports.getSolicitud = async (req, res) => {
         console.error('Error getSolicitud:', err);
         res.status(500).json({ error: err.message });
     }
+};// ================== CREAR SOLICITUD MANUAL ==================
+
+// Crear una solicitud manualmente (no por importación Excel)
+exports.crearSolicitudManual = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const {
+        nombre,
+        cedula,
+        celular,
+        estado,
+        correo_electronico,
+        segmento,
+        producto,
+        codigo_plus,
+        direccion,
+        direccion_trabajo,
+        ocupacion,
+        ingreso_mensual
+    } = req.body;
+
+    // Validar campos obligatorios
+    if (!nombre || !nombre.trim()) {
+        return res.status(400).json({ error: 'El campo nombre es obligatorio' });
+    }
+    if (!cedula || !cedula.trim()) {
+        return res.status(400).json({ error: 'El campo cédula es obligatorio' });
+    }
+    if (!celular || !celular.trim()) {
+        return res.status(400).json({ error: 'El campo celular es obligatorio' });
+    }
+
+    const isPostgres = !!process.env.DATABASE_URL;
+
+    try {
+        // 1. Auto-generar id_solicitud
+        let nextId;
+        if (isPostgres) {
+            const result = await pool.query('SELECT COALESCE(MAX(id_solicitud), 0) + 1 AS next_id FROM solicitudes');
+            nextId = parseInt(result.rows[0].next_id);
+        } else {
+            const dbDirect = require('../config/database');
+            const row = dbDirect.prepare('SELECT COALESCE(MAX(id_solicitud), 0) + 1 AS next_id FROM solicitudes').get();
+            nextId = row.next_id;
+        }
+
+        // 2. Verificar duplicados por cédula para el mismo usuario
+        let duplicado = null;
+        if (isPostgres) {
+            const dupResult = await pool.query(
+                'SELECT id_solicitud, nombre FROM solicitudes WHERE cedula = $1 AND usuario_id = $2 LIMIT 1',
+                [cedula.trim(), usuarioId]
+            );
+            if (dupResult.rows.length > 0) duplicado = dupResult.rows[0];
+        } else {
+            const dbDirect = require('../config/database');
+            duplicado = dbDirect.prepare(
+                'SELECT id_solicitud, nombre FROM solicitudes WHERE cedula = ? AND usuario_id = ? LIMIT 1'
+            ).get(cedula.trim(), usuarioId);
+        }
+
+        // 3. Insertar nueva solicitud
+        const estadoFinal = (estado && estado.trim()) ? estado.trim() : 'SIN ESTADO';
+        const fechaActual = new Date().toISOString().split('T')[0];
+
+        if (isPostgres) {
+            const result = await pool.query(
+                `INSERT INTO solicitudes (
+                    id_solicitud, estado, cedula, nombre, celular,
+                    segmento, producto, codigo_plus, correo_electronico,
+                    direccion, direccion_trabajo, ocupacion, ingreso_mensual,
+                    fecha_solicitud, usuario_id
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                RETURNING id_solicitud`,
+                [
+                    nextId, estadoFinal, cedula.trim(), nombre.trim(), celular.trim(),
+                    segmento || null, producto || null, codigo_plus || null,
+                    correo_electronico || null, direccion || null, direccion_trabajo || null,
+                    ocupacion || null, ingreso_mensual || null, fechaActual, usuarioId
+                ]
+            );
+            
+            res.status(201).json({
+                id_solicitud: result.rows[0].id_solicitud,
+                mensaje: 'Solicitud creada correctamente',
+                duplicado_advertencia: duplicado ? {
+                    id_solicitud: duplicado.id_solicitud,
+                    nombre: duplicado.nombre
+                } : null
+            });
+        } else {
+            const dbDirect = require('../config/database');
+            dbDirect.prepare(`
+                INSERT INTO solicitudes (
+                    id_solicitud, estado, cedula, nombre, celular,
+                    segmento, producto, codigo_plus, correo_electronico,
+                    direccion, direccion_trabajo, ocupacion, ingreso_mensual,
+                    fecha_solicitud, usuario_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(
+                nextId, estadoFinal, cedula.trim(), nombre.trim(), celular.trim(),
+                segmento || null, producto || null, codigo_plus || null,
+                correo_electronico || null, direccion || null, direccion_trabajo || null,
+                ocupacion || null, ingreso_mensual || null, fechaActual, usuarioId
+            );
+            
+            res.status(201).json({
+                id_solicitud: nextId,
+                mensaje: 'Solicitud creada correctamente',
+                duplicado_advertencia: duplicado ? {
+                    id_solicitud: duplicado.id_solicitud,
+                    nombre: duplicado.nombre
+                } : null
+            });
+        }
+
+    } catch (err) {
+        console.error('Error crearSolicitudManual:', err);
+        res.status(500).json({ error: err.message });
+    }
 };
 
 // ================== LIMPIAR SOLICITUDES ==================

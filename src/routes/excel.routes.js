@@ -29,6 +29,13 @@ router.delete(
     excelController.eliminarImagenGestion
 );
 
+// Crear solicitud manualmente
+router.post(
+    '/solicitudes',
+    requiresAuth,
+    excelController.crearSolicitudManual
+);
+
 router.get('/solicitudes', excelController.listarSolicitudes);
 
 // Búsqueda directa en servidor (evita infinite scroll)

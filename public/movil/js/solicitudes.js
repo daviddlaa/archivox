@@ -1701,6 +1701,337 @@ function exportarExcel() {
     alert('Se exportaron ' + datosAExportar.length + ' registros a Excel');
 }
 
+// ============================================================================
+// NUEVA SOLICITUD MANUAL - Versión Móvil
+// ============================================================================
+
+let estadosDisponiblesMovil = [];
+let segmentosDisponiblesMovil = [];
+
+// Abrir modal de nueva solicitud (móvil)
+async function abrirModalNuevaSolicitudMovil() {
+    // Cargar estados y segmentos dinámicamente
+    if (estadosDisponiblesMovil.length === 0) {
+        try {
+            var res = await fetch('/api/excel/dashboard/estados', { credentials: 'include' });
+            if (res.ok) {
+                var data = await res.json();
+                estadosDisponiblesMovil = data.map(function(e) { return e.estado; });
+                if (estadosDisponiblesMovil.indexOf('SIN ESTADO') === -1) estadosDisponiblesMovil.unshift('SIN ESTADO');
+            }
+        } catch (e) { console.error('Error cargando estados:', e); }
+    }
+    if (segmentosDisponiblesMovil.length === 0) {
+        try {
+            var res = await fetch('/api/excel/dashboard/segmentos', { credentials: 'include' });
+            if (res.ok) {
+                var data = await res.json();
+                segmentosDisponiblesMovil = data.map(function(s) { return s.segmento; });
+            }
+        } catch (e) { console.error('Error cargando segmentos:', e); }
+    }
+
+    var estadosOptions = '<option value="SIN ESTADO">SIN ESTADO</option>';
+    for (var i = 0; i < estadosDisponiblesMovil.length; i++) {
+        if (estadosDisponiblesMovil[i] !== 'SIN ESTADO') {
+            estadosOptions += '<option value="' + estadosDisponiblesMovil[i] + '">' + estadosDisponiblesMovil[i] + '</option>';
+        }
+    }
+
+    var segmentosOptions = '<option value="">Sin segmento</option>';
+    for (var i = 0; i < segmentosDisponiblesMovil.length; i++) {
+        segmentosOptions += '<option value="' + segmentosDisponiblesMovil[i] + '">' + segmentosDisponiblesMovil[i] + '</option>';
+    }
+
+    var html = '';
+    html += '<div class="ns-movil-overlay" id="ns-movil-overlay">';
+    html += '  <div class="ns-movil-header">';
+    html += '    <h2>➕ Nueva Solicitud</h2>';
+    html += '    <button class="ns-close-btn" onclick="cerrarModalNuevaSolicitudMovil()" aria-label="Cerrar">✕</button>';
+    html += '  </div>';
+    html += '  <div class="ns-movil-body">';
+
+    // Advertencia de duplicado
+    html += '    <div class="ns-movil-duplicado-warning" id="ns-movil-duplicado-warning">⚠️ <span id="ns-movil-duplicado-msg"></span></div>';
+
+    // Sección: Información del Cliente
+    html += '    <div class="ns-movil-section">';
+    html += '      <div class="ns-movil-section-title">👤 Información del Cliente</div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>📝 Nombre <span class="required">*</span></label>';
+    html += '        <input type="text" id="ns-movil-nombre" placeholder="Nombre completo" oninput="validarNombreMovil()">';
+    html += '        <div class="validation-feedback" id="ns-movil-nombre-feedback"></div>';
+    html += '      </div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>🆔 Cédula <span class="required">*</span></label>';
+    html += '        <input type="text" id="ns-movil-cedula" placeholder="10 dígitos" maxlength="10" inputmode="numeric" oninput="validarCedulaMovil()" onblur="verificarDuplicadoCedulaMovil()">';
+    html += '        <div class="validation-feedback" id="ns-movil-cedula-feedback"></div>';
+    html += '      </div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>📞 Celular <span class="required">*</span></label>';
+    html += '        <input type="tel" id="ns-movil-celular" placeholder="0991234567" maxlength="10" inputmode="numeric" oninput="validarCelularMovil()">';
+    html += '        <div class="validation-feedback" id="ns-movil-celular-feedback"></div>';
+    html += '      </div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>📧 Correo Electrónico</label>';
+    html += '        <input type="email" id="ns-movil-correo" placeholder="cliente@ejemplo.com" inputmode="email" oninput="validarCorreoMovil()">';
+    html += '        <div class="validation-feedback" id="ns-movil-correo-feedback"></div>';
+    html += '      </div>';
+    html += '    </div>';
+
+    // Sección: Datos del Producto
+    html += '    <div class="ns-movil-section">';
+    html += '      <div class="ns-movil-section-title">📦 Datos del Producto</div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>📦 Producto</label>';
+    html += '        <input type="text" id="ns-movil-producto" placeholder="Ej: Crédito">';
+    html += '      </div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>🏷️ Segmento</label>';
+    html += '        <select id="ns-movil-segmento">' + segmentosOptions + '</select>';
+    html += '      </div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>🔢 Código Plus</label>';
+    html += '        <input type="text" id="ns-movil-codigo-plus" placeholder="Código interno">';
+    html += '      </div>';
+    html += '    </div>';
+
+    // Sección: Información Adicional
+    html += '    <div class="ns-movil-section">';
+    html += '      <div class="ns-movil-section-title">📍 Información Adicional</div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>📍 Dirección</label>';
+    html += '        <input type="text" id="ns-movil-direccion" placeholder="Dirección domiciliaria">';
+    html += '      </div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>💼 Ocupación</label>';
+    html += '        <input type="text" id="ns-movil-ocupacion" placeholder="Ej: Comerciante">';
+    html += '      </div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>💰 Ingreso Mensual</label>';
+    html += '        <input type="number" id="ns-movil-ingreso" placeholder="0.00" step="0.01" min="0" inputmode="decimal">';
+    html += '      </div>';
+    html += '    </div>';
+
+    // Sección: Estado Inicial
+    html += '    <div class="ns-movil-section">';
+    html += '      <div class="ns-movil-section-title">📌 Estado Inicial</div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>📌 Estado <span class="required">*</span></label>';
+    html += '        <select id="ns-movil-estado">' + estadosOptions + '</select>';
+    html += '      </div>';
+    html += '    </div>';
+
+    html += '  </div>'; // fin body
+    html += '  <div class="ns-movil-footer">';
+    html += '    <button class="ns-btn-cancel" onclick="cerrarModalNuevaSolicitudMovil()">Cancelar</button>';
+    html += '    <button class="ns-btn-submit" id="ns-movil-submit-btn" onclick="guardarNuevaSolicitudMovil()">💾 Guardar</button>';
+    html += '  </div>';
+    html += '</div>';
+
+    // Agregar al body
+    var modalExistente = document.getElementById('ns-movil-overlay');
+    if (modalExistente) modalExistente.remove();
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    // Foco inicial
+    setTimeout(function() {
+        var input = document.getElementById('ns-movil-nombre');
+        if (input) input.focus();
+    }, 300);
+}
+
+function cerrarModalNuevaSolicitudMovil() {
+    var overlay = document.getElementById('ns-movil-overlay');
+    if (overlay) overlay.remove();
+}
+
+// ===== VALIDACIONES MÓVIL =====
+
+function validarNombreMovil() {
+    var input = document.getElementById('ns-movil-nombre');
+    var feedback = document.getElementById('ns-movil-nombre-feedback');
+    if (!input || !feedback) return;
+    var val = input.value.trim();
+    if (val.length === 0) {
+        input.className = 'error';
+        feedback.className = 'validation-feedback error';
+        feedback.textContent = '❌ El nombre es obligatorio';
+    } else if (val.length < 3) {
+        input.className = 'error';
+        feedback.className = 'validation-feedback error';
+        feedback.textContent = '❌ Mínimo 3 caracteres';
+    } else {
+        input.className = 'valid';
+        feedback.className = 'validation-feedback ok';
+        feedback.textContent = '✅ Válido';
+    }
+}
+
+function validarCedulaMovil() {
+    var input = document.getElementById('ns-movil-cedula');
+    var feedback = document.getElementById('ns-movil-cedula-feedback');
+    if (!input || !feedback) return;
+    var val = input.value.replace(/\D/g, '');
+    input.value = val;
+    if (val.length === 0) {
+        input.className = 'error';
+        feedback.className = 'validation-feedback error';
+        feedback.textContent = '❌ La cédula es obligatoria';
+    } else if (val.length !== 10) {
+        input.className = 'error';
+        feedback.className = 'validation-feedback error';
+        feedback.textContent = '❌ Debe tener 10 dígitos';
+    } else {
+        var suma = 0;
+        for (var i = 0; i < 9; i++) {
+            var digito = parseInt(val[i]);
+            if (i % 2 === 0) {
+                digito *= 2;
+                if (digito > 9) digito -= 9;
+            }
+            suma += digito;
+        }
+        var digitoVerificador = (10 - (suma % 10)) % 10;
+        if (parseInt(val[9]) === digitoVerificador) {
+            input.className = 'valid';
+            feedback.className = 'validation-feedback ok';
+            feedback.textContent = '✅ Cédula válida';
+        } else {
+            input.className = 'error';
+            feedback.className = 'validation-feedback error';
+            feedback.textContent = '❌ Dígito verificador inválido';
+        }
+    }
+}
+
+function validarCelularMovil() {
+    var input = document.getElementById('ns-movil-celular');
+    var feedback = document.getElementById('ns-movil-celular-feedback');
+    if (!input || !feedback) return;
+    var val = input.value.replace(/\D/g, '');
+    input.value = val;
+    if (val.length === 0) {
+        input.className = 'error';
+        feedback.className = 'validation-feedback error';
+        feedback.textContent = '❌ El celular es obligatorio';
+    } else if (val.length !== 10) {
+        input.className = 'error';
+        feedback.className = 'validation-feedback error';
+        feedback.textContent = '❌ Debe tener 10 dígitos';
+    } else if (!val.startsWith('09')) {
+        input.className = 'error';
+        feedback.className = 'validation-feedback error';
+        feedback.textContent = '❌ Debe empezar con 09';
+    } else {
+        input.className = 'valid';
+        feedback.className = 'validation-feedback ok';
+        feedback.textContent = '✅ Válido';
+    }
+}
+
+function validarCorreoMovil() {
+    var input = document.getElementById('ns-movil-correo');
+    var feedback = document.getElementById('ns-movil-correo-feedback');
+    if (!input || !feedback) return;
+    var val = input.value.trim();
+    if (val.length === 0) {
+        input.className = '';
+        feedback.className = 'validation-feedback';
+        feedback.textContent = '';
+    } else if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+        input.className = 'valid';
+        feedback.className = 'validation-feedback ok';
+        feedback.textContent = '✅ Formato válido';
+    } else {
+        input.className = 'error';
+        feedback.className = 'validation-feedback error';
+        feedback.textContent = '❌ Formato inválido';
+    }
+}
+
+var debounceDuplicadoMovil = null;
+function verificarDuplicadoCedulaMovil() {
+    var input = document.getElementById('ns-movil-cedula');
+    var warning = document.getElementById('ns-movil-duplicado-warning');
+    var warningMsg = document.getElementById('ns-movil-duplicado-msg');
+    if (!input || !warning || !warningMsg) return;
+    var cedula = input.value.trim();
+    if (cedula.length !== 10) { warning.classList.remove('visible'); return; }
+    clearTimeout(debounceDuplicadoMovil);
+    debounceDuplicadoMovil = setTimeout(async function() {
+        try {
+            var res = await fetch('/api/excel/solicitudes/buscar?q=' + encodeURIComponent(cedula) + '&limite=1', { credentials: 'include' });
+            if (res.ok) {
+                var data = await res.json();
+                var solicitudes = data.data || [];
+                if (solicitudes.length > 0) {
+                    warning.classList.add('visible');
+                    warningMsg.textContent = 'Ya existe una solicitud con esta cédula: #' + solicitudes[0].id_solicitud + ' - ' + (solicitudes[0].nombre || '');
+                } else {
+                    warning.classList.remove('visible');
+                }
+            }
+        } catch (e) { console.error('Error:', e); }
+    }, 500);
+}
+
+// ===== GUARDAR NUEVA SOLICITUD MÓVIL =====
+async function guardarNuevaSolicitudMovil() {
+    var nombre = document.getElementById('ns-movil-nombre').value.trim();
+    var cedula = document.getElementById('ns-movil-cedula').value.trim();
+    var celular = document.getElementById('ns-movil-celular').value.trim();
+
+    if (!nombre) { document.getElementById('ns-movil-nombre').focus(); validarNombreMovil(); return; }
+    if (!cedula || cedula.length !== 10) { document.getElementById('ns-movil-cedula').focus(); validarCedulaMovil(); return; }
+    if (!celular || celular.length !== 10) { document.getElementById('ns-movil-celular').focus(); validarCelularMovil(); return; }
+
+    var btn = document.getElementById('ns-movil-submit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+
+    try {
+        var body = {
+            nombre: nombre,
+            cedula: cedula,
+            celular: celular,
+            estado: document.getElementById('ns-movil-estado').value,
+            correo_electronico: document.getElementById('ns-movil-correo').value.trim() || undefined,
+            segmento: document.getElementById('ns-movil-segmento').value || undefined,
+            producto: document.getElementById('ns-movil-producto').value.trim() || undefined,
+            codigo_plus: document.getElementById('ns-movil-codigo-plus').value.trim() || undefined,
+            direccion: document.getElementById('ns-movil-direccion').value.trim() || undefined,
+            ocupacion: document.getElementById('ns-movil-ocupacion').value.trim() || undefined,
+            ingreso_mensual: document.getElementById('ns-movil-ingreso').value ? parseFloat(document.getElementById('ns-movil-ingreso').value) : undefined
+        };
+
+        var response = await fetch('/api/excel/solicitudes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(body)
+        });
+
+        var resultado = await response.json();
+
+        if (response.ok) {
+            var msg = '✅ Solicitud #' + resultado.id_solicitud + ' creada';
+            if (resultado.duplicado_advertencia) {
+                msg += '\n⚠️ Ya existe otra con la misma cédula';
+            }
+            alert(msg);
+            cerrarModalNuevaSolicitudMovil();
+            if (typeof init === 'function') init();
+        } else {
+            alert('❌ Error: ' + (resultado.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('❌ Error al guardar: ' + error.message);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar'; }
+    }
+}
+
 // Iniciar al cargar página
 window.addEventListener('DOMContentLoaded', function() {
     init();

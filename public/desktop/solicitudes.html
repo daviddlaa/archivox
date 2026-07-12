@@ -97,6 +97,7 @@
                     <div class="acciones-botones">
                         <button class="accion-btn" onclick="exportarSeleccionadas()">📥 Exportar</button>
                         <button class="accion-btn" onclick="marcarSeleccionadas()">✓ Marcar</button>
+                        <button class="accion-btn" onclick="abrirModalNuevaSolicitud()">➕ Nueva Solicitud</button>
                         <button class="accion-btn" onclick="limpiarFiltros()">🧹 Limpiar</button>
                         <button class="accion-btn peligro" onclick="borrarTodas()">🗑️ Borrar</button>
                     </div>
@@ -156,6 +157,12 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- FAB: Nueva Solicitud Manual (siempre visible) -->
+                <button id="fab-nueva-solicitud" class="fab-new-solicitud" onclick="abrirModalNuevaSolicitud()" title="Crear nueva solicitud">
+                    <span class="fab-new-icon">➕</span>
+                    <span class="fab-new-text">Nueva Solicitud</span>
+                </button>
             </div>
         </main>
     </div>

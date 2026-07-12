@@ -1006,4 +1006,290 @@
         visibility: hidden;
         pointer-events: none;
     }
+
+    /* ========================================================================
+       FAB MÓVIL - Nueva Solicitud (esquina inferior izquierda)
+       ======================================================================== */
+    .fab-new-solicitud-movil {
+        position: fixed;
+        bottom: 80px;
+        left: 16px;
+        z-index: 9998;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 14px 18px;
+        background: linear-gradient(135deg, #059669, #047857);
+        color: white;
+        border: none;
+        border-radius: 999px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 6px 24px rgba(5, 150, 105, 0.45);
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        line-height: 1;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    .fab-new-solicitud-movil:active {
+        transform: scale(0.92);
+    }
+
+    .fab-new-solicitud-movil .fab-new-icon {
+        font-size: 18px;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    .fab-new-solicitud-movil .fab-new-text {
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    /* ========================================================================
+       FORMULARIO NUEVA SOLICITUD MÓVIL - Pantalla completa tipo app
+       ======================================================================== */
+    .ns-movil-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        z-index: 99999;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .ns-movil-header {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 18px;
+        background: linear-gradient(135deg, #059669, #047857);
+        color: white;
+    }
+
+    .ns-movil-header h2 {
+        margin: 0;
+        color: white;
+        font-size: 18px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .ns-movil-header .ns-close-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.15);
+        border: none;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        padding: 0;
+    }
+
+    .ns-movil-header .ns-close-btn:active {
+        transform: scale(0.9);
+        background: rgba(255,255,255,0.25);
+    }
+
+    .ns-movil-body {
+        padding: 16px 18px 120px;
+    }
+
+    .ns-movil-section {
+        margin-bottom: 16px;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 14px;
+        background: #fafafa;
+    }
+
+    .ns-movil-section-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #374151;
+        margin: 0 0 12px 0;
+        padding-bottom: 8px;
+        border-bottom: 1.5px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .ns-movil-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 12px;
+    }
+
+    .ns-movil-field:last-child {
+        margin-bottom: 0;
+    }
+
+    .ns-movil-field label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .ns-movil-field label .required {
+        color: #dc2626;
+        font-weight: 700;
+    }
+
+    .ns-movil-field input,
+    .ns-movil-field select {
+        padding: 12px 14px;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 16px;
+        transition: all 0.2s ease;
+        background: white;
+        width: 100%;
+        box-sizing: border-box;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    .ns-movil-field input:focus,
+    .ns-movil-field select:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    .ns-movil-field input.error,
+    .ns-movil-field select.error {
+        border-color: #dc2626;
+        background: #fef2f2;
+    }
+
+    .ns-movil-field input.valid,
+    .ns-movil-field select.valid {
+        border-color: #16a34a;
+        background: #f0fdf4;
+    }
+
+    .ns-movil-field .validation-feedback {
+        font-size: 11px;
+        font-weight: 500;
+        min-height: 16px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .ns-movil-field .validation-feedback.error {
+        color: #dc2626;
+    }
+
+    .ns-movil-field .validation-feedback.ok {
+        color: #16a34a;
+    }
+
+    .ns-movil-duplicado-warning {
+        background: #fffbeb;
+        border: 2px solid #f59e0b;
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+        display: none;
+        font-size: 13px;
+        color: #92400e;
+        align-items: center;
+        gap: 8px;
+        line-height: 1.4;
+    }
+
+    .ns-movil-duplicado-warning.visible {
+        display: flex;
+    }
+
+    .ns-movil-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 2;
+        display: flex;
+        gap: 10px;
+        padding: 14px 18px;
+        padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+        border-top: 1.5px solid #e5e7eb;
+        background: white;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    }
+
+    .ns-movil-footer .ns-btn-cancel {
+        flex: 1;
+        padding: 14px;
+        background: #f3f4f6;
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    .ns-movil-footer .ns-btn-cancel:active {
+        background: #e5e7eb;
+    }
+
+    .ns-movil-footer .ns-btn-submit {
+        flex: 2;
+        padding: 14px;
+        background: linear-gradient(135deg, #059669, #047857);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    .ns-movil-footer .ns-btn-submit:disabled {
+        background: #9ca3af;
+        box-shadow: none;
+    }
+
+    .ns-movil-footer .ns-btn-submit:active:not(:disabled) {
+        transform: scale(0.97);
+    }
+
+    /* Ajuste padding bottom del body para no tapar el footer */
+    .ns-movil-body {
+        padding-bottom: 100px;
+    }
 }
