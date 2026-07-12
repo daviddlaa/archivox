@@ -1761,6 +1761,26 @@ td .cell-combinado {
     font-weight: 700;
 }
 
+/* ===== SELECTION BAR EN ESCRITORIO ===== */
+.selection-bar {
+    margin-bottom: 16px;
+}
+
+/* Make cards clickable to toggle selection on desktop */
+.solicitud-card {
+    cursor: pointer;
+}
+
+.solicitud-card .card-checkbox-wrapper {
+    position: relative;
+    z-index: 1;
+}
+
+/* Hover sutil en cards no seleccionadas */
+.solicitud-card:not(.seleccionada):hover {
+    border-color: #c7d2fe;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1200px) {
     .stats-grid {

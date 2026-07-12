@@ -269,13 +269,44 @@ function toggleFilaCheckbox(checkbox) {
     if (checkbox.checked) {
         if (filasSeleccionadas.indexOf(id) === -1) filasSeleccionadas.push(id);
         if (fila) fila.classList.add('fila-seleccionada');
+        // Also add seleccionada class to the card
+        var card = checkbox.closest('.solicitud-card');
+        if (card) card.classList.add('seleccionada');
     } else {
         var index = filasSeleccionadas.indexOf(id);
         if (index > -1) filasSeleccionadas.splice(index, 1);
         if (fila) fila.classList.remove('fila-seleccionada');
+        // Also remove seleccionada class from the card
+        var card = checkbox.closest('.solicitud-card');
+        if (card) card.classList.remove('seleccionada');
     }
     actualizarCheckboxes();
     actualizarContador();
+}
+
+// Toggle card selection by clicking on the card itself (desktop)
+function toggleCardDesktop(id, event) {
+    // Si el click fue en un checkbox, botón o input, no hacer nada (ellos manejan su propio evento)
+    if (event) {
+        var target = event.target;
+        if (target.classList.contains('checkbox-fila') ||
+            target.classList.contains('card-btn') ||
+            target.tagName === 'BUTTON' ||
+            target.tagName === 'INPUT' ||
+            target.closest('.card-btn') ||
+            target.closest('.card-checkbox-wrapper')) {
+            return;
+        }
+    }
+    
+    var card = document.querySelector('.solicitud-card[data-id="' + id + '"]');
+    if (!card) return;
+    
+    var checkbox = card.querySelector('.checkbox-fila');
+    if (checkbox) {
+        checkbox.checked = !checkbox.checked;
+        toggleFilaCheckbox(checkbox);
+    }
 }
 
 function seleccionarTodos() {
@@ -289,12 +320,18 @@ function seleccionarTodos() {
             if (filasSeleccionadas.indexOf(id) === -1) filasSeleccionadas.push(id);
             var fila = cb.closest('tr') || cb.closest('.cliente-card');
             if (fila) fila.classList.add('fila-seleccionada');
+            // Also update card visual state
+            var card = cb.closest('.solicitud-card');
+            if (card) card.classList.add('seleccionada');
         });
     } else {
         checkboxes.forEach(function(cb) {
             cb.checked = false;
             var fila = cb.closest('tr') || cb.closest('.cliente-card');
             if (fila) fila.classList.remove('fila-seleccionada');
+            // Also update card visual state
+            var card = cb.closest('.solicitud-card');
+            if (card) card.classList.remove('seleccionada');
         });
         filasSeleccionadas = [];
     }
@@ -312,17 +349,51 @@ function actualizarCheckboxes() {
 
 function actualizarContador() {
     var contador = document.getElementById('seleccionadas-count');
-    var toolbar = document.getElementById('toolbar-flotante');
+    var selectionBar = document.getElementById('selection-bar');
     var toolbarCount = document.getElementById('seleccionadas-count-toolbar');
+    
     if (contador) contador.textContent = filasSeleccionadas.length;
-    if (toolbar && toolbarCount) {
+    
+    if (selectionBar && toolbarCount) {
         if (filasSeleccionadas.length > 0) {
             toolbarCount.textContent = filasSeleccionadas.length;
-            toolbar.style.display = 'flex';
+            // Remove closing class if present
+            selectionBar.classList.remove('closing');
+            selectionBar.style.display = 'block';
+            // Force reflow for animation
+            void selectionBar.offsetWidth;
         } else {
-            toolbar.style.display = 'none';
+            // Animate out
+            selectionBar.classList.add('closing');
+            setTimeout(function() {
+                if (filasSeleccionadas.length === 0) {
+                    selectionBar.style.display = 'none';
+                    selectionBar.classList.remove('closing');
+                }
+            }, 250);
         }
     }
+}
+
+// Cancelar selección - deselecciona todo con animación
+function cancelarSeleccion() {
+    var checkboxes = document.querySelectorAll('.checkbox-fila');
+    checkboxes.forEach(function(cb) {
+        cb.checked = false;
+    });
+    
+    // Remove selection classes from all cards
+    document.querySelectorAll('.solicitud-card').forEach(function(card) {
+        card.classList.remove('seleccionada');
+    });
+    
+    document.querySelectorAll('.fila-seleccionada').forEach(function(el) {
+        el.classList.remove('fila-seleccionada');
+    });
+    
+    filasSeleccionadas = [];
+    actualizarCheckboxes();
+    actualizarContador();
 }
 
 // ============================================================================
@@ -592,7 +663,7 @@ function renderizarCards(datos) {
         var estadoClase = 'estado-' + (item.estado || '').replace(/\s+/g, '').toUpperCase();
         var colorEstado = coloresEstado[item.estado] || '#f3f4f6';
 
-        html += '<div class="solicitud-card ' + seleccionado + '" data-id="' + id + '">';
+        html += '<div class="solicitud-card ' + seleccionado + '" data-id="' + id + '" onclick="toggleCardDesktop(\'' + id + '\', event)">';
         // FILA 1: Checkbox + ID + Segmento + Estado (con flex wrap controlado)
         html += '  <div class="card-fila-1">';
         html += '    <div class="card-checkbox-wrapper"><input type="checkbox" class="card-checkbox checkbox-fila" value="' + id + '" ' + (seleccionado ? 'checked' : '') + '></div>';
@@ -971,14 +1042,23 @@ function exportarSeleccionadas() {
 function marcarSeleccionadas() {
     var checkboxes = document.querySelectorAll('.checkbox-fila');
     if (filasSeleccionadas.length === checkboxes.length) {
-        checkboxes.forEach(function(cb) { cb.checked = false; var fila = cb.closest('tr') || cb.closest('.cliente-card'); if (fila) fila.classList.remove('fila-seleccionada'); });
+        checkboxes.forEach(function(cb) {
+            cb.checked = false;
+            var fila = cb.closest('tr') || cb.closest('.cliente-card');
+            if (fila) fila.classList.remove('fila-seleccionada');
+            var card = cb.closest('.solicitud-card');
+            if (card) card.classList.remove('seleccionada');
+        });
         filasSeleccionadas = [];
     } else {
         filasSeleccionadas = [];
         checkboxes.forEach(function(cb) {
             cb.checked = true; var id = cb.value;
             if (filasSeleccionadas.indexOf(id) === -1) filasSeleccionadas.push(id);
-            var fila = cb.closest('tr') || cb.closest('.cliente-card'); if (fila) fila.classList.add('fila-seleccionada');
+            var fila = cb.closest('tr') || cb.closest('.cliente-card');
+            if (fila) fila.classList.add('fila-seleccionada');
+            var card = cb.closest('.solicitud-card');
+            if (card) card.classList.add('seleccionada');
         });
     }
     actualizarCheckboxes(); actualizarContador();
@@ -1064,8 +1144,6 @@ function configurarEventosCodigoPlus() {
 function configurarEventosCheckboxes() {
     var checkboxTodos = document.getElementById('seleccionar-todos');
     if (checkboxTodos) checkboxTodos.onclick = function() { seleccionarTodos(); };
-    var tabla = document.getElementById('tabla');
-    if (tabla) tabla.onclick = function(e) { if (e.target.classList.contains('checkbox-fila')) toggleFilaCheckbox(e.target); };
     var btnWhatsApp = document.getElementById('btn-whatsapp');
     if (btnWhatsApp) btnWhatsApp.onclick = enviarWhatsApp;
     var btnCopy = document.getElementById('btn-copy');
@@ -1082,14 +1160,17 @@ if (document.getElementById('cedula')) {
 var columnaOrdenar = 'id_solicitud';
 var ordenActual = 'DESC';
 
-document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('checkbox-fila') && e.target.closest('.cliente-card')) {
-        var checkbox = e.target; var id = checkbox.value;
-        if (checkbox.checked) { if (filasSeleccionadas.indexOf(id) === -1) filasSeleccionadas.push(id); checkbox.closest('.cliente-card').classList.add('fila-seleccionada'); }
-        else { var index = filasSeleccionadas.indexOf(id); if (index > -1) filasSeleccionadas.splice(index, 1); checkbox.closest('.cliente-card').classList.remove('fila-seleccionada'); }
-        actualizarContador();
-    }
-});
+// Global change listener for checkboxes - ÚNICO punto de entrada para selección
+// ToggleFilaCheckbox maneja toda la lógica de selección
+var _solicitudesChangeListenerAttached = false;
+if (!_solicitudesChangeListenerAttached) {
+    _solicitudesChangeListenerAttached = true;
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('checkbox-fila')) {
+            toggleFilaCheckbox(e.target);
+        }
+    });
+}
 
 window.addEventListener('DOMContentLoaded', function() {
     var inputBusqueda = document.getElementById('cedula');

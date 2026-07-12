@@ -65,20 +65,23 @@ function actualizarContador() {
     if (actionBar && actionBarCount) {
         actionBarCount.textContent = filasSeleccionadas.length;
         if (filasSeleccionadas.length > 0) {
-            // Mostrar la barra con animación slide-up
+            // Show bar with slide-up animation
+            actionBar.classList.remove('closing');
             actionBar.style.display = 'block';
-            // Forzar reflow para que la transición funcione
+            // Force reflow for animation
             void actionBar.offsetWidth;
             actionBar.classList.add('visible');
         } else {
-            // Ocultar con animación
+            // Hide with closing animation
             actionBar.classList.remove('visible');
-            // Esperar a que termine la animación antes de ocultar
+            actionBar.classList.add('closing');
+            // Wait for animation to finish before hiding
             setTimeout(function() {
                 if (filasSeleccionadas.length === 0) {
                     actionBar.style.display = 'none';
+                    actionBar.classList.remove('closing');
                 }
-            }, 350);
+            }, 250);
         }
     }
 
@@ -94,6 +97,17 @@ function actualizarContador() {
             btnSeleccionarTodo.textContent = todasSeleccionadas ? 'Deseleccionar todo' : 'Seleccionar todo';
         }
     }
+}
+
+// Cancelar selección en móvil - deselecciona todo
+function cancelarSeleccionMovil() {
+    // Remover clase de todas las cards seleccionadas
+    document.querySelectorAll('.solicitud-card.seleccionada').forEach(function(card) {
+        card.classList.remove('seleccionada');
+    });
+    // Limpiar array de selección
+    filasSeleccionadas = [];
+    actualizarContador();
 }
 
 function enviarWhatsApp() {

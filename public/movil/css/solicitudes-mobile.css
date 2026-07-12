@@ -739,19 +739,60 @@
         opacity: 1;
     }
 
+    /* Closing animation */
+    .mobile-action-bar.closing {
+        transform: translateY(100%);
+        opacity: 0;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.6, 1), opacity 0.2s ease;
+    }
+
     .action-bar-inner {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
         max-width: 600px;
         margin: 0 auto;
     }
 
-    .action-bar-info {
+    .action-bar-left {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         flex-shrink: 0;
+    }
+
+    .action-bar-cancel-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #fef2f2;
+        border: 1.5px solid #fecaca;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        padding: 0;
+    }
+
+    .action-bar-cancel-btn:active {
+        transform: scale(0.88);
+        background: #fee2e2;
+    }
+
+    .action-bar-cancel-btn .cancel-icon {
+        font-size: 14px;
+        color: #dc2626;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .action-bar-count-wrap {
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .action-bar-count {
@@ -778,16 +819,16 @@
 
     .action-bar-buttons {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         flex: 1;
         justify-content: flex-end;
     }
 
     .action-bar-btn {
-        padding: 10px 14px;
+        padding: 10px 12px;
         border: none;
         border-radius: 12px;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 700;
         cursor: pointer;
         white-space: nowrap;
@@ -801,11 +842,21 @@
         touch-action: manipulation;
         user-select: none;
         -webkit-user-select: none;
-        letter-spacing: 0.2px;
+        letter-spacing: 0.1px;
     }
 
     .action-bar-btn:active {
         transform: scale(0.94);
+    }
+
+    .action-bar-btn .btn-icon {
+        font-size: 14px;
+        line-height: 1;
+    }
+
+    .action-bar-btn .btn-text {
+        font-size: 12px;
+        white-space: nowrap;
     }
 
     .action-bar-btn.btn-campana {

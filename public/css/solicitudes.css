@@ -168,7 +168,7 @@
     padding: 14px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     border: 2px solid transparent;
-    transition: all 0.25s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: default;
     position: relative;
 }
@@ -176,9 +176,49 @@
     box-shadow: 0 4px 16px rgba(0,0,0,0.12);
     transform: translateY(-2px);
 }
+
+/* Card seleccionada - checkmark overlay + borde */
 .solicitud-card.seleccionada {
-    border-color: #2563eb;
-    background: #eff6ff;
+    border-color: #4f46e5;
+    background: #f8faff;
+    box-shadow: 0 4px 20px rgba(79, 70, 229, 0.12);
+    transform: translateY(-2px);
+}
+
+.solicitud-card.seleccionada::after {
+    content: '✓';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #4f46e5;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.4);
+    animation: checkPopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 2;
+    pointer-events: none;
+}
+
+@keyframes checkPopIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.solicitud-card.seleccionada .card-checkbox {
+    accent-color: #4f46e5;
 }
 
 /* Checkbox de selección - integrado en card-fila-1 */
@@ -205,7 +245,6 @@
     margin-bottom: 6px;
     overflow: hidden;
     min-width: 0;
-    padding-right: 24px; /* Espacio para el checkbox */
 }
 .card-fila-1 .card-id {
     font-size: 10px;
@@ -372,46 +411,199 @@
 }
 
 /* ========================================================================
-   TOOLBAR FLOTANTE DE SELECCIÓN (escritorio)
+   SELECTION BAR - Barra de selección profesional (unificada)
+   ========================================================================
+   Barra horizontal tipo Gmail/Google Drive que aparece cuando
+   hay elementos seleccionados. Se coloca entre el contenido y
+   el header, con animación slide-down.
    ======================================================================== */
-.toolbar-flotante {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+.selection-bar {
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    border: 2px solid #e0e7ff;
+    overflow: hidden;
+    animation: selectionBarSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes selectionBarSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-16px) scaleY(0.95);
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scaleY(1);
+        max-height: 80px;
+    }
+}
+
+@keyframes selectionBarSlideUp {
+    from {
+        opacity: 1;
+        transform: translateY(0) scaleY(1);
+        max-height: 80px;
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-16px) scaleY(0.95);
+        max-height: 0;
+    }
+}
+
+.selection-bar-inner {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: white;
-    padding: 10px 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    z-index: 1000;
-    animation: slideUpToolbar 0.3s ease;
+    justify-content: space-between;
+    padding: 8px 16px;
+    gap: 12px;
 }
-@keyframes slideUpToolbar {
-    from { transform: translateX(-50%) translateY(20px); opacity: 0; }
-    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+.selection-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
 }
-.toolbar-flotante .toolbar-info {
+
+.selection-bar-cancel {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #fef2f2;
+    border: 1.5px solid #fecaca;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #dc2626;
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.selection-bar-cancel:hover {
+    background: #fee2e2;
+    border-color: #f87171;
+    transform: translateY(-1px);
+}
+
+.selection-bar-cancel:active {
+    transform: translateY(0);
+}
+
+.selection-bar-cancel .cancel-icon {
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #dc2626;
+    color: white;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.selection-bar-divider {
+    width: 1px;
+    height: 28px;
+    background: #e5e7eb;
+    flex-shrink: 0;
+}
+
+.selection-bar-count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.selection-bar-count .count-num {
+    font-size: 20px;
+    font-weight: 800;
+    color: #4f46e5;
+    background: #eef2ff;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    line-height: 1;
+}
+
+.selection-bar-count .count-label {
     font-size: 13px;
     color: #6b7280;
     font-weight: 600;
 }
-.toolbar-flotante .toolbar-info strong { color: #2563eb; }
-.toolbar-flotante .toolbar-btn {
-    padding: 8px 14px;
+
+.selection-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.selection-bar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
     border: none;
     border-radius: 8px;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     white-space: nowrap;
+    line-height: 1;
 }
-.toolbar-flotante .toolbar-btn:hover { transform: translateY(-2px); }
-.toolbar-flotante .toolbar-btn.campana { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
-.toolbar-flotante .toolbar-btn.agregar { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; }
+
+.selection-bar-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.selection-bar-btn:active {
+    transform: translateY(0);
+}
+
+.selection-bar-btn .btn-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.selection-bar-btn.btn-campana {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.selection-bar-btn.btn-campana:hover {
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.5);
+}
+
+.selection-bar-btn.btn-agregar {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: white;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+.selection-bar-btn.btn-agregar:hover {
+    box-shadow: 0 4px 16px rgba(124, 58, 237, 0.5);
+}
+
+/* Selection bar closing animation class */
+.selection-bar.closing {
+    animation: selectionBarSlideUp 0.25s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+}
 
 /* ========================================================================
    ESTADO VACÍO / CARGA

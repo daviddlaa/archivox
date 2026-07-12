@@ -102,11 +102,31 @@
                     </div>
                 </div>
 
-                <!-- Toolbar flotante de selección -->
-                <div id="toolbar-flotante" class="toolbar-flotante" style="display:none;">
-                    <span class="toolbar-info"><strong id="seleccionadas-count-toolbar">0</strong> seleccionadas</span>
-                    <button class="toolbar-btn campana" onclick="abrirModalNuevaGestion()">🚀 Crear campaña</button>
-                    <button class="toolbar-btn agregar" onclick="abrirModalAgregarCampana()">➕ Agregar a campaña</button>
+                <!-- Selection Bar - Barra de selección profesional tipo Gmail/Drive -->
+                <div id="selection-bar" class="selection-bar" style="display:none;">
+                    <div class="selection-bar-inner">
+                        <div class="selection-bar-left">
+                            <button class="selection-bar-cancel" onclick="cancelarSeleccion()" title="Cancelar selección">
+                                <span class="cancel-icon">✕</span>
+                                <span class="cancel-text">Cancelar</span>
+                            </button>
+                            <div class="selection-bar-divider"></div>
+                            <div class="selection-bar-count">
+                                <span class="count-num" id="seleccionadas-count-toolbar">0</span>
+                                <span class="count-label">seleccionadas</span>
+                            </div>
+                        </div>
+                        <div class="selection-bar-right">
+                            <button class="selection-bar-btn btn-campana" onclick="abrirModalNuevaGestion()" title="Crear campaña con las solicitudes seleccionadas">
+                                <span class="btn-icon">🚀</span>
+                                <span class="btn-text">Crear campaña</span>
+                            </button>
+                            <button class="selection-bar-btn btn-agregar" onclick="abrirModalAgregarCampana()" title="Agregar solicitudes a una campaña existente">
+                                <span class="btn-icon">➕</span>
+                                <span class="btn-text">Agregar a campaña</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Contenedor de Cards -->
