@@ -182,6 +182,14 @@ app.get('/m/admin', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/admin/index.html'));
 });
 
+// 🆕 Ruta del Panel del Líder (FASE 7)
+app.get('/equipo', requireAuthPage, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/desktop/equipo.html'));
+});
+app.get('/m/equipo', requireAuthPage, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/desktop/equipo.html'));
+});
+
 // Rutas de login (públicas)
 app.get('/login', (req, res) => {
     const isMobile = isMobileDevice(req.headers['user-agent']);
