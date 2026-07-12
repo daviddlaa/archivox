@@ -373,6 +373,99 @@ function actualizarContador() {
             }, 250);
         }
     }
+    
+    // Actualizar el Floating Action Panel contextual
+    actualizarFloatingPanel();
+}
+
+// ============================================================================
+// FLOATING ACTION PANEL - Panel contextual que sigue al usuario al hacer scroll
+// ============================================================================
+function actualizarFloatingPanel() {
+    var panel = document.getElementById('floating-actions-panel');
+    var countNum = document.getElementById('floating-count-num');
+    
+    if (!panel || !countNum) return;
+    
+    countNum.textContent = filasSeleccionadas.length;
+    
+    if (filasSeleccionadas.length > 0) {
+        // Verificar si la selection bar está visible en pantalla
+        // Si está fuera de la vista, mostramos el FAB
+        var selectionBar = document.getElementById('selection-bar');
+        var mostrarPanel = false;
+        
+        if (selectionBar && selectionBar.style.display !== 'none') {
+            var rect = selectionBar.getBoundingClientRect();
+            // Si la barra superior está fuera de la vista (scrolleada hacia arriba)
+            if (rect.bottom < 0 || rect.top > window.innerHeight) {
+                mostrarPanel = true;
+            }
+        } else {
+            mostrarPanel = true;
+        }
+        
+        if (mostrarPanel) {
+            mostrarFloatingPanel();
+        } else {
+            ocultarFloatingPanel();
+        }
+    } else {
+        ocultarFloatingPanel();
+    }
+}
+
+function mostrarFloatingPanel() {
+    var panel = document.getElementById('floating-actions-panel');
+    if (!panel) return;
+    if (panel.style.display === 'block' && !panel.classList.contains('closing')) return;
+    panel.classList.remove('closing', 'hidden');
+    panel.style.display = 'block';
+    void panel.offsetWidth;
+}
+
+function ocultarFloatingPanel() {
+    var panel = document.getElementById('floating-actions-panel');
+    if (!panel || panel.style.display !== 'block') return;
+    panel.classList.remove('hidden');
+    panel.classList.add('closing');
+    setTimeout(function() {
+        panel.classList.remove('closing');
+        if (filasSeleccionadas.length === 0) {
+            panel.style.display = 'none';
+        } else {
+            // Si aún hay selecciones, reevaluamos visibilidad
+            actualizarFloatingPanel();
+        }
+    }, 250);
+}
+
+// Variable para controlar el listener de scroll
+var _fabListenersAttached = false;
+
+// Inicializar los listeners de scroll Y resize para el FAB
+function initScrollAwareFAB() {
+    if (_fabListenersAttached) return;
+    _fabListenersAttached = true;
+    
+    var debounceTimer;
+    function handleFabUpdate() {
+        if (filasSeleccionadas.length === 0) return;
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() {
+            actualizarFloatingPanel();
+        }, 50);
+    }
+    
+    window.addEventListener('scroll', handleFabUpdate, { passive: true });
+    window.addEventListener('resize', handleFabUpdate, { passive: true });
+}
+
+// Inicializar el FAB al cargar
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initScrollAwareFAB);
+} else {
+    initScrollAwareFAB();
 }
 
 // Cancelar selección - deselecciona todo con animación

@@ -134,6 +134,28 @@
                     <!-- Contenedor de Cards unificado -->
                     <div id="cards-container" class="cards-grid-unificado"></div>
                 </div>
+
+                <!-- Floating Action Panel - Aparece al seleccionar + hacer scroll -->
+                <div id="floating-actions-panel" class="floating-actions-panel" style="display:none;">
+                    <div class="floating-actions-inner">
+                        <div class="floating-actions-count">
+                            <span class="floating-count-num" id="floating-count-num">0</span>
+                            <span class="floating-count-label">seleccionadas</span>
+                        </div>
+                        <div class="floating-actions-divider"></div>
+                        <button class="floating-action-btn btn-campana" onclick="abrirModalNuevaGestion()" title="Crear campaña con las solicitudes seleccionadas">
+                            <span class="fab-icon">🚀</span>
+                            <span class="fab-text">Crear campaña</span>
+                        </button>
+                        <button class="floating-action-btn btn-agregar" onclick="abrirModalAgregarCampana()" title="Agregar solicitudes a una campaña existente">
+                            <span class="fab-icon">➕</span>
+                            <span class="fab-text">Agregar</span>
+                        </button>
+                        <button class="floating-action-close" onclick="cancelarSeleccion()" title="Cancelar selección">
+                            <span class="fab-icon">✕</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </main>
     </div>

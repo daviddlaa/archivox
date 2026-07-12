@@ -749,15 +749,16 @@
     .action-bar-inner {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         max-width: 600px;
         margin: 0 auto;
+        width: 100%;
     }
 
     .action-bar-left {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         flex-shrink: 0;
     }
 
@@ -775,6 +776,7 @@
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
         padding: 0;
+        flex-shrink: 0;
     }
 
     .action-bar-cancel-btn:active {
@@ -793,6 +795,7 @@
         display: flex;
         align-items: center;
         gap: 4px;
+        flex-shrink: 0;
     }
 
     .action-bar-count {
@@ -822,6 +825,7 @@
         gap: 6px;
         flex: 1;
         justify-content: flex-end;
+        min-width: 0;
     }
 
     .action-bar-btn {
@@ -843,6 +847,10 @@
         user-select: none;
         -webkit-user-select: none;
         letter-spacing: 0.1px;
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: 160px;
+        justify-content: center;
     }
 
     .action-bar-btn:active {
@@ -852,11 +860,14 @@
     .action-bar-btn .btn-icon {
         font-size: 14px;
         line-height: 1;
+        flex-shrink: 0;
     }
 
     .action-bar-btn .btn-text {
         font-size: 12px;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .action-bar-btn.btn-campana {
@@ -877,6 +888,59 @@
 
     .action-bar-btn.btn-agregar:active {
         box-shadow: 0 1px 4px rgba(124, 58, 237, 0.25);
+    }
+
+    /* ===== Pantallas muy pequeñas: texto debajo del icono ===== */
+    @media (max-width: 390px) {
+        .action-bar-btn {
+            flex-direction: column;
+            gap: 2px;
+            padding: 8px 10px;
+            max-width: none;
+            flex: 1;
+        }
+        .action-bar-btn .btn-icon {
+            font-size: 16px;
+        }
+        .action-bar-btn .btn-text {
+            font-size: 10px;
+        }
+        .action-bar-cancel-btn {
+            width: 32px;
+            height: 32px;
+        }
+        .action-bar-count-wrap {
+            gap: 2px;
+        }
+        .action-bar-count {
+            font-size: 13px;
+            min-width: 24px;
+            height: 24px;
+            padding: 0 6px;
+        }
+        .action-bar-label {
+            font-size: 10px;
+        }
+    }
+
+    /* ===== Pantallas extremadamente pequeñas: solo iconos ===== */
+    @media (max-width: 340px) {
+        .action-bar-btn .btn-text {
+            display: none;
+        }
+        .action-bar-btn {
+            padding: 10px;
+            min-width: 44px;
+        }
+        .action-bar-btn .btn-icon {
+            font-size: 18px;
+        }
+        .action-bar-inner {
+            gap: 4px;
+        }
+        .action-bar-left {
+            gap: 4px;
+        }
     }
 
     /* ========================================================================

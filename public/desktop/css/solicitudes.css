@@ -1781,6 +1781,188 @@ td .cell-combinado {
     border-color: #c7d2fe;
 }
 
+/* ========================================================================
+   FLOATING ACTION PANEL - Panel contextual al seleccionar + scroll
+   ========================================================================
+   Aparece cuando hay selecciones activas Y el usuario ha scrolleado
+   más allá de la selection bar superior. Se posiciona en el
+   bottom-right de la ventana, tipo FAB de Google Drive.
+   ======================================================================== */
+.floating-actions-panel {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    animation: fabSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fabSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes fabSlideDown {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(20px) scale(0.92);
+    }
+}
+
+.floating-actions-panel.closing {
+    animation: fabSlideDown 0.25s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+}
+
+.floating-actions-inner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    padding: 8px 10px 8px 16px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 2px solid #e0e7ff;
+}
+
+.floating-actions-count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.floating-count-num {
+    font-size: 18px;
+    font-weight: 800;
+    color: #4f46e5;
+    background: #eef2ff;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    line-height: 1;
+}
+
+.floating-count-label {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.floating-actions-divider {
+    width: 1px;
+    height: 24px;
+    background: #e5e7eb;
+    flex-shrink: 0;
+    margin: 0 2px;
+}
+
+.floating-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.floating-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+.floating-action-btn:active {
+    transform: translateY(0);
+}
+
+.floating-action-btn .fab-icon {
+    font-size: 15px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.floating-action-btn .fab-text {
+    font-size: 13px;
+}
+
+.floating-action-btn.btn-campana {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.floating-action-btn.btn-campana:hover {
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.floating-action-btn.btn-agregar {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: white;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+.floating-action-btn.btn-agregar:hover {
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
+}
+
+.floating-action-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #fef2f2;
+    border: 1.5px solid #fecaca;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
+    margin-left: 2px;
+}
+
+.floating-action-close:hover {
+    background: #fee2e2;
+    border-color: #f87171;
+    transform: scale(1.05);
+}
+
+.floating-action-close:active {
+    transform: scale(0.95);
+}
+
+.floating-action-close .fab-icon {
+    font-size: 11px;
+    color: #dc2626;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Hidden state */
+.floating-actions-panel.hidden {
+    display: none !important;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1200px) {
     .stats-grid {
