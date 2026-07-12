@@ -225,9 +225,9 @@ const initTables = async () => {
                 prioridad       TEXT DEFAULT 'normal' CHECK(prioridad IN ('baja', 'normal', 'alta', 'critica')),
                 creador_id      INTEGER REFERENCES usuarios(id),
                 destinatario_id INTEGER REFERENCES usuarios(id),
-                leida           BOOLEAN DEFAULT FALSE,
+                leida           INTEGER DEFAULT 0,
                 leida_at        TIMESTAMP,
-                archivada       BOOLEAN DEFAULT FALSE,
+                archivada       INTEGER DEFAULT 0,
                 accion_url      TEXT,
                 accion_texto    TEXT,
                 fecha_expiracion TIMESTAMP,
@@ -239,7 +239,7 @@ const initTables = async () => {
         // Migración: agregar columnas nuevas si no existen
         for (const [col, tipo] of Object.entries({
             'prioridad': "TEXT DEFAULT 'normal' CHECK(prioridad IN ('baja','normal','alta','critica'))",
-            'archivada': 'BOOLEAN DEFAULT FALSE',
+            'archivada': 'INTEGER DEFAULT 0',
             'accion_url': 'TEXT',
             'accion_texto': 'TEXT',
             'fecha_expiracion': 'TIMESTAMP'
@@ -255,6 +255,25 @@ const initTables = async () => {
                 }
             }
         }
+        // Migración: convertir columnas BOOLEAN a INTEGER para compatibilidad
+        // (PostgreSQL no permite comparar BOOLEAN con INTEGER como hace el controlador)
+        try {
+            await client.query(`
+                ALTER TABLE notificaciones ALTER COLUMN leida TYPE INTEGER USING leida::int
+            `);
+            console.log('   ✅ notificaciones.leida migrada BOOLEAN→INTEGER');
+        } catch (e) {
+            console.log('   ⏩ notificaciones.leida ya INTEGER (o no aplica):', e.message.substring(0,60));
+        }
+        try {
+            await client.query(`
+                ALTER TABLE notificaciones ALTER COLUMN archivada TYPE INTEGER USING archivada::int
+            `);
+            console.log('   ✅ notificaciones.archivada migrada BOOLEAN→INTEGER');
+        } catch (e) {
+            console.log('   ⏩ notificaciones.archivada ya INTEGER (o no aplica):', e.message.substring(0,60));
+        }
+
         console.log('   ✅ notificaciones migradas')
 
         // ================================================================
