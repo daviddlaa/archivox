@@ -556,7 +556,9 @@ async function cargarEstadisticas() {
 // ============================================================================
 async function cargarAuditoria() {
     const tbody = document.getElementById('auditTableBody');
+    const cardsDiv = document.getElementById('auditMobileCards');
     tbody.innerHTML = '<tr><td colspan="6" class="admin-loading">Cargando auditoría...</td></tr>';
+    if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading">Cargando auditoría...</div>';
 
     try {
         const q = document.getElementById('searchAudit').value;
@@ -569,15 +571,18 @@ async function cargarAuditoria() {
             const errData = await res.json().catch(() => ({ error: res.statusText }));
             console.error('[Admin] Error auditoría:', res.status, errData);
             tbody.innerHTML = '<tr><td colspan="6" class="admin-loading" style="color:#dc2626">Error ' + res.status + '</td></tr>';
+            if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading" style="color:#dc2626">Error ' + res.status + '</div>';
             return;
         }
         const data = await res.json();
 
         if (!data.data || data.data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="admin-loading">No hay registros de auditoría</td></tr>';
+            if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading">No hay registros de auditoría</div>';
             return;
         }
 
+        // Tabla para desktop
         tbody.innerHTML = data.data.map(log => {
             let detalle = '';
             try {
@@ -597,9 +602,52 @@ async function cargarAuditoria() {
             </tr>`;
         }).join('');
 
+        // Cards para móvil
+        if (cardsDiv) {
+            cardsDiv.innerHTML = data.data.map(log => {
+                let detalle = '';
+                try {
+                    const d = JSON.parse(log.detalle);
+                    detalle = d?.motivo || d?.username || d?.metodo || '';
+                } catch(e) {
+                    detalle = log.detalle || '';
+                }
+
+                const accionIcon = log.accion.includes('user') || log.accion.includes('login') ? '👤' :
+                    log.accion.includes('notif') ? '🔔' :
+                    log.accion.includes('equipo') || log.accion.includes('team') ? '🏢' :
+                    log.accion.includes('create') || log.accion.includes('crear') ? '➕' :
+                    log.accion.includes('delete') || log.accion.includes('eliminar') ? '🗑️' :
+                    log.accion.includes('update') || log.accion.includes('actualizar') ? '✏️' : '📋';
+
+                return `<div class="audit-card">
+                    <div class="audit-card-header">
+                        <div class="audit-card-icon">${accionIcon}</div>
+                        <div class="audit-card-info">
+                            <div class="audit-card-user">${escapeHtml(log.usuario_username || `Usuario #${log.usuario_id}`)}</div>
+                            <div class="audit-card-date">${formatearFecha(log.created_at)}</div>
+                        </div>
+                        <span class="audit-card-badge badge badge-gray">${escapeHtml(log.target_type || '-')}</span>
+                    </div>
+                    <div class="audit-card-body">
+                        <div class="audit-card-row">
+                            <span class="audit-card-label">🔧 Acción</span>
+                            <span class="audit-card-value"><code class="audit-card-action-code">${escapeHtml(log.accion)}</code></span>
+                        </div>
+                        <div class="audit-card-row">
+                            <span class="audit-card-label">🌐 IP</span>
+                            <span class="audit-card-value">${escapeHtml(log.ip_address || '-')}</span>
+                        </div>
+                    </div>
+                    ${detalle ? `<div class="audit-card-detail">📝 ${escapeHtml(detalle)}</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
     } catch (err) {
         console.error('Error auditoría:', err);
         tbody.innerHTML = '<tr><td colspan="6" class="admin-loading" style="color:var(--admin-danger)">Error al cargar auditoría</td></tr>';
+        if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading" style="color:#dc2626">Error al cargar auditoría</div>';
     }
 }
 
@@ -1200,8 +1248,10 @@ async function verEquipo(id, nombre) {
 
         // Tabla de miembros
         const miembrosBody = document.getElementById('equipoMiembrosBody');
+        const miembrosCardsDiv = document.getElementById('equipoMiembrosMobileCards');
         if (!miembros || miembros.length === 0) {
             miembrosBody.innerHTML = '<tr><td colspan="8" class="admin-loading">No hay miembros en este equipo</td></tr>';
+            if (miembrosCardsDiv) miembrosCardsDiv.innerHTML = '<div class="admin-loading">No hay miembros en este equipo</div>';
         } else {
             miembrosBody.innerHTML = miembros.map(m => {
                 const estado = m.fecha_salida ? 'inactivo' : 'activo';
@@ -1222,6 +1272,50 @@ async function verEquipo(id, nombre) {
                     </td>
                 </tr>`;
             }).join('');
+
+            // Cards para móvil
+            if (miembrosCardsDiv) {
+                miembrosCardsDiv.innerHTML = miembros.map(m => {
+                    const estado = m.fecha_salida ? 'inactivo' : 'activo';
+                    const esLider = m.es_lider ? '✅ Sí' : '—';
+                    const estadoColor = estado === 'activo' ? '#10b981' : '#ef4444';
+                    const inicial = (m.usuario_nombre || m.usuario_username || '?').charAt(0).toUpperCase();
+                    const rolClase = m.usuario_rol === 'superadmin' ? 'superadmin' : (m.usuario_rol === 'lider' ? 'lider' : m.usuario_rol);
+
+                    return `<div class="equipo-miembro-card">
+                        <div class="equipo-miembro-header">
+                            <div class="equipo-miembro-avatar">${inicial}</div>
+                            <div class="equipo-miembro-info">
+                                <div class="equipo-miembro-name">${escapeHtml(m.usuario_nombre || m.usuario_username || 'Usuario')}</div>
+                                <div class="equipo-miembro-label">@${escapeHtml(m.usuario_username || '')}</div>
+                            </div>
+                            <span class="role-badge ${rolClase}">${rolLabelUsuario(m.usuario_rol)}</span>
+                        </div>
+                        <div class="admin-user-card-body">
+                            <div class="admin-user-card-row">
+                                <span class="admin-user-card-label">👑 Líder</span>
+                                <span class="admin-user-card-value">${esLider}</span>
+                            </div>
+                            <div class="admin-user-card-row">
+                                <span class="admin-user-card-label">📅 Ingreso</span>
+                                <span class="admin-user-card-value">${formatearFecha(m.fecha_ingreso)}</span>
+                            </div>
+                            <div class="admin-user-card-row">
+                                <span class="admin-user-card-label">📌 Estado</span>
+                                <span class="admin-user-card-value"><span class="estado-dot ${estado}" style="background:${estadoColor}"></span> ${m.fecha_salida ? 'Inactivo' : 'Activo'}</span>
+                            </div>
+                            ${m.fecha_salida ? `<div class="admin-user-card-row">
+                                <span class="admin-user-card-label">🚪 Salida</span>
+                                <span class="admin-user-card-value">${formatearFecha(m.fecha_salida)}</span>
+                            </div>` : ''}
+                        </div>
+                        <div class="equipo-miembro-actions">
+                            ${!m.es_lider ? `<button class="admin-btn admin-btn-sm admin-btn-primary" onclick="asignarLiderDirecto(${eq.id}, ${m.usuario_id}, '${escapeHtml(m.usuario_username)}')">👑 Líder</button>` : ''}
+                            ${!m.fecha_salida ? `<button class="admin-btn admin-btn-sm admin-btn-danger" onclick="removerMiembro(${eq.id}, ${m.usuario_id}, '${escapeHtml(m.usuario_username)}')">🚫 Remover</button>` : ''}
+                        </div>
+                    </div>`;
+                }).join('');
+            }
         }
 
         // Campañas del equipo
@@ -1235,16 +1329,19 @@ async function verEquipo(id, nombre) {
 
 async function cargarCampanasEquipo(equipoId) {
     const campanasBody = document.getElementById('equipoCampanasBody');
+    const campanasCardsDiv = document.getElementById('equipoCampanasMobileCards');
     try {
         const res = await fetch(`/api/equipos/${equipoId}/campanas`);
         if (!res.ok) {
             campanasBody.innerHTML = '<tr><td colspan="6" class="admin-loading" style="color:#dc2626">Error ' + res.status + '</td></tr>';
+            if (campanasCardsDiv) campanasCardsDiv.innerHTML = '<div class="admin-loading" style="color:#dc2626">Error ' + res.status + '</div>';
             return;
         }
         const data = await res.json();
 
         if (!data.data || data.data.length === 0) {
             campanasBody.innerHTML = '<tr><td colspan="6" class="admin-loading">No hay campañas asociadas a este equipo</td></tr>';
+            if (campanasCardsDiv) campanasCardsDiv.innerHTML = '<div class="admin-loading">No hay campañas asociadas a este equipo</div>';
             return;
         }
 
@@ -1259,9 +1356,43 @@ async function cargarCampanasEquipo(equipoId) {
             </tr>
         `).join('');
 
+        // Cards para móvil
+        if (campanasCardsDiv) {
+            campanasCardsDiv.innerHTML = data.data.map(c => `
+                <div class="equipo-campana-card">
+                    <div class="equipo-campana-header">
+                        <div class="equipo-campana-icon">📋</div>
+                        <div class="equipo-campana-info">
+                            <div class="equipo-campana-name">${escapeHtml(c.nombre_campana || c.nombre || 'Campaña #' + c.id)}</div>
+                        </div>
+                        <span class="badge ${c.estado === 'completada' ? 'badge-success' : 'badge-info'}">${escapeHtml(c.estado || 'activa')}</span>
+                    </div>
+                    <div class="admin-user-card-body">
+                        <div class="admin-user-card-row">
+                            <span class="admin-user-card-label">🆔 ID</span>
+                            <span class="admin-user-card-value">#${c.id}</span>
+                        </div>
+                        <div class="admin-user-card-row">
+                            <span class="admin-user-card-label">👤 Agente</span>
+                            <span class="admin-user-card-value">${escapeHtml(c.agente_username || '-')}</span>
+                        </div>
+                        <div class="admin-user-card-row">
+                            <span class="admin-user-card-label">📋 Solicitudes</span>
+                            <span class="admin-user-card-value"><strong>${c.total_solicitudes || 0}</strong></span>
+                        </div>
+                        <div class="admin-user-card-row">
+                            <span class="admin-user-card-label">📅 Creado</span>
+                            <span class="admin-user-card-value">${formatearFecha(c.created_at)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
     } catch (err) {
         console.error('Error cargar campañas del equipo:', err);
         campanasBody.innerHTML = '<tr><td colspan="6" class="admin-loading" style="color:#dc2626">Error al cargar campañas</td></tr>';
+        if (campanasCardsDiv) campanasCardsDiv.innerHTML = '<div class="admin-loading" style="color:#dc2626">Error al cargar campañas</div>';
     }
 }
 

@@ -110,6 +110,8 @@
                     <input type="text" id="searchAudit" placeholder="Filtrar por acción..." oninput="debounceAuditar()">
                 </div>
             </div>
+            <!-- Mobile cards for auditoría -->
+            <div id="auditMobileCards" class="mobile-cards"></div>
             <div class="admin-table-wrapper">
                 <table class="admin-table">
                     <thead>
@@ -264,10 +266,11 @@
                     </div>
                 </div>
 
-                <!-- Miembros del equipo (tabla) -->
+                <!-- Miembros del equipo (tabla + mobile cards) -->
                 <div class="admin-toolbar" style="margin-top:20px;">
                     <h3 style="margin:0;font-size:16px;color:#1f2937;">👥 Miembros del Equipo</h3>
                 </div>
+                <div id="equipoMiembrosMobileCards" class="mobile-cards"></div>
                 <div class="admin-table-wrapper">
                     <table class="admin-table">
                         <thead>
@@ -288,10 +291,11 @@
                     </table>
                 </div>
 
-                <!-- Campañas del equipo -->
+                <!-- Campañas del equipo (tabla + mobile cards) -->
                 <div class="admin-toolbar" style="margin-top:20px;">
                     <h3 style="margin:0;font-size:16px;color:#1f2937;">📋 Campañas del Equipo</h3>
                 </div>
+                <div id="equipoCampanasMobileCards" class="mobile-cards"></div>
                 <div class="admin-table-wrapper">
                     <table class="admin-table">
                         <thead>
