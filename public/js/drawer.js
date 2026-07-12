@@ -421,7 +421,9 @@
     /* ───────── arranque ───────── */
     function boot() {
         // En móvil: NO crear nada. En desktop: crear el drawer.
-        if (!isMobile()) {
+        // Usar la variable esMobile ya evaluada para evitar condiciones de carrera
+        // con el viewport en dispositivos móviles.
+        if (!esMobile) {
             initDesktopDrawer();
         }
 
