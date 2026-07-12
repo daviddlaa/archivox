@@ -185,8 +185,14 @@
             var self = this;
             setTimeout(function() {
                 var wrapper = document.getElementById('drawer-wrapper');
-                if (wrapper && !document.querySelector('#drawer-wrapper .drawer, #drawer-wrapper .mm-sheet')) {
-                    wrapper.innerHTML = '';
+                if (wrapper) {
+                    var mmSheet = wrapper.querySelector('.mm-sheet');
+                    // Solo limpiar si el sheet NO está visible (clase 'visible' removida)
+                    // y no hay un drawer de escritorio activo
+                    var sheetHidden = !mmSheet || !mmSheet.classList.contains('visible');
+                    if (!wrapper.querySelector('.drawer') && sheetHidden) {
+                        wrapper.innerHTML = '';
+                    }
                 }
                 if (self._keyHandler) {
                     document.removeEventListener('keydown', self._keyHandler);

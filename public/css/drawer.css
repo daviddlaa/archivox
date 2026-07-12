@@ -184,3 +184,140 @@
         display: none !important;
     }
 }
+
+/* ============================================================================
+   MOBILE MENU — Bottom Sheet Nativo (MobileMenu en drawer.js)
+   Compartido: cualquier página que cargue drawer.js puede usarlo.
+   ============================================================================ */
+
+.mm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.mm-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.mm-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 82vh;
+    background: #ffffff;
+    border-radius: 20px 20px 0 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.2);
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.mm-sheet.visible {
+    transform: translateY(0);
+}
+
+.mm-handle {
+    width: 36px;
+    height: 4px;
+    background: #d1d5db;
+    border-radius: 4px;
+    margin: 10px auto 0;
+    flex-shrink: 0;
+}
+
+.mm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid #f3f4f6;
+    flex-shrink: 0;
+}
+.mm-header-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1f2937;
+}
+.mm-close {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    padding: 0;
+}
+.mm-close:active {
+    background: #e5e7eb;
+    transform: scale(0.92);
+}
+
+.mm-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 16px 18px;
+    flex: 1;
+}
+
+.mm-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 14px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #374151;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    cursor: pointer;
+}
+.mm-item:active {
+    background: #f3f4f6;
+    transform: scale(0.97);
+}
+.mm-item-icon {
+    font-size: 20px;
+    width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.mm-item-label {
+    flex: 1;
+}
+.mm-item-danger {
+    color: #dc2626;
+}
+.mm-item-danger:active {
+    background: #fef2f2;
+}
+.mm-item-admin {
+    color: #7c3aed;
+}
+.mm-divider {
+    height: 1px;
+    background: #f3f4f6;
+    margin: 6px 14px;
+}
