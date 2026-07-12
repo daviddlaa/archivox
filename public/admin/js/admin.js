@@ -41,8 +41,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         actualizarReloj();
         setInterval(actualizarReloj, 1000);
 
-        // Cargar datos
+        // Cargar datos iniciales
         cargarUsuarios();
+
+        // ================================================================
+        // SUPERADMIN MOBILE: Soporte para navegación por ?tab= query param
+        // Permite que los enlaces del menú móvil abran tabs específicos
+        // ================================================================
+        var urlParams = new URLSearchParams(window.location.search);
+        var tabParam = urlParams.get('tab');
+        if (tabParam) {
+            var tabValido = ['usuarios', 'estadisticas', 'auditoria', 'notificaciones', 'equipos'];
+            if (tabValido.indexOf(tabParam) !== -1) {
+                cambiarTab(tabParam);
+            }
+        }
     } catch (err) {
         console.error('[Admin] Error en inicialización:', err);
         document.getElementById('usersTableBody').innerHTML =

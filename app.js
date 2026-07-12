@@ -67,6 +67,18 @@ function isMobileDevice(userAgent) {
 
 // Rutas para servir HTML según dispositivo (protegidas)
 app.get('/', requireAuthPage, (req, res) => {
+    // ================================================================
+    // SUPERADMIN: Redirigir al Panel de Administración
+    // El SuperAdmin NO debe acceder al Dashboard Operativo
+    // ================================================================
+    if (req.session?.usuario?.is_superadmin) {
+        const isMobile = isMobileDevice(req.headers['user-agent']);
+        if (req.query.movil === '1' || isMobile) {
+            return res.redirect('/m/admin');
+        }
+        return res.redirect('/admin');
+    }
+
     const isMobile = isMobileDevice(req.headers['user-agent']);
     // Debug: usar ?movil=1 para forzar versión móvil
     if (req.query.movil === '1' || isMobile) {
@@ -78,20 +90,45 @@ app.get('/', requireAuthPage, (req, res) => {
 
 // Rutas para móvil (protegidas)
 app.get('/m', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/movil/index.html'));
 });
 app.get('/m/importar', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/movil/importar.html'));
 });
 app.get('/m/solicitudes', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/movil/solicitudes.html'));
 });
 app.get('/m/ventas', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/movil/ventas.html'));
 });
 
+// Helper: redirigir SuperAdmin al panel de administración
+// Retorna true si redirigió (SuperAdmin), false si debe continuar
+function redirectSuperAdmin(req, res) {
+    if (req.session?.usuario?.is_superadmin) {
+        const isMobile = isMobileDevice(req.headers['user-agent']);
+        if (isMobile || req.query.movil === '1') {
+            res.redirect('/m/admin');
+        } else {
+            res.redirect('/admin');
+        }
+        return true;
+    }
+    return false;
+}
+
 // Rutas protegidas - requieren autenticación
 app.get('/importar', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     const isMobile = isMobileDevice(req.headers['user-agent']);
     if (isMobile) {
         res.sendFile(path.join(__dirname, 'public/movil/importar.html'));
@@ -101,6 +138,8 @@ app.get('/importar', requireAuthPage, (req, res) => {
 });
 
 app.get('/solicitudes', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     const isMobile = isMobileDevice(req.headers['user-agent']);
     if (isMobile) {
         res.sendFile(path.join(__dirname, 'public/movil/solicitudes.html'));
@@ -110,11 +149,15 @@ app.get('/solicitudes', requireAuthPage, (req, res) => {
 });
 
 app.get('/ventas', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/desktop/ventas.html'));
 });
 
 // Rutas de Gestiones
 app.get('/gestiones', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     const isMobile = isMobileDevice(req.headers['user-agent']);
     if (isMobile || req.query.movil === '1') {
         res.sendFile(path.join(__dirname, 'public/movil/gestiones.html'));
@@ -124,39 +167,55 @@ app.get('/gestiones', requireAuthPage, (req, res) => {
 });
 
 app.get('/m/gestiones', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/movil/gestiones.html'));
 });
 
 // Ruta móvil para Gestión por Lotes
 app.get('/m/gestion-lote', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/movil/gestion-lote.html'));
 });
 
 // Rutas de Relaciones
 app.get('/relaciones', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/desktop/relaciones.html'));
 });
 
 app.get('/m/relaciones', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/movil/relaciones.html'));
 });
 
 // Rutas de Gestión por Lotes
 app.get('/gestion-lote', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/desktop/gestion-lote.html'));
 });
 
 // Rutas de Control de Ventas del Equipo
 app.get('/equipo-ventas', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/desktop/ventas.html'));
 });
 
 app.get('/m/equipo-ventas', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/movil/ventas.html'));
 });
 
 // Rutas de Historial de Actualizaciones
 app.get('/historial', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     const isMobile = isMobileDevice(req.headers['user-agent']);
     if (isMobile) {
         res.sendFile(path.join(__dirname, 'public/movil/historial.html'));
@@ -166,6 +225,8 @@ app.get('/historial', requireAuthPage, (req, res) => {
 });
 
 app.get('/m/historial', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/movil/historial.html'));
 });
 
@@ -184,9 +245,13 @@ app.get('/m/admin', requireAuthPage, (req, res) => {
 
 // 🆕 Ruta del Panel del Líder (FASE 7)
 app.get('/equipo', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/desktop/equipo.html'));
 });
 app.get('/m/equipo', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
     res.sendFile(path.join(__dirname, 'public/desktop/equipo.html'));
 });
 

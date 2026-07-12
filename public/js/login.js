@@ -81,7 +81,12 @@ if (loginForm) {
             if (response.ok) {
                 mostrarExito('✓ Login exitoso, redireccionando...');
                 setTimeout(() => {
-                    window.location.href = '/';
+                    // SUPERADMIN: Redirigir al Panel de Administración
+                    if (data.usuario && data.usuario.is_superadmin) {
+                        window.location.href = '/admin';
+                    } else {
+                        window.location.href = '/';
+                    }
                 }, 1000);
             } else {
                 mostrarError(data.error || 'Error al iniciar sesión');

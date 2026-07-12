@@ -1,3 +1,18 @@
+// ============================================================================
+// PROTECCIÓN SUPERADMIN: Redirigir al Panel de Administración
+// El SuperAdmin no debe cargar el dashboard operativo
+// ============================================================================
+(function() {
+    fetch('/api/auth/sesion')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.autenticado && data.usuario.is_superadmin) {
+                window.location.href = '/m/admin';
+            }
+        })
+        .catch(function() {});
+})();
+
 // Dashboard móvil
 async function cargarDatos() {
     try {

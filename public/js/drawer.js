@@ -36,13 +36,26 @@
         /* ─── build nav items ─── */
         _getItems: function() {
             if (esPaginaAdmin()) {
+                // ============================================================
+                // MENÚ MÓVIL DE SUPERADMIN (Panel de Administración)
+                // Solo opciones administrativas - Sin operaciones
+                // ============================================================
                 return [
-                    { icon: '📊', label: 'Dashboard', href: '/m/admin' },
+                    { icon: '📊', label: 'Dashboard Admin', href: '/m/admin' },
+                    { icon: '👤', label: 'Mi Perfil', href: '/perfil' },
                     null, // separator
-                    { icon: '🏠', label: 'Volver al Sistema', href: '/' },
+                    { icon: '👥', label: 'Usuarios', action: 'tab:usuarios' },
+                    { icon: '📊', label: 'Estadísticas', action: 'tab:estadisticas' },
+                    { icon: '📋', label: 'Auditoría', action: 'tab:auditoria' },
+                    { icon: '🔔', label: 'Notificaciones', action: 'tab:notificaciones' },
+                    { icon: '🏢', label: 'Equipos', action: 'tab:equipos' },
+                    null, // separator
                     { icon: '🚪', label: 'Cerrar Sesión', action: 'cerrarSesion', danger: true },
                 ];
             }
+            // ============================================================
+            // MENÚ MÓVIL DE USUARIOS OPERATIVOS
+            // ============================================================
             return [
                 { icon: '📊', label: 'Inicio', href: '/m' },
                 { icon: '👤', label: 'Mi Perfil', href: '/perfil' },
@@ -86,6 +99,15 @@
                 }
                 if (item.action === 'cerrarSesion') {
                     navHTML += '<a class="mm-item mm-item-danger" href="#" onclick="event.preventDefault(); cerrarSesion(); MobileMenu.close()">' +
+                        '<span class="mm-item-icon">' + item.icon + '</span>' +
+                        '<span class="mm-item-label">' + item.label + '</span>' +
+                        '</a>';
+                    continue;
+                }
+                // Acciones de tabs de administración (menú móvil SuperAdmin)
+                if (item.action && item.action.startsWith('tab:')) {
+                    var tabName = item.action.replace('tab:', '');
+                    navHTML += '<a class="mm-item" href="#" onclick="event.preventDefault(); window.location.href=\'/m/admin?tab=\' + \'' + tabName + '\'; MobileMenu.close()">' +
                         '<span class="mm-item-icon">' + item.icon + '</span>' +
                         '<span class="mm-item-label">' + item.label + '</span>' +
                         '</a>';
@@ -203,6 +225,10 @@
         var admin = esPaginaAdmin();
 
         if (admin) {
+            // ============================================================
+            // MENÚ DE SUPERADMIN (Panel de Administración)
+            // Solo opciones administrativas - Sin opciones operativas
+            // ============================================================
             return '' +
                 '<div class="drawer-section">' +
                     '<h3>Administración</h3>' +
@@ -212,17 +238,22 @@
                         '<li><a href="#" class="drawer-link" onclick="cambiarTab(\'estadisticas\'); Drawer.close(); return false;"><span class="drawer-menu-icon">📊</span>Estadísticas</a></li>' +
                         '<li><a href="#" class="drawer-link" onclick="cambiarTab(\'auditoria\'); Drawer.close(); return false;"><span class="drawer-menu-icon">📋</span>Auditoría</a></li>' +
                         '<li><a href="#" class="drawer-link" onclick="cambiarTab(\'notificaciones\'); Drawer.close(); return false;"><span class="drawer-menu-icon">🔔</span>Notificaciones</a></li>' +
+                        '<li><a href="#" class="drawer-link" onclick="cambiarTab(\'equipos\'); Drawer.close(); return false;"><span class="drawer-menu-icon">🏢</span>Equipos</a></li>' +
                     '</ul>' +
                 '</div>' +
                 '<div class="drawer-section drawer-section-last">' +
                     '<h3>Cuenta</h3>' +
                     '<ul class="drawer-menu">' +
-                        '<li><a href="/" class="drawer-link"><span class="drawer-menu-icon">🏠</span>Volver al Sistema</a></li>' +
+                        '<li><a href="/perfil" class="drawer-link"><span class="drawer-menu-icon">👤</span>Mi Perfil</a></li>' +
                         '<li class="drawer-menu-logout"><a href="#" onclick="cerrarSesion()" class="drawer-link"><span class="drawer-menu-icon">🚪</span>Cerrar Sesión</a></li>' +
                     '</ul>' +
                 '</div>';
         }
 
+        // ============================================================
+        // MENÚ DE USUARIOS OPERATIVOS (Dashboard normal)
+        // Líderes, Agentes y Usuarios ven este menú
+        // ============================================================
         return '' +
             '<div class="drawer-section">' +
                 '<h3>Inicio</h3>' +

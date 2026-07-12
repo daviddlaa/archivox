@@ -21,6 +21,25 @@ function requiresAuth(req, res, next) {
 }
 
 /**
+ * Middleware: Verifica que el usuario sea SuperAdmin (is_superadmin === true).
+ * ⚠️ Flujo completamente separado del dashboard operativo.
+ * El SuperAdmin NO tiene acceso a rutas operativas.
+ * Responde con 403 si no es SuperAdmin.
+ */
+function requiresSuperAdmin(req, res, next) {
+    if (!req.session?.usuario) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+    if (req.session.usuario.is_superadmin) {
+        return next();
+    }
+    return res.status(403).json({
+        error: 'Acceso denegado: solo SuperAdmin',
+        tu_rol: req.session.usuario.rol
+    });
+}
+
+/**
  * Middleware: Verifica que el usuario esté autenticado (para páginas HTML).
  * Redirecciona al login si no hay sesión.
  */
@@ -195,6 +214,7 @@ module.exports = {
     requiresPermissionAsync,
     requiresLevel,
     requiresEquipo,
+    requiresSuperAdmin,
     getUsuarioId,
     getRol,
     getEquipoId
