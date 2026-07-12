@@ -32,6 +32,23 @@ async function auditar(usuarioId, accion, targetType, targetId, detalle, req) {
 }
 
 // ============================================================================
+// Verificar que un agente pertenece al equipo del líder
+// SuperAdmin siempre puede administrar cualquier agente
+// ============================================================================
+async function verificarAgenteEnEquipo(equipoId, agenteId, req) {
+    // Superadmin bypass
+    if (req?.session?.usuario?.is_superadmin || req?.session?.usuario?.rol === 'superadmin') {
+        return true;
+    }
+    const result = await pool.query(
+        `SELECT id FROM equipo_usuarios
+         WHERE equipo_id = $1 AND usuario_id = $2 AND fecha_salida IS NULL`,
+        [equipoId, agenteId]
+    );
+    return result.rows.length > 0;
+}
+
+// ============================================================================
 // LISTAR EQUIPOS
 // ============================================================================
 // GET /api/equipos
@@ -46,7 +63,7 @@ async function listar(req, res) {
         let paramIdx = 1;
 
         // Líderes y agentes solo ven su propio equipo
-        if (user.rol === 'lider' || user.rol === 'agente') {
+        if (user.rol === 'lider' || user.rol === 'agente' || user.rol === 'user') {
             sql += ' AND e.id = $' + paramIdx++;
             params.push(user.equipo_id);
         }
@@ -607,6 +624,151 @@ async function gestionesEquipo(req, res) {
 }
 
 // ============================================================================
+// TOGGLE ACTIVO AGENTE (Líder activa/desactiva sus agentes)
+// ============================================================================
+// PUT /api/equipos/:id/agentes/:agenteId/toggle-active
+async function toggleActivoAgente(req, res) {
+    try {
+        const { id, agenteId } = req.params;
+        const usuarioId = getUsuarioId(req);
+
+        // Verificar que el agente pertenece al equipo
+        const pertenece = await verificarAgenteEnEquipo(id, agenteId, req);
+        if (!pertenece) {
+            return res.status(400).json({ error: 'El agente no pertenece a este equipo' });
+        }
+
+        const userResult = await pool.query(
+            'SELECT id, username, is_active FROM usuarios WHERE id = $1',
+            [agenteId]
+        );
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Agente no encontrado' });
+        }
+
+        const nuevoEstado = !userResult.rows[0].is_active;
+
+        await pool.query(
+            `UPDATE usuarios SET is_active = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+            [nuevoEstado, agenteId]
+        );
+
+        await auditar(usuarioId, 'agente.toggle_active', 'agente', parseInt(agenteId),
+            { username: userResult.rows[0].username, nuevo_estado: nuevoEstado }, req);
+
+        res.json({
+            mensaje: nuevoEstado ? 'Agente activado' : 'Agente desactivado',
+            is_active: nuevoEstado
+        });
+    } catch (err) {
+        console.error('[Equipos] Error toggleActivoAgente:', err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+// ============================================================================
+// RESET PASSWORD AGENTE (Líder resetea contraseña de sus agentes)
+// ============================================================================
+// PUT /api/equipos/:id/agentes/:agenteId/reset-password
+async function resetPasswordAgente(req, res) {
+    try {
+        const { id, agenteId } = req.params;
+        const { nueva_password } = req.body;
+        const usuarioId = getUsuarioId(req);
+
+        if (!nueva_password || nueva_password.length < 8 || !/[A-Z]/.test(nueva_password) || !/[0-9]/.test(nueva_password)) {
+            return res.status(400).json({
+                error: 'La contraseña debe tener mínimo 8 caracteres, una mayúscula y un número'
+            });
+        }
+
+        // Verificar que el agente pertenece al equipo
+        const pertenece = await verificarAgenteEnEquipo(id, agenteId, req);
+        if (!pertenece) {
+            return res.status(400).json({ error: 'El agente no pertenece a este equipo' });
+        }
+
+        const userResult = await pool.query(
+            'SELECT id, username FROM usuarios WHERE id = $1',
+            [agenteId]
+        );
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Agente no encontrado' });
+        }
+
+        const passwordHash = bcrypt.hashSync(nueva_password, 10);
+
+        await pool.query(
+            `UPDATE usuarios SET password = $1, password_changed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+            [passwordHash, agenteId]
+        );
+
+        await auditar(usuarioId, 'agente.password_reset', 'agente', parseInt(agenteId),
+            { username: userResult.rows[0].username }, req);
+
+        res.json({ mensaje: 'Contraseña actualizada correctamente' });
+    } catch (err) {
+        console.error('[Equipos] Error resetPasswordAgente:', err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+// ============================================================================
+// EDITAR AGENTE (Líder edita datos de sus agentes)
+// ============================================================================
+// PUT /api/equipos/:id/agentes/:agenteId
+async function editarAgente(req, res) {
+    try {
+        const { id, agenteId } = req.params;
+        const { nombre, email } = req.body;
+        const usuarioId = getUsuarioId(req);
+
+        // Verificar que el agente pertenece al equipo
+        const pertenece = await verificarAgenteEnEquipo(id, agenteId, req);
+        if (!pertenece) {
+            return res.status(400).json({ error: 'El agente no pertenece a este equipo' });
+        }
+
+        const updates = [];
+        const params = [];
+        let paramIdx = 1;
+
+        if (nombre !== undefined) {
+            updates.push('nombre = $' + paramIdx++);
+            params.push(nombre);
+        }
+        if (email !== undefined) {
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return res.status(400).json({ error: 'Formato de email inválido' });
+            }
+            updates.push('email = $' + paramIdx++);
+            params.push(email);
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({ error: 'No hay campos para actualizar' });
+        }
+
+        updates.push('updated_at = CURRENT_TIMESTAMP');
+        params.push(agenteId);
+
+        const result = await pool.query(
+            `UPDATE usuarios SET ${updates.join(', ')} WHERE id = $${paramIdx}
+             RETURNING id, username, nombre, email, rol`,
+            params
+        );
+
+        await auditar(usuarioId, 'agente.updated', 'agente', parseInt(agenteId),
+            { cambios: req.body }, req);
+
+        res.json({ mensaje: 'Agente actualizado', data: result.rows[0] });
+    } catch (err) {
+        console.error('[Equipos] Error editarAgente:', err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+// ============================================================================
 // CAMPANAS DEL EQUIPO
 // ============================================================================
 // GET /api/equipos/:id/campanas
@@ -646,5 +808,8 @@ module.exports = {
     miEquipo,
     dashboardEquipo,
     gestionesEquipo,
-    campanasEquipo
+    campanasEquipo,
+    toggleActivoAgente,
+    resetPasswordAgente,
+    editarAgente
 };

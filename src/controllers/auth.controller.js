@@ -481,7 +481,7 @@ exports.updatePerfil = async (req, res) => {
 // LISTAR USUARIOS (solo admin)
 // ============================================================================
 exports.listarUsuarios = async (req, res) => {
-    if (req.session.usuario.rol !== 'admin' && !req.session.usuario.is_superadmin) {
+    if (!req.session.usuario.is_superadmin && req.session.usuario.rol !== 'superadmin') {
         return res.status(403).json({
             error: 'Acceso denegado'
         });

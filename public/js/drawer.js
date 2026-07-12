@@ -183,11 +183,11 @@
                 .then(function(data) {
                     if (data.autenticado) {
                         var adminLink = document.getElementById('mm-admin-link');
-                        if (adminLink && (data.usuario.rol === 'admin' || data.usuario.rol === 'superadmin' || data.usuario.is_superadmin)) {
+                        if (adminLink && (data.usuario.is_superadmin || data.usuario.rol === 'superadmin')) {
                             adminLink.style.display = '';
                         }
                         var liderLink = document.getElementById('mm-lider-link');
-                        if (liderLink && (data.usuario.es_lider || data.usuario.rol === 'superadmin' || data.usuario.rol === 'admin')) {
+                        if (liderLink && (data.usuario.es_lider || data.usuario.is_superadmin || data.usuario.rol === 'superadmin')) {
                             liderLink.style.display = '';
                         }
                     }
@@ -358,7 +358,7 @@
         try {
             var res = await fetch('/api/auth/sesion');
             var data = await res.json();
-            if (data.autenticado && (data.usuario.es_lider || data.usuario.rol === 'superadmin' || data.usuario.rol === 'admin')) {
+            if (data.autenticado && (data.usuario.es_lider || data.usuario.is_superadmin || data.usuario.rol === 'superadmin')) {
                 var link = document.getElementById('liderEquipoLink');
                 if (link) link.style.display = '';
             }
@@ -369,7 +369,7 @@
         try {
             var res = await fetch('/api/auth/sesion');
             var data = await res.json();
-            if (data.autenticado && (data.usuario.rol === 'admin' || data.usuario.rol === 'superadmin' || data.usuario.is_superadmin)) {
+            if (data.autenticado && (data.usuario.is_superadmin || data.usuario.rol === 'superadmin')) {
                 var link = document.getElementById('adminLink');
                 if (link) link.style.display = '';
             }

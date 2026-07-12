@@ -29,12 +29,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.log('[Admin] Sesión verificada:', user.username, 'rol:', user.rol, 'is_superadmin:', user.is_superadmin);
 
         const badge = document.getElementById('userBadge');
-        if (user.rol === 'superadmin' || user.is_superadmin) {
+        if (user.is_superadmin || user.rol === 'superadmin') {
             badge.textContent = '👑 Super Admin';
-        } else if (user.rol === 'admin') {
-            badge.textContent = '🛡️ Admin';
         } else {
-            console.log('[Admin] No eres admin, redirigiendo a inicio');
+            console.log('[Admin] No eres superadmin, redirigiendo a inicio');
             window.location.href = '/';
             return;
         }
@@ -123,7 +121,7 @@ async function cargarUsuarios() {
                 (user.locked_until && new Date(user.locked_until) > new Date() ? 'bloqueado' : 'activo')
                 : 'inactivo';
 
-            const rolClass = user.is_superadmin ? 'superadmin' : user.rol;
+            const rolClass = user.is_superadmin ? 'superadmin' : (user.rol === 'lider' ? 'lider' : user.rol);
 
             return `<tr>
                 <td><span class="admin-username">${escapeHtml(user.username)}</span></td>
@@ -137,6 +135,12 @@ async function cargarUsuarios() {
                     <div class="action-btns">
                         <button class="action-btn edit" onclick="editarUsuario(${user.id})" title="Editar">✏️</button>
                         <button class="action-btn stats" data-userid="${user.id}" data-username="${escapeHtml(user.username)}" onclick="verEstadisticasUsuario(this.dataset.userid, this.dataset.username)" title="Estadísticas">📊</button>
+                        ${!user.is_superadmin && user.rol !== 'superadmin' ?
+                            (user.rol === 'lider'
+                                ? `<button class="action-btn" onclick="revocarLider(${user.id}, '${escapeHtml(user.username)}')" title="Revocar Líder" style="color:#f59e0b">👑</button>`
+                                : `<button class="action-btn" onclick="promoverALider(${user.id}, '${escapeHtml(user.username)}')" title="Convertir en Líder" style="color:#10b981">⬆️</button>`
+                            ) : ''
+                        }
                         ${user.locked_until && new Date(user.locked_until) > new Date() ?
                             `<button class="action-btn lock" onclick="desbloquearUsuario(${user.id})" title="Desbloquear">🔓</button>` : ''}
                     </div>
@@ -144,7 +148,7 @@ async function cargarUsuarios() {
             </tr>`;
         }).join('');
 
-        // ASIGNAR filas a la tabla (¡ESTA LÍNEA FALTABA!)
+        // ASIGNAR filas a la tabla
         tbody.innerHTML = rows;
 
         // Cards para móvil - versión mejorada responsive
@@ -152,7 +156,7 @@ async function cargarUsuarios() {
             const estado = user.is_active ?
                 (user.locked_until && new Date(user.locked_until) > new Date() ? 'bloqueado' : 'activo')
                 : 'inactivo';
-            const rolClass = user.is_superadmin ? 'superadmin' : user.rol;
+            const rolClass = user.is_superadmin ? 'superadmin' : (user.rol === 'lider' ? 'lider' : user.rol);
             const estadoColor = estado === 'activo' ? '#10b981' : estado === 'bloqueado' ? '#f59e0b' : '#ef4444';
 
             return `<div class="user-card">
@@ -234,10 +238,14 @@ async function editarUsuario(id) {
 
         // Opciones de rol
         const rolSelect = document.getElementById('editRol');
-        const isSuper = document.querySelector('.admin-badge')?.textContent?.includes('Super');
         rolSelect.innerHTML = '<option value="user">Usuario</option>' +
-            (isSuper ? '<option value="admin">Administrador</option><option value="superadmin">Super Admin</option>' : '');
-        rolSelect.value = user.is_superadmin ? 'superadmin' : user.rol;
+            '<option value="agente">Agente</option>' +
+            '<option value="lider">Líder</option>';
+        // Solo superadmin establecido puede ser superadmin
+        if (user.is_superadmin) {
+            rolSelect.innerHTML += '<option value="superadmin">Super Admin</option>';
+        }
+        rolSelect.value = user.is_superadmin ? 'superadmin' : (user.rol || 'user');
 
         // Info del usuario
         document.getElementById('infoCreated').textContent = formatearFecha(user.created_at);
@@ -289,6 +297,48 @@ async function guardarUsuario() {
         }
     } catch (err) {
         console.error('Error guardar:', err);
+        alert('Error de conexión');
+    }
+}
+
+// ============================================================================
+// PROMOVER A LÍDER
+// ============================================================================
+async function promoverALider(id, username) {
+    if (!confirm(`¿Convertir a ${username} en Líder?\n\nSe creará automáticamente un equipo para él/ella.`)) return;
+
+    try {
+        const res = await fetch(`/api/admin/usuarios/${id}/promover-lider`, { method: 'POST' });
+        const result = await res.json();
+        if (res.ok) {
+            cargarUsuarios();
+            mostrarToast(`✅ ${username} ahora es Líder`);
+        } else {
+            alert(result.error || 'Error al promover');
+        }
+    } catch (err) {
+        console.error('[Admin] Error promover:', err);
+        alert('Error de conexión');
+    }
+}
+
+// ============================================================================
+// REVOCAR LÍDER
+// ============================================================================
+async function revocarLider(id, username) {
+    if (!confirm(`¿Revocar el rol de Líder a ${username}?\n\nEl equipo se mantendrá pero ${username} ya no será líder.`)) return;
+
+    try {
+        const res = await fetch(`/api/admin/usuarios/${id}/revocar-lider`, { method: 'POST' });
+        const result = await res.json();
+        if (res.ok) {
+            cargarUsuarios();
+            mostrarToast(`👑 Liderazgo revocado: ${username} ahora es Agente`);
+        } else {
+            alert(result.error || 'Error al revocar');
+        }
+    } catch (err) {
+        console.error('[Admin] Error revocar:', err);
         alert('Error de conexión');
     }
 }
@@ -990,7 +1040,6 @@ function formatearFecha(fecha) {
 
 function rolLabel(user) {
     if (user.is_superadmin || user.rol === 'superadmin') return 'Super Admin';
-    if (user.rol === 'admin') return 'Admin';
     if (user.rol === 'lider') return 'Líder';
     if (user.rol === 'agente') return 'Agente';
     return 'Usuario';
@@ -1573,7 +1622,6 @@ async function verEstadisticasEquipo(equipoId) {
 
 function rolLabelUsuario(rol) {
     if (rol === 'superadmin') return 'Super Admin';
-    if (rol === 'admin') return 'Admin';
     if (rol === 'lider') return 'Líder';
     if (rol === 'agente') return 'Agente';
     return 'Usuario';

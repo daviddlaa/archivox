@@ -52,9 +52,9 @@ router.put('/notificaciones/marcar-todas-leidas', notificacionesController.marca
 router.put('/notificaciones/:id/archivar', notificacionesController.archivar);
 
 // ============================================================================
-// MIDDLEWARE DE ROL ADMIN (SOLO ADMINISTRADORES DE AHORA EN ADELANTE)
+// MIDDLEWARE DE ROL (SOLO SUPERADMIN DE AHORA EN ADELANTE)
 // ============================================================================
-router.use(requiresRole('admin', 'superadmin'));
+router.use(requiresRole('superadmin'));
 router.use(adminLimiter);
 
 // ============================================================================
@@ -81,6 +81,12 @@ router.put('/usuarios/:id/reset-password', adminController.resetPassword);
 
 // Desbloquear un usuario
 router.put('/usuarios/:id/unlock', adminController.desbloquearUsuario);
+
+// Promover usuario a Líder (auto-crea equipo)
+router.post('/usuarios/:id/promover-lider', adminController.promoverALider);
+
+// Revocar rol de Líder
+router.post('/usuarios/:id/revocar-lider', adminController.revocarLider);
 
 // ============================================================================
 // ESTADÍSTICAS

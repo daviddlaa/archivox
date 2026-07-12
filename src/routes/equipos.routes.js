@@ -57,6 +57,15 @@ router.get('/:id/miembros', equiposController.listarMiembros);
 // Crear agente en el equipo (líder puede crear en su equipo, superadmin en cualquier)
 router.post('/:id/agentes', requiresPermissionAsync('agentes:crear'), equiposController.crearAgente);
 
+// Editar agente (líder edita datos de sus agentes)
+router.put('/:id/agentes/:agenteId', requiresPermissionAsync('agentes:editar'), equiposController.editarAgente);
+
+// Activar/Desactivar agente (líder gestiona estado de sus agentes)
+router.put('/:id/agentes/:agenteId/toggle-active', requiresPermissionAsync('agentes:desactivar'), equiposController.toggleActivoAgente);
+
+// Resetear contraseña de agente (líder resetea password de sus agentes)
+router.put('/:id/agentes/:agenteId/reset-password', requiresPermissionAsync('agentes:reset-password'), equiposController.resetPasswordAgente);
+
 // ============================================================================
 // RUTAS DE DASHBOARD Y OPERACIONES
 // ============================================================================

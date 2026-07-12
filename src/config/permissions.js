@@ -25,7 +25,7 @@ const ROLES = {
     superadmin: {
         level: 100,
         label: 'Super Administrador',
-        description: 'Control total del sistema. Puede gestionar equipos y administradores.',
+        description: 'Control total del sistema. Puede gestionar usuarios, líderes y agentes.',
         permissions: [
             'users:*',
             'system:*',
@@ -38,25 +38,14 @@ const ROLES = {
             'asignaciones:*'
         ]
     },
-    admin: {
-        level: 50,
-        label: 'Administrador',
-        description: 'Panel de administración y gestión de usuarios.',
-        permissions: [
-            'users:read',
-            'users:write',
-            'system:read',
-            'audit:read',
-            'data:*'
-        ]
-    },
     lider: {
         level: 30,
         label: 'Líder de Equipo',
-        description: 'Gestiona un equipo, crea agentes, asigna solicitudes.',
+        description: 'Gestiona su equipo, crea agentes, asigna solicitudes.',
         permissions: [
             'equipo:ver',
             'equipo:gestionar',
+            'agentes:reset-password',
             'data:read',
             'data:write'
         ]
@@ -115,7 +104,7 @@ function tieneNivelMinimo(rol, nivelMinimo) {
 
 /**
  * Verifica permiso en BD (para roles dinámicos como lider y agente).
- * superadmin/admin tienen permisos implícitos + verifican BD.
+ * superadmin tiene permisos implícitos + verifican BD.
  * Consulta la tabla permisos_roles.
  */
 async function tienePermisoBD(rol, permisoRequerido) {

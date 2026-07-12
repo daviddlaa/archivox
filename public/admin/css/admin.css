@@ -258,6 +258,8 @@ body {
 }
 .role-badge.superadmin { background: #fee2e2; color: #dc2626; }
 .role-badge.admin { background: #e0e7ff; color: #4338ca; }
+.role-badge.lider { background: #fef3c7; color: #b45309; }
+.role-badge.agente { background: #dbeafe; color: #1e40af; }
 .role-badge.user { background: #d1fae5; color: #065f46; }
 
 .estado-indicador {
