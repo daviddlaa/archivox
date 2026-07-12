@@ -932,11 +932,9 @@ body {
     .admin-pagination { flex-wrap: wrap; }
     .reset-password-row { flex-direction: column; }
     
-    /* Mobile: mostrar tabla con scroll horizontal en vez de ocultarla */
+    /* Mobile: ocultar tabla, mostrar solo cards */
     .admin-table-wrapper {
-        display: block !important;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        display: none !important;
     }
     .admin-table {
         min-width: 700px;

@@ -716,13 +716,11 @@ function renderizarCards(datos) {
 
         html += '<div class="solicitud-card ' + seleccionado + '" data-id="' + id + '">';
 
-        // Checkbox wrapper
-        html += '  <div class="card-checkbox-wrapper">';
-        html += '    <input type="checkbox" class="card-checkbox checkbox-fila" value="' + id + '" ' + (seleccionado ? 'checked' : '') + '>';
-        html += '  </div>';
-
-        // ===== FILA 1: ID + Segmento + Estado =====
+        // ===== FILA 1: Checkbox + ID + Segmento + Estado =====
         html += '  <div class="card-fila-1">';
+        html += '    <div class="card-checkbox-wrapper">';
+        html += '      <input type="checkbox" class="card-checkbox checkbox-fila" value="' + id + '" ' + (seleccionado ? 'checked' : '') + '>';
+        html += '    </div>';
         html += '    <span class="card-id">#' + id + '</span>';
         html += '    <span class="card-badge badge-segmento">' + (item.segmento || 'Sin segmento') + '</span>';
         html += '    <span class="card-badge badge-estado ' + estadoClase + '" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
@@ -783,46 +781,66 @@ var filtros = { estado: '', segmento: '', busqueda: '' };
 // ================== BÚSQUEDA EN SERVIDOR ==================
 // Nueva implementación: buscar directamente en el servidor
 var busquedaActiva = false;
-var debounceBusqueda;
+var debounceBusqueda;// ================== BÚSQUEDA UNIFICADA EN SERVIDOR ==================
+// Función única para buscar y filtrar: mantiene paginación siempre activa
 
-// ================== BÚSQUEDA UNIFICADA EN SERVIDOR ==================
-// Función única para buscar y filtrar: lee el término del input + filtros activos
-async function buscarEnServidor() {
+async function buscarEnServidor(resetOffset = false, extraOffset = null) {
     try {
         var inputBusqueda = document.getElementById('cedula');
         var termino = inputBusqueda ? inputBusqueda.value.trim() : '';
+        var tieneFiltros = !!(termino || estadoActual || segmentoActual);
         
-        // Si hay término de búsqueda, usarlo; si no, % para traer todos
-        var url = termino
-            ? '/api/excel/solicitudes/buscar?q=' + encodeURIComponent(termino)
-            : '/api/excel/solicitudes/buscar?q=%';
+        // Determinar offset a usar
+        var nuevoOffset = (extraOffset !== null) ? extraOffset : (resetOffset ? 0 : currentOffset);
         
-        // Agregar filtros activos siempre
-        if (estadoActual) {
-            url += '&estado=' + encodeURIComponent(estadoActual);
+        if (tieneFiltros) {
+            // Usar endpoint de búsqueda con paginación
+            var url = '/api/excel/solicitudes/buscar?q=' + encodeURIComponent(termino || '%') + '&limite=' + TAMANO_LOTE + '&offset=' + nuevoOffset;
+            
+            if (estadoActual) {
+                url += '&estado=' + encodeURIComponent(estadoActual);
+            }
+            if (segmentoActual) {
+                url += '&segmento=' + encodeURIComponent(segmentoActual);
+            }
+            
+            var response = await fetch(url);
+            var result = await response.json();
+            
+            var datosRecibidos = Array.isArray(result) ? result : (result.data || []);
+            var total = Array.isArray(result) ? result.length : (result.total || 0);
+            
+            if (resetOffset) {
+                todosDatos = datosRecibidos;
+                currentOffset = datosRecibidos.length;
+            } else {
+                // Agregar al final
+                for (var i = 0; i < datosRecibidos.length; i++) {
+                    todosDatos.push(datosRecibidos[i]);
+                }
+                currentOffset += datosRecibidos.length;
+            }
+            
+            hasMoreData = currentOffset < total;
+            busquedaActiva = true;
+            
+            document.getElementById('totalRegistros').textContent = total;
+            document.getElementById('mostrando').textContent = todosDatos.length;
+            
+            renderizarTabla(todosDatos);
+        } else {
+            // Sin filtros: usar endpoint regular con paginación
+            busquedaActiva = false;
+            if (resetOffset) {
+                currentOffset = 0;
+                todosDatos = [];
+                await cargarLoteInicial();
+            } else if (extraOffset !== null) {
+                await cargarMasSolicitudes();
+            }
         }
-        if (segmentoActual) {
-            url += '&segmento=' + encodeURIComponent(segmentoActual);
-        }
         
-        var response = await fetch(url);
-        var result = await response.json();
-        
-        var datosRecibidos = Array.isArray(result) ? result : (result.data || []);
-        
-        // Guardar datos
-        todosDatos = datosRecibidos;
-        hasMoreData = false; // Deshabilitar infinite scroll cuando hay filtros/búsqueda
-        
-        // Actualizar total
-        var total = Array.isArray(result) ? result.length : (result.total || 0);
-        document.getElementById('totalRegistros').textContent = total;
-        document.getElementById('mostrando').textContent = datosRecibidos.length;
-        
-        // Renderizar
-        renderizarTabla(datosRecibidos);
-        
-        console.log('Búsqueda/filtro unificado:', datosRecibidos.length, 'resultados - q:', termino || '(todos)', 'Estado:', estadoActual || '(todos)', 'Segmento:', segmentoActual || '(todos)');
+        console.log('Búsqueda/filtro:', todosDatos.length, 'resultados - q:', termino || '(ninguno)', 'Estado:', estadoActual || '(todos)', 'Segmento:', segmentoActual || '(todos)', 'hasMore:', hasMoreData);
     } catch (error) {
         console.error('Error en búsqueda unificada:', error);
     }
@@ -831,16 +849,8 @@ async function buscarEnServidor() {
 // Función para buscar con debounce
 function buscarConDebounce() {
     clearTimeout(debounceBusqueda);
-    
-    var inputBusqueda = document.getElementById('cedula');
-    var termino = inputBusqueda ? inputBusqueda.value.trim() : '';
-    
-    // Activar/desactivar modo búsqueda según si hay término
-    busquedaActiva = !!termino;
-    
-    // Siempre llamar a la función unificada (con o sin término)
     debounceBusqueda = setTimeout(function() {
-        buscarEnServidor();
+        buscarEnServidor(true); // Reset offset al buscar
     }, 300);
 }
 
@@ -924,7 +934,7 @@ function configurarEventosBotones() {
             }
             this.classList.add('active');
             estadoActual = this.dataset.value;
-            buscarEnServidor(); // Llama a la función unificada (respeta búsqueda actual)
+            buscarEnServidor(true); // Reset offset al cambiar filtro
         };
     }
     
@@ -938,7 +948,7 @@ function configurarEventosBotones() {
             }
             this.classList.add('active');
             segmentoActual = this.dataset.value;
-            buscarEnServidor(); // Llama a la función unificada (respeta búsqueda actual)
+            buscarEnServidor(true); // Reset offset al cambiar filtro
         };
     }
 }
@@ -1016,41 +1026,62 @@ async function init() {
         currentOffset = 0;
         todosDatos = [];
         
-        var response = await fetch('/api/excel/solicitudes?limite=' + currentLimit + '&offset=0');
-        var result = await response.json();
-        
-        // Compatibilidad: el backend ahora devuelve { data, total, limite, offset } o array directo
-        var datosRecibidos = Array.isArray(result) ? result : (result.data || []);
-        
-        // Guardar datos
-        todosDatos = datosRecibidos;
-        currentOffset = datosRecibidos.length;
-        
-        // Verificar si hay más datos
-        var total = Array.isArray(result) ? result.length : (result.total || 0);
-        hasMoreData = datosRecibidos.length < total;
-        
-document.getElementById('totalRegistros').textContent = total;
-        
-        // Renderizar las cards
-        aplicarFiltros();
+        await cargarLoteInicial();
         
         // Inicializar infinite scroll
         initInfiniteScroll();
-        
-        console.log('Datos cargados:', todosDatos.length, 'total:', total);
     } catch (error) {
         console.error('Error cargando datos:', error);
     }
 }
 
+// Cargar lote inicial de solicitudes (sin filtros)
+async function cargarLoteInicial() {
+    isLoading = true;
+    try {
+        var response = await fetch('/api/excel/solicitudes?limite=' + TAMANO_LOTE + '&offset=0');
+        var result = await response.json();
+        
+        var nuevosDatos = Array.isArray(result) ? result : (result.data || []);
+        var total = Array.isArray(result) ? result.length : (result.total || 0);
+        
+        todosDatos = nuevosDatos;
+        currentOffset = nuevosDatos.length;
+        hasMoreData = currentOffset < total;
+        
+        document.getElementById('totalRegistros').textContent = total;
+        renderizarTabla(todosDatos);
+    } catch (error) {
+        console.error('Error cargando lote inicial:', error);
+    } finally {
+        isLoading = false;
+        recrearSentinel();
+    }
+}
+
 // Cargar más datos (para infinite scroll)
 async function cargarMas() {
-    if (isLoading || !hasMoreData || busquedaActiva) return; // No cargar más durante búsqueda activa
+    if (isLoading || !hasMoreData) return;
     
     isLoading = true;
     
-    // Mostrar indicador de carga
+    // Si hay filtros activos, usar búsqueda paginada
+    if (busquedaActiva || estadoActual || segmentoActual) {
+        await buscarEnServidor(false, currentOffset);
+        isLoading = false;
+        recrearSentinel();
+        return;
+    }
+    
+    await cargarMasSolicitudes();
+}
+
+// Cargar más solicitudes (sin filtros)
+async function cargarMasSolicitudes() {
+    if (isLoading || !hasMoreData) return;
+    
+    isLoading = true;
+    
     var sentinel = document.getElementById('infinite-scroll-sentinel');
     if (sentinel) {
         sentinel.innerHTML = '<span class="loader-text">⏳ Cargando más...</span>';
@@ -1064,18 +1095,15 @@ async function cargarMas() {
         var nuevosDatos = Array.isArray(result) ? result : (result.data || []);
         
         if (nuevosDatos.length > 0) {
-            // Agregar nuevos datos a la lista
             for (var i = 0; i < nuevosDatos.length; i++) {
                 todosDatos.push(nuevosDatos[i]);
             }
             
             currentOffset += nuevosDatos.length;
             
-            // Verificar si hay más datos
             var total = Array.isArray(result) ? result.length : (result.total || 0);
             hasMoreData = currentOffset < total;
             
-// Actualizar visualización
             aplicarFiltros();
             
             console.log('Más datos cargados:', nuevosDatos.length, 'total en memoria:', todosDatos.length);
@@ -1088,7 +1116,6 @@ async function cargarMas() {
     } finally {
         isLoading = false;
         
-        // Actualizar indicador
         if (sentinel) {
             if (hasMoreData) {
                 sentinel.innerHTML = '<span class="loader-text">📜 Scroll para cargar más...</span>';
@@ -2013,33 +2040,31 @@ function marcarSeleccionadas() {
 // Función para limpiar todos los filtros
 function limpiarFiltros() {
     // Limpiar búsqueda
-    document.getElementById('cedula').value = '';
-    
-    // Resetear botones de estado
-    var botonesEstado = document.querySelectorAll('#filtro-estado .filter-btn');
-    botonesEstado.forEach(function(btn) {
-        btn.classList.remove('active');
-    });
-    botonesEstado[0].classList.add('active');
-    
-    // Resetear botones de segmento
-    var botonesSegmento = document.querySelectorAll('#filtro-segmento .filter-btn');
-    botonesSegmento.forEach(function(btn) {
-        btn.classList.remove('active');
-    });
-    botonesSegmento[0].classList.add('active');
-    
-    // Resetear variables
-    estadoActual = '';
-    segmentoActual = '';
-    columnaOrdenar = 'id_solicitud';
-    ordenActual = 'DESC';
-    
-    // Actualizar info panel
-    actualizarInfoPanel();
-    
-    // Recargar datos con el nuevo sistema
-    init();
+    document.getElementById('cedula').value = '';        // Resetear botones de estado
+        var botonesEstado = document.querySelectorAll('#filtro-estado .filter-btn');
+        for (var i = 0; i < botonesEstado.length; i++) {
+            botonesEstado[i].classList.remove('active');
+        }
+        if (botonesEstado.length > 0) botonesEstado[0].classList.add('active');
+        
+        // Resetear botones de segmento
+        var botonesSegmento = document.querySelectorAll('#filtro-segmento .filter-btn');
+        for (var i = 0; i < botonesSegmento.length; i++) {
+            botonesSegmento[i].classList.remove('active');
+        }
+        if (botonesSegmento.length > 0) botonesSegmento[0].classList.add('active');
+        
+        // Resetear variables
+        estadoActual = '';
+        segmentoActual = '';
+        columnaOrdenar = 'id_solicitud';
+        ordenActual = 'DESC';
+        
+        // Actualizar info panel
+        actualizarInfoPanel();
+        
+        // Recargar datos con el nuevo sistema
+        init();
 }
 
 // Actualizar info panel con filtros actuales

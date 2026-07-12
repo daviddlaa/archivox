@@ -173,10 +173,14 @@ function iniciarSSE() {
 
         // Notificación leída
         es.addEventListener('notification.read', function(e) {
-            actualizarBadgeNotifUsuario();
-            // Solo recargar si NO estamos en medio de marcar como leída
-            if (notifState.isPanelOpen && !notifState._isMarkingRead) {
-                cargarNotificacionesUsuario();
+            // Solo actualizar badge si NO estamos en medio de marcar como leída
+            // (para evitar duplicación con actualizarBadgeNotifUsuario() en marcarLeidaUsuario)
+            if (!notifState._isMarkingRead) {
+                actualizarBadgeNotifUsuario();
+                // Solo recargar si NO estamos en medio de marcar como leída
+                if (notifState.isPanelOpen) {
+                    cargarNotificacionesUsuario();
+                }
             }
         });
 
@@ -189,6 +193,7 @@ function iniciarSSE() {
 
         // Actualización de contador
         es.addEventListener('count.updated', function(e) {
+            if (notifState._isMarkingRead) return; // Evitar duplicación con marcarLeidaUsuario
             try {
                 const data = JSON.parse(e.data);
                 if (data.no_leidas !== null) {
@@ -197,7 +202,7 @@ function iniciarSSE() {
                     actualizarBadgeNotifUsuario();
                 }
             } catch (err) {
-                actualizarBadgeNotifUsuario();
+                if (!notifState._isMarkingRead) actualizarBadgeNotifUsuario();
             }
         });
 
@@ -457,9 +462,11 @@ function renderizarNotificacion(n, index) {
 // ============================================================================
 // MARCAR COMO LEÍDA (individual) - con navegación a acción si existe
 // ============================================================================
+// Versión corregida: elimina race conditions con SSE y asegura estado consistente
 async function marcarLeidaUsuario(id, accionUrl) {
     // Flag para evitar doble recarga por SSE
     notifState._isMarkingRead = true;
+    const panelWasOpen = notifState.isPanelOpen;
 
     try {
         await fetch(`/api/admin/notificaciones/${id}/leer`, { method: 'PUT' });
@@ -470,35 +477,36 @@ async function marcarLeidaUsuario(id, accionUrl) {
     // Actualizar visualmente sin recargar todo
     const item = document.querySelector(`.notif-item[data-id="${id}"]`);
     if (item) {
-        item.classList.remove('notif-item-no-leida', 'notif-item-new');
+        item.classList.remove('notif-item-no-leida', 'notif-item-new', 'notif-item-highlight');
         item.dataset.leida = 'true';
         const dot = item.querySelector('.notif-item-dot');
         if (dot) dot.remove();
     }
 
-    actualizarBadgeNotifUsuario();
+    // Esperar respuesta de contar no leídas desde el servidor
+    await actualizarBadgeNotifUsuario();
     actualizarContadorPanel();
 
     // Liberar flag después de un breve momento
-    setTimeout(() => { notifState._isMarkingRead = false; }, 300);
+    setTimeout(() => { notifState._isMarkingRead = false; }, 500);
 
     // Si hay URL de acción, cerrar panel y navegar
     if (accionUrl) {
         cerrarPanelNotificaciones();
         setTimeout(() => {
             window.location.href = accionUrl;
-        }, 350); // Esperar que cierre la animación del panel
+        }, 400); // Esperar que cierre la animación del panel
         return;
     }
 
-    // Recargar suavemente (solo si no hay SSE que ya lo haga)
-    if (notifState.isPanelOpen) {
-        // Pequeña actualización local sin recarga completa
+    // Recargar el panel suavemente para reflejar cambios del servidor
+    // (el SSE no recarga cuando _isMarkingRead = true, así que lo hacemos aquí)
+    if (panelWasOpen) {
         setTimeout(() => {
-            if (!notifState._isMarkingRead) {
+            if (!notifState._isMarkingRead && notifState.isPanelOpen) {
                 cargarNotificacionesUsuario();
             }
-        }, 600);
+        }, 800);
     }
 }
 

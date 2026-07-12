@@ -177,41 +177,63 @@ async function init() {
         currentOffset = 0;
         todosDatos = [];
         
-        const res = await fetch('/api/excel/solicitudes?limite=50&offset=0');
-        var result = await res.json();
-        
-        // Compatibilidad: el backend ahora devuelve { data, total, limite, offset } o array directo
-        var datosRecibidos = Array.isArray(result) ? result : (result.data || []);
-        
-        // Guardar datos
-        todosDatos = datosRecibidos;
-        currentOffset = datosRecibidos.length;
-        
-        // Verificar si hay más datos
-        var total = Array.isArray(result) ? result.length : (result.total || 0);
-        hasMoreData = datosRecibidos.length < total;
-        
-document.getElementById('totalRegistros').textContent = total;
-        
+        await cargarLoteInicial();
         renderizarFiltros();
-        aplicarFiltros();
         
         // Inicializar infinite scroll
         initInfiniteScroll();
-        
-        console.log('Datos cargados:', todosDatos.length, 'total:', total);
     } catch (e) {
         console.error('Error cargando:', e);
     }
 }
 
+// Cargar lote inicial de solicitudes (sin filtros)
+async function cargarLoteInicial() {
+    isLoading = true;
+    try {
+        var res = await fetch('/api/excel/solicitudes?limite=' + TAMANO_LOTE + '&offset=0');
+        var result = await res.json();
+        
+        var nuevosDatos = Array.isArray(result) ? result : (result.data || []);
+        var total = Array.isArray(result) ? result.length : (result.total || 0);
+        
+        todosDatos = nuevosDatos;
+        currentOffset = nuevosDatos.length;
+        hasMoreData = currentOffset < total;
+        
+        document.getElementById('totalRegistros').textContent = total;
+        renderizarCards(todosDatos);
+    } catch (error) {
+        console.error('Error cargando lote inicial:', error);
+    } finally {
+        isLoading = false;
+        recrearSentinel();
+    }
+}
+
 // Cargar más datos (para infinite scroll)
 async function cargarMas() {
-    if (isLoading || !hasMoreData || busquedaActiva) return; // No cargar más durante búsqueda activa
+    if (isLoading || !hasMoreData) return;
     
     isLoading = true;
     
-    // Mostrar indicador de carga
+    // Si hay filtros activos, usar búsqueda paginada
+    if (busquedaActiva || filtros.estado || filtros.segmento) {
+        await buscarEnServidor(false, currentOffset);
+        isLoading = false;
+        recrearSentinel();
+        return;
+    }
+    
+    await cargarMasSolicitudes();
+}
+
+// Cargar más solicitudes (sin filtros)
+async function cargarMasSolicitudes() {
+    if (isLoading || !hasMoreData) return;
+    
+    isLoading = true;
+    
     var sentinel = document.getElementById('infinite-scroll-sentinel');
     if (sentinel) {
         sentinel.innerHTML = '<span class="loader-text">⏳ Cargando más...</span>';
@@ -225,18 +247,15 @@ async function cargarMas() {
         var nuevosDatos = Array.isArray(result) ? result : (result.data || []);
         
         if (nuevosDatos.length > 0) {
-            // Agregar nuevos datos a la lista
             for (var i = 0; i < nuevosDatos.length; i++) {
                 todosDatos.push(nuevosDatos[i]);
             }
             
             currentOffset += nuevosDatos.length;
             
-            // Verificar si hay más datos
             var total = Array.isArray(result) ? result.length : (result.total || 0);
             hasMoreData = currentOffset < total;
             
-// Actualizar visualización
             aplicarFiltros();
             
             console.log('Más datos cargados:', nuevosDatos.length, 'total en memoria:', todosDatos.length);
@@ -249,7 +268,6 @@ async function cargarMas() {
     } finally {
         isLoading = false;
         
-        // Actualizar indicador
         if (sentinel) {
             if (hasMoreData) {
                 sentinel.innerHTML = '<span class="loader-text">📜 Scroll para cargar más...</span>';
@@ -290,43 +308,65 @@ var busquedaActiva = false;
 var debounceBusqueda;
 
 // ================== BÚSQUEDA UNIFICADA EN SERVIDOR ==================
-// Función única para buscar y filtrar: lee el término del input + filtros activos
+// Función única para buscar y filtrar: mantiene paginación siempre activa
 
-async function buscarEnServidor() {
+async function buscarEnServidor(resetOffset = false, extraOffset = null) {
     try {
         var inputBusqueda = document.getElementById('cedula');
         var termino = inputBusqueda ? inputBusqueda.value.trim() : '';
+        var tieneFiltros = !!(termino || filtros.estado || filtros.segmento);
         
-        // Si hay término de búsqueda, usarlo; si no, % para traer todos
-        var url = termino
-            ? '/api/excel/solicitudes/buscar?q=' + encodeURIComponent(termino)
-            : '/api/excel/solicitudes/buscar?q=%';
+        // Determinar offset a usar
+        var nuevoOffset = (extraOffset !== null) ? extraOffset : (resetOffset ? 0 : currentOffset);
         
-        // Agregar filtros activos siempre
-        if (filtros.estado) {
-            url += '&estado=' + encodeURIComponent(filtros.estado);
+        if (tieneFiltros) {
+            // Usar endpoint de búsqueda con paginación
+            var url = '/api/excel/solicitudes/buscar?q=' + encodeURIComponent(termino || '%') + '&limite=' + TAMANO_LOTE + '&offset=' + nuevoOffset;
+            
+            if (filtros.estado) {
+                url += '&estado=' + encodeURIComponent(filtros.estado);
+            }
+            if (filtros.segmento) {
+                url += '&segmento=' + encodeURIComponent(filtros.segmento);
+            }
+            
+            var response = await fetch(url);
+            var result = await response.json();
+            
+            var datosRecibidos = Array.isArray(result) ? result : (result.data || []);
+            var total = Array.isArray(result) ? result.length : (result.total || 0);
+            
+            if (resetOffset) {
+                todosDatos = datosRecibidos;
+                currentOffset = datosRecibidos.length;
+            } else {
+                // Agregar al final
+                for (var i = 0; i < datosRecibidos.length; i++) {
+                    todosDatos.push(datosRecibidos[i]);
+                }
+                currentOffset += datosRecibidos.length;
+            }
+            
+            hasMoreData = currentOffset < total;
+            busquedaActiva = true;
+            
+            document.getElementById('totalRegistros').textContent = total;
+            document.getElementById('mostrando').textContent = todosDatos.length;
+            
+            renderizarCards(todosDatos);
+        } else {
+            // Sin filtros: usar endpoint regular con paginación
+            busquedaActiva = false;
+            if (resetOffset) {
+                currentOffset = 0;
+                todosDatos = [];
+                await cargarLoteInicial();
+            } else if (extraOffset !== null) {
+                await cargarMasSolicitudes();
+            }
         }
-        if (filtros.segmento) {
-            url += '&segmento=' + encodeURIComponent(filtros.segmento);
-        }
         
-        var response = await fetch(url);
-        var result = await response.json();
-        
-        var datosRecibidos = Array.isArray(result) ? result : (result.data || []);
-        
-        // Guardar datos
-        todosDatos = datosRecibidos;
-        hasMoreData = false; // Deshabilitar infinite scroll cuando hay filtros/búsqueda
-        
-        // Actualizar total
-        var total = Array.isArray(result) ? result.length : (result.total || 0);
-        document.getElementById('mostrando').textContent = datosRecibidos.length;
-        
-        // Renderizar
-        renderizarCards(datosRecibidos);
-        
-        console.log('Búsqueda/filtro unificado:', datosRecibidos.length, 'resultados - q:', termino || '(todos)', 'Estado:', filtros.estado || '(todos)', 'Segmento:', filtros.segmento || '(todos)');
+        console.log('Búsqueda/filtro:', todosDatos.length, 'resultados - q:', termino || '(ninguno)', 'Estado:', filtros.estado || '(todos)', 'Segmento:', filtros.segmento || '(todos)', 'hasMore:', hasMoreData);
     } catch (error) {
         console.error('Error en búsqueda unificada:', error);
     }
@@ -335,16 +375,8 @@ async function buscarEnServidor() {
 // Función para buscar con debounce
 function buscarConDebounce() {
     clearTimeout(debounceBusqueda);
-    
-    var inputBusqueda = document.getElementById('cedula');
-    var termino = inputBusqueda ? inputBusqueda.value.trim() : '';
-    
-    // Activar/desactivar modo búsqueda según si hay término
-    busquedaActiva = !!termino;
-    
-    // Siempre llamar a la función unificada (con o sin término)
     debounceBusqueda = setTimeout(function() {
-        buscarEnServidor();
+        buscarEnServidor(true); // Reset offset al buscar
     }, 300);
 }
 
@@ -356,7 +388,7 @@ function adjuntarEventos() {
             document.querySelectorAll('#filtro-estado .filtro-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             filtros.estado = this.dataset.value;
-            buscarEnServidor(); // Llama a la función unificada (respeta búsqueda actual)
+            buscarEnServidor(true); // Reset offset al cambiar filtro
         };
     });
     
@@ -366,7 +398,7 @@ function adjuntarEventos() {
             document.querySelectorAll('#filtro-segmento .filtro-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             filtros.segmento = this.dataset.value;
-            buscarEnServidor(); // Llama a la función unificada (respeta búsqueda actual)
+            buscarEnServidor(true); // Reset offset al cambiar filtro
         };
     });
     
@@ -1623,4 +1655,6 @@ function exportarExcel() {
 }
 
 // Iniciar al cargar página
-window.addEventListener('DOMContentLoaded', init);
+window.addEventListener('DOMContentLoaded', function() {
+    init();
+});

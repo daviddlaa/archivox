@@ -181,12 +181,11 @@
     background: #eff6ff;
 }
 
-/* Checkbox de selección - overlay en la card */
+/* Checkbox de selección - integrado en card-fila-1 */
 .solicitud-card .card-checkbox-wrapper {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 2;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
 }
 .solicitud-card .card-checkbox {
     width: 18px;
@@ -197,7 +196,7 @@
 
 /* ========================================================================
    FILA 1: ID + Segmento + Estado
-   Segmento truncado con ellipsis para evitar desbordamiento
+   Segmento y Estado con espacio suficiente, sin superposiciones
    ======================================================================== */
 .card-fila-1 {
     display: flex;
@@ -206,6 +205,7 @@
     margin-bottom: 6px;
     overflow: hidden;
     min-width: 0;
+    padding-right: 24px; /* Espacio para el checkbox */
 }
 .card-fila-1 .card-id {
     font-size: 10px;

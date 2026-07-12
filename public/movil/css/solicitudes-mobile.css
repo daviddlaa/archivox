@@ -68,15 +68,16 @@
     /* ========================================================================
        FILA 1: Segmento + Estado
        Distribución tipo app - badges grandes y legibles
-       El segmento se trunca con ellipsis, el estado siempre queda alineado
+       Si ambos textos son largos, el estado baja a la siguiente línea
        ======================================================================== */
     .card-fila-1 {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         margin-bottom: 10px;
-        padding-right: 8px;
-        overflow: hidden;
+        padding-right: 0;
+        overflow: visible;
         min-width: 0;
     }
 
@@ -98,16 +99,15 @@
         background: #eef2ff;
         color: #4338ca;
         border: 1.5px solid #c7d2fe;
-        max-width: 40vw;
+        max-width: 55vw;
         overflow: hidden;
         text-overflow: ellipsis;
         flex-shrink: 1;
         min-width: 0;
     }
 
-    /* Badge de Estado: siempre visible, nunca empujado */
+    /* Badge de Estado: siempre visible, con espacio propio */
     .card-fila-1 .card-badge.badge-estado {
-        margin-left: auto;
         flex-shrink: 0;
     }
 
