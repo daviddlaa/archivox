@@ -511,6 +511,8 @@ async function miEquipo(req, res) {
             return res.status(401).json({ error: 'No autenticado' });
         }
 
+        // IMPORTANTE: Priorizar equipos donde es_lider=1 sobre "Sistema"
+        // Un Líder que aún está en "Sistema" por compatibilidad debe ver su propio equipo.
         const result = await pool.query(
             `SELECT e.id, e.nombre, e.descripcion, eu.es_lider, eu.fecha_ingreso,
                     (SELECT COUNT(*) FROM equipo_usuarios eu2
@@ -520,6 +522,7 @@ async function miEquipo(req, res) {
              FROM equipo_usuarios eu
              INNER JOIN equipos e ON eu.equipo_id = e.id
              WHERE eu.usuario_id = $1 AND eu.fecha_salida IS NULL
+             ORDER BY eu.es_lider DESC, e.nombre ASC
              LIMIT 1`,
             [usuarioId]
         );

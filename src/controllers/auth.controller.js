@@ -226,21 +226,85 @@ exports.login = async (req, res) => {
         );
 
         // Cargar datos de equipo del usuario (arquitectura multi-equipo v3.0)
+        // IMPORTANTE: Se prioriza el equipo donde es_lider=1 sobre "Sistema"
+        // para que un Líder vea su propio equipo y no el equipo técnico "Sistema".
         let equipoId = null;
         let equipoNombre = null;
         let esLider = false;
         try {
+            // 1. Intentar conseguir un equipo NO "Sistema" (priorizando donde es_lider=1)
             const equipoResult = await pool.query(`
                 SELECT e.id, e.nombre, eu.es_lider
                 FROM equipo_usuarios eu
                 INNER JOIN equipos e ON eu.equipo_id = e.id
-                WHERE eu.usuario_id = $1 AND eu.fecha_salida IS NULL
+                WHERE eu.usuario_id = $1 AND eu.fecha_salida IS NULL AND e.nombre != 'Sistema'
+                ORDER BY eu.es_lider DESC, e.nombre ASC
                 LIMIT 1
             `, [usuario.id]);
+
             if (equipoResult.rows.length > 0) {
+                // Tiene un equipo real (no "Sistema") — usarlo
                 equipoId = equipoResult.rows[0].id;
                 equipoNombre = equipoResult.rows[0].nombre;
                 esLider = equipoResult.rows[0].es_lider === 1 || equipoResult.rows[0].es_lider === true;
+            } else if (usuario.rol === 'lider') {
+                // 🆕 MIGRACIÓN AUTOMÁTICA: Líder existente que solo tiene "Sistema"
+                // (promovido antes de la corrección). Se le crea su propio equipo automáticamente.
+                console.log(`[Auth] Migrando líder "${usuario.username}" desde equipo Sistema a su propio equipo...`);
+                const client = await pool.connect();
+                try {
+                    await client.query('BEGIN');
+                    const teamName = `Equipo de ${usuario.username}`;
+                    const newTeam = await client.query(
+                        `INSERT INTO equipos (nombre, descripcion)
+                         VALUES ($1, $2) RETURNING id`,
+                        [teamName, `Equipo creado automáticamente durante migración de líder ${usuario.nombre || usuario.username}`]
+                    );
+                    equipoId = newTeam.rows[0].id;
+                    equipoNombre = teamName;
+                    esLider = true;
+
+                    // Asignar como líder del nuevo equipo
+                    await client.query(
+                        'INSERT INTO equipo_usuarios (equipo_id, usuario_id, es_lider) VALUES ($1, $2, 1)',
+                        [equipoId, usuario.id]
+                    );
+                    // NO eliminar membresía de "Sistema" (compatibilidad histórica)
+                    await client.query('COMMIT');
+                    console.log(`[Auth] ✅ Equipo "${teamName}" creado para líder "${usuario.username}"`);
+                } catch (err) {
+                    await client.query('ROLLBACK');
+                    console.error('[Auth] Error migrando líder:', err.message);
+                    // Fallback: usar "Sistema" si falla la creación
+                    const fallback = await pool.query(`
+                        SELECT e.id, e.nombre, eu.es_lider
+                        FROM equipo_usuarios eu
+                        INNER JOIN equipos e ON eu.equipo_id = e.id
+                        WHERE eu.usuario_id = $1 AND eu.fecha_salida IS NULL
+                        LIMIT 1
+                    `, [usuario.id]);
+                    if (fallback.rows.length > 0) {
+                        equipoId = fallback.rows[0].id;
+                        equipoNombre = fallback.rows[0].nombre;
+                        esLider = fallback.rows[0].es_lider === 1 || fallback.rows[0].es_lider === true;
+                    }
+                } finally {
+                    client.release();
+                }
+            } else {
+                // Usuario normal (no líder) solo con "Sistema" — mantener compatibilidad
+                const sistemaTeam = await pool.query(`
+                    SELECT e.id, e.nombre, eu.es_lider
+                    FROM equipo_usuarios eu
+                    INNER JOIN equipos e ON eu.equipo_id = e.id
+                    WHERE eu.usuario_id = $1 AND eu.fecha_salida IS NULL
+                    LIMIT 1
+                `, [usuario.id]);
+                if (sistemaTeam.rows.length > 0) {
+                    equipoId = sistemaTeam.rows[0].id;
+                    equipoNombre = sistemaTeam.rows[0].nombre;
+                    esLider = sistemaTeam.rows[0].es_lider === 1 || sistemaTeam.rows[0].es_lider === true;
+                }
             }
         } catch (e) {
             // La tabla equipo_usuarios podría no existir aún (migración no ejecutada)

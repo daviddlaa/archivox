@@ -402,37 +402,46 @@ exports.promoverALider = async (req, res) => {
         try {
             await client.query('BEGIN');
 
-            // Verificar si ya tiene un equipo activo
+            // Verificar si ya tiene un equipo activo (EXCLUYENDO "Sistema")
+            // El equipo "Sistema" es solo un grupo técnico de migración,
+            // nunca debe usarse como equipo operativo de un Líder.
             const teamResult = await client.query(
-                `SELECT eu.id, eu.equipo_id FROM equipo_usuarios eu
-                 WHERE eu.usuario_id = $1 AND eu.fecha_salida IS NULL LIMIT 1`,
+                `SELECT eu.id, eu.equipo_id, e.nombre FROM equipo_usuarios eu
+                 INNER JOIN equipos e ON eu.equipo_id = e.id
+                 WHERE eu.usuario_id = $1 AND eu.fecha_salida IS NULL AND e.nombre != 'Sistema'
+                 LIMIT 1`,
                 [id]
             );
 
             let equipoId;
+            let equipoNombre;
 
             if (teamResult.rows.length > 0) {
-                // Ya tiene equipo — hacerlo líder
+                // Ya tiene un equipo real (no "Sistema") — hacerlo líder de ese equipo
                 equipoId = teamResult.rows[0].equipo_id;
+                equipoNombre = teamResult.rows[0].nombre;
                 await client.query(
                     'UPDATE equipo_usuarios SET es_lider = 1 WHERE id = $1',
                     [teamResult.rows[0].id]
                 );
             } else {
-                // Crear equipo automático
-                const teamName = `Equipo de ${targetUser.username}`;
+                // Crear equipo automático (no reusa "Sistema")
+                equipoNombre = `Equipo de ${targetUser.username}`;
                 const newTeam = await client.query(
                     `INSERT INTO equipos (nombre, descripcion)
                      VALUES ($1, $2) RETURNING id`,
-                    [teamName, `Equipo creado automáticamente para ${targetUser.nombre || targetUser.username}`]
+                    [equipoNombre, `Equipo creado automáticamente para ${targetUser.nombre || targetUser.username}`]
                 );
                 equipoId = newTeam.rows[0].id;
 
-                // Asignar como líder
+                // Asignar como líder del nuevo equipo
                 await client.query(
                     'INSERT INTO equipo_usuarios (equipo_id, usuario_id, es_lider) VALUES ($1, $2, 1)',
                     [equipoId, id]
                 );
+
+                // NO eliminar la membresía existente en "Sistema" (compatibilidad histórica)
+                // El login y miEquipo ya están corregidos para priorizar equipos donde es_lider=1
             }
 
             // Actualizar rol
@@ -449,7 +458,7 @@ exports.promoverALider = async (req, res) => {
             res.json({
                 mensaje: `✅ ${targetUser.username} ahora es Líder`,
                 equipo_id: equipoId,
-                equipo_nombre: `Equipo de ${targetUser.username}`
+                equipo_nombre: equipoNombre
             });
         } catch (err) {
             await client.query('ROLLBACK');
