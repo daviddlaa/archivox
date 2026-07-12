@@ -540,7 +540,7 @@ function renderizarCards(datos) {
         html += '    <div class="card-actions-more-movil" onclick="event.stopPropagation();">';
         html += '      <button class="card-btn btn-more-movil" onclick="toggleCardMenuMovil(event, \'' + id + '\')" title="Más acciones">⋮</button>';
         html += '      <div class="card-dropdown-menu-movil" id="card-menu-movil-' + id + '">';
-        html += '        <button class="dropdown-item" onclick="event.stopPropagation(); abrirCompletarInfoMovil(\'' + id + '\'); cerrarTodosLosMenusMovil()">✏️ Editar</button>';
+        html += '        <button class="dropdown-item" onclick="event.stopPropagation(); abrirEditarSolicitudMovil(\'' + id + '\'); cerrarTodosLosMenusMovil()">✏️ Editar</button>';
         html += '        <div class="dropdown-divider"></div>';
         html += '        <button class="dropdown-item dropdown-item-danger" onclick="event.stopPropagation(); confirmarEliminarSolicitudMovil(\'' + id + '\'); cerrarTodosLosMenusMovil()">🗑️ Eliminar</button>';
         html += '      </div>';
@@ -2057,6 +2057,141 @@ if (!window._cardMenuMovilListenerAttached) {
             cerrarTodosLosMenusMovil();
         }
     });
+}
+
+// Abrir modal de edición de solicitud en móvil
+async function abrirEditarSolicitudMovil(id) {
+    var datos = datosFilas[id];
+    if (!datos) {
+        // Intentar cargar desde el servidor
+        try {
+            var res = await fetch('/api/excel/solicitudes/' + id, { credentials: 'include' });
+            if (!res.ok) {
+                alert('No se encontraron datos para esta solicitud');
+                return;
+            }
+            datos = await res.json();
+            datosFilas[id] = datos;
+        } catch (e) {
+            console.error('Error cargando solicitud:', e);
+            alert('No se encontraron datos para esta solicitud');
+            return;
+        }
+    }
+    
+    // Cargar estados y segmentos disponibles
+    var estadosOptions = '<option value="">Seleccionar...</option>';
+    var segmentosOptions = '<option value="">Seleccionar...</option>';
+    
+    try {
+        var resEstados = await fetch('/api/excel/dashboard/estados', { credentials: 'include' });
+        if (resEstados.ok) {
+            var estadosData = await resEstados.json();
+            estadosOptions = '<option value="">Seleccionar...</option>';
+            for (var e = 0; e < estadosData.length; e++) {
+                var selected = estadosData[e].estado === datos.estado ? 'selected' : '';
+                estadosOptions += '<option value="' + estadosData[e].estado + '" ' + selected + '>' + estadosData[e].estado + '</option>';
+            }
+        }
+    } catch (err) { console.error('Error cargando estados:', err); }
+    
+    try {
+        var resSegmentos = await fetch('/api/excel/dashboard/segmentos', { credentials: 'include' });
+        if (resSegmentos.ok) {
+            var segmentosData = await resSegmentos.json();
+            segmentosOptions = '<option value="">Seleccionar...</option>';
+            for (var s = 0; s < segmentosData.length; s++) {
+                var selected = segmentosData[s].segmento === datos.segmento ? 'selected' : '';
+                segmentosOptions += '<option value="' + segmentosData[s].segmento + '" ' + selected + '>' + segmentosData[s].segmento + '</option>';
+            }
+        }
+    } catch (err) { console.error('Error cargando segmentos:', err); }
+    
+    // Construir contenido del modal móvil
+    var contenido = '';
+    contenido += '<div class="editar-movil-container" style="padding: 0; background: white; min-height: 100vh; display: flex; flex-direction: column;">';
+    contenido += '  <div class="editar-movil-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; position: sticky; top: 0; z-index: 10;">';
+    contenido += '    <h2 style="margin: 0; font-size: 17px; color: #1f2937; font-weight: 700;">✏️ Editar Solicitud #' + id + '</h2>';
+    contenido += '    <button onclick="cerrarModal()" style="background: transparent; border: none; font-size: 22px; cursor: pointer; color: #6b7280; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">✕</button>';
+    contenido += '  </div>';
+    
+    contenido += '  <div style="padding: 16px 20px; flex: 1; overflow-y: auto;">';
+    
+    // Información del cliente
+    contenido += '    <div style="background: #f3f4f6; border-radius: 10px; padding: 14px; margin-bottom: 16px; font-size: 13px;">';
+    contenido += '      <p style="margin: 0 0 6px 0;"><strong>👤 Cliente:</strong> ' + (datos.nombre || 'N/A') + '</p>';
+    contenido += '      <p style="margin: 0 0 6px 0;"><strong>🆔 Cédula:</strong> ' + (datos.cedula || 'N/A') + '</p>';
+    contenido += '      <p style="margin: 0;"><strong>📱 Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
+    contenido += '    </div>';
+    
+    // Campos editables
+    contenido += '    <div style="border: 2px solid #818cf8; border-radius: 10px; padding: 16px; background: #eef2ff; margin-bottom: 16px;">';
+    contenido += '      <h3 style="margin: 0 0 14px 0; color: #4338ca; font-size: 15px; font-weight: 700;">📝 Campos Editables</h3>';
+    
+    contenido += '      <div style="margin-bottom: 14px;">';
+    contenido += '        <label for="editar-estado-movil" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #374151;">📌 Estado</label>';
+    contenido += '        <select id="editar-estado-movil" style="width: 100%; padding: 12px 14px; border: 2px solid #c7d2fe; border-radius: 8px; font-size: 15px; background: white; color: #1f2937; appearance: auto;">' + estadosOptions + '</select>';
+    contenido += '      </div>';
+    
+    contenido += '      <div style="margin-bottom: 4px;">';
+    contenido += '        <label for="editar-segmento-movil" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #374151;">🏷️ Segmento</label>';
+    contenido += '        <select id="editar-segmento-movil" style="width: 100%; padding: 12px 14px; border: 2px solid #c7d2fe; border-radius: 8px; font-size: 15px; background: white; color: #1f2937; appearance: auto;">' + segmentosOptions + '</select>';
+    contenido += '      </div>';
+    
+    contenido += '    </div>';
+    contenido += '  </div>';
+    
+    // Footer con botones
+    contenido += '  <div style="padding: 16px 20px; border-top: 1px solid #e5e7eb; background: white; display: flex; gap: 10px;">';
+    contenido += '    <button onclick="cerrarModal()" style="flex: 1; padding: 14px; background: #f3f4f6; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; color: #374151; cursor: pointer;">Cancelar</button>';
+    contenido += '    <button id="editar-btn-save-movil" onclick="guardarEditarSolicitudMovil(\'' + id + '\')" style="flex: 1; padding: 14px; background: #6366f1; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;">💾 Guardar Cambios</button>';
+    contenido += '  </div>';
+    contenido += '</div>';
+    
+    crearModalMovil(contenido);
+}
+
+// Guardar cambios de edición en móvil
+async function guardarEditarSolicitudMovil(id) {
+    var estado = document.getElementById('editar-estado-movil').value;
+    var segmento = document.getElementById('editar-segmento-movil').value;
+    
+    var btn = document.getElementById('editar-btn-save-movil');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+    
+    try {
+        var body = {};
+        if (estado) body.estado = estado;
+        if (segmento) body.segmento = segmento;
+        
+        if (!body.estado && !body.segmento) {
+            alert('Selecciona al menos un campo para actualizar');
+            if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Cambios'; }
+            return;
+        }
+        
+        var response = await fetch('/api/excel/solicitudes/' + id + '/editar', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(body)
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok) {
+            alert('✅ Solicitud #' + id + ' actualizada correctamente');
+            cerrarModal();
+            if (typeof init === 'function') init();
+        } else {
+            alert('❌ Error: ' + (resultado.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error guardando edición:', error);
+        alert('❌ Error al guardar: ' + error.message);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Cambios'; }
+    }
 }
 
 function confirmarEliminarSolicitudMovil(id) {

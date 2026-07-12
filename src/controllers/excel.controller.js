@@ -1,4 +1,3 @@
-
 const excelService = require('../services/excel.service');
 const pool = require('../config/db.js');
 const fs = require('fs');
@@ -857,9 +856,117 @@ try {
     }
 };
 
-// ================== C�DIGO PLUS ==================
+// ================== EDITAR SOLICITUD (ESTADO + SEGMENTO) ==================
 
-// Actualizar c�digo plus de una solicitud
+// Actualizar estado y segmento de una solicitud con auditoria
+exports.actualizarSolicitudEditar = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { id } = req.params;
+    const { estado, segmento } = req.body;
+
+    if (!id) {
+        return res.status(400).json({ error: 'ID de solicitud requerido' });
+    }
+
+    try {
+        // 1. Obtener datos actuales de la solicitud
+        const solicitudResult = await pool.query(
+            'SELECT id_solicitud, estado, segmento FROM solicitudes WHERE id_solicitud = $1 AND usuario_id = $2',
+            [id, usuarioId]
+        );
+
+        if (solicitudResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Solicitud no encontrada' });
+        }
+
+        const solicitudActual = solicitudResult.rows[0];
+        const oldEstado = solicitudActual.estado || '';
+        const oldSegmento = solicitudActual.segmento || '';
+
+        // 2. Construir SET dinamico con los campos a actualizar
+        const setClauses = [];
+        const updateParams = [];
+        let paramIdx = 1;
+        let huboCambios = false;
+
+        // Actualizar estado si se proporciono y es diferente
+        const nuevoEstado = (estado !== undefined && estado !== null) ? String(estado).trim() : oldEstado;
+        if (nuevoEstado !== oldEstado) {
+            setClauses.push('estado = $' + paramIdx++);
+            updateParams.push(nuevoEstado);
+            huboCambios = true;
+        }
+
+        // Actualizar segmento si se proporciono y es diferente
+        const nuevoSegmento = (segmento !== undefined && segmento !== null) ? String(segmento).trim() : oldSegmento;
+        if (nuevoSegmento !== oldSegmento) {
+            setClauses.push('segmento = $' + paramIdx++);
+            updateParams.push(nuevoSegmento);
+            huboCambios = true;
+        }
+
+        // Siempre actualizar fecha_actualizacion
+        setClauses.push('fecha_actualizacion = CURRENT_TIMESTAMP');
+
+        if (huboCambios) {
+            // 3. Ejecutar UPDATE
+            updateParams.push(id, usuarioId);
+            const updateSql = 'UPDATE solicitudes SET ' + setClauses.join(', ') + ' WHERE id_solicitud = $' + paramIdx++ + ' AND usuario_id = $' + paramIdx++ + ' RETURNING *';
+
+            const updateResult = await pool.query(updateSql, updateParams);
+
+            // 4. Guardar auditoria para cada cambio
+            if (nuevoEstado !== oldEstado) {
+                try {
+                    await pool.query(
+                        'INSERT INTO historial_actualizaciones (solicitud_id, usuario_id, campo, valor_anterior, valor_nuevo) VALUES ($1, $2, $3, $4, $5)',
+                        [id, usuarioId, 'estado', oldEstado, nuevoEstado]
+                    );
+                } catch (auditErr) {
+                    console.error('Error guardando auditoria de estado:', auditErr.message);
+                }
+            }
+
+            if (nuevoSegmento !== oldSegmento) {
+                try {
+                    await pool.query(
+                        'INSERT INTO historial_actualizaciones (solicitud_id, usuario_id, campo, valor_anterior, valor_nuevo) VALUES ($1, $2, $3, $4, $5)',
+                        [id, usuarioId, 'segmento', oldSegmento, nuevoSegmento]
+                    );
+                } catch (auditErr) {
+                    console.error('Error guardando auditoria de segmento:', auditErr.message);
+                }
+            }
+
+            res.json({
+                mensaje: 'Solicitud actualizada correctamente',
+                data: updateResult.rows[0]
+            });
+        } else {
+            // No hay cambios
+            const solicitudFull = await pool.query(
+                'SELECT * FROM solicitudes WHERE id_solicitud = $1 AND usuario_id = $2',
+                [id, usuarioId]
+            );
+            res.json({
+                mensaje: 'No se realizaron cambios (los valores son los mismos)',
+                data: solicitudFull.rows[0]
+            });
+        }
+
+    } catch (err) {
+        console.error('Error actualizarSolicitudEditar:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// ================== CODIGO PLUS ==================
+
+// Actualizar codigo plus de una solicitud
 // ================== DESTACAR SOLICITUD ==================
 
 // Actualizar destacado de una solicitud
@@ -1719,13 +1826,3 @@ exports.eliminarImagenGestion = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-
-
-
-
-
-
-
-
-
-

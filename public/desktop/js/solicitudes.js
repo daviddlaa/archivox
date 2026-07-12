@@ -773,6 +773,7 @@ function renderizarCards(datos) {
     for (var i = 0; i < datos.length; i++) {
         var item = datos[i];
         var id = item.id_solicitud || '';
+        datosFilas[id] = item;
         var seleccionado = filasSeleccionadas.indexOf(id) > -1 ? 'seleccionada' : '';
         var estadoClase = 'estado-' + (item.estado || '').replace(/\s+/g, '').toUpperCase();
         var colorEstado = coloresEstado[item.estado] || '#f3f4f6';
@@ -1695,16 +1696,151 @@ if (!window._cardMenuListenerAttached) {
     });
 }
 
-// Editar solicitud - abre el modal con datos precargados
+// Editar solicitud - abre el modal de edición con selectores de Estado y Segmento
 async function editarSolicitud(id) {
     var datos = datosFilas[id];
     if (!datos) {
-        alert('No se encontraron datos para esta solicitud');
-        return;
+        // Intentar cargar desde el servidor
+        try {
+            var res = await fetch('/api/excel/solicitudes/' + id, { credentials: 'include' });
+            if (!res.ok) {
+                alert('No se encontraron datos para esta solicitud');
+                return;
+            }
+            datos = await res.json();
+            datosFilas[id] = datos;
+        } catch (e) {
+            console.error('Error cargando solicitud:', e);
+            alert('No se encontraron datos para esta solicitud');
+            return;
+        }
     }
     
-    // Abrir el modal de completar información (ya existente)
-    abrirCompletar(id);
+    // Cargar estados y segmentos disponibles
+    var estadosOptions = '<option value="">Seleccionar...</option>';
+    var segmentosOptions = '<option value="">Seleccionar...</option>';
+    
+    try {
+        var resEstados = await fetch('/api/excel/dashboard/estados', { credentials: 'include' });
+        if (resEstados.ok) {
+            var estadosData = await resEstados.json();
+            estadosOptions = '<option value="">Seleccionar...</option>';
+            for (var e = 0; e < estadosData.length; e++) {
+                var selected = estadosData[e].estado === datos.estado ? 'selected' : '';
+                estadosOptions += '<option value="' + estadosData[e].estado + '" ' + selected + '>' + estadosData[e].estado + '</option>';
+            }
+        }
+    } catch (err) { console.error('Error cargando estados:', err); }
+    
+    try {
+        var resSegmentos = await fetch('/api/excel/dashboard/segmentos', { credentials: 'include' });
+        if (resSegmentos.ok) {
+            var segmentosData = await resSegmentos.json();
+            segmentosOptions = '<option value="">Seleccionar...</option>';
+            for (var s = 0; s < segmentosData.length; s++) {
+                var selected = segmentosData[s].segmento === datos.segmento ? 'selected' : '';
+                segmentosOptions += '<option value="' + segmentosData[s].segmento + '" ' + selected + '>' + segmentosData[s].segmento + '</option>';
+            }
+        }
+    } catch (err) { console.error('Error cargando segmentos:', err); }
+    
+    // Construir modal de edición
+    var contenido = '';
+    contenido += '<div class="editar-solicitud-overlay">';
+    contenido += '  <div class="editar-solicitud-modal">';
+    contenido += '    <div class="editar-header">';
+    contenido += '      <h2>✏️ Editar Solicitud #' + id + '</h2>';
+    contenido += '      <button class="editar-close-btn" onclick="cerrarModalEditar()" title="Cerrar">✕</button>';
+    contenido += '    </div>';
+    contenido += '    <div class="editar-body">';
+    
+    // Información del cliente (solo lectura)
+    contenido += '      <div class="editar-info-cliente">';
+    contenido += '        <div class="editar-info-item"><span class="info-label">👤 Cliente</span><span class="info-value">' + (datos.nombre || 'N/A') + '</span></div>';
+    contenido += '        <div class="editar-info-item"><span class="info-label">🆔 Cédula</span><span class="info-value">' + (datos.cedula || 'N/A') + '</span></div>';
+    contenido += '        <div class="editar-info-item"><span class="info-label">📱 Celular</span><span class="info-value">' + (datos.celular || 'N/A') + '</span></div>';
+    contenido += '      </div>';
+    
+    // Campos editables
+    contenido += '      <div class="editar-campos">';
+    contenido += '        <div class="editar-campo">';
+    contenido += '          <label for="editar-estado">📌 Estado</label>';
+    contenido += '          <select id="editar-estado" class="editar-select">' + estadosOptions + '</select>';
+    contenido += '        </div>';
+    contenido += '        <div class="editar-campo">';
+    contenido += '          <label for="editar-segmento">🏷️ Segmento</label>';
+    contenido += '          <select id="editar-segmento" class="editar-select">' + segmentosOptions + '</select>';
+    contenido += '        </div>';
+    contenido += '      </div>';
+    
+    contenido += '    </div>';
+    contenido += '    <div class="editar-footer">';
+    contenido += '      <button class="editar-btn-cancel" onclick="cerrarModalEditar()">Cancelar</button>';
+    contenido += '      <button class="editar-btn-save" id="editar-btn-save" onclick="guardarEditarSolicitud(\'' + id + '\')">💾 Guardar Cambios</button>';
+    contenido += '    </div>';
+    contenido += '  </div>';
+    contenido += '</div>';
+    
+    // Agregar al body
+    var modalExistente = document.getElementById('editar-solicitud-modal-overlay');
+    if (modalExistente) modalExistente.remove();
+    
+    var tempDiv = document.createElement('div');
+    tempDiv.innerHTML = contenido;
+    var overlay = tempDiv.firstElementChild;
+    overlay.id = 'editar-solicitud-modal-overlay';
+    overlay.onclick = function(e) { if (e.target === overlay) cerrarModalEditar(); };
+    document.body.appendChild(overlay);
+}
+
+// Cerrar modal de edición
+function cerrarModalEditar() {
+    var overlay = document.getElementById('editar-solicitud-modal-overlay');
+    if (overlay) overlay.remove();
+}
+
+// Guardar cambios de edición
+async function guardarEditarSolicitud(id) {
+    var estado = document.getElementById('editar-estado').value;
+    var segmento = document.getElementById('editar-segmento').value;
+    
+    var btn = document.getElementById('editar-btn-save');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+    
+    try {
+        var body = {};
+        if (estado) body.estado = estado;
+        if (segmento) body.segmento = segmento;
+        
+        if (!body.estado && !body.segmento) {
+            alert('Selecciona al menos un campo para actualizar');
+            if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Cambios'; }
+            return;
+        }
+        
+        var response = await fetch('/api/excel/solicitudes/' + id + '/editar', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(body)
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok) {
+            alert('✅ Solicitud #' + id + ' actualizada correctamente');
+            cerrarModalEditar();
+            // Recargar datos para reflejar cambios
+            if (typeof init === 'function') init();
+        } else {
+            alert('❌ Error: ' + (resultado.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error guardando edición:', error);
+        alert('❌ Error al guardar: ' + error.message);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Cambios'; }
+    }
 }
 
 // Confirmar y eliminar solicitud

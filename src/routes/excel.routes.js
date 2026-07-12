@@ -141,6 +141,15 @@ router.put(
     excelController.destacarSolicitud
 );
 
+// ================== EDITAR SOLICITUD (ESTADO + SEGMENTO) ==================
+
+// Actualizar estado y segmento de una solicitud (con auditoría)
+router.put(
+    '/solicitudes/:id/editar',
+    requiresAuth,
+    excelController.actualizarSolicitudEditar
+);
+
 // ================== COMPLETAR INFO ==================
 
 // Obtener solicitud con información completa (incluyendo referencias)
