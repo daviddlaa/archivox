@@ -225,7 +225,29 @@ exports.login = async (req, res) => {
             [usuario.id]
         );
 
-        // Guardar usuario en sesión (incluyendo nuevas propiedades de seguridad)
+        // Cargar datos de equipo del usuario (arquitectura multi-equipo v3.0)
+        let equipoId = null;
+        let equipoNombre = null;
+        let esLider = false;
+        try {
+            const equipoResult = await pool.query(`
+                SELECT e.id, e.nombre, eu.es_lider
+                FROM equipo_usuarios eu
+                INNER JOIN equipos e ON eu.equipo_id = e.id
+                WHERE eu.usuario_id = $1 AND eu.fecha_salida IS NULL
+                LIMIT 1
+            `, [usuario.id]);
+            if (equipoResult.rows.length > 0) {
+                equipoId = equipoResult.rows[0].id;
+                equipoNombre = equipoResult.rows[0].nombre;
+                esLider = equipoResult.rows[0].es_lider === 1 || equipoResult.rows[0].es_lider === true;
+            }
+        } catch (e) {
+            // La tabla equipo_usuarios podría no existir aún (migración no ejecutada)
+            console.warn('[Auth] No se pudo cargar equipo del usuario (migración multi-equipo pendiente?):', e.message.substring(0, 60));
+        }
+
+        // Guardar usuario en sesión (incluyendo propiedades multi-equipo)
         req.session.usuario = {
             id: usuario.id,
             username: usuario.username,
@@ -233,7 +255,11 @@ exports.login = async (req, res) => {
             email: usuario.email || null,
             rol: usuario.rol || 'user',
             is_active: usuario.is_active,
-            is_superadmin: usuario.is_superadmin || false
+            is_superadmin: usuario.is_superadmin || false,
+            // 🆕 Propiedades multi-equipo
+            equipo_id: equipoId,
+            equipo_nombre: equipoNombre,
+            es_lider: esLider
         };
 
         // Registrar login exitoso en auditoría
@@ -249,7 +275,11 @@ exports.login = async (req, res) => {
                 email: usuario.email || null,
                 rol: usuario.rol || 'user',
                 is_active: usuario.is_active,
-                is_superadmin: usuario.is_superadmin || false
+                is_superadmin: usuario.is_superadmin || false,
+                // 🆕 Propiedades multi-equipo
+                equipo_id: equipoId,
+                equipo_nombre: equipoNombre,
+                es_lider: esLider
             }
         });
     } catch (err) {

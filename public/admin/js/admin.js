@@ -994,6 +994,624 @@ function rolLabel(user) {
     return 'Usuario';
 }
 
+// ============================================================================
+// EQUIPOS - GESTIÓN DE EQUIPOS
+// ============================================================================
+
+let equipoActualId = null; // ID del equipo en vista detalle
+let equipoActualNombre = '';
+let equiposSearchTimeout;
+
+// Cargar lista de equipos
+async function cargarEquipos() {
+    const tbody = document.getElementById('equiposTableBody');
+    const cardsDiv = document.getElementById('equiposMobileCards');
+    tbody.innerHTML = '<tr><td colspan="7" class="admin-loading">Cargando equipos...</td></tr>';
+    if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading">Cargando equipos...</div>';
+
+    try {
+        const q = document.getElementById('searchEquipo').value;
+        let url = '/api/equipos';
+        if (q) url += `?q=${encodeURIComponent(q)}`;
+
+        const res = await fetch(url);
+        if (!res.ok) {
+            tbody.innerHTML = '<tr><td colspan="7" class="admin-loading" style="color:#dc2626">Error ' + res.status + '</td></tr>';
+            if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading" style="color:#dc2626">Error ' + res.status + '</div>';
+            return;
+        }
+        const data = await res.json();
+
+        if (!data.data || data.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="admin-loading">No hay equipos creados. ¡Crea el primero!</td></tr>';
+            if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading">No hay equipos creados. ¡Crea el primero!</div>';
+            return;
+        }
+
+        tbody.innerHTML = data.data.map(eq => {
+            const lider = eq.miembros?.find(m => m.es_lider);
+            const liderNombre = lider ? escapeHtml(lider.usuario_username || lider.usuario_nombre) : '-';
+            const totalMiembros = eq.miembros?.length || eq.total_miembros || 0;
+
+            return `<tr>
+                <td><span class="admin-username" style="cursor:pointer" onclick="verEquipo(${eq.id}, '${escapeHtml(eq.nombre)}')">🏢 ${escapeHtml(eq.nombre)}</span></td>
+                <td style="font-size:13px;color:#6b7280;">${escapeHtml(eq.descripcion || '-')}</td>
+                <td><strong>${totalMiembros}</strong></td>
+                <td>${liderNombre}</td>
+                <td><strong>${eq.total_campanas || eq.campanas_count || 0}</strong></td>
+                <td>${formatearFecha(eq.created_at)}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="action-btn edit" onclick="verEquipo(${eq.id}, '${escapeHtml(eq.nombre)}')" title="Ver equipo">👁️</button>
+                        <button class="action-btn" onclick="abrirModalEditarEquipo(${eq.id}, '${escapeHtml(eq.nombre)}', '${escapeHtml(eq.descripcion || '')}')" title="Editar">✏️</button>
+                        <button class="action-btn" onclick="verEstadisticasEquipo(${eq.id})" title="Estadísticas">📊</button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+
+        // Cards para móvil
+        if (cardsDiv) {
+            cardsDiv.innerHTML = data.data.map(eq => {
+                const lider = eq.miembros?.find(m => m.es_lider);
+                const liderNombre = lider ? escapeHtml(lider.usuario_username || lider.usuario_nombre) : 'Sin líder';
+                const totalMiembros = eq.miembros?.length || eq.total_miembros || 0;
+
+                return `<div class="user-card">
+                    <div class="admin-user-card-header">
+                        <div class="admin-user-card-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">🏢</div>
+                        <div class="admin-user-card-info">
+                            <div class="admin-user-card-name">🏢 ${escapeHtml(eq.nombre)}</div>
+                            <div class="admin-user-card-username">${escapeHtml(eq.descripcion || 'Sin descripción')}</div>
+                        </div>
+                    </div>
+                    <div class="admin-user-card-body">
+                        <div class="admin-user-card-row">
+                            <span class="admin-user-card-label">👥 Miembros</span>
+                            <span class="admin-user-card-value">${totalMiembros}</span>
+                        </div>
+                        <div class="admin-user-card-row">
+                            <span class="admin-user-card-label">👑 Líder</span>
+                            <span class="admin-user-card-value">${liderNombre}</span>
+                        </div>
+                        <div class="admin-user-card-row">
+                            <span class="admin-user-card-label">📋 Campañas</span>
+                            <span class="admin-user-card-value">${eq.total_campanas || eq.campanas_count || 0}</span>
+                        </div>
+                        <div class="admin-user-card-row">
+                            <span class="admin-user-card-label">📅 Creado</span>
+                            <span class="admin-user-card-value">${formatearFecha(eq.created_at)}</span>
+                        </div>
+                    </div>
+                    <div class="admin-user-card-actions">
+                        <button class="admin-user-card-btn admin-user-card-btn-primary" onclick="verEquipo(${eq.id}, '${escapeHtml(eq.nombre)}')">👁️ Ver</button>
+                        <button class="admin-user-card-btn admin-user-card-btn-secondary" onclick="verEstadisticasEquipo(${eq.id})">📊 Stats</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+    } catch (err) {
+        console.error('Error cargar equipos:', err);
+        tbody.innerHTML = '<tr><td colspan="7" class="admin-loading" style="color:#dc2626">Error al cargar equipos</td></tr>';
+        if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading" style="color:#dc2626">Error al cargar equipos</div>';
+    }
+}
+
+function debounceBuscarEquipo() {
+    clearTimeout(equiposSearchTimeout);
+    equiposSearchTimeout = setTimeout(cargarEquipos, 300);
+}
+
+// ============================================================================
+// VER DETALLE DEL EQUIPO
+// ============================================================================
+
+async function verEquipo(id, nombre) {
+    equipoActualId = id;
+    equipoActualNombre = nombre;
+
+    // Mostrar vista detalle, ocultar lista
+    document.getElementById('equiposListView').style.display = 'none';
+    document.getElementById('equipoDetailView').style.display = 'block';
+
+    // Cabecera
+    document.getElementById('equipoDetailName').textContent = `🏢 ${nombre}`;
+    document.getElementById('equipoDetailDesc').textContent = 'Cargando...';
+
+    try {
+        const res = await fetch(`/api/equipos/${id}`);
+        if (!res.ok) throw new Error('Error ' + res.status);
+        const eq = await res.json();
+
+        document.getElementById('equipoDetailDesc').textContent = eq.descripcion || 'Sin descripción';
+
+        // Stats
+        const miembros = eq.miembros || [];
+        const lider = miembros.find(m => m.es_lider);
+        document.getElementById('equipoStatMiembros').textContent = eq.total_miembros || miembros.length;
+        document.getElementById('equipoStatLider').textContent = lider ? escapeHtml(lider.usuario_username || lider.usuario_nombre) : 'Sin asignar';
+        document.getElementById('equipoStatCampanas').textContent = eq.total_campanas || 0;
+        document.getElementById('equipoStatSolicitudes').textContent = eq.total_asignaciones || 0;
+
+        // Tabla de miembros
+        const miembrosBody = document.getElementById('equipoMiembrosBody');
+        if (!miembros || miembros.length === 0) {
+            miembrosBody.innerHTML = '<tr><td colspan="8" class="admin-loading">No hay miembros en este equipo</td></tr>';
+        } else {
+            miembrosBody.innerHTML = miembros.map(m => {
+                const estado = m.fecha_salida ? 'inactivo' : 'activo';
+                const esLider = m.es_lider ? '✅ Sí' : '—';
+                return `<tr>
+                    <td><span class="admin-username">${escapeHtml(m.usuario_username || 'Usuario #' + m.usuario_id)}</span></td>
+                    <td>${escapeHtml(m.usuario_nombre || '-')}</td>
+                    <td><span class="role-badge ${m.usuario_rol === 'superadmin' ? 'superadmin' : m.usuario_rol}">${rolLabelUsuario(m.usuario_rol)}</span></td>
+                    <td>${esLider}</td>
+                    <td>${formatearFecha(m.fecha_ingreso)}</td>
+                    <td>${m.fecha_salida ? formatearFecha(m.fecha_salida) : '<span style="color:#10b981">Activo</span>'}</td>
+                    <td><span class="estado-indicador"><span class="estado-dot ${estado}"></span>${estado}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            ${!m.es_lider ? `<button class="action-btn edit" onclick="asignarLiderDirecto(${eq.id}, ${m.usuario_id}, '${escapeHtml(m.usuario_username)}')" title="Asignar como líder">👑</button>` : ''}
+                            ${!m.fecha_salida ? `<button class="action-btn lock" onclick="removerMiembro(${eq.id}, ${m.usuario_id}, '${escapeHtml(m.usuario_username)}')" title="Remover del equipo" style="color:#dc2626">🚫</button>` : ''}
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // Campañas del equipo
+        await cargarCampanasEquipo(id);
+
+    } catch (err) {
+        console.error('Error cargar equipo:', err);
+        document.getElementById('equipoDetailDesc').textContent = 'Error al cargar detalles';
+    }
+}
+
+async function cargarCampanasEquipo(equipoId) {
+    const campanasBody = document.getElementById('equipoCampanasBody');
+    try {
+        const res = await fetch(`/api/equipos/${equipoId}/campanas`);
+        if (!res.ok) {
+            campanasBody.innerHTML = '<tr><td colspan="6" class="admin-loading" style="color:#dc2626">Error ' + res.status + '</td></tr>';
+            return;
+        }
+        const data = await res.json();
+
+        if (!data.data || data.data.length === 0) {
+            campanasBody.innerHTML = '<tr><td colspan="6" class="admin-loading">No hay campañas asociadas a este equipo</td></tr>';
+            return;
+        }
+
+        campanasBody.innerHTML = data.data.map(c => `
+            <tr>
+                <td>#${c.id}</td>
+                <td>${escapeHtml(c.nombre_campana || c.nombre || 'Campaña #' + c.id)}</td>
+                <td>${escapeHtml(c.agente_username || '-')}</td>
+                <td><strong>${c.total_solicitudes || 0}</strong></td>
+                <td><span class="estado-indicador"><span class="estado-dot ${c.estado === 'completada' ? 'activo' : 'inactivo'}"></span>${escapeHtml(c.estado || 'activa')}</span></td>
+                <td>${formatearFecha(c.created_at)}</td>
+            </tr>
+        `).join('');
+
+    } catch (err) {
+        console.error('Error cargar campañas del equipo:', err);
+        campanasBody.innerHTML = '<tr><td colspan="6" class="admin-loading" style="color:#dc2626">Error al cargar campañas</td></tr>';
+    }
+}
+
+function volverListaEquipos() {
+    equipoActualId = null;
+    equipoActualNombre = '';
+    document.getElementById('equiposListView').style.display = 'block';
+    document.getElementById('equipoDetailView').style.display = 'none';
+    cargarEquipos();
+}
+
+// ============================================================================
+// CREAR EQUIPO
+// ============================================================================
+
+async function abrirModalCrearEquipo() {
+    document.getElementById('createEquipoNombre').value = '';
+    document.getElementById('createEquipoDesc').value = '';
+
+    // Cargar usuarios disponibles para líder
+    const liderSelect = document.getElementById('createEquipoLider');
+    liderSelect.innerHTML = '<option value="">— Sin líder —</option>';
+    try {
+        const res = await fetch('/api/admin/usuarios?limite=200');
+        const data = await res.json();
+        if (data.data) {
+            data.data.forEach(u => {
+                liderSelect.innerHTML += `<option value="${u.id}">${escapeHtml(u.username)} (${escapeHtml(u.nombre || u.username)})</option>`;
+            });
+        }
+    } catch (e) { /* seguir sin opciones */ }
+
+    document.getElementById('createEquipoModal').classList.add('active');
+    document.getElementById('modalOverlay').classList.add('active');
+}
+
+function cerrarModalCrearEquipo() {
+    document.getElementById('createEquipoModal').classList.remove('active');
+    document.getElementById('modalOverlay').classList.remove('active');
+}
+
+async function crearEquipo() {
+    const nombre = document.getElementById('createEquipoNombre').value.trim();
+    const descripcion = document.getElementById('createEquipoDesc').value.trim();
+    const liderId = document.getElementById('createEquipoLider').value;
+
+    if (!nombre) return alert('El nombre del equipo es requerido');
+
+    try {
+        const body = { nombre, descripcion };
+        if (liderId) body.lider_id = parseInt(liderId);
+
+        const res = await fetch('/api/equipos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const result = await res.json();
+        if (res.ok) {
+            cerrarModalCrearEquipo();
+            cargarEquipos();
+            mostrarToast('✅ Equipo creado exitosamente');
+        } else {
+            alert(result.error || 'Error al crear equipo');
+        }
+    } catch (err) {
+        console.error('Error crear equipo:', err);
+        alert('Error de conexión');
+    }
+}
+
+// ============================================================================
+// ASIGNAR LÍDER
+// ============================================================================
+
+async function abrirModalAsignarLider() {
+    if (!equipoActualId) return;
+
+    document.getElementById('asignarLiderEquipoNombre').value = equipoActualNombre;
+
+    const liderSelect = document.getElementById('asignarLiderSelect');
+    liderSelect.innerHTML = '<option value="">Cargando miembros disponibles...</option>';
+
+    try {
+        const res = await fetch(`/api/equipos/${equipoActualId}/miembros`);
+        const data = await res.json();
+        liderSelect.innerHTML = '<option value="">— Seleccionar —</option>';
+
+        if (data.data) {
+            data.data.forEach(m => {
+                if (!m.fecha_salida) {
+                    liderSelect.innerHTML += `<option value="${m.usuario_id}">${escapeHtml(m.usuario_username)} ${m.es_lider ? '(actual líder)' : ''}</option>`;
+                }
+            });
+        }
+    } catch (e) {
+        liderSelect.innerHTML = '<option value="">Error al cargar miembros</option>';
+    }
+
+    document.getElementById('asignarLiderModal').classList.add('active');
+    document.getElementById('modalOverlay').classList.add('active');
+}
+
+function cerrarModalAsignarLider() {
+    document.getElementById('asignarLiderModal').classList.remove('active');
+    document.getElementById('modalOverlay').classList.remove('active');
+}
+
+async function asignarLider() {
+    const userId = parseInt(document.getElementById('asignarLiderSelect').value);
+    if (!userId) return alert('Selecciona un usuario para asignar como líder');
+
+    try {
+        const res = await fetch(`/api/equipos/${equipoActualId}/asignar-lider`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario_id: userId })
+        });
+        const result = await res.json();
+        if (res.ok) {
+            cerrarModalAsignarLider();
+            verEquipo(equipoActualId, equipoActualNombre);
+            mostrarToast('✅ Líder asignado correctamente');
+        } else {
+            alert(result.error || 'Error al asignar líder');
+        }
+    } catch (err) {
+        console.error('Error asignar líder:', err);
+        alert('Error de conexión');
+    }
+}
+
+// Asignar líder directo desde la tabla de miembros
+function asignarLiderDirecto(equipoId, usuarioId, username) {
+    if (!confirm(`¿Asignar a ${username} como líder de ${equipoActualNombre}?`)) return;
+
+    fetch(`/api/equipos/${equipoId}/asignar-lider`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario_id: usuarioId })
+    })
+    .then(r => r.json())
+    .then(result => {
+        if (result.id || result.mensaje) {
+            verEquipo(equipoActualId, equipoActualNombre);
+            mostrarToast('✅ Líder asignado: ' + username);
+        } else {
+            alert(result.error || 'Error');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Error de conexión');
+    });
+}
+
+// ============================================================================
+// CREAR AGENTE
+// ============================================================================
+
+async function abrirModalCrearAgente() {
+    if (!equipoActualId) return;
+    document.getElementById('createAgenteEquipoNombre').value = equipoActualNombre;
+    document.getElementById('createAgenteUsername').value = '';
+    document.getElementById('createAgenteNombre').value = '';
+    document.getElementById('createAgentePassword').value = '';
+
+    document.getElementById('createAgenteModal').classList.add('active');
+    document.getElementById('modalOverlay').classList.add('active');
+}
+
+function cerrarModalCrearAgente() {
+    document.getElementById('createAgenteModal').classList.remove('active');
+    document.getElementById('modalOverlay').classList.remove('active');
+}
+
+async function crearAgente() {
+    const username = document.getElementById('createAgenteUsername').value.trim();
+    const nombre = document.getElementById('createAgenteNombre').value.trim();
+    const password = document.getElementById('createAgentePassword').value;
+
+    if (!username || !password) return alert('Usuario y contraseña son requeridos');
+    if (password.length < 8) return alert('La contraseña debe tener al menos 8 caracteres');
+
+    try {
+        const res = await fetch(`/api/equipos/${equipoActualId}/agentes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, nombre, password })
+        });
+        const result = await res.json();
+        if (res.ok) {
+            cerrarModalCrearAgente();
+            verEquipo(equipoActualId, equipoActualNombre);
+            mostrarToast('✅ Agente creado: ' + username);
+        } else {
+            alert(result.error || 'Error al crear agente');
+        }
+    } catch (err) {
+        console.error('Error crear agente:', err);
+        alert('Error de conexión');
+    }
+}
+
+// ============================================================================
+// MOVER USUARIO
+// ============================================================================
+
+async function abrirModalMoverUsuario() {
+    if (!equipoActualId) return;
+
+    document.getElementById('moverUsuarioEquipoActual').value = equipoActualNombre;
+
+    // Cargar usuarios del equipo actual
+    const userSelect = document.getElementById('moverUsuarioSelect');
+    userSelect.innerHTML = '<option value="">Cargando usuarios...</option>';
+
+    // Cargar equipos destino
+    const destSelect = document.getElementById('moverUsuarioDestinoSelect');
+    destSelect.innerHTML = '<option value="">Cargando equipos...</option>';
+
+    try {
+        const [miembrosRes, equiposRes] = await Promise.all([
+            fetch(`/api/equipos/${equipoActualId}/miembros`),
+            fetch('/api/equipos')
+        ]);
+
+        const miembros = await miembrosRes.json();
+        const equipos = await equiposRes.json();
+
+        userSelect.innerHTML = '<option value="">— Seleccionar usuario —</option>';
+        if (miembros.data) {
+            miembros.data.forEach(m => {
+                if (!m.fecha_salida) {
+                    userSelect.innerHTML += `<option value="${m.usuario_id}">${escapeHtml(m.usuario_username)} ${m.es_lider ? '👑' : ''}</option>`;
+                }
+            });
+        }
+
+        destSelect.innerHTML = '<option value="">— Seleccionar equipo destino —</option>';
+        if (equipos.data) {
+            equipos.data.forEach(eq => {
+                if (eq.id !== equipoActualId) {
+                    destSelect.innerHTML += `<option value="${eq.id}">${escapeHtml(eq.nombre)}</option>`;
+                }
+            });
+        }
+
+    } catch (e) {
+        userSelect.innerHTML = '<option value="">Error al cargar</option>';
+        destSelect.innerHTML = '<option value="">Error al cargar</option>';
+    }
+
+    document.getElementById('moverUsuarioModal').classList.add('active');
+    document.getElementById('modalOverlay').classList.add('active');
+}
+
+function cerrarModalMoverUsuario() {
+    document.getElementById('moverUsuarioModal').classList.remove('active');
+    document.getElementById('modalOverlay').classList.remove('active');
+}
+
+async function moverUsuario() {
+    const usuarioId = parseInt(document.getElementById('moverUsuarioSelect').value);
+    const equipoDestinoId = parseInt(document.getElementById('moverUsuarioDestinoSelect').value);
+
+    if (!usuarioId) return alert('Selecciona un usuario');
+    if (!equipoDestinoId) return alert('Selecciona un equipo destino');
+
+    try {
+        const res = await fetch(`/api/equipos/${equipoActualId}/mover-usuario`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario_id: usuarioId, equipo_destino_id: equipoDestinoId })
+        });
+        const result = await res.json();
+        if (res.ok) {
+            cerrarModalMoverUsuario();
+            verEquipo(equipoActualId, equipoActualNombre);
+            mostrarToast('✅ Usuario movido exitosamente');
+        } else {
+            alert(result.error || 'Error al mover usuario');
+        }
+    } catch (err) {
+        console.error('Error mover usuario:', err);
+        alert('Error de conexión');
+    }
+}
+
+// ============================================================================
+// REMOVER MIEMBRO
+// ============================================================================
+
+function removerMiembro(equipoId, usuarioId, username) {
+    if (!confirm(`¿Remover a ${username} del equipo ${equipoActualNombre}?\n\nEl usuario dejará de pertenecer a este equipo pero conservará su historial.`)) return;
+
+    fetch(`/api/equipos/${equipoId}/remover-miembro`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario_id: usuarioId })
+    })
+    .then(r => r.json())
+    .then(result => {
+        if (result.mensaje || !result.error) {
+            verEquipo(equipoActualId, equipoActualNombre);
+            mostrarToast('🚫 Usuario removido del equipo');
+        } else {
+            alert(result.error || 'Error');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Error de conexión');
+    });
+}
+
+// ============================================================================
+// ELIMINAR EQUIPO
+// ============================================================================
+
+function eliminarEquipo() {
+    if (!equipoActualId) return;
+    document.getElementById('eliminarEquipoNombre').textContent = equipoActualNombre;
+    document.getElementById('eliminarEquipoModal').classList.add('active');
+    document.getElementById('modalOverlay').classList.add('active');
+}
+
+function cerrarModalEliminarEquipo() {
+    document.getElementById('eliminarEquipoModal').classList.remove('active');
+    document.getElementById('modalOverlay').classList.remove('active');
+}
+
+async function confirmarEliminarEquipo() {
+    try {
+        const res = await fetch(`/api/equipos/${equipoActualId}`, { method: 'DELETE' });
+        const result = await res.json();
+        if (res.ok) {
+            cerrarModalEliminarEquipo();
+            volverListaEquipos();
+            mostrarToast('🗑️ Equipo eliminado');
+        } else {
+            alert(result.error || 'Error al eliminar equipo');
+        }
+    } catch (err) {
+        console.error('Error eliminar equipo:', err);
+        alert('Error de conexión');
+    }
+}
+
+// ============================================================================
+// ESTADÍSTICAS DEL EQUIPO
+// ============================================================================
+
+async function verEstadisticasEquipo(equipoId) {
+    try {
+        const res = await fetch(`/api/equipos/${equipoId}/dashboard`);
+        if (!res.ok) return mostrarToast('Error al cargar estadísticas del equipo');
+        const data = await res.json();
+
+        // Mostrar resumen en toast
+        const msg = `📊 ${data.equipo_nombre || 'Equipo'}: ${data.total_miembros || 0} miembros, ${data.total_campanas || 0} campañas, ${data.total_asignaciones || 0} asignaciones`;
+        mostrarToast(msg);
+    } catch (err) {
+        console.error('Error estadísticas equipo:', err);
+    }
+}
+
+// ============================================================================
+// HELPER: rolLabelUsuario (para miembros de equipo)
+// ============================================================================
+
+function rolLabelUsuario(rol) {
+    if (rol === 'superadmin') return 'Super Admin';
+    if (rol === 'admin') return 'Admin';
+    if (rol === 'lider') return 'Líder';
+    if (rol === 'agente') return 'Agente';
+    return 'Usuario';
+}
+
+// ============================================================================
+// EXTENDER cambiarTab para cargar equipos cuando se cambie a esa pestaña
+// ============================================================================
+
+// Guardar referencia a la función original
+const _cambiarTabOriginal = window.cambiarTab;
+window.cambiarTab = function(tab) {
+    _cambiarTabOriginal(tab);
+    if (tab === 'equipos') {
+        cargarEquipos();
+    }
+};
+
+// ============================================================================
+// CERRAR TODOS LOS MODALES (overlay compartido)
+// ============================================================================
+
+function cerrarTodosLosModales() {
+    // Modales existentes
+    cerrarModal();                      // userModal
+    cerrarModalCrear();                 // createModal (usuario)
+    cerrarModalNotif();                 // notifModal
+    cerrarStatsUsuario();               // statsUsuarioModal
+
+    // Modales de equipos
+    cerrarModalCrearEquipo();           // createEquipoModal
+    cerrarModalAsignarLider();          // asignarLiderModal
+    cerrarModalCrearAgente();           // createAgenteModal
+    cerrarModalMoverUsuario();          // moverUsuarioModal
+    cerrarModalEliminarEquipo();        // eliminarEquipoModal
+
+    // Quitar overlay por si alguna función no lo hizo
+    document.getElementById('modalOverlay').classList.remove('active');
+}
+
 // Toast notifications
 function mostrarToast(mensaje) {
     const existing = document.querySelector('.admin-toast');

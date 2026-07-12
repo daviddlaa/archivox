@@ -2,10 +2,10 @@
 // MIDDLEWARE DE AUTENTICACIÓN Y AUTORIZACIÓN (CENTRALIZADO)
 // ============================================================================
 // Único punto de definición para todos los middlewares de seguridad.
-// Reemplaza las 6 definiciones duplicadas de requiresAuth que existían antes.
+// Arquitectura multi-equipo v3.0: soporta permisos en BD y por equipo.
 // ============================================================================
 
-const { tienePermiso, tieneNivelMinimo } = require('../config/permissions');
+const { tienePermiso, tieneNivelMinimo, tienePermisoBD, tienePermisoCompleto } = require('../config/permissions');
 
 /**
  * Middleware: Verifica que el usuario esté autenticado (para APIs REST).
@@ -28,7 +28,6 @@ function requireAuthPage(req, res, next) {
     if (req.session?.usuario) {
         return next();
     }
-    // Redireccionar a login según el dispositivo
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(req.headers['user-agent']);
     if (isMobile || req.query.movil === '1') {
         return res.redirect('/m/login');
@@ -45,7 +44,6 @@ function requiresRole(...roles) {
         if (!req.session?.usuario) {
             return res.status(401).json({ error: 'No autenticado' });
         }
-
         const userRole = req.session.usuario.rol;
         if (!roles.includes(userRole)) {
             return res.status(403).json({
@@ -54,13 +52,12 @@ function requiresRole(...roles) {
                 tu_rol: userRole
             });
         }
-
         return next();
     };
 }
 
 /**
- * Middleware: Verifica que el usuario tenga un permiso específico.
+ * Middleware: Verifica que el usuario tenga un permiso específico (síncrono).
  * Uso: router.get('/ruta', requiresPermission('users:read'), handler)
  */
 function requiresPermission(permiso) {
@@ -68,7 +65,6 @@ function requiresPermission(permiso) {
         if (!req.session?.usuario) {
             return res.status(401).json({ error: 'No autenticado' });
         }
-
         const userRole = req.session.usuario.rol;
         if (!tienePermiso(userRole, permiso)) {
             return res.status(403).json({
@@ -77,28 +73,92 @@ function requiresPermission(permiso) {
                 tu_rol: userRole
             });
         }
-
         return next();
     };
 }
 
 /**
+ * Middleware: Verifica que el usuario tenga un permiso específico (ASÍNCRONO).
+ * Consulta la tabla permisos_roles en BD para los roles dinámicos.
+ * Uso: router.get('/ruta', requiresPermissionAsync('campañas:crear'), handler)
+ */
+function requiresPermissionAsync(permiso) {
+    return async (req, res, next) => {
+        if (!req.session?.usuario) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+
+        const userRole = req.session.usuario.rol;
+        const equipoId = req.session.usuario.equipo_id || null;
+
+        try {
+            const tiene = await tienePermisoCompleto(userRole, equipoId, permiso);
+            if (tiene) return next();
+
+            return res.status(403).json({
+                error: 'Acceso denegado: permiso insuficiente',
+                permiso_requerido: permiso,
+                tu_rol: userRole
+            });
+        } catch (err) {
+            console.error('[Auth] Error en requiresPermissionAsync:', err.message);
+            return res.status(500).json({ error: 'Error interno al verificar permisos' });
+        }
+    };
+}
+
+/**
  * Middleware: Verifica que el usuario tenga al menos el nivel de rol especificado.
- * Niveles: superadmin=100, admin=50, user=10
- * Uso: router.get('/ruta', requiresLevel(50), handler)
+ * Niveles: superadmin=100, admin=50, lider=30, agente=20, user=10
  */
 function requiresLevel(minLevel) {
     return (req, res, next) => {
         if (!req.session?.usuario) {
             return res.status(401).json({ error: 'No autenticado' });
         }
-
         const userRole = req.session.usuario.rol;
         if (!tieneNivelMinimo(userRole, minLevel)) {
             return res.status(403).json({
                 error: 'Acceso denegado: nivel insuficiente',
                 nivel_requerido: minLevel,
                 tu_rol: userRole
+            });
+        }
+        return next();
+    };
+}
+
+/**
+ * Middleware: Verifica que el usuario pertenezca al equipo especificado.
+ * Uso: router.get('/ruta', requiresEquipo('ver'), handler)
+ *       router.get('/ruta/:equipo_id', requiresEquipo('gestionar'), handler)
+ */
+function requiresEquipo(accion = 'ver') {
+    return (req, res, next) => {
+        if (!req.session?.usuario) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+
+        const user = req.session.usuario;
+
+        // superadmin y admin pueden ver cualquier equipo
+        if (user.rol === 'superadmin' || user.rol === 'admin') {
+            return next();
+        }
+
+        // El equipo_id puede venir de params (:id o :equipo_id), body o de la sesión
+        const equipoIdRequerido = parseInt(req.params.equipo_id || req.params.id || req.body.equipo_id) || user.equipo_id;
+
+        // Si el usuario no tiene equipo, no puede acceder
+        if (!user.equipo_id) {
+            return res.status(403).json({ error: 'No perteneces a ningún equipo' });
+        }
+
+        // El usuario solo puede acceder a su propio equipo
+        if (user.equipo_id !== equipoIdRequerido) {
+            return res.status(403).json({
+                error: 'No tienes acceso a este equipo',
+                tu_equipo: user.equipo_nombre
             });
         }
 
@@ -120,12 +180,22 @@ function getRol(req) {
     return req.session?.usuario?.rol || null;
 }
 
+/**
+ * Helper: Obtiene el equipo del usuario actual desde la sesión.
+ */
+function getEquipoId(req) {
+    return req.session?.usuario?.equipo_id || null;
+}
+
 module.exports = {
     requiresAuth,
     requireAuthPage,
     requiresRole,
     requiresPermission,
+    requiresPermissionAsync,
     requiresLevel,
+    requiresEquipo,
     getUsuarioId,
-    getRol
+    getRol,
+    getEquipoId
 };

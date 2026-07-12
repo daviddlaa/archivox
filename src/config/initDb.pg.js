@@ -421,7 +421,109 @@ const initTables = async () => {
             ON historial_actualizaciones(usuario_id, fecha_actualizacion DESC)
         `);
 
-        console.log('✅ Tablas e índices creados en PostgreSQL');
+        // ================================================================
+        // 🆕 TABLAS DEL SISTEMA MULTI-EQUIPO (Arquitectura v3.0)
+        // ================================================================
+
+        // equipos
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS equipos (
+                id              SERIAL PRIMARY KEY,
+                nombre          VARCHAR(100) UNIQUE NOT NULL,
+                descripcion     TEXT,
+                activo          INTEGER DEFAULT 1 NOT NULL CHECK (activo IN (0, 1)),
+                created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // equipo_usuarios
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS equipo_usuarios (
+                id              SERIAL PRIMARY KEY,
+                equipo_id       INTEGER NOT NULL REFERENCES equipos(id) ON DELETE CASCADE,
+                usuario_id      INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+                es_lider        INTEGER DEFAULT 0 NOT NULL CHECK (es_lider IN (0, 1)),
+                fecha_ingreso   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                fecha_salida    TIMESTAMP,
+                motivo_salida   TEXT,
+                UNIQUE(usuario_id, fecha_salida)
+            )
+        `);
+
+        // permisos_roles
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS permisos_roles (
+                id              SERIAL PRIMARY KEY,
+                rol             VARCHAR(20) NOT NULL,
+                permiso         VARCHAR(100) NOT NULL,
+                created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(rol, permiso)
+            )
+        `);
+
+        // permisos_equipo
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS permisos_equipo (
+                id              SERIAL PRIMARY KEY,
+                equipo_id       INTEGER NOT NULL REFERENCES equipos(id) ON DELETE CASCADE,
+                permiso         VARCHAR(100) NOT NULL,
+                concedido_por   INTEGER REFERENCES usuarios(id),
+                created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(equipo_id, permiso)
+            )
+        `);
+
+        // asignaciones_solicitudes
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS asignaciones_solicitudes (
+                id                  SERIAL PRIMARY KEY,
+                solicitud_id        INTEGER NOT NULL,
+                equipo_id           INTEGER NOT NULL REFERENCES equipos(id),
+                usuario_id          INTEGER REFERENCES usuarios(id),
+                asignado_por        INTEGER NOT NULL REFERENCES usuarios(id),
+                desde_campaña_id    INTEGER,
+                tipo_asignacion     VARCHAR(20) DEFAULT 'manual'
+                                    CHECK (tipo_asignacion IN ('manual', 'automatica', 'campaña', 'importacion')),
+                fecha_asignacion    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                fecha_desasignacion TIMESTAMP,
+                motivo_desasignacion TEXT,
+                UNIQUE(solicitud_id, fecha_desasignacion)
+            )
+        `);
+
+        // campañas_equipo
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS campañas_equipo (
+                id              SERIAL PRIMARY KEY,
+                campaña_id      INTEGER NOT NULL,
+                equipo_id       INTEGER NOT NULL REFERENCES equipos(id) ON DELETE CASCADE,
+                created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(campaña_id)
+            )
+        `);
+
+        // Columna equipo_id en gestiones_maestro
+        try {
+            await client.query(`ALTER TABLE gestiones_maestro ADD COLUMN IF NOT EXISTS equipo_id INTEGER REFERENCES equipos(id)`);
+        } catch (e) {
+            // fallback para PG < 9.6
+            try { await client.query(`ALTER TABLE gestiones_maestro ADD COLUMN equipo_id INTEGER`); } catch (e2) { /* ya existe */ }
+        }
+
+        // Índices multi-equipo
+        await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_equipo_usuario_unico_activo ON equipo_usuarios(usuario_id) WHERE fecha_salida IS NULL`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_equipos_activo ON equipos(activo)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_equipo_usuarios_equipo ON equipo_usuarios(equipo_id, es_lider, fecha_salida)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_permisos_roles_rol ON permisos_roles(rol)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_asignaciones_solicitud_activa ON asignaciones_solicitudes(solicitud_id, fecha_desasignacion)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_asignaciones_usuario_activas ON asignaciones_solicitudes(usuario_id, fecha_desasignacion) WHERE usuario_id IS NOT NULL`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_asignaciones_equipo_activas ON asignaciones_solicitudes(equipo_id, fecha_desasignacion)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_asignaciones_fecha ON asignaciones_solicitudes(fecha_asignacion DESC)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_gestiones_maestro_equipo ON gestiones_maestro(equipo_id)`);
+        console.log('   ✅ Tablas multi-equipo creadas/verificadas');
+
+        console.log('✅ Todas las tablas e índices creados en PostgreSQL');
     } catch (err) {
         console.error('Error creando tablas:', err.message);
     } finally {

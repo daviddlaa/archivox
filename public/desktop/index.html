@@ -38,6 +38,43 @@
                 <a href="/solicitudes" class="btn-nueva-solicitud-dash" onclick="sessionStorage.setItem('abrirNuevaSolicitud','true')">➕ Nueva Solicitud</a>
             </div>
             
+            <!-- Mi Equipo Card (visible para usuarios con equipo) -->
+            <div id="miEquipoSection" class="mi-equipo-card" style="display:none;">
+                <div class="mi-equipo-header">
+                    <div class="mi-equipo-icon">🏢</div>
+                    <div class="mi-equipo-info">
+                        <h3 id="miEquipoNombre">Cargando...</h3>
+                        <span id="miEquipoDesc" class="mi-equipo-desc"></span>
+                    </div>
+                    <div class="mi-equipo-badges">
+                        <span id="miEquipoRolBadge" class="mi-equipo-role-badge"></span>
+                    </div>
+                </div>
+                <div class="mi-equipo-stats">
+                    <div class="mi-equipo-stat">
+                        <span class="mi-equipo-stat-icon">👑</span>
+                        <div>
+                            <span class="mi-equipo-stat-label">Líder</span>
+                            <span class="mi-equipo-stat-value" id="miEquipoLider">—</span>
+                        </div>
+                    </div>
+                    <div class="mi-equipo-stat">
+                        <span class="mi-equipo-stat-icon">👥</span>
+                        <div>
+                            <span class="mi-equipo-stat-label">Agentes</span>
+                            <span class="mi-equipo-stat-value" id="miEquipoAgentes">—</span>
+                        </div>
+                    </div>
+                    <div class="mi-equipo-stat">
+                        <span class="mi-equipo-stat-icon">📋</span>
+                        <div>
+                            <span class="mi-equipo-stat-label">Asignaciones</span>
+                            <span class="mi-equipo-stat-value" id="miEquipoAsignaciones">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Stats Row -->
             <div class="dashboard-stats">
                 <div class="dashboard-stat-card stat-total">

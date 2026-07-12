@@ -210,6 +210,9 @@ app.use('/api/relaciones', require('./src/routes/relaciones.routes'));
 app.use('/api/relaciones/gestiones', require('./src/routes/relacionesGestion.routes'));
 app.use('/api/admin', require('./src/routes/admin.routes'));
 
+// 🆕 Rutas multi-equipo
+app.use('/api/equipos', require('./src/routes/equipos.routes'));
+
 // Archivos estáticos
 app.use(express.static('public'));
 

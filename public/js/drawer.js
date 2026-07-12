@@ -46,6 +46,7 @@
             return [
                 { icon: '📊', label: 'Inicio', href: '/m' },
                 { icon: '👤', label: 'Mi Perfil', href: '/perfil' },
+                { icon: '🏢', label: 'Gestión de Equipo', href: '/equipo', liderOnly: true },
                 { icon: '💰', label: 'Ventas', href: '/m/ventas' },
                 null, // separator
                 { icon: '📤', label: 'Importar Excel', href: '/m/importar' },
@@ -71,6 +72,13 @@
                 }
                 if (item.adminOnly) {
                     navHTML += '<a class="mm-item mm-item-admin" id="mm-admin-link" style="display:none" href="' + item.href + '" onclick="MobileMenu.close()">' +
+                        '<span class="mm-item-icon">' + item.icon + '</span>' +
+                        '<span class="mm-item-label">' + item.label + '</span>' +
+                        '</a>';
+                    continue;
+                }
+                if (item.liderOnly) {
+                    navHTML += '<a class="mm-item mm-item-leader" id="mm-lider-link" style="display:none" href="' + item.href + '" onclick="MobileMenu.close()">' +
                         '<span class="mm-item-icon">' + item.icon + '</span>' +
                         '<span class="mm-item-label">' + item.label + '</span>' +
                         '</a>';
@@ -173,9 +181,15 @@
             fetch('/api/auth/sesion')
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
-                    if (data.autenticado && (data.usuario.rol === 'admin' || data.usuario.rol === 'superadmin' || data.usuario.is_superadmin)) {
-                        var link = document.getElementById('mm-admin-link');
-                        if (link) link.style.display = '';
+                    if (data.autenticado) {
+                        var adminLink = document.getElementById('mm-admin-link');
+                        if (adminLink && (data.usuario.rol === 'admin' || data.usuario.rol === 'superadmin' || data.usuario.is_superadmin)) {
+                            adminLink.style.display = '';
+                        }
+                        var liderLink = document.getElementById('mm-lider-link');
+                        if (liderLink && (data.usuario.es_lider || data.usuario.rol === 'superadmin' || data.usuario.rol === 'admin')) {
+                            liderLink.style.display = '';
+                        }
                     }
                 })
                 .catch(function() {});
@@ -216,6 +230,7 @@
                     '<li><a href="/" class="drawer-link"><span class="drawer-menu-icon">📊</span>Dashboard</a></li>' +
                     '<li><a href="/perfil" class="drawer-link"><span class="drawer-menu-icon">👤</span>Mi Perfil</a></li>' +
                     '<li><a href="/equipo-ventas" class="drawer-link"><span class="drawer-menu-icon">💰</span>Control de Ventas</a></li>' +
+                    '<li><a href="/equipo" class="drawer-link" id="liderEquipoLink" style="display:none"><span class="drawer-menu-icon">🏢</span>Gestión de Equipo</a></li>' +
                 '</ul>' +
             '</div>' +
             '<div class="drawer-section">' +
@@ -282,8 +297,9 @@
             }, 300);
         });
 
-        // Admin access check
+        // Admin & Leader access checks
         checkAdminAccess();
+        checkLiderAccess();
     }
 
     /* ───────── API pública unificada ───────── */
@@ -338,6 +354,17 @@
     }
 
     /* ───────── admin access ───────── */
+    async function checkLiderAccess() {
+        try {
+            var res = await fetch('/api/auth/sesion');
+            var data = await res.json();
+            if (data.autenticado && (data.usuario.es_lider || data.usuario.rol === 'superadmin' || data.usuario.rol === 'admin')) {
+                var link = document.getElementById('liderEquipoLink');
+                if (link) link.style.display = '';
+            }
+        } catch(e) { /* ignore */ }
+    }
+
     async function checkAdminAccess() {
         try {
             var res = await fetch('/api/auth/sesion');

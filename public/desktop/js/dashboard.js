@@ -8,6 +8,82 @@ const colores = [
     '#06b6d4', '#3b82f6'
 ];
 
+// ============================================================================
+// MI EQUIPO - Información del equipo del usuario (FASE 8)
+// ============================================================================
+async function cargarMiEquipo() {
+    try {
+        const res = await fetch('/api/equipos/mi-equipo');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (!data || data.id === undefined || data.id === null) {
+            // Usuario sin equipo
+            return;
+        }
+
+        const section = document.getElementById('miEquipoSection');
+        section.style.display = 'block';
+
+        document.getElementById('miEquipoNombre').textContent = `🏢 ${escapeHtml(data.nombre || 'Mi Equipo')}`;
+        document.getElementById('miEquipoDesc').textContent = data.descripcion || 'Panel de información del equipo';
+
+        // Badge de rol
+        const rolBadge = document.getElementById('miEquipoRolBadge');
+        try {
+            const sesRes = await fetch('/api/auth/sesion');
+            const ses = await sesRes.json();
+            if (ses.autenticado) {
+                if (ses.usuario.es_lider || ses.usuario.rol === 'superadmin' || ses.usuario.rol === 'admin') {
+                    rolBadge.textContent = '👑 Líder';
+                    rolBadge.className = 'mi-equipo-role-badge role-lider';
+                } else if (ses.usuario.rol === 'agente') {
+                    rolBadge.textContent = '🔹 Agente';
+                    rolBadge.className = 'mi-equipo-role-badge role-agente';
+                } else {
+                    rolBadge.textContent = '👤 Miembro';
+                    rolBadge.className = 'mi-equipo-role-badge role-miembro';
+                }
+            }
+        } catch (e) { /* ignore */ }
+
+        // Cargar líder y stats
+        const equipoId = data.id;
+        const [miembrosRes, dashboardRes] = await Promise.all([
+            fetch(`/api/equipos/${equipoId}/miembros`),
+            fetch(`/api/equipos/${equipoId}/dashboard`)
+        ]);
+
+        if (miembrosRes.ok) {
+            const miembros = await miembrosRes.json();
+            const miembrosArr = miembros.data || miembros || [];
+            const activos = miembrosArr.filter(m => !m.fecha_salida);
+            const lider = activos.find(m => m.es_lider);
+
+            document.getElementById('miEquipoLider').textContent = lider
+                ? escapeHtml(lider.usuario_username || lider.usuario_nombre || 'Asignado')
+                : 'Sin asignar';
+            document.getElementById('miEquipoAgentes').textContent = activos.length;
+        }
+
+        if (dashboardRes.ok) {
+            const dash = await dashboardRes.json();
+            document.getElementById('miEquipoAsignaciones').textContent =
+                (dash.totales?.asignadas || 0).toLocaleString();
+        }
+
+    } catch (err) {
+        console.error('[Dashboard] Error cargando Mi Equipo:', err);
+    }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, function(c) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c] || c;
+    });
+}
+
 async function cargarDashboard() {
     try {
         const response = await fetch('/api/excel/dashboard');
@@ -169,6 +245,7 @@ async function actualizarDashboard() {
 
 async function iniciarDashboard() {
     await cargarDashboard();
+    await cargarMiEquipo();
     await actualizarDashboard();
 }
 

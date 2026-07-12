@@ -410,6 +410,138 @@ try {
 }
 
 // ================================================================
+// 🆕 TABLAS DEL SISTEMA MULTI-EQUIPO (Arquitectura v3.0)
+// ================================================================
+try {
+    // equipos
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS equipos (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre          TEXT UNIQUE NOT NULL,
+            descripcion     TEXT,
+            activo          INTEGER DEFAULT 1 NOT NULL,
+            created_at      TEXT DEFAULT (datetime('now')),
+            updated_at      TEXT DEFAULT (datetime('now'))
+        )
+    `);
+
+    // equipo_usuarios
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS equipo_usuarios (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            equipo_id       INTEGER NOT NULL,
+            usuario_id      INTEGER NOT NULL,
+            es_lider        INTEGER DEFAULT 0 NOT NULL,
+            fecha_ingreso   TEXT DEFAULT (datetime('now')),
+            fecha_salida    TEXT,
+            motivo_salida   TEXT,
+            FOREIGN KEY (equipo_id) REFERENCES equipos(id) ON DELETE CASCADE,
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+            UNIQUE(usuario_id, fecha_salida)
+        )
+    `);
+
+    // permisos_roles
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS permisos_roles (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            rol             TEXT NOT NULL,
+            permiso         TEXT NOT NULL,
+            created_at      TEXT DEFAULT (datetime('now')),
+            UNIQUE(rol, permiso)
+        )
+    `);
+
+    // permisos_equipo
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS permisos_equipo (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            equipo_id       INTEGER NOT NULL,
+            permiso         TEXT NOT NULL,
+            concedido_por   INTEGER,
+            created_at      TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (equipo_id) REFERENCES equipos(id) ON DELETE CASCADE,
+            FOREIGN KEY (concedido_por) REFERENCES usuarios(id),
+            UNIQUE(equipo_id, permiso)
+        )
+    `);
+
+    // asignaciones_solicitudes
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS asignaciones_solicitudes (
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            solicitud_id        INTEGER NOT NULL,
+            equipo_id           INTEGER NOT NULL,
+            usuario_id          INTEGER,
+            asignado_por        INTEGER NOT NULL,
+            desde_campaña_id    INTEGER,
+            tipo_asignacion     TEXT DEFAULT 'manual',
+            fecha_asignacion    TEXT DEFAULT (datetime('now')),
+            fecha_desasignacion TEXT,
+            motivo_desasignacion TEXT,
+            FOREIGN KEY (equipo_id) REFERENCES equipos(id),
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+            FOREIGN KEY (asignado_por) REFERENCES usuarios(id),
+            UNIQUE(solicitud_id, fecha_desasignacion)
+        )
+    `);
+
+    // campañas_equipo
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS campañas_equipo (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            campaña_id      INTEGER NOT NULL,
+            equipo_id       INTEGER NOT NULL,
+            created_at      TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (equipo_id) REFERENCES equipos(id) ON DELETE CASCADE,
+            UNIQUE(campaña_id)
+        )
+    `);
+
+    // Columna equipo_id en gestiones_maestro
+    const gmCols = db.prepare('PRAGMA table_info(gestiones_maestro)').all().map(c => c.name);
+    if (!gmCols.includes('equipo_id')) {
+        db.exec(`ALTER TABLE gestiones_maestro ADD COLUMN equipo_id INTEGER`);
+        console.log('[DB] Columna gestiones_maestro.equipo_id agregada');
+    }
+
+    console.log('[DB] Tablas multi-equipo verificadas');
+} catch (e) {
+    console.log('[DB] Error con tablas multi-equipo:', e.message);
+}
+
+// ================================================================
+// 🆕 ÍNDICES DE MULTI-EQUIPO — SQLite
+// ================================================================
+try {
+    db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_equipo_usuario_unico_activo ON equipo_usuarios(usuario_id) WHERE fecha_salida IS NULL`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_equipos_activo ON equipos(activo)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_equipo_usuarios_equipo ON equipo_usuarios(equipo_id, es_lider, fecha_salida)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_permisos_roles_rol ON permisos_roles(rol)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_asignaciones_solicitud_activa ON asignaciones_solicitudes(solicitud_id, fecha_desasignacion)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_asignaciones_usuario_activas ON asignaciones_solicitudes(usuario_id, fecha_desasignacion)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_asignaciones_equipo_activas ON asignaciones_solicitudes(equipo_id, fecha_desasignacion)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_asignaciones_fecha ON asignaciones_solicitudes(fecha_asignacion DESC)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_gestiones_maestro_equipo ON gestiones_maestro(equipo_id)`);
+} catch (e) { /* ignorar */ }
+
+// ================================================================
 // ÍNDICES (con protección para columnas que puedan no existir)
 // ================================================================
 try {
