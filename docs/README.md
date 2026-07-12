@@ -15,12 +15,14 @@
 |-----------|-------------|
 | [`docs/informe-auditoria-rendimiento.md`](informe-auditoria-rendimiento.md) | Auditoría completa de rendimiento y escalabilidad — análisis de backend, PostgreSQL, pool, caché, SSE, frontend y escenarios de carga |
 | [`docs/informe-optimizacion-arquitectura.md`](informe-optimizacion-arquitectura.md) | Informe de optimización — cambios realizados, justificación técnica, comparativas antes/después y recomendaciones |
+| [`docs/informe-drawer-movil.md`](informe-drawer-movil.md) | Auditoría y reparación del Drawer Móvil — causa raíz, comparativa Desktop vs Mobile, cambios realizados |
 
 ### Registro de Cambios (Changelog)
 
 | Fecha | Versión | Cambio |
 |------|---------|--------|
 | Jul 2026 | 1.0 → 2.1 | 🏗️ **Estandarización Frontend (Fases 2-5)** — Botones, badges, modales, análisis legacy |
+| Jul 2026 | 2.1 → 2.1.1 | 🐛 **Hotfix Drawer Móvil** — Import missing `drawer.css` en 8 HTML móviles + z-index nav-bottom corregido |
 | Jul 2026 | 1.0 → 2.0 | **Optimización de Arquitectura** — Caché, índices, pool, SSE |
 | Jul 2026 | 1.0 | Versión inicial del sistema |
 
