@@ -523,6 +523,126 @@ const initTables = async () => {
         await client.query(`CREATE INDEX IF NOT EXISTS idx_gestiones_maestro_equipo ON gestiones_maestro(equipo_id)`);
         console.log('   ✅ Tablas multi-equipo creadas/verificadas');
 
+        // ================================================================
+        // 🆕 AUTO-SEED: Datos iniciales del sistema multi-equipo
+        // Solo se ejecuta si la tabla equipos está vacía
+        // ================================================================
+        try {
+            const eqCount = await client.query('SELECT COUNT(*) as total FROM equipos');
+            if (parseInt(eqCount.rows[0]?.total || 0) === 0) {
+                console.log('   ⏳ Ejecutando seed de datos multi-equipo...');
+
+                // 1. Crear equipo Sistema
+                await client.query(
+                    `INSERT INTO equipos (nombre, descripcion)
+                     SELECT 'Sistema', 'Equipo por defecto creado durante la migración. Todos los usuarios actuales pertenecen aquí inicialmente.'
+                     WHERE NOT EXISTS (SELECT 1 FROM equipos WHERE nombre = 'Sistema')`
+                );
+                console.log('      ✅ Equipo "Sistema" creado');
+
+                // 2. Asignar SUPERADMIN como líder
+                const liderResult = await client.query(`
+                    INSERT INTO equipo_usuarios (equipo_id, usuario_id, es_lider)
+                    SELECT e.id, u.id, 1
+                    FROM equipos e, usuarios u
+                    WHERE e.nombre = 'Sistema'
+                      AND u.is_superadmin = TRUE
+                      AND NOT EXISTS (
+                        SELECT 1 FROM equipo_usuarios eu
+                        WHERE eu.usuario_id = u.id AND eu.fecha_salida IS NULL
+                      )
+                `);
+                console.log(`      ✅ ${liderResult.rowCount} superadmin(s) asignado(s) como líder(es)`);
+
+                // 3. Asignar ADMIN como miembros
+                const adminResult = await client.query(`
+                    INSERT INTO equipo_usuarios (equipo_id, usuario_id, es_lider)
+                    SELECT e.id, u.id, 0
+                    FROM equipos e, usuarios u
+                    WHERE e.nombre = 'Sistema'
+                      AND u.rol = 'admin'
+                      AND (u.is_superadmin IS NULL OR u.is_superadmin = FALSE)
+                      AND NOT EXISTS (
+                        SELECT 1 FROM equipo_usuarios eu
+                        WHERE eu.usuario_id = u.id AND eu.fecha_salida IS NULL
+                      )
+                `);
+                console.log(`      ✅ ${adminResult.rowCount} admin(s) asignado(s) como miembro(s)`);
+
+                // 4. Asignar demás usuarios como miembros
+                const usersResult = await client.query(`
+                    INSERT INTO equipo_usuarios (equipo_id, usuario_id, es_lider)
+                    SELECT e.id, u.id, 0
+                    FROM equipos e, usuarios u
+                    WHERE e.nombre = 'Sistema'
+                      AND (u.rol IS NULL OR u.rol NOT IN ('admin', 'superadmin'))
+                      AND u.id NOT IN (
+                        SELECT eu.usuario_id FROM equipo_usuarios eu WHERE eu.fecha_salida IS NULL
+                      )
+                `);
+                console.log(`      ✅ ${usersResult.rowCount} usuario(s) asignado(s) como miembro(s)`);
+
+                // 5. Insertar permisos de líder
+                const liderPermisos = [
+                    'equipo:ver', 'equipo:gestionar',
+                    'agentes:ver', 'agentes:crear', 'agentes:editar', 'agentes:desactivar',
+                    'campañas:ver', 'campañas:crear', 'campañas:gestionar', 'campañas:asignar',
+                    'solicitudes:importar', 'solicitudes:ver-equipo',
+                    'solicitudes:asignar', 'solicitudes:reasignar', 'solicitudes:ver-asignaciones',
+                    'gestiones:ver-equipo',
+                    'dashboard:ver-equipo', 'dashboard:ver-agentes',
+                    'relaciones:ver-equipo',
+                    'historial:ver-equipo'
+                ];
+                for (const p of liderPermisos) {
+                    await client.query(
+                        `INSERT INTO permisos_roles (rol, permiso) VALUES ('lider', $1) ON CONFLICT DO NOTHING`,
+                        [p]
+                    );
+                }
+                console.log(`      ✅ ${liderPermisos.length} permisos de líder insertados`);
+
+                // 6. Insertar permisos de agente
+                const agentePermisos = [
+                    'campañas:ver-propias',
+                    'solicitudes:ver-asignadas', 'solicitudes:gestionar',
+                    'solicitudes:editar-estado', 'solicitudes:completar-info',
+                    'gestiones:crear', 'gestiones:ver-propias', 'gestiones:editar',
+                    'relaciones:gestionar',
+                    'historial:ver-propio',
+                    'perfil:ver', 'perfil:editar'
+                ];
+                for (const p of agentePermisos) {
+                    await client.query(
+                        `INSERT INTO permisos_roles (rol, permiso) VALUES ('agente', $1) ON CONFLICT DO NOTHING`,
+                        [p]
+                    );
+                }
+                console.log(`      ✅ ${agentePermisos.length} permisos de agente insertados`);
+
+                // 7. Insertar permisos de user
+                const userPermisos = [
+                    'solicitudes:importar', 'solicitudes:ver-propias', 'solicitudes:gestionar',
+                    'solicitudes:editar-estado', 'solicitudes:completar-info',
+                    'campañas:crear', 'campañas:gestionar',
+                    'gestiones:crear', 'gestiones:ver-propias', 'gestiones:editar',
+                    'relaciones:gestionar', 'ventas:gestionar',
+                    'historial:ver-propio',
+                    'perfil:ver', 'perfil:editar'
+                ];
+                for (const p of userPermisos) {
+                    await client.query(
+                        `INSERT INTO permisos_roles (rol, permiso) VALUES ('user', $1) ON CONFLICT DO NOTHING`,
+                        [p]
+                    );
+                }
+                console.log(`      ✅ ${userPermisos.length} permisos de user insertados`);
+                console.log('   ✅ Seed de datos multi-equipo completado');
+            }
+        } catch (e) {
+            console.log('   ⏩ Error en auto-seed multi-equipo (posiblemente ya hay datos):', e.message.substring(0, 80));
+        }
+
         console.log('✅ Todas las tablas e índices creados en PostgreSQL');
     } catch (err) {
         console.error('Error creando tablas:', err.message);

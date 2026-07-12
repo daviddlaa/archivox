@@ -989,8 +989,10 @@ function formatearFecha(fecha) {
 }
 
 function rolLabel(user) {
-    if (user.is_superadmin) return 'Super Admin';
+    if (user.is_superadmin || user.rol === 'superadmin') return 'Super Admin';
     if (user.rol === 'admin') return 'Admin';
+    if (user.rol === 'lider') return 'Líder';
+    if (user.rol === 'agente') return 'Agente';
     return 'Usuario';
 }
 

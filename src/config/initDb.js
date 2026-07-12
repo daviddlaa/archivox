@@ -542,6 +542,95 @@ try {
 } catch (e) { /* ignorar */ }
 
 // ================================================================
+// 🆕 AUTO-SEED: Datos iniciales del sistema multi-equipo
+// Ejecuta el seed solo si las tablas están vacías
+// ================================================================
+try {
+    const equipoCount = db.prepare('SELECT COUNT(*) as count FROM equipos').get();
+    if (equipoCount.count === 0) {
+        console.log('[DB] ⏳ Ejecutando seed de datos multi-equipo...');
+
+        // 1. Crear equipo Sistema
+        const insertEquipo = db.prepare('INSERT INTO equipos (nombre, descripcion) VALUES (?, ?)');
+        insertEquipo.run('Sistema', 'Equipo por defecto creado durante la migración. Todos los usuarios actuales pertenecen aquí inicialmente.');
+        console.log('[DB]   ✅ Equipo "Sistema" creado');
+
+        // 2. Asignar SUPERADMIN como líder
+        const superAdmins = db.prepare("SELECT id FROM usuarios WHERE is_superadmin = 1").all();
+        for (const sa of superAdmins) {
+            db.prepare('INSERT OR IGNORE INTO equipo_usuarios (equipo_id, usuario_id, es_lider) VALUES ((SELECT id FROM equipos WHERE nombre = \'Sistema\'), ?, 1)').run(sa.id);
+        }
+        console.log('[DB]   ✅ Superadmins asignados como líderes:', superAdmins.length);
+
+        // 3. Asignar ADMIN como miembros
+        const admins = db.prepare("SELECT id FROM usuarios WHERE rol = 'admin' AND (is_superadmin IS NULL OR is_superadmin = 0)").all();
+        for (const a of admins) {
+            db.prepare('INSERT OR IGNORE INTO equipo_usuarios (equipo_id, usuario_id, es_lider) VALUES ((SELECT id FROM equipos WHERE nombre = \'Sistema\'), ?, 0)').run(a.id);
+        }
+        console.log('[DB]   ✅ Admins asignados como miembros:', admins.length);
+
+        // 4. Asignar demás usuarios como miembros
+        const otros = db.prepare("SELECT id FROM usuarios WHERE (rol IS NULL OR rol NOT IN ('admin', 'superadmin')) AND id NOT IN (SELECT usuario_id FROM equipo_usuarios WHERE fecha_salida IS NULL)").all();
+        for (const u of otros) {
+            db.prepare('INSERT OR IGNORE INTO equipo_usuarios (equipo_id, usuario_id, es_lider) VALUES ((SELECT id FROM equipos WHERE nombre = \'Sistema\'), ?, 0)').run(u.id);
+        }
+        console.log('[DB]   ✅ Usuarios asignados como miembros:', otros.length);
+
+        // 5. Insertar permisos de líder
+        const liderPermisos = [
+            'equipo:ver', 'equipo:gestionar',
+            'agentes:ver', 'agentes:crear', 'agentes:editar', 'agentes:desactivar',
+            'campañas:ver', 'campañas:crear', 'campañas:gestionar', 'campañas:asignar',
+            'solicitudes:importar', 'solicitudes:ver-equipo',
+            'solicitudes:asignar', 'solicitudes:reasignar', 'solicitudes:ver-asignaciones',
+            'gestiones:ver-equipo',
+            'dashboard:ver-equipo', 'dashboard:ver-agentes',
+            'relaciones:ver-equipo',
+            'historial:ver-equipo'
+        ];
+        const insertPermiso = db.prepare('INSERT OR IGNORE INTO permisos_roles (rol, permiso) VALUES (?, ?)');
+        for (const p of liderPermisos) {
+            insertPermiso.run('lider', p);
+        }
+        console.log('[DB]   ✅ Permisos de líder insertados:', liderPermisos.length);
+
+        // 6. Insertar permisos de agente
+        const agentePermisos = [
+            'campañas:ver-propias',
+            'solicitudes:ver-asignadas', 'solicitudes:gestionar',
+            'solicitudes:editar-estado', 'solicitudes:completar-info',
+            'gestiones:crear', 'gestiones:ver-propias', 'gestiones:editar',
+            'relaciones:gestionar',
+            'historial:ver-propio',
+            'perfil:ver', 'perfil:editar'
+        ];
+        for (const p of agentePermisos) {
+            insertPermiso.run('agente', p);
+        }
+        console.log('[DB]   ✅ Permisos de agente insertados:', agentePermisos.length);
+
+        // 7. Insertar permisos de user
+        const userPermisos = [
+            'solicitudes:importar', 'solicitudes:ver-propias', 'solicitudes:gestionar',
+            'solicitudes:editar-estado', 'solicitudes:completar-info',
+            'campañas:crear', 'campañas:gestionar',
+            'gestiones:crear', 'gestiones:ver-propias', 'gestiones:editar',
+            'relaciones:gestionar', 'ventas:gestionar',
+            'historial:ver-propio',
+            'perfil:ver', 'perfil:editar'
+        ];
+        for (const p of userPermisos) {
+            insertPermiso.run('user', p);
+        }
+        console.log('[DB]   ✅ Permisos de user insertados:', userPermisos.length);
+
+        console.log('[DB] ✅ Seed de datos multi-equipo completado');
+    }
+} catch (e) {
+    console.log('[DB] Error en auto-seed multi-equipo:', e.message);
+}
+
+// ================================================================
 // ÍNDICES (con protección para columnas que puedan no existir)
 // ================================================================
 try {
