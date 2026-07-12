@@ -116,7 +116,7 @@ async function cargarLoteInicial() {
         hasMoreData = currentOffset < total;
         document.getElementById('totalRegistros').textContent = total;
         document.getElementById('mostrando').textContent = todosDatos.length;
-        renderizarTabla(todosDatos);
+        renderizarCards(todosDatos);
     } catch (error) {
         console.error('[Solicitudes] Error cargando lote inicial:', error);
     } finally {
@@ -143,7 +143,7 @@ async function buscarEnServidor(resetOffset, extraOffset) {
         hasMoreData = currentOffset < (cached.total || 0);
         document.getElementById('totalRegistros').textContent = cached.total || cached.length;
         document.getElementById('mostrando').textContent = cached.length;
-        renderizarTabla(cached);
+        renderizarCards(cached);
         return;
     }
 
@@ -171,7 +171,7 @@ async function buscarEnServidor(resetOffset, extraOffset) {
             busquedaActiva = true;
             document.getElementById('totalRegistros').textContent = total;
             document.getElementById('mostrando').textContent = todosDatos.length;
-            renderizarTabla(todosDatos);
+            renderizarCards(todosDatos);
         } else {
             busquedaActiva = false;
             if (resetOffset) { currentOffset = 0; todosDatos = []; await cargarLoteInicial(); }
@@ -728,7 +728,7 @@ function aplicarFiltros() {
         return true;
     });
     document.getElementById('mostrando').textContent = filtrados.length;
-    renderizarTabla(filtrados);
+    renderizarCards(filtrados);
 }
 
 // ============================================================================
