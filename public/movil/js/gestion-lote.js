@@ -244,21 +244,21 @@ function renderizarSolicitudes(lista) {
         }
 
 html += '<div class="sol-botones">';
-        // Acciones compactas de la tarjeta
-        html += '<button class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')">📞</button>';
-        html += '<button class="btn-sol btn-sol-primary btn-sol-small" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">Seguimiento</button>';
-        html += "<button class=\"btn-sol btn-sol-call btn-sol-small\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
+        // Acciones táctiles — diseño touch-optimizado (min 48px altura)
+        html += '<button class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')" title="Llamar">📞</button>';
+        html += '<button class="btn-sol btn-sol-primary" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
+        html += "<button class=\"btn-sol btn-sol-whatsapp\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {
-            html += '<button class="btn-sol btn-sol-ver btn-sol-small" onclick="verGestion(\'' + sol.id_solicitud + '\')">Ver</button>';
+            html += '<button class="btn-sol btn-sol-ver" onclick="verGestion(\'' + sol.id_solicitud + '\')">👁️ Ver</button>';
         }
         
         // Botón historial para TODAS las cards
-        html += '<button class="btn-sol btn-sol-historial btn-sol-small" onclick="verHistorial(\'' + sol.id_solicitud + '\')">Historial</button>';
+        html += '<button class="btn-sol btn-sol-historial" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button>';
         
         // Botón quitar de campaña
-        html += '<button class="btn-sol btn-sol-quitar btn-sol-small" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar</button>';
+        html += '<button class="btn-sol btn-sol-quitar" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar</button>';
         
         html += '</div>';
 
