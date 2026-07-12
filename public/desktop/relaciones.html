@@ -5,23 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relaciones - Archivox</title>
     <link rel="stylesheet" href="/desktop/css/base.css">
+    <link rel="stylesheet" href="/css/modal.css">
+    <link rel="stylesheet" href="/css/drawer.css">
+    <link rel="stylesheet" href="/css/notificaciones.css">
     <link rel="stylesheet" href="/desktop/css/relaciones.css">
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-    <!-- Drawer Toggle -->
-    <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
-    <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
+    <div id="drawer-wrapper"></div>
 
     <div class="layout">
         <main class="contenido">
             <div class="relaciones-container">
 
                 <!-- Header -->
-                <div class="relaciones-header">
-                    <div class="relaciones-header-left">
+                <div class="page-header">
+                    <div class="page-header-left">
                         <h1>📋 Relaciones</h1>
-                        <p class="relaciones-subtitle">Gestión de clientes ALTA y BAJA</p>
+                        <p class="subtitulo">Gestión de clientes ALTA y BAJA</p>
+                    </div>
+                    <div class="page-header-right">
+                        <button class="notif-bell-usuario" onclick="abrirPanelNotificaciones()" title="Notificaciones">
+                            🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
+                        </button>
                     </div>
                 </div>
 
@@ -141,7 +147,10 @@
         </main>
     </div>
 
-    <script src="/desktop/js/drawer.js"></script>
+    <script src="/js/notificaciones-dashboard.js"></script>
+    <script src="/js/modal.js"></script>
+    <script src="/js/drawer.js"></script>
     <script src="/desktop/js/relaciones.js"></script>
+
 </body>
 </html>

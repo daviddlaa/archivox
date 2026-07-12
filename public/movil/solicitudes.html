@@ -112,7 +112,7 @@
             <span class="nav-bottom-icon">📋</span>
             <span class="nav-bottom-label">Solicitudes</span>
         </a>
-        <a href="#" class="nav-item" onclick="abrirDrawer(); return false;">
+        <a href="#" class="nav-item" onclick="Drawer.toggle(); return false;">
             <span class="nav-bottom-icon">☰</span>
             <span class="nav-bottom-label">Menú</span>
         </a>
@@ -120,12 +120,7 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script src="/js/notificaciones-dashboard.js"></script>
-<script src="/movil/js/drawer.js"></script>
+<script src="/js/drawer.js"></script>
 <script src="/movil/js/solicitudes.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        if (typeof initNotificaciones === 'function') initNotificaciones();
-    });
-</script>
 </body>
 </html>

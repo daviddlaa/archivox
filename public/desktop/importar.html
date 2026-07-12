@@ -5,34 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Importar Excel - Archivox</title>
 <link rel="stylesheet" href="/desktop/css/base.css">
+    <link rel="stylesheet" href="/css/drawer.css">
+    <link rel="stylesheet" href="/css/notificaciones.css">
     <link rel="stylesheet" href="/desktop/css/importar.css">
 </head>
 <body>
-    <!-- Drawer Toggle -->
-    <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
-    <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
-    
-    <!-- Drawer -->
-    <aside id="drawer" class="drawer">
-        <div class="drawer-header">
-            <div class="drawer-logo"><h2>📊 Archivox</h2></div>
-            <button class="drawer-close" onclick="Drawer.close()">✕</button>
-        </div>
-        <nav class="drawer-nav">
-            <a href="/" class="drawer-link">📊 Dashboard</a>
-            <a href="/equipo-ventas" class="drawer-link">💰 Control de Ventas</a>
-            <a href="/importar" class="drawer-link">📤 Importar Excel</a>
-            <a href="/solicitudes" class="drawer-link">📋 Solicitudes</a>
-            <a href="/historial" class="drawer-link">🔄 Historial</a>
-            <a href="#" class="drawer-link drawer-link-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
-        </nav>
-    </aside>
+    <div id="drawer-wrapper"></div>
 
     <div class="layout">
         <main class="contenido">
             <div class="container">
-                <h1>📤 Importar Excel</h1>
-                <p style="color:#6b7280;margin-bottom:20px;">Sube tus archivos Excel (.xlsx, .xls) para importar solicitudes</p>
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>📤 Importar Excel</h1>
+                        <p class="subtitulo">Sube tus archivos Excel (.xlsx, .xls) para importar solicitudes</p>
+                    </div>
+                    <div class="page-header-right">
+                        <button class="notif-bell-usuario" onclick="abrirPanelNotificaciones()" title="Notificaciones">
+                            🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
+                        </button>
+                    </div>
+                </div>
                 
                 <form id="formExcel">
                     <input type="file" id="excelFiles" name="excelFiles" multiple accept=".xlsx,.xls">
@@ -44,7 +37,9 @@
         </main>
     </div>
 
-<script src="/desktop/js/importar.js"></script>
-<script src="/desktop/js/drawer.js"></script>
+<script src="/js/notificaciones-dashboard.js"></script>
+    <script src="/js/drawer.js"></script>
+    <script src="/desktop/js/importar.js"></script>
+
 </body>
 </html>

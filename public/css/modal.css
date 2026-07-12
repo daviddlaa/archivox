@@ -1,0 +1,261 @@
+/* ============================================================================
+   MODAL COMPARTIDO — Sistema unificado de ventanas modales
+   ============================================================================
+   Creado para unificar los 3+ sistemas de modales existentes:
+   1. Modal genérico (solicitudes, gestion-lote, relaciones, gestiones)
+   2. Admin modals (admin.html con toggle .active)
+   3. SweetAlert2 (ventas) — reemplazado por este sistema
+   
+   Uso: crearModal(htmlContent) / cerrarModal()
+   ============================================================================ */
+
+/* Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: modalOverlayIn 0.2s ease;
+}
+
+@keyframes modalOverlayIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalOverlayOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Contenedor del modal */
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalContentIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalContentIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Modal grande (para contenido extenso) */
+.modal-content-wide {
+    max-width: 900px;
+}
+
+/* Modal pequeño (para confirmaciones) */
+.modal-content-narrow {
+    max-width: 420px;
+}
+
+/* Header del modal */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-radius: 16px 16px 0 0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.modal-header .modal-close-btn {
+    background: #f3f4f6;
+    border: none;
+    color: #6b7280;
+    font-size: 18px;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-header .modal-close-btn:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Cuerpo del modal */
+.modal-body {
+    padding: 24px;
+}
+
+/* Footer del modal */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px 24px;
+    border-top: 1px solid #e5e7eb;
+    background: #f8fafc;
+    border-radius: 0 0 16px 16px;
+}
+
+/* Botones dentro del modal */
+.modal-btn {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.modal-btn:hover {
+    transform: translateY(-1px);
+}
+
+.modal-btn-cancel {
+    background: #f3f4f6;
+    color: #374151;
+}
+.modal-btn-cancel:hover {
+    background: #e5e7eb;
+}
+
+.modal-btn-primary {
+    background: #2563eb;
+    color: white;
+}
+.modal-btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.modal-btn-success {
+    background: #10b981;
+    color: white;
+}
+.modal-btn-success:hover {
+    background: #059669;
+}
+
+.modal-btn-danger {
+    background: #ef4444;
+    color: white;
+}
+.modal-btn-danger:hover {
+    background: #dc2626;
+}
+
+/* Botón modo bloqueado */
+.modal-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* ============================================================================
+   VARIANTES ESPECIALES
+   ============================================================================ */
+
+/* Modal de confirmación (centrado, sin header) */
+.modal-confirm {
+    text-align: center;
+    padding: 40px 24px;
+}
+.modal-confirm .confirm-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+.modal-confirm h2 {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    color: #1f2937;
+}
+.modal-confirm p {
+    margin: 0 0 24px 0;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.modal-confirm .confirm-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+/* Modal de formulario */
+.modal-form-group {
+    margin-bottom: 16px;
+}
+.modal-form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+}
+.modal-form-group input,
+.modal-form-group select,
+.modal-form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+.modal-form-group input:focus,
+.modal-form-group select:focus,
+.modal-form-group textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        max-height: 95vh;
+        border-radius: 12px;
+    }
+    .modal-header {
+        padding: 14px 16px;
+    }
+    .modal-body {
+        padding: 16px;
+    }
+    .modal-footer {
+        padding: 12px 16px;
+        flex-direction: column;
+    }
+    .modal-footer .modal-btn {
+        width: 100%;
+    }
+}

@@ -4,99 +4,124 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Perfil - Archivox</title>
-    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/desktop/css/base.css">
     <link rel="stylesheet" href="/css/perfil.css">
+    <link rel="stylesheet" href="/css/drawer.css">
+    <link rel="stylesheet" href="/css/notificaciones.css">
 </head>
 <body>
-    <!-- Drawer se carga dinámicamente -->
+    <!-- Drawer wrapper (se llena dinámicamente) -->
     <div id="drawer-wrapper"></div>
 
-    <div class="perfil-container">
-        <!-- Header -->
-        <header class="perfil-header">
-            <button class="perfil-menu-btn" onclick="Drawer.toggle()">☰</button>
-            <h1>👤 Mi Perfil</h1>
-        </header>
-
-        <!-- Mensajes -->
-        <div id="perfilMensaje"></div>
-
-        <div class="perfil-grid">
-            <!-- Tarjeta: Datos del usuario -->
-            <div class="perfil-card">
-                <div class="perfil-card-header">
-                    <span class="perfil-avatar" id="avatarInicial">👤</span>
-                    <div>
-                        <h2 id="perfilNombre">Cargando...</h2>
-                        <span class="perfil-rol" id="perfilRol">-</span>
+    <div class="layout">
+        <main class="contenido">
+            <div class="perfil-container">
+                <!-- Header with notification bell -->
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>👤 Mi Perfil</h1>
+                    </div>
+                    <div class="page-header-right">
+                        <button class="notif-bell-usuario" onclick="abrirPanelNotificaciones()" title="Notificaciones">
+                            🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
+                        </button>
                     </div>
                 </div>
 
-                <div class="perfil-info-grid">
-                    <div class="perfil-info-item">
-                        <span class="perfil-label">Usuario</span>
-                        <span class="perfil-value" id="perfilUsername">-</span>
+                <!-- Mensajes -->
+                <div id="perfilMensaje"></div>
+
+                <div class="perfil-grid">
+                    <!-- Tarjeta: Datos del usuario -->
+                    <div class="perfil-card">
+                        <div class="perfil-card-header">
+                            <span class="perfil-avatar" id="avatarInicial">👤</span>
+                            <div>
+                                <h2 id="perfilNombre">Cargando...</h2>
+                                <span class="perfil-rol" id="perfilRol">-</span>
+                            </div>
+                        </div>
+
+                        <div class="perfil-info-grid">
+                            <div class="perfil-info-item">
+                                <span class="perfil-label">Usuario</span>
+                                <span class="perfil-value" id="perfilUsername">-</span>
+                            </div>
+                            <div class="perfil-info-item">
+                                <span class="perfil-label">Email</span>
+                                <span class="perfil-value" id="perfilEmail">-</span>
+                            </div>
+                            <div class="perfil-info-item">
+                                <span class="perfil-label">Miembro desde</span>
+                                <span class="perfil-value" id="perfilCreado">-</span>
+                            </div>
+                            <div class="perfil-info-item">
+                                <span class="perfil-label">Último acceso</span>
+                                <span class="perfil-value" id="perfilLastLogin">-</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="perfil-info-item">
-                        <span class="perfil-label">Email</span>
-                        <span class="perfil-value" id="perfilEmail">-</span>
+
+                    <!-- Tarjeta: Editar perfil -->
+                    <div class="perfil-card">
+                        <div class="perfil-card-header">
+                            <h2>✏️ Editar Perfil</h2>
+                        </div>
+
+                        <form id="perfilForm" class="perfil-form">
+                            <div class="form-group">
+                                <label for="editNombre">Nombre</label>
+                                <input type="text" id="editNombre" placeholder="Tu nombre completo">
+                            </div>
+                            <div class="form-group">
+                                <label for="editEmail">Email</label>
+                                <input type="email" id="editEmail" placeholder="tu@correo.com">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        </form>
                     </div>
-                    <div class="perfil-info-item">
-                        <span class="perfil-label">Miembro desde</span>
-                        <span class="perfil-value" id="perfilCreado">-</span>
-                    </div>
-                    <div class="perfil-info-item">
-                        <span class="perfil-label">Último acceso</span>
-                        <span class="perfil-value" id="perfilLastLogin">-</span>
+
+                    <!-- Tarjeta: Cambiar contraseña -->
+                    <div class="perfil-card">
+                        <div class="perfil-card-header">
+                            <h2>🔒 Cambiar Contraseña</h2>
+                        </div>
+
+                        <form id="passwordForm" class="perfil-form">
+                            <div class="form-group">
+                                <label for="passActual">Contraseña actual</label>
+                                <input type="password" id="passActual" placeholder="Ingresa tu contraseña actual" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="passNueva">Nueva contraseña</label>
+                                <input type="password" id="passNueva" placeholder="Mín 8 caracteres, mayúscula y número" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="passConfirmar">Confirmar nueva contraseña</label>
+                                <input type="password" id="passConfirmar" placeholder="Repite la nueva contraseña" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-warning">Actualizar Contraseña</button>
+                        </form>
                     </div>
                 </div>
             </div>
-
-            <!-- Tarjeta: Editar perfil -->
-            <div class="perfil-card">
-                <div class="perfil-card-header">
-                    <h2>✏️ Editar Perfil</h2>
-                </div>
-
-                <form id="perfilForm" class="perfil-form">
-                    <div class="form-group">
-                        <label for="editNombre">Nombre</label>
-                        <input type="text" id="editNombre" placeholder="Tu nombre completo">
-                    </div>
-                    <div class="form-group">
-                        <label for="editEmail">Email</label>
-                        <input type="email" id="editEmail" placeholder="tu@correo.com">
-                    </div>
-                    <button type="submit" class="btn-primary">Guardar Cambios</button>
-                </form>
-            </div>
-
-            <!-- Tarjeta: Cambiar contraseña -->
-            <div class="perfil-card">
-                <div class="perfil-card-header">
-                    <h2>🔒 Cambiar Contraseña</h2>
-                </div>
-
-                <form id="passwordForm" class="perfil-form">
-                    <div class="form-group">
-                        <label for="passActual">Contraseña actual</label>
-                        <input type="password" id="passActual" placeholder="Ingresa tu contraseña actual" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="passNueva">Nueva contraseña</label>
-                        <input type="password" id="passNueva" placeholder="Mín 8 caracteres, mayúscula y número" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="passConfirmar">Confirmar nueva contraseña</label>
-                        <input type="password" id="passConfirmar" placeholder="Repite la nueva contraseña" required>
-                    </div>
-                    <button type="submit" class="btn-primary btn-warning">Actualizar Contraseña</button>
-                </form>
-            </div>
-        </div>
+        </main>
     </div>
 
-    <script src="/desktop/js/drawer.js"></script>
+    <!-- Mobile Bottom Nav -->
+    <nav class="nav-bottom">
+        <a href="/" class="nav-item">
+            <span class="nav-bottom-icon">📊</span>
+            <span class="nav-bottom-label">Inicio</span>
+        </a>
+        <a href="#" class="nav-item active" onclick="Drawer.toggle(); return false;">
+            <span class="nav-bottom-icon">☰</span>
+            <span class="nav-bottom-label">Menú</span>
+        </a>
+    </nav>
+
+    <script src="/js/notificaciones-dashboard.js"></script>
+    <script src="/js/drawer.js"></script>
     <script src="/js/perfil.js"></script>
 </body>
 </html>

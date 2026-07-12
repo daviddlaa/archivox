@@ -1,8 +1,7 @@
 /* ============================================================================
    PERFIL DE USUARIO - ESTILOS
+   Alineado con el sistema Archivox
    ============================================================================ */
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -17,41 +16,6 @@ body {
 .perfil-container {
     max-width: 900px;
     margin: 0 auto;
-    padding: 24px 24px 24px 88px;
-    min-height: 100vh;
-}
-
-/* ============================================================================
-   HEADER
-   ============================================================================ */
-.perfil-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 28px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid #e5e7eb;
-}
-
-.perfil-header h1 {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #111827;
-}
-
-.perfil-menu-btn {
-    background: none;
-    border: none;
-    font-size: 1.4rem;
-    cursor: pointer;
-    padding: 8px 12px;
-    border-radius: 8px;
-    transition: background 0.2s;
-    color: #374151;
-}
-
-.perfil-menu-btn:hover {
-    background: #e5e7eb;
 }
 
 /* ============================================================================
@@ -118,6 +82,7 @@ body {
     font-size: 1.15rem;
     font-weight: 600;
     color: #111827;
+    margin: 0;
 }
 
 /* ============================================================================
@@ -134,6 +99,17 @@ body {
     font-size: 1.6rem;
     flex-shrink: 0;
     box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.perfil-rol {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #e0e7ff;
+    color: #4338ca;
+    margin-top: 4px;
 }
 
 /* ============================================================================
@@ -208,37 +184,20 @@ body {
 }
 
 /* ============================================================================
-   BOTONES
+   BOTONES (heredados de base.css, solo overrides)
    ============================================================================ */
-.btn-primary {
-    padding: 11px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
     color: white;
 }
-
-.btn-primary:hover {
+.btn-warning:hover {
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
 }
-
-.btn-primary:disabled {
+.btn-warning:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
-}
-
-.btn-warning {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-}
-
-.btn-warning:hover {
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
 }
 
 /* ============================================================================
@@ -256,8 +215,8 @@ body {
    ============================================================================ */
 @media (max-width: 768px) {
     .perfil-container {
-        margin-left: 0;
         padding: 16px;
+        padding-bottom: 80px; /* espacio para bottom nav */
     }
 
     .perfil-info-grid {

@@ -14,7 +14,7 @@
             <h1>📤 Importar Excel</h1>
             <p>Sube archivos y procesa tus solicitudes desde móvil</p>
         </div>
-        <button class="btn-menu" onclick="abrirDrawer()">☰</button>
+        <button class="btn-menu" onclick="Drawer.toggle()">☰</button>
     </div>
 
     <!-- Content -->
@@ -44,13 +44,13 @@
             <span class="nav-bottom-icon">📋</span>
             <span class="nav-bottom-label">Solicitudes</span>
         </a>
-        <a href="#" class="nav-item active" onclick="abrirDrawer(); return false;">
+        <a href="#" class="nav-item active" onclick="Drawer.toggle(); return false;">
             <span class="nav-bottom-icon">☰</span>
             <span class="nav-bottom-label">Menú</span>
         </a>
     </nav>
 
-    <script src="/movil/js/drawer.js"></script>
+    <script src="/js/drawer.js"></script>
     <script src="/movil/js/importar.js"></script>
 </body>
 </html>

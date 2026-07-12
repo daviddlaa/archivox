@@ -5,32 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historial de Actualizaciones - Archivox</title>
 <link rel="stylesheet" href="/desktop/css/base.css">
+    <link rel="stylesheet" href="/css/drawer.css">
     <link rel="stylesheet" href="/desktop/css/historial.css">
 </head>
 <body>
     <!-- Drawer Toggle -->
-    <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
-    <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
-    
-    <!-- Drawer -->
-    <aside id="drawer" class="drawer">
-        <div class="drawer-header">
-            <div class="drawer-logo"><h2>📊 Archivox</h2></div>
-            <button class="drawer-close" onclick="Drawer.close()">✕</button>
-        </div>
-        <nav class="drawer-nav">
-            <a href="/" class="drawer-link">📊 Dashboard</a>
-            <a href="/equipo-ventas" class="drawer-link">💰 Control de Ventas</a>
-            <a href="/importar" class="drawer-link">📤 Importar Excel</a>
-            <a href="/solicitudes" class="drawer-link">📋 Solicitudes</a>
-            <a href="/historial" class="drawer-link">🔄 Historial</a>
-            <a href="#" class="drawer-link drawer-link-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
-        </nav>
-    </aside>
+    <div id="drawer-wrapper"></div>
 
     <div class="layout">
         <main class="contenido">
-            <h1>🔄 Historial de Actualizaciones</h1>
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h1>🔄 Historial de Actualizaciones</h1>
+                </div>
+                <div class="page-header-right">
+                    <button class="notif-bell-usuario" onclick="abrirPanelNotificaciones()" title="Notificaciones">
+                        🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
+                    </button>
+                </div>
+            </div>
             
             <!-- Stats Cards -->
             <div class="historial-stats">
@@ -128,7 +121,9 @@
 </main>
     </div>
 
-<script src="/desktop/js/drawer.js"></script>
+<script src="/js/notificaciones-dashboard.js"></script>
+    <script src="/js/drawer.js"></script>
+
 <script>
     // Variables de estado
     let paginaActual = 1;
@@ -280,16 +275,6 @@ function renderizarCards(registros) {
     function paginaSiguiente() {
         var totalPaginas = Math.ceil(totalRegistros / limitePorPagina);
         if (paginaActual < totalPaginas) { paginaActual++; cargarHistorial(); }
-    }
-
-    function toggleMenu() {
-        var sidebar = document.getElementById('sidebar');
-        var overlay = document.querySelector('.menu-overlay');
-        if (sidebar && overlay) {
-            sidebar.classList.toggle('movil');
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        }
     }
 
     // Load on start

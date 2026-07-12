@@ -498,24 +498,7 @@ async function enviarWhatsAppRelacion(relacionId, celular) {
 }
 
 // ================== MODAL ==================
-function crearModal(contenido) {
-    var existente = document.getElementById('modal-generico');
-    if (existente) existente.remove();
-    var overlay = document.createElement('div');
-    overlay.id = 'modal-generico';
-    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
-    var modal = document.createElement('div');
-    modal.style.cssText = 'background:white;border-radius:16px;max-width:600px;width:90%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.4);padding:30px;';
-    modal.innerHTML = contenido;
-    overlay.onclick = function(e) { if (e.target === overlay) cerrarModal(); };
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-}
 
-function cerrarModal() {
-    var modal = document.getElementById('modal-generico');
-    if (modal) modal.remove();
-}
 
 // ================== INICIO ==================
 async function iniciar() {

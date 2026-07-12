@@ -1008,19 +1008,9 @@ function abrirCompletar(id) {
     }).catch(function(err) { console.error('Error cargando datos completos:', err); alert('Error al cargar datos. Intente de nuevo.'); });
 }
 
-function crearModal(contenido) {
-    var modalExistente = document.getElementById('modal-generico');
-    if (modalExistente) modalExistente.remove();
-    var overlay = document.createElement('div'); overlay.id = 'modal-generico'; overlay.className = 'modal-overlay';
-    var modal = document.createElement('div'); modal.className = 'modal-content'; modal.innerHTML = contenido;
-    overlay.onclick = function(e) { if (e.target === overlay) cerrarModal(); };
-    overlay.appendChild(modal); document.body.appendChild(overlay);
-}
 
-function cerrarModal() {
-    var modal = document.getElementById('modal-generico');
-    if (modal) modal.remove();
-}
+
+
 
 async function cargarHistorialGestiones(id) {
     var container = document.getElementById('lista-historial');

@@ -5,7 +5,7 @@ let configBonos = { bono1: 3000, bono2: 7000, bono3: 12000, bono4: 20000, bono5:
 let vendedores = [];
 let grafico = null;
 
-// ================== SWEETALERT CONFIG METAS ==================
+// ================== CONFIG METAS (Modal) ==================
 function mostrarConfigMetas() {
     const html = `
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left;">
@@ -19,16 +19,12 @@ function mostrarConfigMetas() {
         </div>
     `;
     
-    Swal.fire({
-        title: '⚙️ Configurar Metas',
+    Modal.formulario({
+        titulo: '⚙️ Configurar Metas',
         html: html,
-        confirmButtonText: '💾 Guardar',
-        confirmButtonColor: '#3b82f6',
-        cancelButtonText: 'Cancelar',
-        showCancelButton: true,
-        width: '500px',
-        preConfirm: () => {
-            return {
+        textoGuardar: '💾 Guardar',
+        onGuardar: function() {
+            const data = {
                 bono1: parseFloat(document.getElementById('sw-bono1').value) || 3000,
                 bono2: parseFloat(document.getElementById('sw-bono2').value) || 7000,
                 bono3: parseFloat(document.getElementById('sw-bono3').value) || 12000,
@@ -37,15 +33,12 @@ function mostrarConfigMetas() {
                 bono6: parseFloat(document.getElementById('sw-bono6').value) || 40000,
                 meta_equipo: parseFloat(document.getElementById('sw-meta-equipo').value) || 40000
             };
-        }
-    }).then((result) => {
-        if (result.isConfirmed && result.value) {
-            guardarConfigBonosSweetAlert(result.value);
+            guardarConfigBonosModal(data);
         }
     });
 }
 
-async function guardarConfigBonosSweetAlert(data) {
+async function guardarConfigBonosModal(data) {
     const payload = { mes: currentMes, ...data };
     try {
         await fetch('/api/excel/config-bonos', {
@@ -55,7 +48,6 @@ async function guardarConfigBonosSweetAlert(data) {
         });
         
         configBonos = data;
-        // Actualizar inputs ocultos
         document.getElementById('bono1').value = data.bono1;
         document.getElementById('bono2').value = data.bono2;
         document.getElementById('bono3').value = data.bono3;
@@ -64,18 +56,19 @@ async function guardarConfigBonosSweetAlert(data) {
         document.getElementById('bono6').value = data.bono6;
         document.getElementById('metaEquipoInput').value = data.meta_equipo;
         
-renderizarCards();
+        renderizarCards();
         actualizarResumen();
         actualizarGrafico();
         
-        Swal.fire('✅ Guardado', 'Configuración guardada correctamente', 'success');
+        Modal.cerrar();
+        alert('✅ Configuración guardada correctamente');
     } catch (err) {
         console.error('Error guardando config:', err);
-        Swal.fire('❌ Error', 'No se pudo guardar la configuración', 'error');
+        alert('❌ Error: No se pudo guardar la configuración');
     }
 }
 
-// ================== FIN SWEETALERT ==================
+// ================== FIN CONFIG METAS ==================
 
 // Generar meses del año en curso
 function generarMeses() {

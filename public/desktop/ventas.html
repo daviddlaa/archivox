@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Equipo de Ventas - Archivox</title>
 <link rel="stylesheet" href="/desktop/css/base.css">
+    <link rel="stylesheet" href="/css/modal.css">
+    <link rel="stylesheet" href="/css/drawer.css">
+    <link rel="stylesheet" href="/css/notificaciones.css">
     <link rel="stylesheet" href="/desktop/css/ventas.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .ventas-container { padding: 20px; }
         
@@ -77,29 +79,20 @@
     </style>
 </head>
 <body>
-    <!-- Drawer Toggle -->
-    <button id="drawer-toggle" class="drawer-toggle" onclick="Drawer.toggle()">☰</button>
-    <div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>
-    
-    <!-- Drawer -->
-    <aside id="drawer" class="drawer">
-        <div class="drawer-header">
-            <div class="drawer-logo"><h2>📊 Archivox</h2></div>
-            <button class="drawer-close" onclick="Drawer.close()">✕</button>
-        </div>
-        <nav class="drawer-nav">
-            <a href="/" class="drawer-link">📊 Dashboard</a>
-            <a href="/equipo-ventas" class="drawer-link">💰 Control de Ventas</a>
-            <a href="/importar" class="drawer-link">📤 Importar Excel</a>
-            <a href="/solicitudes" class="drawer-link">📋 Solicitudes</a>
-            <a href="/historial" class="drawer-link">🔄 Historial</a>
-            <a href="#" class="drawer-link drawer-link-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
-        </nav>
-    </aside>
+    <div id="drawer-wrapper"></div>
 
     <div class="layout">
         <main class="contenido">
-            <h1>💰 Control de Ventas del Equipo</h1>
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h1>💰 Control de Ventas del Equipo</h1>
+                </div>
+                <div class="page-header-right">
+                    <button class="notif-bell-usuario" onclick="abrirPanelNotificaciones()" title="Notificaciones">
+                        🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
+                    </button>
+                </div>
+            </div>
             
             <!-- Fila 1: Selector + Botón Configurar Metas -->
             <div class="fila-cabecera">
@@ -162,9 +155,10 @@
                 <button class="btn-guardar" onclick="guardarConfigBonos()" style="margin-top: 15px;">Guardar Config</button>
             </div>
         </main>
-    </div>
-    
-<script src="/desktop/js/ventas.js"></script>
-<script src="/desktop/js/drawer.js"></script>
+    </div>    <script src="/js/notificaciones-dashboard.js"></script>
+    <script src="/js/modal.js"></script>
+    <script src="/js/drawer.js"></script>
+    <script src="/desktop/js/ventas.js"></script>
+
 </body>
 </html>
