@@ -59,7 +59,7 @@
             return [
                 { icon: '📊', label: 'Inicio', href: '/m' },
                 { icon: '👤', label: 'Mi Perfil', href: '/perfil' },
-                { icon: '🏢', label: 'Gestión de Equipo', href: '/equipo', liderOnly: true },
+                { icon: '🏢', label: 'Gestión de Equipo', href: '/m/equipo', liderOnly: true },
                 { icon: '💰', label: 'Ventas', href: '/m/ventas' },
                 null, // separator
                 { icon: '📤', label: 'Importar Excel', href: '/m/importar' },
