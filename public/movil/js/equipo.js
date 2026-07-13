@@ -85,7 +85,19 @@ async function cargarDatosEquipo() {
         }
 
         var equipoId = eqData.id;
-        if (!equipoId) return;
+        if (!equipoId) {
+            document.getElementById('agentesCount').textContent = 'Error';
+            document.querySelectorAll('.equipo-kpi-value').forEach(function(el) { el.textContent = '—'; });
+            document.getElementById('equipoAgentesList').innerHTML = `
+                <div class="equipo-empty">
+                    <div class="equipo-empty-icon">⚠️</div>
+                    <h3>Error de datos</h3>
+                    <p>No se pudo identificar el equipo. Intenta recargar la página.</p>
+                    <button onclick="recargarTodo()" style="padding:10px 24px;background:#6366f1;color:white;border:none;border-radius:10px;font-weight:600;font-size:14px;">Reintentar</button>
+                </div>
+            `;
+            return;
+        }
 
         // Cargar dashboard del equipo
         var dashRes = await fetch('/api/equipos/' + equipoId + '/dashboard');
@@ -464,7 +476,10 @@ async function verCampanasAgente(agenteId, username) {
         var eqRes = await fetch('/api/equipos/mi-equipo');
         var eqData = await eqRes.json();
         var equipoId = eqData.id;
-        if (!equipoId) return;
+        if (!equipoId) {
+            mostrarToastMovil('⚠️ Error: No se encontró el equipo');
+            return;
+        }
 
         var campRes = await fetch('/api/equipos/' + equipoId + '/campanas');
         var campData = await campRes.json();
@@ -547,7 +562,10 @@ async function guardarEdicionAgente(agenteId) {
         var eqRes = await fetch('/api/equipos/mi-equipo');
         var eqData = await eqRes.json();
         var equipoId = eqData.id;
-        if (!equipoId) return;
+        if (!equipoId) {
+            mostrarToastMovil('⚠️ Error: No se encontró el equipo');
+            return;
+        }
 
         var res = await fetch('/api/equipos/' + equipoId + '/agentes/' + agenteId, {
             method: 'PUT',
@@ -606,7 +624,10 @@ async function guardarResetPassword(agenteId) {
         var eqRes = await fetch('/api/equipos/mi-equipo');
         var eqData = await eqRes.json();
         var equipoId = eqData.id;
-        if (!equipoId) return;
+        if (!equipoId) {
+            mostrarToastMovil('⚠️ Error: No se encontró el equipo');
+            return;
+        }
 
         var res = await fetch('/api/equipos/' + equipoId + '/agentes/' + agenteId + '/reset-password', {
             method: 'PUT',
@@ -648,7 +669,10 @@ async function guardarResetPassword(agenteId) {
         var eqRes = await fetch('/api/equipos/mi-equipo');
         var eqData = await eqRes.json();
         var equipoId = eqData.id;
-        if (!equipoId) return;
+        if (!equipoId) {
+            mostrarToastMovil('⚠️ Error: No se encontró el equipo');
+            return;
+        }
 
         var res = await fetch('/api/equipos/' + equipoId + '/agentes/' + agenteId + '/toggle-active', {
             method: 'PUT'
