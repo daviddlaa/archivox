@@ -6,6 +6,9 @@ var datosGestion = null;
 var solicitudes = [];
 var todasLasSolicitudes = [];
 var campañas = [];
+var _esLider = false;
+var _equipoActual = null;
+var _agentesEquipo = [];
 
 // Objeto SidebarCampanas para manejar el toggle del sidebar
 var SidebarCampanas = {
@@ -67,10 +70,48 @@ async function init() {
     }
 }
 
+// Determinar si el usuario actual es líder
+async function verificarRolUsuario() {
+    try {
+        var res = await fetch('/api/auth/sesion');
+        var sesion = await res.json();
+        if (sesion.autenticado && sesion.usuario) {
+            _esLider = !!(sesion.usuario.es_lider || sesion.usuario.rol === 'superadmin' || sesion.usuario.rol === 'admin');
+            _equipoActual = sesion.usuario.equipo_id || null;
+            return _esLider;
+        }
+    } catch (e) {
+        console.error('[verificarRolUsuario] Error:', e);
+    }
+    return false;
+}
+
+// Cargar agentes del equipo del líder
+async function cargarAgentesEquipo(equipoId) {
+    if (!equipoId) return [];
+    try {
+        var res = await fetch('/api/equipos/' + equipoId + '/dashboard');
+        var data = await res.json();
+        _agentesEquipo = data.agentes || [];
+        return _agentesEquipo;
+    } catch (e) {
+        console.error('[cargarAgentesEquipo] Error:', e);
+        _agentesEquipo = [];
+        return [];
+    }
+}
+
 // Cargar lista de todas las campañas en el sidebar
 async function cargarListaCampanas() {
     try {
         console.log('[cargarListaCampanas] Iniciando fetch...');
+        
+        // Verificar rol y equipo al cargar
+        await verificarRolUsuario();
+        if (_esLider && _equipoActual) {
+            await cargarAgentesEquipo(_equipoActual);
+        }
+        
         var container = document.getElementById('lista-campañas');
         
         // Timeout de 10 segundos para el fetch
@@ -116,10 +157,21 @@ async function cargarListaCampanas() {
             html += '</div>';
             html += '<div class="campaña-progreso">';
             html += '<div class="campaña-progreso-barra" style="width: ' + pct + '%;"></div>';
-            html += '</div>';
-            
-var estadoClase = (g.estado === 'Completada' || pct === 100) ? 'completada' : 'activa';
+            html += '</div>';            var estadoClase = (g.estado === 'Completada' || pct === 100) ? 'completada' : 'activa';
             html += '<span class="campaña-estado ' + estadoClase + '">' + (g.estado || 'Activa') + '</span>';
+            
+            // Mostrar info de asignación
+            if (g.asignado_a) {
+                var agenteNombre = g.asignado_username || 'Agente #' + g.asignado_a;
+                html += '<div class="campaña-asignacion">👤 Asignado: ' + escaparParaHTML(agenteNombre) + '</div>';
+            } else if (_esLider) {
+                html += '<div class="campaña-asignacion campaña-asignacion-pendiente">⬜ Sin asignar</div>';
+            }
+            
+            // Botón de asignar (solo líder)
+            if (_esLider && _agentesEquipo.length > 0) {
+                html += '<button class="campaña-btn-asignar" onclick="event.stopPropagation(); abrirModalAsignarAgente(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.asignado_a || 'null') + ')" title="Asignar a agente">👤 Asignar</button>';
+            }
             
             // Botón de editar
             html += '<button class="campaña-btn-editar" onclick="event.stopPropagation(); abrirModalEditarCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Editar campaña">✏️</button>';
@@ -1183,6 +1235,118 @@ function escaparParaHTML(texto) {
         .replace(/"/g, '&quot;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
+}
+
+// ================== ASIGNAR CAMPAÑA A AGENTE ==================
+
+function abrirModalAsignarAgente(campaniaId, nombreCampania, asignadoActual) {
+    if (!_esLider || _agentesEquipo.length === 0) {
+        alert('No tienes agentes en tu equipo para asignar');
+        return;
+    }
+    
+    var contenido = '';
+    contenido += '<div class="modal-asignar">';
+    contenido += '<h2>👤 Asignar Campaña</h2>';
+    contenido += '<p style="margin-bottom:16px;color:#6b7280;"><strong>Campaña:</strong> ' + escaparParaHTML(nombreCampania) + '</p>';
+    
+    contenido += '<div class="modal-asignar-lista">';
+    
+    // Opción: quitar asignación si ya tiene una
+    if (asignadoActual && asignadoActual !== null) {
+        contenido += '<div class="asignar-item asignar-item-quitar" onclick="quitarAsignacionAgente(' + campaniaId + ')">';
+        contenido += '<div class="asignar-item-check">❌</div>';
+        contenido += '<div class="asignar-item-info">';
+        contenido += '<div class="asignar-item-nombre">Quitar asignación actual</div>';
+        contenido += '<div class="asignar-item-datos">La campaña quedará sin agente asignado</div>';
+        contenido += '</div>';
+        contenido += '</div>';
+    }
+    
+    for (var i = 0; i < _agentesEquipo.length; i++) {
+        var agente = _agentesEquipo[i];
+        var isActive = agente.is_active;
+        var esAsignado = String(agente.id) === String(asignadoActual);
+        var claseItem = 'asignar-item';
+        if (esAsignado) claseItem += ' asignar-item-actual';
+        if (!isActive) claseItem += ' asignar-item-inactivo';
+        
+        contenido += '<div class="' + claseItem + '" onclick="' + (!esAsignado && isActive ? 'asignarAgente(' + campaniaId + ', ' + agente.id + ')' : '') + '">';
+        if (esAsignado) {
+            contenido += '<div class="asignar-item-check">✅</div>';
+        } else {
+            contenido += '<div class="asignar-item-check">👤</div>';
+        }
+        contenido += '<div class="asignar-item-info">';
+        contenido += '<div class="asignar-item-nombre">' + escaparParaHTML(agente.nombre || agente.username) + '</div>';
+        contenido += '<div class="asignar-item-datos">@' + escaparParaHTML(agente.username) + ' · ' + parseInt(agente.asignadas || 0) + ' asignadas</div>';
+        if (esAsignado) {
+            contenido += '<span style="font-size:11px;color:#059669;font-weight:600;">✅ Actualmente asignado</span>';
+        }
+        if (!isActive) {
+            contenido += '<span style="font-size:11px;color:#dc2626;font-weight:600;">🔴 Inactivo</span>';
+        }
+        contenido += '</div>';
+        contenido += '</div>';
+    }
+    
+    contenido += '</div>';
+    
+    contenido += '<div class="modal-botones" style="margin-top:16px;">';
+    contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cerrar</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    crearModal(contenido);
+}
+
+async function asignarAgente(campaniaId, agenteId) {
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + campaniaId + '/asignar-agente', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ agente_id: agenteId })
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok) {
+            alert('✅ ' + resultado.mensaje);
+            cerrarModal();
+            await cargarListaCampanas();
+            if (String(campaniaId) === String(gestionId)) {
+                await cargarDatosGestion();
+            }
+        } else {
+            alert('Error: ' + (resultado.error || 'Error al asignar agente'));
+        }
+    } catch (error) {
+        console.error('Error asignando agente:', error);
+        alert('Error al asignar agente: ' + error.message);
+    }
+}
+
+async function quitarAsignacionAgente(campaniaId) {
+    if (!confirm('¿Estás seguro de quitar la asignación de esta campaña?')) return;
+    
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + campaniaId + '/quitar-asignacion', {
+            method: 'PUT'
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok) {
+            alert('✅ ' + resultado.mensaje);
+            cerrarModal();
+            await cargarListaCampanas();
+        } else {
+            alert('Error: ' + (resultado.error || 'Error al quitar asignación'));
+        }
+    } catch (error) {
+        console.error('Error quitando asignación:', error);
+        alert('Error al quitar asignación: ' + error.message);
+    }
 }
 
 // ================== EDITAR CAMPAÑA ==================

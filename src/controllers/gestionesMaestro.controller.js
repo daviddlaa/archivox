@@ -18,6 +18,88 @@ function getUsuarioId(req) {
     return req.session && req.session.usuario ? req.session.usuario.id : null;
 }
 
+// Construir condiciones WHERE para acceso a gestión maestro según el rol
+// Líder: campañas propias + campañas de su equipo
+// Agente: campañas propias + campañas asignadas a él
+// SuperAdmin/Admin: todas
+//
+// Importante: Cuando includeIdCheck está presente, se combina con AND
+// para evitar que un usuario acceda a una campaña incorrecta.
+// Ejemplo correcto: WHERE gm.id = 5 AND (gm.usuario_id = 123 OR gm.equipo_id = 456)
+// Ejemplo INCORRECTO (evitado): WHERE gm.id = 5 OR gm.usuario_id = 123
+function buildGestionAccessWhere(req, includeIdCheck) {
+    const usuario_id = getUsuarioId(req);
+    const user = req.session.usuario;
+    
+    let idConditions = [];
+    let permConditions = [];
+    let params = [];
+    
+    if (includeIdCheck) {
+        idConditions.push('gm.id = ?');
+        params.push(includeIdCheck);
+    }
+    
+    if (user.rol === 'superadmin' || user.rol === 'admin') {
+        // SuperAdmin/Admin ven todas
+        // Si hay ID específico, solo validar que exista
+        return {
+            idConditions: idConditions,
+            permConditions: [],
+            params: params,
+            hasIdCheck: !!includeIdCheck
+        };
+    }
+    
+    // Todos los usuarios ven sus propias campañas
+    permConditions.push('gm.usuario_id = ?');
+    params.push(usuario_id);
+    
+    if (user.es_lider && user.equipo_id) {
+        // Líder también ve campañas de su equipo
+        permConditions.push('gm.equipo_id = ?');
+        params.push(user.equipo_id);
+    } else if (user.rol === 'agente') {
+        // Agente también ve campañas asignadas a él
+        permConditions.push('gm.asignado_a = ?');
+        params.push(usuario_id);
+    }
+    
+    return {
+        idConditions: idConditions,
+        permConditions: permConditions,
+        params: params,
+        hasIdCheck: !!includeIdCheck
+    };
+}
+
+// Construir SQL completo a partir del resultado de buildGestionAccessWhere
+function buildGestionSQL(access, tableAlias) {
+    const alias = tableAlias || 'gm';
+    let parts = [];
+    
+    if (access.hasIdCheck) {
+        // Combinar ID check con permisos: gm.id = X AND (perm1 OR perm2)
+        const idSql = access.idConditions.map(c => c.replace('gm.', alias + '.')).join(' AND ');
+        if (access.permConditions.length > 0) {
+            const permSql = access.permConditions.map(c => c.replace('gm.', alias + '.')).join(' OR ');
+            parts.push('(' + idSql + ' AND (' + permSql + '))');
+        } else {
+            // SuperAdmin solo necesita el ID check
+            parts.push(idSql);
+        }
+    } else {
+        // Listado: perm1 OR perm2
+        if (access.permConditions.length > 0) {
+            parts.push(access.permConditions.map(c => c.replace('gm.', alias + '.')).join(' OR '));
+        } else {
+            parts.push('1=1'); // SuperAdmin ve todo
+        }
+    }
+    
+    return parts.join(' AND ');
+}
+
 // GET /api/gestiones-maestro - Listar todas las gestione maestro
 async function getGestionesMaestro(req, res) {
     try {
@@ -26,10 +108,9 @@ async function getGestionesMaestro(req, res) {
             return res.status(401).json({ error: 'No autenticado' });
         }
         
-        const result = await pool.query(
-            'SELECT * FROM gestiones_maestro WHERE usuario_id = ? ORDER BY created_at DESC',
-            [usuario_id]
-        );
+        const access = buildGestionAccessWhere(req, null);
+        const sql = 'SELECT DISTINCT gm.* FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access) + ' ORDER BY gm.created_at DESC';
+        const result = await pool.query(sql, access.params);
         
         res.json(getRows(result));
     } catch (error) {
@@ -48,11 +129,10 @@ async function getGestionMaestroById(req, res) {
         
         const { id } = req.params;
         
-        // Obtener gestión maestro
-        const resultGM = await pool.query(
-            'SELECT * FROM gestiones_maestro WHERE id = ? AND usuario_id = ?',
-            [id, usuario_id]
-        );
+        // Obtener gestión maestro con control de acceso según rol
+        const access = buildGestionAccessWhere(req, id);
+        const sql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access);
+        const resultGM = await pool.query(sql, access.params);
         
         const gestion = getFirstRow(resultGM);
         
@@ -139,14 +219,17 @@ async function createGestionMaestro(req, res) {
             return res.status(400).json({ error: 'Se requiere al menos una solicitud' });
         }
         
+        // Obtener equipo_id de la sesión del usuario
+        const equipo_id = req.session.usuario?.equipo_id || null;
+        
         // Guardar los IDs de solicitudes como JSON en la misma tabla
         // (evita escribir N registros innecesarios en gestiones con 'Pendiente/Por gestionar')
         const solicitudesIdsJson = JSON.stringify(solicitudes_ids);
         
         const resultGM = await pool.query(`
-            INSERT INTO gestiones_maestro (nombre, descripcion, usuario_id, total_solicitudes, gestionadas, fecha_limite, solicitudes_ids)
-            VALUES (?, ?, ?, ?, 0, ?, ?)
-        `, [nombre, descripcion || '', usuario_id, solicitudes_ids.length, fecha_limite || null, solicitudesIdsJson]);
+            INSERT INTO gestiones_maestro (nombre, descripcion, usuario_id, equipo_id, total_solicitudes, gestionadas, fecha_limite, solicitudes_ids)
+            VALUES (?, ?, ?, ?, ?, 0, ?, ?)
+        `, [nombre, descripcion || '', usuario_id, equipo_id, solicitudes_ids.length, fecha_limite || null, solicitudesIdsJson]);
         
         // SQLite usa lastInsertRowid
         const gestion_id = resultGM.lastInsertRowid;
@@ -181,10 +264,10 @@ async function updateGestionMaestro(req, res) {
         const { id } = req.params;
         const { nombre, descripcion, fecha_limite, estado } = req.body;
         
-        // Verificar que existe y pertenece al usuario
-        const resultCheck = await pool.query(`
-            SELECT id FROM gestiones_maestro WHERE id = ? AND usuario_id = ?
-        `, [id, usuario_id]);
+        // Verificar que existe y el usuario tiene acceso
+        const access = buildGestionAccessWhere(req, id);
+        const checkSql = 'SELECT id FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access);
+        const resultCheck = await pool.query(checkSql, access.params);
         
         const existing = getFirstRow(resultCheck);
         
@@ -202,12 +285,12 @@ async function updateGestionMaestro(req, res) {
             if (fecha_limite !== undefined) { updates.push('fecha_limite = ?'); params.push(fecha_limite); }
             if (estado !== undefined) { updates.push('estado = ?'); params.push(estado); }
             updates.push('updated_at = CURRENT_TIMESTAMP');
-            params.push(id, usuario_id);
+            params.push(id);
             
             await pool.query(`
                 UPDATE gestiones_maestro 
                 SET ${updates.join(', ')}
-                WHERE id = ? AND usuario_id = ?
+                WHERE id = ?
             `, params);
         }
         
@@ -228,10 +311,10 @@ async function deleteGestionMaestro(req, res) {
         
         const { id } = req.params;
         
-        // Verificar que existe y pertenece al usuario
-        const resultCheck = await pool.query(`
-            SELECT id FROM gestiones_maestro WHERE id = ? AND usuario_id = ?
-        `, [id, usuario_id]);
+        // Verificar que existe y el usuario tiene acceso
+        const access = buildGestionAccessWhere(req, id);
+        const checkSql = 'SELECT id FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access);
+        const resultCheck = await pool.query(checkSql, access.params);
         
         const existing = getFirstRow(resultCheck);
         
@@ -246,8 +329,8 @@ async function deleteGestionMaestro(req, res) {
         
         // Eliminar el maestro
         await pool.query(`
-            DELETE FROM gestiones_maestro WHERE id = ? AND usuario_id = ?
-        `, [id, usuario_id]);
+            DELETE FROM gestiones_maestro WHERE id = ?
+        `, [id]);
         
         res.json({ mensaje: 'Gestión eliminada correctamente' });
     } catch (error) {
@@ -311,11 +394,10 @@ async function obtenerProgresoGestion(req, res) {
         
         const { id } = req.params;
         
-        // Obtener gestión maestro
-        const resultGM = await pool.query(`
-            SELECT * FROM gestiones_maestro 
-            WHERE id = ? AND usuario_id = ?
-        `, [id, usuario_id]);
+        // Obtener gestión maestro con control de acceso
+        const access = buildGestionAccessWhere(req, id);
+        const sql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access);
+        const resultGM = await pool.query(sql, access.params);
         
         const gestion = getFirstRow(resultGM);
         
@@ -373,11 +455,10 @@ async function agregarSolicitudesACampana(req, res) {
             return res.status(400).json({ error: 'Se requiere al menos un ID de solicitud' });
         }
 
-        // Obtener la campaña actual
-        const resultGM = await pool.query(
-            'SELECT * FROM gestiones_maestro WHERE id = ? AND usuario_id = ?',
-            [id, usuario_id]
-        );
+        // Obtener la campaña actual con control de acceso
+        const access = buildGestionAccessWhere(req, id);
+        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + access.conditions.join(' OR ');
+        const resultGM = await pool.query(checkSql, access.params);
 
         const gestion = getFirstRow(resultGM);
 
@@ -418,8 +499,8 @@ async function agregarSolicitudesACampana(req, res) {
         await pool.query(`
             UPDATE gestiones_maestro 
             SET solicitudes_ids = ?, total_solicitudes = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ? AND usuario_id = ?
-        `, [solicitudesIdsJson, idsActualizados.length, id, usuario_id]);
+            WHERE id = ?
+        `, [solicitudesIdsJson, idsActualizados.length, id]);
 
         console.log('[agregarSolicitudesACampana] Agregados', agregados, 'solicitudes a campaña', id, 'Total:', idsActualizados.length);
 
@@ -449,11 +530,10 @@ async function quitarSolicitudDeCampana(req, res) {
             return res.status(400).json({ error: 'solicitud_id es requerido' });
         }
 
-        // Obtener la campaña actual
-        const resultGM = await pool.query(
-            'SELECT * FROM gestiones_maestro WHERE id = ? AND usuario_id = ?',
-            [id, usuario_id]
-        );
+        // Obtener la campaña actual con control de acceso
+        const access = buildGestionAccessWhere(req, id);
+        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + access.conditions.join(' OR ');
+        const resultGM = await pool.query(checkSql, access.params);
 
         const gestion = getFirstRow(resultGM);
 
@@ -501,8 +581,8 @@ async function quitarSolicitudDeCampana(req, res) {
         await pool.query(`
             UPDATE gestiones_maestro 
             SET solicitudes_ids = ?, total_solicitudes = ?, gestionadas = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ? AND usuario_id = ?
-        `, [solicitudesIdsJson, idsExistentes.length, nuevasGestionadas, id, usuario_id]);
+            WHERE id = ?
+        `, [solicitudesIdsJson, idsExistentes.length, nuevasGestionadas, id]);
 
         console.log('[quitarSolicitudDeCampana] Quitada solicitud', solicitud_id, 'de campaña', id, 'Total:', idsExistentes.length);
 
@@ -513,6 +593,122 @@ async function quitarSolicitudDeCampana(req, res) {
     } catch (error) {
         console.error('Error en quitarSolicitudDeCampana:', error);
         res.status(500).json({ error: 'Error al quitar solicitud de la campaña' });
+    }
+}
+
+// ============================================================================
+// ASIGNAR CAMPAÑA A AGENTE
+// ============================================================================
+// PUT /api/gestiones-maestro/:id/asignar-agente
+async function asignarAgenteACampana(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+        
+        const { id } = req.params;
+        const { agente_id } = req.body;
+        
+        if (!agente_id) {
+            return res.status(400).json({ error: 'agente_id es requerido' });
+        }
+        
+        const user = req.session.usuario;
+        
+        // Verificar que la campaña existe y el usuario tiene acceso
+        const access = buildGestionAccessWhere(req, id);
+        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + access.conditions.join(' OR ');
+        const resultGM = await pool.query(checkSql, access.params);
+        
+        const gestion = getFirstRow(resultGM);
+        
+        if (!gestion) {
+            return res.status(404).json({ error: 'Gestión no encontrada' });
+        }
+        
+        console.log('[asignarAgenteACampana] Campaña encontrada, equipo_id:', gestion.equipo_id, 'Usuario equipo_id:', user.equipo_id);
+        
+        // Si no es superadmin, validar que el usuario es líder o admin del equipo de la campaña
+        if (user.rol !== 'superadmin' && user.rol !== 'admin') {
+            if (!user.es_lider) {
+                return res.status(403).json({ error: 'Solo el líder puede asignar campañas a agentes' });
+            }
+            if (gestion.equipo_id !== user.equipo_id) {
+                return res.status(403).json({ error: 'No puedes asignar campañas que no pertenecen a tu equipo' });
+            }
+        }
+        
+        // Validar que el agente pertenece al mismo equipo que la campaña
+        const checkAgente = await pool.query(
+            'SELECT u.id, u.username FROM usuarios u INNER JOIN equipo_usuarios eu ON u.id = eu.usuario_id WHERE u.id = ? AND eu.equipo_id = ? AND eu.fecha_salida IS NULL AND es_lider = 0',
+            [agente_id, gestion.equipo_id]
+        );
+        
+        const agente = getFirstRow(checkAgente);
+        
+        if (!agente) {
+            return res.status(400).json({ error: 'El agente no pertenece al equipo de esta campaña o no es un agente válido' });
+        }
+        
+        // Asignar la campaña al agente
+        await pool.query(
+            'UPDATE gestiones_maestro SET asignado_a = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [agente_id, id]
+        );
+        
+        console.log('[asignarAgenteACampana] Campaña', id, 'asignada al agente', agente_id);
+        
+        res.json({ 
+            mensaje: 'Campaña asignada al agente correctamente',
+            agente: { id: agente.id, username: agente.username },
+            campaña_id: parseInt(id)
+        });
+    } catch (error) {
+        console.error('Error en asignarAgenteACampana:', error);
+        res.status(500).json({ error: 'Error al asignar agente a la campaña' });
+    }
+}
+
+// ============================================================================
+// QUITAR ASIGNACIÓN DE AGENTE
+// ============================================================================
+// PUT /api/gestiones-maestro/:id/quitar-asignacion
+async function quitarAsignacionAgente(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+        
+        const { id } = req.params;
+        const user = req.session.usuario;
+        
+        // Verificar acceso a la campaña
+        const access = buildGestionAccessWhere(req, id);
+        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + access.conditions.join(' OR ');
+        const resultGM = await pool.query(checkSql, access.params);
+        
+        const gestion = getFirstRow(resultGM);
+        
+        if (!gestion) {
+            return res.status(404).json({ error: 'Gestión no encontrada' });
+        }
+        
+        // Solo líder/admin/superadmin pueden quitar asignación
+        if (user.rol !== 'superadmin' && user.rol !== 'admin' && !user.es_lider) {
+            return res.status(403).json({ error: 'No tienes permiso para quitar asignaciones' });
+        }
+        
+        await pool.query(
+            'UPDATE gestiones_maestro SET asignado_a = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [id]
+        );
+        
+        res.json({ mensaje: 'Asignación de agente removida correctamente', campaña_id: parseInt(id) });
+    } catch (error) {
+        console.error('Error en quitarAsignacionAgente:', error);
+        res.status(500).json({ error: 'Error al quitar asignación' });
     }
 }
 
@@ -527,6 +723,8 @@ module.exports = {
     agregarSolicitudesACampana: agregarSolicitudesACampana,
     quitarSolicitudDeCampana: quitarSolicitudDeCampana,
     createGestion: createGestion,
+    asignarAgenteACampana: asignarAgenteACampana,
+    quitarAsignacionAgente: quitarAsignacionAgente,
     // Aliases en inglés para excel.routes.js
     getGestionesMaestro: getGestionesMaestro,
     getGestionMaestroById: getGestionMaestroById,

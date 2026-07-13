@@ -807,9 +807,12 @@ async function campanasEquipo(req, res) {
         const { id } = req.params;
         const result = await pool.query(
             `SELECT gm.id, gm.nombre as nombre_campana, gm.total_solicitudes, gm.gestionadas,
-                    gm.estado, gm.created_at, u.username as agente_username
+                    gm.estado, gm.created_at, gm.asignado_a,
+                    u.username as agente_username,
+                    ua.username as asignado_username, ua.nombre as asignado_nombre
              FROM gestiones_maestro gm
              LEFT JOIN usuarios u ON gm.usuario_id = u.id
+             LEFT JOIN usuarios ua ON gm.asignado_a = ua.id
              WHERE gm.equipo_id = $1
              ORDER BY gm.created_at DESC
              LIMIT 50`,

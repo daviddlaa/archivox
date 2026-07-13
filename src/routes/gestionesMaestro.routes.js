@@ -28,4 +28,10 @@ router.put('/:id/agregar-solicitudes', controller.agregarSolicitudesACampana);
 // PUT /api/gestiones-maestro/:id/quitar-solicitud - Quitar una solicitud de una campaña
 router.put('/:id/quitar-solicitud', controller.quitarSolicitudDeCampana);
 
+// PUT /api/gestiones-maestro/:id/asignar-agente - Asignar campaña a un agente
+router.put('/:id/asignar-agente', controller.asignarAgenteACampana);
+
+// PUT /api/gestiones-maestro/:id/quitar-asignacion - Quitar asignación de agente
+router.put('/:id/quitar-asignacion', controller.quitarAsignacionAgente);
+
 module.exports = router;

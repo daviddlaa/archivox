@@ -190,11 +190,17 @@ async function cargarCampanas() {
             const progresoCls = progreso >= 100 ? 'completa' : '';
 
             const estadoCls = c.estado === 'activa' ? 'activo' : 'inactivo';
+            
+            // Mostrar asignado a agente
+            const asignadoHtml = c.asignado_a 
+                ? '<span style="color:#059669;font-weight:600;">👤 ' + escapeHtml(c.asignado_username || 'Agente #' + c.asignado_a) + '</span>'
+                : '<span style="color:#9ca3af;">⬜ Sin asignar</span>';
 
             return `<tr>
                 <td style="color:#6b7280;">#${c.id}</td>
                 <td><strong>${escapeHtml(c.nombre_campana || 'Campaña #' + c.id)}</strong></td>
                 <td>${escapeHtml(c.agente_username || '-')}</td>
+                <td>${asignadoHtml}</td>
                 <td><strong>${total.toLocaleString()}</strong></td>
                 <td><strong>${gestionadas.toLocaleString()}</strong></td>
                 <td>
@@ -212,7 +218,7 @@ async function cargarCampanas() {
 
     } catch (err) {
         console.error('[Equipo] Error cargar campañas:', err);
-        tbody.innerHTML = '<tr><td colspan="8" class="equipo-loading" style="color:#dc2626">Error al cargar campañas</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="equipo-loading" style="color:#dc2626">Error al cargar campañas</td></tr>';
     }
 }
 
