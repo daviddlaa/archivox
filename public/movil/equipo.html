@@ -19,6 +19,325 @@
             margin: 0 auto;
         }
 
+        /* ===== QUICK ACTIONS ===== */
+        .equipo-quick-actions {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .equipo-quick-action {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 14px 10px;
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            border: 1px solid #f3f4f6;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .equipo-quick-action:active {
+            transform: scale(0.95);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .equipo-quick-action-icon {
+            font-size: 24px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+        }
+
+        .equipo-quick-action-icon.verde { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+        .equipo-quick-action-icon.azul { background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
+        .equipo-quick-action-icon.indigo { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); }
+        .equipo-quick-action-icon.ambar { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+
+        .equipo-quick-action-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #374151;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        /* ===== CAMPAÑAS CARDS ===== */
+        .equipo-section-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .equipo-section-header-custom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .equipo-section-header-custom h2 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .equipo-section-header-custom span {
+            font-size: 11px;
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        .campana-card {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f9fafb;
+            transition: background 0.15s;
+        }
+
+        .campana-card:last-child {
+            border-bottom: none;
+        }
+
+        .campana-card:active {
+            background: #f9fafb;
+        }
+
+        .campana-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .campana-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .campana-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .campana-nombre {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1f2937;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .campana-meta {
+            font-size: 11px;
+            color: #9ca3af;
+            display: block;
+            margin-top: 1px;
+        }
+
+        .campana-estado {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .campana-estado.activo { background: #10b981; }
+        .campana-estado.inactivo { background: #ef4444; }
+
+        .campana-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .campana-progress-bar {
+            flex: 1;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .campana-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .campana-progress-fill.completa {
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        }
+
+        .campana-progress-text {
+            font-size: 12px;
+            font-weight: 700;
+            color: #10b981;
+            min-width: 36px;
+            text-align: right;
+        }
+
+        .campana-progress-text.completa {
+            color: #3b82f6;
+        }
+
+        .campana-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+
+        .campana-asignado {
+            font-size: 11px;
+        }
+
+        /* ===== GESTIONES TIMELINE ===== */
+        .gestiones-timeline {
+            padding: 4px 0;
+        }
+
+        .gestion-item {
+            display: flex;
+            gap: 12px;
+            padding: 10px 16px;
+            position: relative;
+        }
+
+        .gestion-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 24px;
+            top: 32px;
+            bottom: 0;
+            width: 2px;
+            background: #e5e7eb;
+        }
+
+        .gestion-timeline-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #6366f1;
+            flex-shrink: 0;
+            margin-top: 4px;
+            z-index: 1;
+            border: 2px solid #e0e7ff;
+        }
+
+        .gestion-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .gestion-header-line {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 2px;
+        }
+
+        .gestion-id {
+            font-size: 13px;
+            font-weight: 700;
+            color: #6366f1;
+            text-decoration: none;
+        }
+
+        .gestion-tipo {
+            font-size: 10px;
+        }
+
+        .gestion-cliente {
+            font-size: 13px;
+            color: #374151;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .gestion-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 11px;
+            color: #9ca3af;
+            margin-bottom: 2px;
+        }
+
+        .gestion-obs {
+            font-size: 11px;
+            color: #6b7280;
+            font-style: italic;
+            padding: 4px 8px;
+            background: #f9fafb;
+            border-radius: 6px;
+            margin-top: 4px;
+        }
+
+        /* ===== FORM ===== */
+        .equipo-form-group-movil {
+            margin-bottom: 14px;
+        }
+
+        .equipo-form-group-movil label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+
+        .equipo-form-group-movil input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            background: white;
+            color: #1f2937;
+            font-size: 14px;
+            outline: none;
+            transition: border 0.2s;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+        }
+
+        .equipo-form-group-movil input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+
+        /* ===== ASIGNACIONES DETALLE ===== */
+        .asignaciones-detalle-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
         /* ===== KPI Horizontal Scroll ===== */
         .equipo-kpis-wrapper {
             margin: 0 -16px;
@@ -590,6 +909,26 @@
             </div>
         </div>
 
+        <!-- ===== ACCIONES RÁPIDAS ===== -->
+        <div class="equipo-quick-actions" id="equipoQuickActions">
+            <button class="equipo-quick-action" onclick="abrirNuevoAgente()">
+                <span class="equipo-quick-action-icon verde">➕</span>
+                <span class="equipo-quick-action-label">Nuevo Agente</span>
+            </button>
+            <button class="equipo-quick-action" onclick="irAImportar()">
+                <span class="equipo-quick-action-icon azul">📤</span>
+                <span class="equipo-quick-action-label">Importar Excel</span>
+            </button>
+            <button class="equipo-quick-action" onclick="irASolicitudes()">
+                <span class="equipo-quick-action-icon indigo">📋</span>
+                <span class="equipo-quick-action-label">Ver Solicitudes</span>
+            </button>
+            <button class="equipo-quick-action" onclick="recargarTodo()">
+                <span class="equipo-quick-action-icon ambar">🔄</span>
+                <span class="equipo-quick-action-label">Actualizar</span>
+            </button>
+        </div>
+
         <!-- Título agentes -->
         <div class="equipo-agentes-title">
             <h2>👥 Agentes</h2>
@@ -600,6 +939,28 @@
         <div id="equipoAgentesList">
             <div class="equipo-shimmer"></div>
             <div class="equipo-shimmer" style="margin-top:12px;"></div>
+        </div>
+
+        <!-- ===== CAMPAÑAS ===== -->
+        <div class="equipo-section-card" id="campanasSection">
+            <div class="equipo-section-header-custom">
+                <h2>📢 Campañas del Equipo</h2>
+                <span id="campanasCount">Cargando...</span>
+            </div>
+            <div id="campanasEquipoList">
+                <div class="equipo-shimmer" style="height:80px;"></div>
+            </div>
+        </div>
+
+        <!-- ===== GESTIONES RECIENTES ===== -->
+        <div class="equipo-section-card" id="gestionesSection">
+            <div class="equipo-section-header-custom">
+                <h2>📝 Gestiones Recientes</h2>
+                <span id="gestionesCount">Cargando...</span>
+            </div>
+            <div class="gestiones-timeline" id="gestionesEquipoList">
+                <div class="equipo-shimmer" style="height:80px;"></div>
+            </div>
         </div>
     </div>
 
