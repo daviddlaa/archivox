@@ -1,6 +1,6 @@
 // ============================================================================
 // EQUIPO MÓVIL - Archivox v3.0
-// Gestión de equipo con cards tipo app
+// Gestión de equipo con experiencia tipo app nativa
 // ============================================================================
 
 // ============================================================================
@@ -10,6 +10,8 @@ var _equipoData = null;
 var _agentesData = [];
 var _totalGestiones7d = 0;
 var _totalCampanas = 0;
+var _refrescando = false;
+var _ptrEstado = 'idle'; // idle | pulling | refreshing
 
 // ============================================================================
 // INICIALIZACIÓN
@@ -39,6 +41,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             `;
             return;
         }
+
+        // Inicializar pull-to-refresh
+        initPullToRefresh();
+
+        // Inicializar scroll indicator de KPIs
+        initKpiScrollIndicator();
 
         // Cargar datos
         await cargarDatosEquipo();
@@ -123,7 +131,132 @@ async function cargarDatosEquipo() {
 }
 
 // ============================================================================
-// RENDERIZAR CARDS DE AGENTES
+// PULL-TO-REFRESH (experiencia app nativa)
+// ============================================================================
+function initPullToRefresh() {
+    var container = document.getElementById('equipoContainer');
+    var touchStartY = 0;
+    var isPulling = false;
+    var pullThreshold = 80;
+
+    container.addEventListener('touchstart', function(e) {
+        if (window.scrollY > 0) return;
+        if (_refrescando) return;
+        touchStartY = e.touches[0].clientY;
+        isPulling = true;
+        setPtrEstado('idle');
+    }, { passive: true });
+
+    container.addEventListener('touchmove', function(e) {
+        if (!isPulling || _refrescando) return;
+        if (window.scrollY > 0) {
+            resetPtr();
+            return;
+        }
+
+        var currentY = e.touches[0].clientY;
+        var diff = currentY - touchStartY;
+
+        if (diff < 0) {
+            resetPtr();
+            return;
+        }
+
+        e.preventDefault();
+
+        // Resistencia: mientras más tiras, más cuesta
+        var pullDistance = Math.min(diff * 0.5, 120);
+        var indicator = document.getElementById('ptrIndicator');
+        var arrow = document.getElementById('ptrArrow');
+
+        indicator.style.transform = 'translateY(' + (pullDistance - 60) + 'px)';
+        indicator.style.opacity = Math.min(pullDistance / 60, 1);
+
+        if (pullDistance >= pullThreshold) {
+            setPtrEstado('pulled');
+            arrow.classList.add('pulled');
+            document.getElementById('ptrText').textContent = 'Suelta para actualizar';
+        } else {
+            setPtrEstado('pulling');
+            arrow.classList.remove('pulled');
+            document.getElementById('ptrText').textContent = 'Tira para actualizar';
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchend', function(e) {
+        if (!isPulling) return;
+        isPulling = false;
+
+        var indicator = document.getElementById('ptrIndicator');
+        var arrow = document.getElementById('ptrArrow');
+
+        if (arrow.classList.contains('pulled')) {
+            // Ejecutar refresh
+            setPtrEstado('refreshing');
+            document.getElementById('ptrText').textContent = 'Actualizando...';
+            document.getElementById('ptrSpinner').classList.add('active');
+            arrow.style.display = 'none';
+            indicator.style.transform = 'translateY(0px)';
+            indicator.style.opacity = '1';
+
+            recargarTodo().then(function() {
+                setTimeout(function() {
+                    resetPtr();
+                }, 400);
+            });
+        } else {
+            resetPtr();
+        }
+    }, { passive: true });
+}
+
+function setPtrEstado(estado) {
+    _ptrEstado = estado;
+    if (estado === 'refreshing') _refrescando = true;
+}
+
+function resetPtr() {
+    var indicator = document.getElementById('ptrIndicator');
+    var arrow = document.getElementById('ptrArrow');
+    var spinner = document.getElementById('ptrSpinner');
+
+    indicator.style.transform = 'translateY(-60px)';
+    indicator.style.opacity = '0';
+    arrow.classList.remove('pulled');
+    arrow.style.display = 'inline-block';
+    spinner.classList.remove('active');
+    document.getElementById('ptrText').textContent = 'Tira para actualizar';
+    _refrescando = false;
+}
+
+// ============================================================================
+// KPI SCROLL INDICATOR
+// ============================================================================
+function initKpiScrollIndicator() {
+    var kpis = document.getElementById('equipoKpis');
+    if (!kpis) return;
+
+    kpis.addEventListener('scroll', function() {
+        actualizarKpiScrollDots();
+    }, { passive: true });
+}
+
+function actualizarKpiScrollDots() {
+    var kpis = document.getElementById('equipoKpis');
+    var dots = document.querySelectorAll('.kpi-scroll-dot');
+    if (!kpis || !dots.length) return;
+
+    var scrollLeft = kpis.scrollLeft;
+    var cardWidth = 150; // 140px card + 10px gap
+    var activeIndex = Math.round(scrollLeft / cardWidth);
+
+    for (var i = 0; i < dots.length; i++) {
+        dots[i].classList.toggle('active', i === activeIndex);
+    }
+}
+
+// ============================================================================
+// RENDERIZAR CARDS DE AGENTES (con animación escalonada)
 // ============================================================================
 function renderizarAgentesCards() {
     var container = document.getElementById('equipoAgentesList');
@@ -147,11 +280,10 @@ function renderizarAgentesCards() {
         var estadoClase = activo ? 'activo' : 'inactivo';
         var estadoTexto = activo ? '🟢 Activo' : '🔴 Inactivo';
         var avatarClase = activo ? 'activo' : 'inactivo';
-        var inicial = (a.nombre || a.username || '?').charAt(0).toUpperCase();
         var asignadas = parseInt(a.asignadas || 0);
         var gestiones7d = parseInt(a.gestiones_7d || 0);
 
-        html += '<div class="equipo-agente-card ' + estadoClase + '" onclick="abrirDetalleAgente(' + i + ')">';
+        html += '<div class="equipo-agente-card ' + estadoClase + '" data-index="' + i + '" onclick="abrirDetalleAgente(' + i + ')">';
 
         // Header con avatar y nombre
         html += '<div class="equipo-agente-header">';
@@ -184,6 +316,18 @@ function renderizarAgentesCards() {
     }
 
     container.innerHTML = html;
+
+    // Animar cards escalonadamente
+    animarCardsAgentes();
+}
+
+function animarCardsAgentes() {
+    var cards = document.querySelectorAll('.equipo-agente-card');
+    cards.forEach(function(card, index) {
+        setTimeout(function() {
+            card.classList.add('visible');
+        }, 50 + (index * 80));
+    });
 }
 
 // ============================================================================
@@ -219,14 +363,7 @@ function abrirDetalleAgente(index) {
     bodyHtml += 'Ver Campañas Asignadas';
     bodyHtml += '</button>';
 
-    // Asignar nueva campaña
-    bodyHtml += '<button class="equipo-detalle-btn" onclick="cerrarSheetDetalle(); irACampanas()">';
-    bodyHtml += '<span class="equipo-detalle-btn-icon">🚀</span>';
-    bodyHtml += 'Asignar Nueva Campaña';
-    bodyHtml += '</button>';
-
-    bodyHtml += '<div class="equipo-detalle-divider"></div>';
-
+    // Acciones de administración
     // Editar agente
     bodyHtml += '<button class="equipo-detalle-btn" onclick="cerrarSheetDetalle(); editarAgente(' + agente.id + ', \\'' + escapeHtmlMovil(agente.username) + '\\', \\'' + escapeHtmlMovil(agente.nombre || '') + '\\')">';
     bodyHtml += '<span class="equipo-detalle-btn-icon">✏️</span>';
@@ -534,10 +671,16 @@ async function guardarResetPassword(agenteId) {
 // RECARGAR TODO
 // ============================================================================
 async function recargarTodo() {
-    // Mostrar shimmer
-    document.getElementById('equipoAgentesList').innerHTML = '' +
-        '<div class="equipo-shimmer"></div>' +
-        '<div class="equipo-shimmer" style="margin-top:12px;"></div>';
+    // Si ya está refrescando, no hacer nada
+    if (_refrescando) return;
+
+    // Mostrar shimmer solo si no estamos en pull-to-refresh
+    var enPtr = _ptrEstado === 'refreshing';
+    if (!enPtr) {
+        document.getElementById('equipoAgentesList').innerHTML = '' +
+            '<div class="equipo-shimmer"></div>' +
+            '<div class="equipo-shimmer" style="margin-top:12px;"></div>';
+    }
 
     // Actualizar KPIs con animación
     var kpiValues = document.querySelectorAll('.equipo-kpi-value');
@@ -546,7 +689,10 @@ async function recargarTodo() {
     }
 
     await cargarDatosEquipo();
-    mostrarToastMovil('✅ Actualizado');
+
+    if (!enPtr) {
+        mostrarToastMovil('✅ Actualizado');
+    }
 }
 
 // ============================================================================

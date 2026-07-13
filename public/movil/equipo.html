@@ -19,47 +19,155 @@
             margin: 0 auto;
         }
 
-        /* ===== KPI Cards ===== */
+        /* ===== KPI Horizontal Scroll ===== */
+        .equipo-kpis-wrapper {
+            margin: 0 -16px;
+            padding: 0 16px;
+        }
+
         .equipo-kpis {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex;
             gap: 10px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 6px;
+            scrollbar-width: none;
+        }
+
+        .equipo-kpis::-webkit-scrollbar {
+            display: none;
         }
 
         .equipo-kpi-card {
+            flex: 0 0 140px;
+            scroll-snap-align: start;
             background: white;
-            border-radius: 14px;
-            padding: 16px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border-radius: 16px;
+            padding: 18px 14px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.08);
             text-align: center;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             border: 1px solid #f3f4f6;
+            position: relative;
+            overflow: hidden;
         }
 
         .equipo-kpi-card:active {
-            transform: scale(0.97);
+            transform: scale(0.95);
         }
+
+        .equipo-kpi-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .equipo-kpi-card:nth-child(1)::after { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+        .equipo-kpi-card:nth-child(2)::after { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .equipo-kpi-card:nth-child(3)::after { background: linear-gradient(90deg, #10b981, #34d399); }
+        .equipo-kpi-card:nth-child(4)::after { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
 
         .equipo-kpi-icon {
-            font-size: 24px;
+            font-size: 22px;
             margin-bottom: 6px;
-        }
-
-        .equipo-kpi-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #1f2937;
             display: block;
         }
 
+        .equipo-kpi-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1f2937;
+            display: block;
+            line-height: 1.2;
+        }
+
         .equipo-kpi-label {
-            font-size: 11px;
+            font-size: 10px;
             color: #6b7280;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.3px;
             display: block;
-            margin-top: 2px;
+            margin-top: 4px;
+        }
+
+        /* ===== KPI Scroll Indicator ===== */
+        .kpi-scroll-hint {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 8px;
+            margin-bottom: 4px;
+        }
+
+        .kpi-scroll-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #d1d5db;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-scroll-dot.active {
+            width: 18px;
+            border-radius: 3px;
+            background: #6366f1;
+        }
+
+        /* ===== Pull-to-Refresh Indicator ===== */
+        .ptr-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ptr-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px;
+            color: #6366f1;
+            font-size: 13px;
+            font-weight: 600;
+            transition: opacity 0.2s ease;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: -60px;
+            z-index: 5;
+        }
+
+        .ptr-spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: ptrSpin 0.6s linear infinite;
+            display: none;
+        }
+
+        .ptr-spinner.active {
+            display: inline-block;
+        }
+
+        .ptr-arrow {
+            font-size: 18px;
+            transition: transform 0.3s ease;
+            display: inline-block;
+        }
+
+        .ptr-arrow.pulled {
+            transform: rotate(180deg);
+        }
+
+        @keyframes ptrSpin {
+            to { transform: rotate(360deg); }
         }
 
         /* ===== Agente Cards ===== */
@@ -89,14 +197,21 @@
             padding: 16px;
             box-shadow: 0 2px 12px rgba(0,0,0,0.08);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             border: 1px solid #f3f4f6;
             position: relative;
             overflow: hidden;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .equipo-agente-card.visible {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .equipo-agente-card:active {
-            transform: scale(0.98);
+            transform: scale(0.98) translateY(0);
             box-shadow: 0 1px 4px rgba(0,0,0,0.1);
         }
 
@@ -435,28 +550,43 @@
         </button>
     </div>
 
-    <div class="equipo-movil-container" id="equipoContainer">
-        <!-- KPIs -->
-        <div class="equipo-kpis" id="equipoKpis">
-            <div class="equipo-kpi-card">
-                <div class="equipo-kpi-icon">👥</div>
-                <span class="equipo-kpi-value" id="kpiAgentes">—</span>
-                <span class="equipo-kpi-label">Agentes Activos</span>
+    <div class="equipo-movil-container ptr-container" id="equipoContainer">
+        <!-- Pull-to-Refresh Indicator -->
+        <div class="ptr-indicator" id="ptrIndicator">
+            <span class="ptr-arrow" id="ptrArrow">↓</span>
+            <span class="ptr-spinner" id="ptrSpinner"></span>
+            <span id="ptrText">Tira para actualizar</span>
+        </div>
+
+        <!-- KPIs Horizontal Scroll -->
+        <div class="equipo-kpis-wrapper">
+            <div class="equipo-kpis" id="equipoKpis">
+                <div class="equipo-kpi-card">
+                    <span class="equipo-kpi-icon">👥</span>
+                    <span class="equipo-kpi-value" id="kpiAgentes">—</span>
+                    <span class="equipo-kpi-label">Agentes Activos</span>
+                </div>
+                <div class="equipo-kpi-card">
+                    <span class="equipo-kpi-icon">📢</span>
+                    <span class="equipo-kpi-value" id="kpiCampanas">—</span>
+                    <span class="equipo-kpi-label">Campañas Activas</span>
+                </div>
+                <div class="equipo-kpi-card">
+                    <span class="equipo-kpi-icon">📝</span>
+                    <span class="equipo-kpi-value" id="kpiGestiones">—</span>
+                    <span class="equipo-kpi-label">Gestiones (7d)</span>
+                </div>
+                <div class="equipo-kpi-card">
+                    <span class="equipo-kpi-icon">📋</span>
+                    <span class="equipo-kpi-value" id="kpiAsignadas">—</span>
+                    <span class="equipo-kpi-label">Asignaciones</span>
+                </div>
             </div>
-            <div class="equipo-kpi-card">
-                <div class="equipo-kpi-icon">📢</div>
-                <span class="equipo-kpi-value" id="kpiCampanas">—</span>
-                <span class="equipo-kpi-label">Campañas Activas</span>
-            </div>
-            <div class="equipo-kpi-card">
-                <div class="equipo-kpi-icon">📝</div>
-                <span class="equipo-kpi-value" id="kpiGestiones">—</span>
-                <span class="equipo-kpi-label">Gestiones (7d)</span>
-            </div>
-            <div class="equipo-kpi-card">
-                <div class="equipo-kpi-icon">📋</div>
-                <span class="equipo-kpi-value" id="kpiAsignadas">—</span>
-                <span class="equipo-kpi-label">Asignaciones</span>
+            <div class="kpi-scroll-hint" id="kpiScrollHint">
+                <span class="kpi-scroll-dot active"></span>
+                <span class="kpi-scroll-dot"></span>
+                <span class="kpi-scroll-dot"></span>
+                <span class="kpi-scroll-dot"></span>
             </div>
         </div>
 
@@ -473,7 +603,7 @@
         </div>
     </div>
 
-    <!-- FAB Refresh -->
+    <!-- FAB Refresh (oculto al hacer pull-to-refresh) -->
     <button class="equipo-fab" id="btnRefresh" onclick="recargarTodo()" title="Actualizar">
         🔄
     </button>
