@@ -36,6 +36,7 @@
                 <a href="/gestion-lote" class="btn-campaign">📢 Campañas</a>
                 <a href="/relaciones" class="btn-relations">📋 Relaciones</a>
                 <a href="/solicitudes" class="btn-nueva-solicitud-dash" onclick="sessionStorage.setItem('abrirNuevaSolicitud','true')">➕ Nueva Solicitud</a>
+                <a href="/equipo" class="btn-gestion-equipo-dash" id="btnGestionEquipo" style="display:none">🏢 Gestión de Equipo</a>
             </div>
             
             <!-- Mi Equipo Card (visible para usuarios con equipo) -->
@@ -98,11 +99,11 @@
                         <span id="totalRechazadas">0</span>
                     </div>
                 </div>
-                <div class="dashboard-stat-card stat-amarillo">
-                    <div class="dashboard-stat-icon">⏳</div>
+                <div class="dashboard-stat-card stat-aprobadas">
+                    <div class="dashboard-stat-icon">🟢</div>
                     <div class="dashboard-stat-info">
-                        <h3>Pendientes</h3>
-                        <span id="totalPendientes">0</span>
+                        <h3>Aprobadas</h3>
+                        <span id="totalAprobadas">0</span>
                     </div>
                 </div>
             </div>

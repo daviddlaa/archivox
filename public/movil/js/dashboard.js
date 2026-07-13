@@ -23,7 +23,7 @@ async function cargarDatos() {
         document.getElementById('totalSolicitudes').textContent = datos.total || 0;
         document.getElementById('totalActivadas').textContent = datos.activadas || 0;
         document.getElementById('totalRechazadas').textContent = datos.rechazadas || 0;
-        document.getElementById('totalPendientes').textContent = datos.pendientes || 0;
+        document.getElementById('totalAprobadas').textContent = datos.pendientes || 0;
         
         // Fetch segmentos
         const resSeg = await fetch('/api/excel/dashboard/segmentos');
@@ -42,7 +42,7 @@ function renderCharts(datos, segmentos) {
         new Chart(ctx1.getContext('2d'), {
             type: 'doughnut',
             data: {
-                labels: ['Activadas', 'Rechazadas', 'Pendientes', 'Devueltas'],
+                labels: ['Activadas', 'Rechazadas', 'Aprobadas', 'Devueltas'],
                 datasets: [{
                     data: [datos.activadas || 0, datos.rechazadas || 0, datos.pendientes || 0, datos.devueltas || 0],
                     backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#fbbf24']
@@ -83,6 +83,20 @@ function abrirNuevaSolicitudDesdeDash() {
 // No hay setInterval porque en móvil se recarga al navegar
 window.addEventListener('DOMContentLoaded', cargarDatos);
 
+// Reemplazar acceso a Relaciones por Gestión de Equipo si el usuario es líder
+async function ajustarAccesoRapido() {
+    try {
+        const res = await fetch('/api/auth/sesion');
+        const data = await res.json();
+        if (data.autenticado && data.usuario.es_lider) {
+            const relaLink = document.getElementById('heroRelaciones');
+            const eqLink = document.getElementById('heroGestionEquipo');
+            if (relaLink) relaLink.style.display = 'none';
+            if (eqLink) eqLink.style.display = '';
+        }
+    } catch (e) { /* ignore */ }
+}
+
 // Botón cerrar sesión
 document.getElementById('btnLogout')?.addEventListener('click', async (e) => {
     e.preventDefault();
@@ -94,4 +108,9 @@ document.getElementById('btnLogout')?.addEventListener('click', async (e) => {
             console.error('Error al cerrar sesión:', error);
         }
     }
+});
+
+// Ajustar accesos rápidos al cargar
+window.addEventListener('DOMContentLoaded', function() {
+    ajustarAccesoRapido();
 });

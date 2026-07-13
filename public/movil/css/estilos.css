@@ -292,6 +292,7 @@ body {
 .card-verde .card-icon { background: #d1fae5; }
 .card-rojo .card-icon { background: #fee2e2; }
 .card-amarillo .card-icon { background: #fef3c7; }
+.card-aprobadas .card-icon { background: #d1fae5; }
 .card-azul .card-icon { background: #dbeafe; }
 
 .card .card-icon {

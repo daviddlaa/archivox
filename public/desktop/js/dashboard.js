@@ -28,6 +28,24 @@ const colores = [
 // ============================================================================
 async function cargarMiEquipo() {
     try {
+        // Primero verificar si el usuario es líder
+        const sesRes = await fetch('/api/auth/sesion');
+        const ses = await sesRes.json();
+        const esLider = ses.autenticado && ses.usuario.es_lider;
+
+        // Mostrar/ocultar botón Gestión de Equipo en quick links
+        const gestionBtn = document.getElementById('btnGestionEquipo');
+        if (gestionBtn) {
+            gestionBtn.style.display = esLider ? '' : 'none';
+        }
+
+        // Si no es líder, ocultar la tarjeta de equipo y salir
+        if (!esLider) {
+            const section = document.getElementById('miEquipoSection');
+            if (section) section.style.display = 'none';
+            return;
+        }
+
         const res = await fetch('/api/equipos/mi-equipo');
         if (!res.ok) return;
         const data = await res.json();
@@ -45,22 +63,18 @@ async function cargarMiEquipo() {
 
         // Badge de rol
         const rolBadge = document.getElementById('miEquipoRolBadge');
-        try {
-            const sesRes = await fetch('/api/auth/sesion');
-            const ses = await sesRes.json();
-            if (ses.autenticado) {
-                if (ses.usuario.es_lider || ses.usuario.rol === 'superadmin' || ses.usuario.rol === 'admin') {
-                    rolBadge.textContent = '👑 Líder';
-                    rolBadge.className = 'mi-equipo-role-badge role-lider';
-                } else if (ses.usuario.rol === 'agente') {
-                    rolBadge.textContent = '🔹 Agente';
-                    rolBadge.className = 'mi-equipo-role-badge role-agente';
-                } else {
-                    rolBadge.textContent = '👤 Miembro';
-                    rolBadge.className = 'mi-equipo-role-badge role-miembro';
-                }
+        if (ses.autenticado) {
+            if (ses.usuario.es_lider || ses.usuario.rol === 'superadmin' || ses.usuario.rol === 'admin') {
+                rolBadge.textContent = '👑 Líder';
+                rolBadge.className = 'mi-equipo-role-badge role-lider';
+            } else if (ses.usuario.rol === 'agente') {
+                rolBadge.textContent = '🔹 Agente';
+                rolBadge.className = 'mi-equipo-role-badge role-agente';
+            } else {
+                rolBadge.textContent = '👤 Miembro';
+                rolBadge.className = 'mi-equipo-role-badge role-miembro';
             }
-        } catch (e) { /* ignore */ }
+        }
 
         // Cargar líder y stats
         const equipoId = data.id;
@@ -107,7 +121,7 @@ async function cargarDashboard() {
         document.getElementById('totalSolicitudes').textContent = datos.total.toLocaleString();
         document.getElementById('totalActivadas').textContent = datos.activadas.toLocaleString();
         document.getElementById('totalRechazadas').textContent = datos.rechazadas.toLocaleString();
-        document.getElementById('totalPendientes').textContent = datos.pendientes.toLocaleString();
+        document.getElementById('totalAprobadas').textContent = datos.pendientes.toLocaleString();
     } catch (error) {
         console.error('Error cargando dashboard:', error);
     }
