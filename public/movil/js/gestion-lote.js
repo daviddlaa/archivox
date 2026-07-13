@@ -6,6 +6,42 @@ var solicitudes = [];
 var todasLasSolicitudes = [];
 var campañas = [];
 
+// Estado de líder/agentes (como en desktop)
+var _esLider = false;
+var _equipoActual = null;
+var _agentesEquipo = [];
+
+// Determinar si el usuario actual es líder
+async function verificarRolUsuario() {
+    try {
+        var res = await fetch('/api/auth/sesion');
+        var sesion = await res.json();
+        if (sesion.autenticado && sesion.usuario) {
+            _esLider = !!(sesion.usuario.es_lider || sesion.usuario.rol === 'superadmin' || sesion.usuario.rol === 'admin');
+            _equipoActual = sesion.usuario.equipo_id || null;
+            return _esLider;
+        }
+    } catch (e) {
+        console.error('[verificarRolUsuario] Error:', e);
+    }
+    return false;
+}
+
+// Cargar agentes del equipo del líder
+async function cargarAgentesEquipo(equipoId) {
+    if (!equipoId) return [];
+    try {
+        var res = await fetch('/api/equipos/' + equipoId + '/dashboard');
+        var data = await res.json();
+        _agentesEquipo = data.agentes || [];
+        return _agentesEquipo;
+    } catch (e) {
+        console.error('[cargarAgentesEquipo] Error:', e);
+        _agentesEquipo = [];
+        return [];
+    }
+}
+
 function obtenerGestionId() {
     var urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('id');
@@ -49,6 +85,12 @@ async function cargarListaCampanas() {
             return;
         }
 
+        // Verificar rol y cargar agentes si es líder
+        await verificarRolUsuario();
+        if (_esLider && _equipoActual) {
+            await cargarAgentesEquipo(_equipoActual);
+        }
+        
         var html = '';
         for (var i = 0; i < campañas.length; i++) {
             var g = campañas[i];
@@ -56,16 +98,17 @@ async function cargarListaCampanas() {
             var isActive = gestionId && String(g.id) === String(gestionId) ? 'active' : '';
 
             html += '<div class="campaña-chip ' + isActive + '" onclick="seleccionarCampaña(' + g.id + ')">';
-            html += '<div class="campaña-chip-nombre">' + (g.nombre || 'Sin nombre') + '</div>';
-            html += '<div class="campaña-chip-stats">';
-            html += '<span>📄 ' + (g.total_solicitudes || 0) + '</span>';
-            html += '<span>✓ ' + (g.gestionadas || 0) + '</span>';
-            html += '<span>' + pct + '%</span>';
-            html += '</div>';
-            html += '<div class="campaña-chip-acciones">';
-            html += '<button class="campaña-chip-editar" onclick="event.stopPropagation(); abrirModalEditarCampanaMovil(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Editar campaña">✏️</button>';
-            html += '<button class="campaña-chip-borrar" onclick="event.stopPropagation(); confirmarEliminarCampañaMovil(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ')" title="Eliminar campaña">🗑️</button>';
-            html += '</div>';
+            html += '  <div class="campaña-chip-content">';
+            html += '    <div class="campaña-chip-top">';
+            html += '      <span class="campaña-chip-nombre">' + (g.nombre || 'Sin nombre') + '</span>';
+            html += '      <button class="campaña-chip-menu-btn" onclick="event.stopPropagation(); abrirBottomSheetCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Acciones de campaña">⋮</button>';
+            html += '    </div>';
+            html += '    <div class="campaña-chip-stats">';
+            html += '      <span>📄 ' + (g.total_solicitudes || 0) + '</span>';
+            html += '      <span>✓ ' + (g.gestionadas || 0) + '</span>';
+            html += '      <span>' + pct + '%</span>';
+            html += '    </div>';
+            html += '  </div>';
             html += '</div>';
         }
 
@@ -1129,6 +1172,256 @@ async function eliminarCampañaMovil(id) {
 }
 
 // ================== FIN ELIMINAR CAMPAÑA (MÓVIL) ==================
+
+// ================== BOTTOM SHEET DE ACCIONES DE CAMPAÑA ==================
+
+// Variable para evitar abrir múltiples bottom sheets
+var _bottomSheetAbierto = false;
+
+function abrirBottomSheetCampana(id, nombre, total, gestionadas, descripcion, fechaLimite, estado) {
+    if (_bottomSheetAbierto) return;
+    _bottomSheetAbierto = true;
+    
+    try {
+        var pendientes = total - gestionadas;
+        var nombreEsc = escaparParaHTML(nombre);
+        var descEsc = escaparParaHTML(descripcion || '');
+        var estadoActual = estado || 'Activa';
+        
+        // Construir items del menú según el rol
+        var itemsHTML = '';
+        
+        // Editar campaña (siempre visible) — pasa todos los datos reales
+        itemsHTML += '<button class="campaña-bs-item" onclick="cerrarBottomSheetCampana(); abrirModalEditarCampanaMovil(' + id + ', \'' + escaparParaAtributo(nombre) + '\', \'' + escaparParaAtributo(descripcion || '') + '\', \'' + (fechaLimite || '') + '\', \'' + estadoActual + '\')">';
+        itemsHTML += '  <span class="campaña-bs-item-icon">✏️</span>';
+        itemsHTML += '  <span class="campaña-bs-item-label">Editar campaña</span>';
+        itemsHTML += '</button>';
+    
+    // Asignar a agente (solo líder) — sin setTimeout
+    if (_esLider) {
+        itemsHTML += '<button class="campaña-bs-item" onclick="cerrarBottomSheetCampana(); abrirModalAsignarAgenteMovil(' + id + ', \'' + escaparParaAtributo(nombre) + '\')">';
+        itemsHTML += '  <span class="campaña-bs-item-icon">👤</span>';
+        itemsHTML += '  <span class="campaña-bs-item-label">Asignar a agente</span>';
+        itemsHTML += '</button>';
+    }
+    
+    // Exportar Excel (siempre visible) — sin setTimeout
+    itemsHTML += '<button class="campaña-bs-item" onclick="cerrarBottomSheetCampana(); if(typeof exportarExcelGestionLote === \'function\') exportarExcelGestionLote()">';
+    itemsHTML += '  <span class="campaña-bs-item-icon">📥</span>';
+    itemsHTML += '  <span class="campaña-bs-item-label">Exportar Excel</span>';
+    itemsHTML += '</button>';
+    
+    // Divider antes de eliminar
+    itemsHTML += '<div class="campaña-bs-divider"></div>';
+    
+    // Eliminar campaña (danger) — sin setTimeout
+    itemsHTML += '<button class="campaña-bs-item campaña-bs-item-danger" onclick="cerrarBottomSheetCampana(); confirmarEliminarCampañaMovil(' + id + ', \'' + escaparParaAtributo(nombre) + '\', ' + total + ', ' + gestionadas + ')">';
+    itemsHTML += '  <span class="campaña-bs-item-icon">🗑️</span>';
+    itemsHTML += '  <span class="campaña-bs-item-label">Eliminar campaña</span>';
+    itemsHTML += '</button>';
+    
+    var overlay = document.getElementById('campaña-bs-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'campaña-bs-overlay';
+        overlay.className = 'campaña-bs-overlay';
+        document.body.appendChild(overlay);
+    }
+    
+    overlay.innerHTML = '' +
+        '<div class="campaña-bs-overlay" id="campaña-bs-overlay-inner" onclick="cerrarBottomSheetCampana()"></div>' +
+        '<div class="campaña-bs-sheet" id="campaña-bs-sheet">' +
+            '<div class="campaña-bs-handle"></div>' +
+            '<div class="campaña-bs-header">' +
+                '<div>' +
+                    '<div class="campaña-bs-header-title">' + nombreEsc + '</div>' +
+                    '<div class="campaña-bs-header-sub">📄 ' + total + ' · ✓ ' + gestionadas + ' · ⏳ ' + pendientes + '</div>' +
+                '</div>' +
+                '<button class="campaña-bs-close" onclick="cerrarBottomSheetCampana()">✕</button>' +
+            '</div>' +
+            '<div class="campaña-bs-body">' +
+                itemsHTML +
+            '</div>' +
+        '</div>';
+    
+    // Animar entrada
+    requestAnimationFrame(function() {
+        var innerOverlay = document.getElementById('campaña-bs-overlay-inner');
+        var sheet = document.getElementById('campaña-bs-sheet');
+        if (innerOverlay) innerOverlay.classList.add('visible');
+        if (sheet) sheet.classList.add('visible');
+    });
+    
+    // Keyboard escape
+    var escapeHandler = function(e) {
+        if (e.key === 'Escape') {
+            cerrarBottomSheetCampana();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+    overlay._escapeHandler = escapeHandler;
+    } catch (e) {
+        console.error('[BottomSheet] Error:', e);
+        _bottomSheetAbierto = false; // Liberar flag si hay error
+    }
+}
+
+function cerrarBottomSheetCampana() {
+    var innerOverlay = document.getElementById('campaña-bs-overlay-inner');
+    var sheet = document.getElementById('campaña-bs-sheet');
+    
+    if (innerOverlay) innerOverlay.classList.remove('visible');
+    if (sheet) sheet.classList.remove('visible');
+    
+    _bottomSheetAbierto = false;
+    
+    // Limpiar overlay después de animación
+    setTimeout(function() {
+        var overlay = document.getElementById('campaña-bs-overlay');
+        if (overlay) {
+            if (overlay._escapeHandler) {
+                document.removeEventListener('keydown', overlay._escapeHandler);
+            }
+            overlay.innerHTML = '';
+        }
+    }, 300);
+}
+
+// ================== ASIGNAR A AGENTE (MÓVIL) — NUEVO ==================
+
+function abrirModalAsignarAgenteMovil(campaniaId, nombreCampania) {
+    if (!_esLider || _agentesEquipo.length === 0) {
+        alert('No tienes agentes en tu equipo para asignar');
+        return;
+    }
+    
+    // Buscar la campaña para obtener asignado actual
+    var campania = null;
+    for (var i = 0; i < campañas.length; i++) {
+        if (String(campañas[i].id) === String(campaniaId)) {
+            campania = campañas[i];
+            break;
+        }
+    }
+    var asignadoActual = campania ? campania.asignado_a : null;
+    
+    var nombreEsc = escaparParaHTML(nombreCampania);
+    
+    // Construir lista de agentes
+    var listaAgentes = '';
+    
+    // Opción quitar asignación si ya tiene una
+    if (asignadoActual) {
+        listaAgentes += '<button class="campaña-bs-item" onclick="cerrarBottomSheetCampana(); setTimeout(function() { quitarAsignacionAgenteMovil(' + campaniaId + '); }, 250)" style="color:#dc2626;">' +
+            '<span class="campaña-bs-item-icon">❌</span>' +
+            '<span class="campaña-bs-item-label">Quitar asignación actual</span>' +
+            '</button>' +
+            '<div class="campaña-bs-divider"></div>';
+    }
+    
+    for (var i = 0; i < _agentesEquipo.length; i++) {
+        var agente = _agentesEquipo[i];
+        var esAsignado = String(agente.id) === String(asignadoActual);
+        var isActive = agente.is_active !== false;
+        
+        if (!isActive) continue; // Omitir agentes inactivos
+        
+        var nombreAgente = escaparParaHTML(agente.nombre || agente.username || 'Agente #' + agente.id);
+        var asignadas = parseInt(agente.asignadas || 0);
+        
+        listaAgentes += '<button class="campaña-bs-item' + (esAsignado ? '" style="background:#ecfdf5;color:#065f46;"' : '"') + ' onclick="cerrarBottomSheetCampana(); setTimeout(function() { asignarAgenteMovil(' + campaniaId + ', ' + agente.id + '); }, 250)">';
+        listaAgentes += '  <span class="campaña-bs-item-icon">' + (esAsignado ? '✅' : '👤') + '</span>';
+        listaAgentes += '  <span class="campaña-bs-item-label">' + nombreAgente + ' · ' + asignadas + ' asignadas' + (esAsignado ? ' (actual)' : '') + '</span>';
+        listaAgentes += '</button>';
+    }
+    
+    if (!listaAgentes) {
+        alert('No hay agentes activos disponibles en tu equipo');
+        return;
+    }
+    
+    // Mostrar bottom sheet con agentes
+    var overlay = document.getElementById('campaña-bs-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'campaña-bs-overlay';
+        overlay.className = 'campaña-bs-overlay';
+        document.body.appendChild(overlay);
+    }
+    
+    overlay.innerHTML = '' +
+        '<div class="campaña-bs-overlay" id="campaña-bs-overlay-inner" onclick="cerrarBottomSheetCampana()"></div>' +
+        '<div class="campaña-bs-sheet" id="campaña-bs-sheet">' +
+            '<div class="campaña-bs-handle"></div>' +
+            '<div class="campaña-bs-header">' +
+                '<div>' +
+                    '<div class="campaña-bs-header-title">👤 Asignar Campaña</div>' +
+                    '<div class="campaña-bs-header-sub">' + nombreEsc + '</div>' +
+                '</div>' +
+                '<button class="campaña-bs-close" onclick="cerrarBottomSheetCampana()">✕</button>' +
+            '</div>' +
+            '<div class="campaña-bs-body">' +
+                listaAgentes +
+            '</div>' +
+        '</div>';
+    
+    requestAnimationFrame(function() {
+        var innerOverlay = document.getElementById('campaña-bs-overlay-inner');
+        var sheet = document.getElementById('campaña-bs-sheet');
+        if (innerOverlay) innerOverlay.classList.add('visible');
+        if (sheet) sheet.classList.add('visible');
+    });
+}
+
+async function asignarAgenteMovil(campaniaId, agenteId) {
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + campaniaId + '/asignar-agente', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ agente_id: agenteId })
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok) {
+            alert('✅ ' + resultado.mensaje);
+            await cargarListaCampanas();
+            if (String(campaniaId) === String(gestionId)) {
+                await cargarDatosGestionMovil();
+            }
+        } else {
+            alert('Error: ' + (resultado.error || 'Error al asignar agente'));
+        }
+    } catch (error) {
+        console.error('[movil] Error asignando agente:', error);
+        alert('Error al asignar agente: ' + error.message);
+    }
+}
+
+async function quitarAsignacionAgenteMovil(campaniaId) {
+    if (!confirm('¿Estás seguro de quitar la asignación de esta campaña?')) return;
+    
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + campaniaId + '/quitar-asignacion', {
+            method: 'PUT'
+        });
+        
+        var resultado = await response.json();
+        
+        if (response.ok) {
+            alert('✅ ' + resultado.mensaje);
+            await cargarListaCampanas();
+        } else {
+            alert('Error: ' + (resultado.error || 'Error al quitar asignación'));
+        }
+    } catch (error) {
+        console.error('[movil] Error quitando asignación:', error);
+        alert('Error al quitar asignación: ' + error.message);
+    }
+}
+
+// ================== FIN NUEVAS FUNCIONES ==================
 
 // Iniciar
 init();

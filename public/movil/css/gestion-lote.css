@@ -1,0 +1,712 @@
+/* ============================================================================
+   CAMPAÑAS MOBILE — ARCHIVOX v3.0
+   Diseñado específicamente para pantallas táctiles (< 769px).
+   Estilo app nativa con touch targets ≥ 44px.
+   ============================================================================ */
+
+/* ==========================================================================
+   CAMPAÑAS HORIZONTAL SCROLL — Tipo tabs nativo iOS/Android
+   ========================================================================== */
+.campañas-scroll {
+    display: flex;
+    gap: 10px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: linear-gradient(180deg, #1f2937 0%, #0f172a 100%);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    scroll-behavior: smooth;
+    position: relative;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+.campañas-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* ===== CHIP DE CAMPAÑA — Touch-optimized ===== */
+.campaña-chip {
+    position: relative;
+    background: rgba(255,255,255,0.08);
+    border: 1.5px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 10px 16px;
+    min-width: max-content;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    flex-shrink: 0;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    min-height: 44px;
+}
+.campaña-chip:active {
+    transform: scale(0.95);
+    background: rgba(255,255,255,0.15);
+}
+.campaña-chip.active {
+    background: rgba(99, 102, 241, 0.3);
+    border-color: #818cf8;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
+.campaña-chip-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.campaña-chip-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.campaña-chip-nombre {
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    line-height: 1.3;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ⋮ Menú contextual del chip — Touch target grande */
+.campaña-chip-menu-btn {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    opacity: 0.9;
+    letter-spacing: 1px;
+}
+.campaña-chip-menu-btn:active {
+    transform: scale(0.88);
+    background: rgba(255,255,255,0.25);
+    color: white;
+}
+
+.campaña-chip-stats {
+    display: flex;
+    gap: 10px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.65);
+    font-weight: 500;
+}
+.campaña-chip-stats span {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+/* ===== BOTTOM SHEET DE ACCIONES — Reutiliza estilo drawer.css (mm-*) ===== */
+.campaña-bs-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.campaña-bs-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.campaña-bs-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 82vh;
+    background: #ffffff;
+    border-radius: 20px 20px 0 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.2);
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.campaña-bs-sheet.visible {
+    transform: translateY(0);
+}
+
+.campaña-bs-handle {
+    width: 36px;
+    height: 4px;
+    background: #d1d5db;
+    border-radius: 4px;
+    margin: 10px auto 0;
+    flex-shrink: 0;
+}
+
+.campaña-bs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid #f3f4f6;
+    flex-shrink: 0;
+}
+.campaña-bs-header-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2937;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.campaña-bs-header-sub {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+.campaña-bs-close {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    padding: 0;
+    flex-shrink: 0;
+}
+.campaña-bs-close:active {
+    background: #e5e7eb;
+    transform: scale(0.92);
+}
+
+.campaña-bs-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 16px 18px;
+    flex: 1;
+}
+
+.campaña-bs-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 14px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #374151;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    box-sizing: border-box;
+}
+.campaña-bs-item:active {
+    background: #f3f4f6;
+    transform: scale(0.97);
+}
+.campaña-bs-item-icon {
+    font-size: 20px;
+    width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.campaña-bs-item-label {
+    flex: 1;
+}
+.campaña-bs-item-danger {
+    color: #dc2626;
+}
+.campaña-bs-item-danger:active {
+    background: #fef2f2;
+}
+.campaña-bs-divider {
+    height: 1px;
+    background: #f3f4f6;
+    margin: 6px 14px;
+}
+
+/* ===== PROGRESO MOBILE — Panel tipo widget ===== */
+.progreso-mobile {
+    background: white !important;
+    padding: 14px 16px !important;
+    display: flex !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    border-bottom: 1px solid #e5e7eb;
+    gap: 4px !important;
+    flex-wrap: nowrap !important;
+    overflow: visible !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.progreso-mobile-item {
+    text-align: center;
+    flex: 1 0 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 56px !important;
+    max-width: none !important;
+    padding: 2px 0;
+}
+.progreso-mobile-value {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1f2937;
+    display: block !important;
+    line-height: 1.2;
+}
+.progreso-mobile-label {
+    font-size: 9px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    display: block !important;
+    font-weight: 600;
+    margin-top: 2px;
+}
+.progreso-mobile-barra {
+    width: 100%;
+    height: 5px;
+    background: #f3f4f6;
+    margin-top: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.progreso-mobile-relleno {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    border-radius: 3px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== FILTROS Y BUSQUEDA ===== */
+.filtros-mobile {
+    background: white;
+    padding: 14px 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.filtros-mobile input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 15px;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 48px;
+}
+.filtros-mobile input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+}
+.filtros-mobile select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 15px;
+    background: white;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    padding-right: 44px;
+    min-height: 48px;
+}
+.filtros-mobile select:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+/* ===== TARJETAS (CARDS) DE SOLICITUDES — Diseño táctil nativo ===== */
+.sol-list {
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-bottom: 90px;
+}
+
+.sol-card {
+    background: white;
+    border-radius: 16px;
+    padding: 18px 16px 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    border-left: 4px solid #f59e0b;
+    transition: all 0.2s ease;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+.sol-card.gestionada {
+    border-left-color: #22c55e;
+}
+.sol-card:active {
+    transform: scale(0.985);
+}
+
+/* Destacada */
+.sol-card.destacada {
+    border: 2px solid #f59e0b !important;
+    border-left-width: 4px !important;
+    box-shadow: 0 0 0 1px #f59e0b, 0 4px 16px rgba(245, 158, 11, 0.2) !important;
+    background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%) !important;
+}
+
+.sol-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    gap: 8px;
+}
+.sol-id {
+    font-weight: 700;
+    font-size: 13px;
+    color: #9ca3af;
+    flex-shrink: 0;
+    padding-top: 2px;
+}
+.sol-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.sol-header-badges {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.sol-destacado-badge {
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+}
+.sol-destacado-badge-on {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+}
+.sol-destacado-badge-on:active {
+    background: #fde68a;
+    transform: scale(0.92);
+}
+.sol-destacado-badge-off {
+    background: #f3f4f6;
+    color: #9ca3af;
+    border: 1px solid #e5e7eb;
+}
+.sol-destacado-badge-off:active {
+    background: #e5e7eb;
+    color: #6b7280;
+}
+
+.sol-nombre {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+.sol-nombre-copy {
+    cursor: pointer;
+    color: #2563eb;
+    transition: color 0.2s ease;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+.sol-nombre-copy:active {
+    color: #1d4ed8;
+}
+
+.sol-datos {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.sol-datos span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.sol-chat-icon {
+    cursor: pointer;
+    font-size: 18px;
+    color: #25D366;
+    transition: transform 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.sol-chat-icon:active {
+    transform: scale(1.2);
+}
+
+.sol-obs {
+    font-size: 13px;
+    color: #374151;
+    padding: 12px 14px;
+    background: #f0fdf4;
+    border-radius: 10px;
+    margin-bottom: 14px;
+    border-left: 3px solid #22c55e;
+    line-height: 1.5;
+}
+
+/* ===== BOTONES DE ACCIÓN EN TARJETAS — Touch-optimized ===== */
+.sol-botones {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-sol {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    flex: 1 1 auto;
+    min-width: 48px;
+    min-height: 48px;
+    text-align: center;
+    line-height: 1.2;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    letter-spacing: 0.2px;
+}
+.btn-sol:active {
+    transform: scale(0.94);
+}
+
+.btn-sol-call {
+    background: #d1fae5;
+    color: #065f46;
+    font-size: 18px;
+    min-width: 52px;
+    max-width: 52px;
+    flex: 0 0 auto;
+}
+.btn-sol-call:active {
+    background: #a7f3d0;
+}
+
+.btn-sol-primary {
+    background: #2563eb;
+    color: white;
+}
+.btn-sol-primary:active {
+    background: #1d4ed8;
+}
+
+.btn-sol-whatsapp {
+    background: #dcfce7;
+    color: #166534;
+}
+.btn-sol-whatsapp:active {
+    background: #bbf7d0;
+}
+
+.btn-sol-secondary {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1.5px solid #e5e7eb;
+}
+.btn-sol-secondary:active {
+    background: #e5e7eb;
+}
+
+.btn-sol-ver {
+    background: #6b7280;
+    color: white;
+}
+.btn-sol-ver:active {
+    background: #4b5563;
+}
+
+.btn-sol-historial {
+    background: #e5e7eb;
+    color: #374151;
+}
+.btn-sol-historial:active {
+    background: #d1d5db;
+}
+
+.btn-sol-quitar {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1.5px solid #fecaca;
+}
+.btn-sol-quitar:active {
+    background: #fecaca;
+    transform: scale(0.94);
+}
+
+/* ===== ESTADO COLORES (badges) ===== */
+.estado-Pendiente { background: #fef3c7; color: #92400e; }
+.estado-Llamada { background: #d1fae5; color: #065f46; }
+.estado-WhatsApp { background: #dcfce7; color: #166534; }
+.estado-Seguimiento { background: #dbeafe; color: #1e40af; }
+.estado-Cobranza { background: #fee2e2; color: #991b1b; }
+.estado-Cita { background: #e0e7ff; color: #3730a3; }
+.estado-Completada { background: #bbf7d0; color: #166534; }
+
+/* ===== BOTONES ACCIÓN GLOBALES ===== */
+.btn-agregar-solicitudes {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 48px;
+}
+.btn-agregar-solicitudes:active {
+    transform: scale(0.97);
+}
+
+.btn-exportar-excel {
+    width: 100%;
+    padding: 14px;
+    background: #22c55e;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 48px;
+}
+.btn-exportar-excel:active {
+    transform: scale(0.97);
+}
+
+/* ===== ESTADO VACIO ===== */
+.sin-campana {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6b7280;
+}
+.sin-campana-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+/* ===== ANIMACIONES ===== */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+/* ===== STAGGER ANIMATION para cards ===== */
+.sol-card:nth-child(1) { animation: fadeIn 0.3s ease both; animation-delay: 0.02s; }
+.sol-card:nth-child(2) { animation: fadeIn 0.3s ease both; animation-delay: 0.04s; }
+.sol-card:nth-child(3) { animation: fadeIn 0.3s ease both; animation-delay: 0.06s; }
+.sol-card:nth-child(4) { animation: fadeIn 0.3s ease both; animation-delay: 0.08s; }
+.sol-card:nth-child(5) { animation: fadeIn 0.3s ease both; animation-delay: 0.10s; }
+
+/* ===== RESPONSIVE EXTRA ===== */
+@media (min-width: 500px) {
+    .campañas-scroll {
+        padding: 16px 24px;
+    }
+    .sol-list {
+        padding: 0 24px 90px;
+    }
+}
