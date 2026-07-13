@@ -208,8 +208,8 @@ async function createGestionMaestro(req, res) {
             return res.status(401).json({ error: 'No autenticado', detalle: 'Sesión no válida' });
         }
         
-        const { nombre, descripcion, fecha_limite, solicitudes_ids } = req.body;
-        console.log('[gestiones-maestro] Datos recibidos:', { nombre, descripcion, fecha_limite, solicitudes_ids: solicitudes_ids?.length });
+        const { nombre, descripcion, fecha_limite, solicitudes_ids, agente_id } = req.body;
+        console.log('[gestiones-maestro] Datos recibidos:', { nombre, descripcion, fecha_limite, solicitudes_ids: solicitudes_ids?.length, agente_id });
         
         if (!nombre) {
             return res.status(400).json({ error: 'El nombre es requerido' });
@@ -220,20 +220,59 @@ async function createGestionMaestro(req, res) {
         }
         
         // Obtener equipo_id de la sesión del usuario
-        const equipo_id = req.session.usuario?.equipo_id || null;
+        const user = req.session.usuario;
+        const equipo_id = user?.equipo_id || null;
+        
+        let asignado_a = null;
+        
+        // ============================================================
+        // ASIGNACIÓN A AGENTE (solo líderes)
+        // ============================================================
+        if (agente_id) {
+            // Solo el líder (o superadmin/admin) puede asignar un agente al crear
+            if (user.rol !== 'superadmin' && user.rol !== 'admin' && !user.es_lider) {
+                return res.status(403).json({ error: 'Solo el líder puede asignar campañas a agentes' });
+            }
+            
+            if (!equipo_id) {
+                return res.status(400).json({ error: 'No tienes un equipo asignado para asignar agentes' });
+            }
+            
+            // Verificar que el agente existe, está activo y pertenece al mismo equipo
+            const checkAgente = await pool.query(
+                `SELECT u.id, u.username, u.is_active 
+                 FROM usuarios u 
+                 INNER JOIN equipo_usuarios eu ON u.id = eu.usuario_id 
+                 WHERE u.id = ? AND eu.equipo_id = ? AND eu.fecha_salida IS NULL AND eu.es_lider = 0`,
+                [agente_id, equipo_id]
+            );
+            
+            const agente = getFirstRow(checkAgente);
+            
+            if (!agente) {
+                return res.status(400).json({ error: 'El agente no pertenece a tu equipo o no es un agente válido' });
+            }
+            
+            if (!agente.is_active) {
+                return res.status(400).json({ error: 'El agente seleccionado está inactivo' });
+            }
+            
+            asignado_a = agente_id;
+            console.log('[gestiones-maestro] Campaña será asignada al agente:', agente_id, agente.username);
+        }
         
         // Guardar los IDs de solicitudes como JSON en la misma tabla
         // (evita escribir N registros innecesarios en gestiones con 'Pendiente/Por gestionar')
         const solicitudesIdsJson = JSON.stringify(solicitudes_ids);
         
         const resultGM = await pool.query(`
-            INSERT INTO gestiones_maestro (nombre, descripcion, usuario_id, equipo_id, total_solicitudes, gestionadas, fecha_limite, solicitudes_ids)
-            VALUES (?, ?, ?, ?, ?, 0, ?, ?)
-        `, [nombre, descripcion || '', usuario_id, equipo_id, solicitudes_ids.length, fecha_limite || null, solicitudesIdsJson]);
+            INSERT INTO gestiones_maestro (nombre, descripcion, usuario_id, equipo_id, total_solicitudes, gestionadas, fecha_limite, solicitudes_ids, asignado_a)
+            VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)
+        `, [nombre, descripcion || '', usuario_id, equipo_id, solicitudes_ids.length, fecha_limite || null, solicitudesIdsJson, asignado_a]);
         
         // SQLite usa lastInsertRowid
         const gestion_id = resultGM.lastInsertRowid;
-        console.log('[gestiones-maestro] Gestion ID creada:', gestion_id, 'con', solicitudes_ids.length, 'solicitudes');
+        console.log('[gestiones-maestro] Gestion ID creada:', gestion_id, 'con', solicitudes_ids.length, 'solicitudes', asignado_a ? ', asignada a agente: ' + asignado_a : ', sin asignar');
         
         // ✅ YA NO se insertan registros 'Pendiente/Por gestionar' en la tabla gestiones
         // Los IDs quedan almacenados en gestiones_maestro.solicitudes_ids como JSON
@@ -244,7 +283,8 @@ async function createGestionMaestro(req, res) {
         res.json({ 
             id: gestion_id, 
             mensaje: 'Gestión creada correctamente',
-            total_solicitudes: solicitudes_ids.length
+            total_solicitudes: solicitudes_ids.length,
+            asignado_a: asignado_a
         });
     } catch (error) {
         console.error('[gestiones-maestro] Error completo:', error);

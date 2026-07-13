@@ -961,10 +961,35 @@ function generarInformeSeleccionadasMovil() {
 }
 
 // Abrir modal para crear nueva gestión por lotes en móvil CON INFORME Y PLAN DE ACCIÓN
-function abrirModalNuevaGestionMovil() {
+async function abrirModalNuevaGestionMovil() {
     if (filasSeleccionadas.length === 0) {
         alert('Selecciona al menos una card primero');
         return;
+    }
+
+    // Obtener datos de sesión y agentes del equipo (para líderes)
+    var agentesDisponibles = [];
+    var esLider = false;
+    
+    try {
+        var sesionRes = await fetch('/api/auth/sesion');
+        var sesionData = await sesionRes.json();
+        if (sesionData.autenticado) {
+            esLider = !!(sesionData.usuario.es_lider || sesionData.usuario.rol === 'superadmin' || sesionData.usuario.rol === 'admin');
+            if (esLider && sesionData.usuario.equipo_id) {
+                try {
+                    var dashboardRes = await fetch('/api/equipos/' + sesionData.usuario.equipo_id + '/dashboard');
+                    if (dashboardRes.ok) {
+                        var dashboardData = await dashboardRes.json();
+                        agentesDisponibles = dashboardData.agentes || [];
+                    }
+                } catch (e) {
+                    console.error('[abrirModalNuevaGestionMovil] Error cargando agentes:', e);
+                }
+            }
+        }
+    } catch (e) {
+        console.error('[abrirModalNuevaGestionMovil] Error obteniendo sesión:', e);
     }
 
     // Generar informe
@@ -975,6 +1000,24 @@ function abrirModalNuevaGestionMovil() {
     ['Seguimiento', 'Cobranza', 'Llamada', 'WhatsApp', 'Reclamo', 'Cita', 'Otro'].forEach(function(tipo) {
         opcionesTipoGestionModal += '<option value="' + tipo + '">' + tipo + '</option>';
     });
+
+    // Generar selector de agente (solo para líderes)
+    var agenteSelectorHTML = '';
+    if (esLider) {
+        if (agentesDisponibles.length > 0) {
+            var opcionesAgentes = '<option value="">Sin asignar</option>';
+            for (var a = 0; a < agentesDisponibles.length; a++) {
+                var ag = agentesDisponibles[a];
+                var nombreAgente = ag.nombre || ag.username || 'Agente #' + ag.id;
+                opcionesAgentes += '<option value="' + ag.id + '">' + nombreAgente + '</option>';
+            }
+            agenteSelectorHTML = '<label style="display:block; font-weight:600; margin-bottom:6px; font-size:12px; color:#374151;">👤 Asignar a:</label>' +
+                '<select id="agente-id-movil" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:14px; margin-bottom:12px; background:white;">' +
+                opcionesAgentes + '</select>';
+        } else {
+            agenteSelectorHTML = '<div style="background: #fef3c7; color: #92400e; padding: 8px 12px; border-radius: 6px; font-size: 12px; margin-bottom: 10px; text-align: center; font-weight: 600;">⚠️ No hay agentes disponibles en tu equipo</div>';
+        }
+    }
 
     var contenido = '';
     contenido += '<div style="padding: 20px; background: white; min-height: 100vh;">';
@@ -1031,6 +1074,9 @@ function abrirModalNuevaGestionMovil() {
     contenido += '<select id="tipo-gestion-lote-movil" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:14px; margin-bottom:12px; background:white;">';
     contenido += opcionesTipoGestionModal;
     contenido += '</select>';
+    
+    // Agregar selector de agente (solo líder)
+    contenido += agenteSelectorHTML;
     
     contenido += '<label style="display:block; font-weight:600; margin-bottom:6px; font-size:12px;">🎯 Objetivo:</label>';
     contenido += '<textarea id="descripcion-gestion-movil" rows="3" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:14px; margin-bottom:12px;" placeholder="¿Cuál es el objetivo...?"></textarea>';
