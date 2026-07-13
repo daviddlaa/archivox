@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mi Equipo - Archivox</title>
+    <link rel="stylesheet" href="/movil/css/estilos.css">
+    <link rel="stylesheet" href="/css/drawer.css">
+    <link rel="stylesheet" href="/css/notificaciones.css">
+    <link rel="stylesheet" href="/movil/css/gestiones.css">
+    <style>
+        /* ===== EQUIPO MÓVIL - CARDS ===== */
+        .equipo-movil-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 16px 16px 80px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* ===== KPI Cards ===== */
+        .equipo-kpis {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .equipo-kpi-card {
+            background: white;
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: all 0.2s ease;
+            border: 1px solid #f3f4f6;
+        }
+
+        .equipo-kpi-card:active {
+            transform: scale(0.97);
+        }
+
+        .equipo-kpi-icon {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .equipo-kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            display: block;
+        }
+
+        .equipo-kpi-label {
+            font-size: 11px;
+            color: #6b7280;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* ===== Agente Cards ===== */
+        .equipo-agentes-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        .equipo-agentes-title h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .equipo-agentes-count {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        .equipo-agente-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #f3f4f6;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .equipo-agente-card:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .equipo-agente-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .equipo-agente-card.activo::before {
+            background: linear-gradient(180deg, #10b981, #34d399);
+        }
+
+        .equipo-agente-card.inactivo::before {
+            background: linear-gradient(180deg, #ef4444, #f87171);
+        }
+
+        .equipo-agente-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .equipo-agente-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .equipo-agente-avatar.activo {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+        }
+
+        .equipo-agente-avatar.inactivo {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+        }
+
+        .equipo-agente-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .equipo-agente-nombre {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1f2937;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .equipo-agente-username {
+            font-size: 12px;
+            color: #9ca3af;
+            display: block;
+            margin-top: 1px;
+        }
+
+        .equipo-agente-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .equipo-agente-status.activo {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .equipo-agente-status.inactivo {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .equipo-agente-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .equipo-agente-stat {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 10px 12px;
+            text-align: center;
+            border: 1px solid #f3f4f6;
+        }
+
+        .equipo-agente-stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            display: block;
+        }
+
+        .equipo-agente-stat-label {
+            font-size: 10px;
+            color: #6b7280;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-top: 2px;
+            display: block;
+        }
+
+        .equipo-agente-btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+        }
+
+        .equipo-agente-btn:active {
+            transform: scale(0.97);
+            opacity: 0.9;
+        }
+
+        /* ===== Empty State ===== */
+        .equipo-empty {
+            text-align: center;
+            padding: 40px 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .equipo-empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .equipo-empty h3 {
+            font-size: 16px;
+            color: #1f2937;
+            margin: 0 0 4px 0;
+        }
+
+        .equipo-empty p {
+            font-size: 13px;
+            color: #6b7280;
+            margin: 0 0 16px 0;
+        }
+
+        /* ===== FAB Refresh ===== */
+        .equipo-fab {
+            position: fixed;
+            bottom: 85px;
+            right: 20px;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+            font-size: 22px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 50;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .equipo-fab:active {
+            transform: scale(0.9);
+        }
+
+        /* ===== Loading Shimmer ===== */
+        .equipo-shimmer {
+            background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 16px;
+            height: 130px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ===== Bottom Sheet para Detalles ===== */
+        .equipo-sheet-body {
+            padding: 0;
+        }
+
+        .equipo-detalle-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 0;
+            margin-bottom: 16px;
+        }
+
+        .equipo-detalle-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .equipo-detalle-info h3 {
+            margin: 0;
+            font-size: 17px;
+            color: #1f2937;
+        }
+
+        .equipo-detalle-info p {
+            margin: 2px 0 0;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .equipo-detalle-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .equipo-detalle-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            background: #f9fafb;
+            color: #374151;
+            width: 100%;
+            text-align: left;
+        }
+
+        .equipo-detalle-btn:active {
+            transform: scale(0.97);
+            background: #f3f4f6;
+        }
+
+        .equipo-detalle-btn-icon {
+            font-size: 18px;
+            width: 28px;
+            text-align: center;
+        }
+
+        .equipo-detalle-btn-danger {
+            color: #dc2626;
+        }
+
+        .equipo-detalle-btn-danger:active {
+            background: #fef2f2;
+        }
+
+        .equipo-detalle-btn-success {
+            color: #059669;
+        }
+
+        .equipo-detalle-btn-success:active {
+            background: #ecfdf5;
+        }
+
+        .equipo-detalle-divider {
+            height: 1px;
+            background: #f3f4f6;
+            margin: 4px 0;
+        }
+
+        /* ===== Toast ===== */
+        .equipo-toast-movil {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: #1f2937;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            animation: toastIn 0.3s ease;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">
+            <h1>🏢 Mi Equipo</h1>
+            <p>Gestión de agentes</p>
+        </div>
+        <button class="notif-bell-usuario notif-bell-movil" onclick="abrirPanelNotificaciones()" title="Notificaciones">
+            🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
+        </button>
+    </div>
+
+    <div class="equipo-movil-container" id="equipoContainer">
+        <!-- KPIs -->
+        <div class="equipo-kpis" id="equipoKpis">
+            <div class="equipo-kpi-card">
+                <div class="equipo-kpi-icon">👥</div>
+                <span class="equipo-kpi-value" id="kpiAgentes">—</span>
+                <span class="equipo-kpi-label">Agentes Activos</span>
+            </div>
+            <div class="equipo-kpi-card">
+                <div class="equipo-kpi-icon">📢</div>
+                <span class="equipo-kpi-value" id="kpiCampanas">—</span>
+                <span class="equipo-kpi-label">Campañas Activas</span>
+            </div>
+            <div class="equipo-kpi-card">
+                <div class="equipo-kpi-icon">📝</div>
+                <span class="equipo-kpi-value" id="kpiGestiones">—</span>
+                <span class="equipo-kpi-label">Gestiones (7d)</span>
+            </div>
+            <div class="equipo-kpi-card">
+                <div class="equipo-kpi-icon">📋</div>
+                <span class="equipo-kpi-value" id="kpiAsignadas">—</span>
+                <span class="equipo-kpi-label">Asignaciones</span>
+            </div>
+        </div>
+
+        <!-- Título agentes -->
+        <div class="equipo-agentes-title">
+            <h2>👥 Agentes</h2>
+            <span class="equipo-agentes-count" id="agentesCount">Cargando...</span>
+        </div>
+
+        <!-- Lista de agentes -->
+        <div id="equipoAgentesList">
+            <div class="equipo-shimmer"></div>
+            <div class="equipo-shimmer" style="margin-top:12px;"></div>
+        </div>
+    </div>
+
+    <!-- FAB Refresh -->
+    <button class="equipo-fab" id="btnRefresh" onclick="recargarTodo()" title="Actualizar">
+        🔄
+    </button>
+
+    <nav class="nav-bottom">
+        <a href="/m" class="nav-item">
+            <span class="nav-bottom-icon">📊</span>
+            <span class="nav-bottom-label">Inicio</span>
+        </a>
+        <a href="/m/solicitudes" class="nav-item">
+            <span class="nav-bottom-icon">📋</span>
+            <span class="nav-bottom-label">Solicitudes</span>
+        </a>
+        <a href="/m/equipo" class="nav-item active">
+            <span class="nav-bottom-icon">🏢</span>
+            <span class="nav-bottom-label">Equipo</span>
+        </a>
+        <a href="#" class="nav-item" onclick="Drawer.toggle(); return false;">
+            <span class="nav-bottom-icon">☰</span>
+            <span class="nav-bottom-label">Menú</span>
+        </a>
+    </nav>
+
+    <script src="/js/deep-link-router.js"></script>
+    <script src="/js/notificaciones-dashboard.js"></script>
+    <script src="/js/drawer.js"></script>
+    <script src="/js/modal.js"></script>
+    <script src="/movil/js/equipo.js"></script>
+</body>
+</html>

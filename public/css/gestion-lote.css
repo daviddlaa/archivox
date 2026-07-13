@@ -394,7 +394,7 @@ body {
     position: fixed;
     left: 0;
     top: 0;
-    width: 260px;
+    width: 340px;
     height: 100vh;
     background: var(--bg-sidebar);
     z-index: 1000;
@@ -405,7 +405,7 @@ body {
 }
 
 .sidebar-campañas.collapsed {
-    left: -260px;
+    left: -340px;
 }
 
 .sidebar-campañas .sidebar-header {
@@ -445,15 +445,16 @@ body {
     padding: 12px;
 }
 
-/* Campaña Cards */
+/* Campaña Cards - Rediseñadas */
 .campaña-card {
     background: rgba(255,255,255,0.08);
     border-radius: var(--radius-sm);
-    padding: 12px;
-    margin-bottom: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
     cursor: pointer;
     transition: all 0.2s ease;
     border: 1px solid transparent;
+    position: relative;
 }
 
 .campaña-card:hover {
@@ -470,10 +471,11 @@ body {
     font-size: 14px;
     font-weight: 600;
     color: white;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     display: flex;
     align-items: center;
     gap: 6px;
+    padding-right: 50px;
 }
 
 .campaña-card .campaña-id {
@@ -526,11 +528,84 @@ body {
     color: #818cf8;
 }
 
+/* Asignación en sidebar */
+.campaña-asignacion {
+    font-size: 10px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.campaña-asignacion-pendiente {
+    color: rgba(255,255,255,0.4);
+    font-style: italic;
+}
+
+/* Botones de acción en grid - nuevo diseño */
+.campaña-acciones-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.campaña-btn-accion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 7px 4px;
+    border: none;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: white;
+}
+
+.campaña-btn-accion:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.2);
+}
+
+.campaña-btn-accion:active {
+    transform: translateY(0px);
+}
+
+.campaña-btn-ver {
+    background: rgba(99, 102, 241, 0.5);
+}
+
+.campaña-btn-ver:hover {
+    background: rgba(99, 102, 241, 0.7);
+}
+
+.campaña-btn-asignar {
+    background: rgba(16, 185, 129, 0.4);
+}
+
+.campaña-btn-asignar:hover {
+    background: rgba(16, 185, 129, 0.6);
+}
+
+.campaña-btn-eliminar {
+    background: rgba(239, 68, 68, 0.4);
+}
+
+.campaña-btn-eliminar:hover {
+    background: rgba(239, 68, 68, 0.6);
+}
+
 /* ===== LAYOUT ===== */
 .layout {
     display: flex;
     min-height: 100vh;
-    margin-left: 260px;
+    margin-left: 340px;
     transition: margin-left 0.3s ease;
 }
 
@@ -855,72 +930,10 @@ body {
     margin: 0;
 }
 
-/* ===== BOTÓN EDITAR CAMPAÑA ===== */
-.campaña-btn-editar {
-    position: absolute;
-    top: 8px;
-    right: 40px;
-    width: 28px;
-    height: 28px;
-    border: none;
-    border-radius: 6px;
-    background: rgba(255,255,255,0.15);
-    color: white;
-    cursor: pointer;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.7;
-    transition: all 0.2s;
-}
+/* ===== BOTÓN EDITAR CAMPAÑA - Legacy (integrado en grid) ===== */
+/* Eliminado - ahora se usa la acción "Ver campaña" en el grid */
 
-.campaña-btn-editar:hover {
-    opacity: 1;
-    background: rgba(255,255,255,0.3);
-    transform: scale(1.1);
-}
-
-/* ===== BOTÓN ASIGNAR AGENTE ===== */
-.campaña-btn-asignar {
-    position: absolute;
-    top: 8px;
-    right: 76px;
-    width: 28px;
-    height: 28px;
-    border: none;
-    border-radius: 6px;
-    background: rgba(99, 102, 241, 0.3);
-    color: white;
-    cursor: pointer;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.7;
-    transition: all 0.2s;
-}
-
-.campaña-btn-asignar:hover {
-    opacity: 1;
-    background: rgba(99, 102, 241, 0.5);
-    transform: scale(1.1);
-}
-
-/* Asignación en sidebar */
-.campaña-asignacion {
-    font-size: 10px;
-    color: rgba(255,255,255,0.7);
-    margin-top: 4px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    display: inline-block;
-}
-
-.campaña-asignacion-pendiente {
-    color: rgba(255,255,255,0.4);
-    font-style: italic;
-}
+/* removed duplicate */
 
 /* ===== MODAL ASIGNAR AGENTE ===== */
 .modal-asignar h2 {
@@ -992,35 +1005,8 @@ body {
     margin-top: 2px;
 }
 
-/* ===== BOTÓN ELIMINAR CAMPAÑA ===== */
-.campaña-btn-eliminar {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 28px;
-    height: 28px;
-    border: none;
-    border-radius: 6px;
-    background: #fee2e2;
-    color: #991b1b;
-    cursor: pointer;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.7;
-    transition: all 0.2s;
-}
-
-.campaña-btn-eliminar:hover {
-    opacity: 1;
-    background: #fecaca;
-    transform: scale(1.1);
-}
-
-.campaña-card {
-    position: relative;
-}
+/* ===== BOTÓN ELIMINAR CAMPAÑA - Legacy (reemplazado por grid) ===== */
+/* Eliminado - ahora se usa .campaña-btn-eliminar dentro de .campaña-acciones-grid */
 
 /* ===== MODAL EDITAR CAMPAÑA ===== */
 .modal-editar-campana h2 {
@@ -1160,13 +1146,17 @@ body {
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
     .sidebar-campañas {
-        width: 240px;
+        width: 300px;
     }
     
     .layout {
-        margin-left: 240px;
+        margin-left: 300px;
+    }
+    
+    .sidebar-campañas.collapsed {
+        left: -300px;
     }
 }
 
@@ -1202,7 +1192,7 @@ body {
     
     .sidebar-campañas {
         width: 100%;
-        max-width: 280px;
+        max-width: 300px;
     }
     
     .layout {

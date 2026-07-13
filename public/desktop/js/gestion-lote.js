@@ -146,38 +146,54 @@ async function cargarListaCampanas() {
             var isActive = gestionId && String(g.id) === String(gestionId) ? 'active' : '';
             
             html += '<div class="campaña-card ' + isActive + '" onclick="seleccionarCampaña(' + g.id + ')">';
+            
+            // Título con nombre e ID
             html += '<div class="campaña-nombre">';
             html += '<span class="campaña-id">#' + g.id + '</span>';
             html += '<span>' + (g.nombre || 'Sin nombre') + '</span>';
             html += '</div>';
+            
+            // Info de asignación (debajo del título)
+            if (g.asignado_a) {
+                var agenteNombre = g.asignado_username || 'Agente #' + g.asignado_a;
+                html += '<div class="campaña-asignacion" style="margin-bottom:4px;">👤 ' + escaparParaHTML(agenteNombre) + '</div>';
+            } else {
+                html += '<div class="campaña-asignacion campaña-asignacion-pendiente" style="margin-bottom:4px;">⬜ Sin asignar</div>';
+            }
+            
+            // Stats
             html += '<div class="campaña-stats">';
             html += '<span>📄 ' + (g.total_solicitudes || 0) + '</span>';
             html += '<span>✓ ' + (g.gestionadas || 0) + '</span>';
             html += '<span>📊 ' + pct + '%</span>';
             html += '</div>';
+            
+            // Barra de progreso
             html += '<div class="campaña-progreso">';
             html += '<div class="campaña-progreso-barra" style="width: ' + pct + '%;"></div>';
-            html += '</div>';            var estadoClase = (g.estado === 'Completada' || pct === 100) ? 'completada' : 'activa';
+            html += '</div>';
+            
+            // Estado badge
+            var estadoClase = (g.estado === 'Completada' || pct === 100) ? 'completada' : 'activa';
             html += '<span class="campaña-estado ' + estadoClase + '">' + (g.estado || 'Activa') + '</span>';
             
-            // Mostrar info de asignación
-            if (g.asignado_a) {
-                var agenteNombre = g.asignado_username || 'Agente #' + g.asignado_a;
-                html += '<div class="campaña-asignacion">👤 Asignado: ' + escaparParaHTML(agenteNombre) + '</div>';
-            } else if (_esLider) {
-                html += '<div class="campaña-asignacion campaña-asignacion-pendiente">⬜ Sin asignar</div>';
-            }
+            // Grid de 3 botones de acción
+            html += '<div class="campaña-acciones-grid">';
             
-            // Botón de asignar (solo líder)
+            // Botón: Ver campaña (siempre visible)
+            html += '<button class="campaña-btn-accion campaña-btn-ver" onclick="event.stopPropagation(); seleccionarCampaña(' + g.id + ')" title="Ver campaña">👁️ Ver</button>';
+            
+            // Botón: Asignar a agente (solo líder con agentes disponibles)
             if (_esLider && _agentesEquipo.length > 0) {
-                html += '<button class="campaña-btn-asignar" onclick="event.stopPropagation(); abrirModalAsignarAgente(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.asignado_a || 'null') + ')" title="Asignar a agente">👤 Asignar</button>';
+                html += '<button class="campaña-btn-accion campaña-btn-asignar" onclick="event.stopPropagation(); abrirModalAsignarAgente(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.asignado_a || 'null') + ')" title="Asignar a agente">👤 Asignar</button>';
+            } else {
+                html += '<button class="campaña-btn-accion campaña-btn-asignar" onclick="event.stopPropagation(); abrirModalEditarCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Editar campaña">✏️ Editar</button>';
             }
             
-            // Botón de editar
-            html += '<button class="campaña-btn-editar" onclick="event.stopPropagation(); abrirModalEditarCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Editar campaña">✏️</button>';
+            // Botón: Eliminar (con confirmación)
+            html += '<button class="campaña-btn-accion campaña-btn-eliminar" onclick="event.stopPropagation(); confirmarEliminarCampaña(' + g.id + ', \'' + (g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ')" title="Eliminar campaña">🗑️ Eliminar</button>';
             
-            // Botón de eliminar
-            html += '<button class="campaña-btn-eliminar" onclick="event.stopPropagation(); confirmarEliminarCampaña(' + g.id + ', \'' + (g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ')">🗑️</button>';
+            html += '</div>';
             html += '</div>';
         }
         

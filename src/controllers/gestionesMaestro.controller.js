@@ -534,20 +534,37 @@ async function agregarSolicitudesACampana(req, res) {
             return res.json({ mensaje: 'Las solicitudes ya estaban en la campaña', agregados: 0, total: idsActualizados.length });
         }
 
-        // Guardar los IDs actualizados
+        // Recalcular gestionadas: contar todas las gestiones reales en la campaña
+        var nuevasGestionadas = 0;
+        try {
+            const resultCount = await pool.query(
+                'SELECT COUNT(*) as count FROM gestiones WHERE gestion_maestro_id = ?',
+                [id]
+            );
+            var countRow = Array.isArray(resultCount) ? resultCount[0] : (resultCount.rows ? resultCount.rows[0] : null);
+            if (countRow) {
+                nuevasGestionadas = parseInt(countRow.count || 0);
+            }
+        } catch (e) {
+            console.error('[agregarSolicitudesACampana] Error contando gestiones:', e);
+            nuevasGestionadas = gestion.gestionadas || 0;
+        }
+
+        // Guardar los IDs actualizados con las nuevas gestionadas recalculadas
         const solicitudesIdsJson = JSON.stringify(idsActualizados);
         await pool.query(`
             UPDATE gestiones_maestro 
-            SET solicitudes_ids = ?, total_solicitudes = ?, updated_at = CURRENT_TIMESTAMP
+            SET solicitudes_ids = ?, total_solicitudes = ?, gestionadas = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        `, [solicitudesIdsJson, idsActualizados.length, id]);
+        `, [solicitudesIdsJson, idsActualizados.length, nuevasGestionadas, id]);
 
-        console.log('[agregarSolicitudesACampana] Agregados', agregados, 'solicitudes a campaña', id, 'Total:', idsActualizados.length);
+        console.log('[agregarSolicitudesACampana] Agregados', agregados, 'solicitudes a campaña', id, 'Total:', idsActualizados.length, 'Gestionadas:', nuevasGestionadas);
 
         res.json({
             mensaje: agregados + ' solicitude(s) agregada(s) correctamente',
             agregados: agregados,
-            total: idsActualizados.length
+            total: idsActualizados.length,
+            gestionadas: nuevasGestionadas
         });
     } catch (error) {
         console.error('Error en agregarSolicitudesACampana:', error);

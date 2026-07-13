@@ -252,7 +252,7 @@ app.get('/equipo', requireAuthPage, (req, res) => {
 app.get('/m/equipo', requireAuthPage, (req, res) => {
     const redir = redirectSuperAdmin(req, res);
     if (redir) return;
-    res.sendFile(path.join(__dirname, 'public/desktop/equipo.html'));
+    res.sendFile(path.join(__dirname, 'public/movil/equipo.html'));
 });
 
 // Rutas de login (públicas)
