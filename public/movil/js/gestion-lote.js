@@ -71,9 +71,14 @@ async function cargarListaCampanas() {
         console.log('[movil-campanas] Fetching campaigns...');
         var container = document.getElementById('lista-campañas');
         
+        // Paralelizar: cargar campañas y verificar rol al mismo tiempo
         var controller = new AbortController();
         var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
-        var response = await fetch('/api/gestiones-maestro', { signal: controller.signal });
+        
+        var [response] = await Promise.all([
+            fetch('/api/gestiones-maestro', { signal: controller.signal }),
+            verificarRolUsuario()
+        ]);
         clearTimeout(timeoutId);
         
         console.log('[movil-campanas] Response:', response.status);
@@ -85,10 +90,9 @@ async function cargarListaCampanas() {
             return;
         }
 
-        // Verificar rol y cargar agentes si es líder
-        await verificarRolUsuario();
+        // Cargar agentes del equipo sin bloquear el render (se usan al hacer clic en ⋮)
         if (_esLider && _equipoActual) {
-            await cargarAgentesEquipo(_equipoActual);
+            cargarAgentesEquipo(_equipoActual);
         }
         
         var html = '';
@@ -1246,6 +1250,7 @@ function abrirBottomSheetCampana(id, nombre, total, gestionadas, descripcion, fe
     
     // Animar entrada
     requestAnimationFrame(function() {
+        overlay.classList.add('visible');
         var innerOverlay = document.getElementById('campaña-bs-overlay-inner');
         var sheet = document.getElementById('campaña-bs-sheet');
         if (innerOverlay) innerOverlay.classList.add('visible');
@@ -1270,15 +1275,16 @@ function abrirBottomSheetCampana(id, nombre, total, gestionadas, descripcion, fe
 function cerrarBottomSheetCampana() {
     var innerOverlay = document.getElementById('campaña-bs-overlay-inner');
     var sheet = document.getElementById('campaña-bs-sheet');
+    var overlay = document.getElementById('campaña-bs-overlay');
     
     if (innerOverlay) innerOverlay.classList.remove('visible');
     if (sheet) sheet.classList.remove('visible');
+    if (overlay) overlay.classList.remove('visible');
     
     _bottomSheetAbierto = false;
     
     // Limpiar overlay después de animación
     setTimeout(function() {
-        var overlay = document.getElementById('campaña-bs-overlay');
         if (overlay) {
             if (overlay._escapeHandler) {
                 document.removeEventListener('keydown', overlay._escapeHandler);
@@ -1367,6 +1373,7 @@ function abrirModalAsignarAgenteMovil(campaniaId, nombreCampania) {
         '</div>';
     
     requestAnimationFrame(function() {
+        overlay.classList.add('visible');
         var innerOverlay = document.getElementById('campaña-bs-overlay-inner');
         var sheet = document.getElementById('campaña-bs-sheet');
         if (innerOverlay) innerOverlay.classList.add('visible');

@@ -497,7 +497,7 @@ async function agregarSolicitudesACampana(req, res) {
 
         // Obtener la campaña actual con control de acceso
         const access = buildGestionAccessWhere(req, id);
-        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + access.conditions.join(' OR ');
+        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access);
         const resultGM = await pool.query(checkSql, access.params);
 
         const gestion = getFirstRow(resultGM);
@@ -589,7 +589,7 @@ async function quitarSolicitudDeCampana(req, res) {
 
         // Obtener la campaña actual con control de acceso
         const access = buildGestionAccessWhere(req, id);
-        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + access.conditions.join(' OR ');
+        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access);
         const resultGM = await pool.query(checkSql, access.params);
 
         const gestion = getFirstRow(resultGM);
@@ -675,7 +675,7 @@ async function asignarAgenteACampana(req, res) {
         
         // Verificar que la campaña existe y el usuario tiene acceso
         const access = buildGestionAccessWhere(req, id);
-        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + access.conditions.join(' OR ');
+        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access);
         const resultGM = await pool.query(checkSql, access.params);
         
         const gestion = getFirstRow(resultGM);
@@ -743,7 +743,7 @@ async function quitarAsignacionAgente(req, res) {
         
         // Verificar acceso a la campaña
         const access = buildGestionAccessWhere(req, id);
-        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + access.conditions.join(' OR ');
+        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access);
         const resultGM = await pool.query(checkSql, access.params);
         
         const gestion = getFirstRow(resultGM);
