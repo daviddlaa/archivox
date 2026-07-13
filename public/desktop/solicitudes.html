@@ -67,9 +67,16 @@
                     </div>
                 </div>
 
-                <!-- Buscador -->
+                <!-- Buscador + Seleccionar Todo -->
                 <div class="buscador-unificado">
-                    <input type="text" id="cedula" placeholder="🔍 Buscar por id, cédula, nombre o teléfono...">
+                    <div class="buscador-search-row" style="display:flex;gap:8px;align-items:center;">
+                        <input type="text" id="cedula" placeholder="🔍 Buscar por id, cédula, nombre o teléfono..." style="flex:1;">
+                        <button type="button" class="filtro-btn active btn-select-all" id="btn-seleccionar-todo-desktop" onclick="marcarSeleccionadas()" style="padding:12px 16px;border-radius:10px;font-size:13px;white-space:nowrap;flex-shrink:0;">
+                            ✓ Seleccionar todo
+                        </button>
+                    </div>
+                    <!-- Checkbox oculto para compatibilidad con seleccionarTodos() -->
+                    <input type="checkbox" id="seleccionar-todos" style="display:none;">
                 </div>
 
                 <!-- Barra de acciones -->
@@ -81,7 +88,7 @@
                         <button class="accion-btn" onclick="exportarSeleccionadas()">📥 Exportar</button>
                         <button class="accion-btn" onclick="marcarSeleccionadas()">✓ Marcar</button>
                         <button class="accion-btn" onclick="limpiarFiltros()">🧹 Limpiar</button>
-                        <button class="accion-btn peligro" onclick="borrarTodas()">🗑️ Borrar</button>
+                        <button class="accion-btn peligro" onclick="borrarTodas()" style="display:none;">🗑️ Borrar</button>
                     </div>
                 </div>
 

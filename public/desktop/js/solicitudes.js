@@ -1001,29 +1001,30 @@ async function cargarSegmentos() {
 // CONFIGURAR EVENTOS DE CHECKBOXES Y FILTROS
 // ============================================================================
 function configurarEventosCheckboxes() {
-    // Eventos para los botones de filtro de estado
-    document.querySelectorAll('#filtro-estado .filtro-btn').forEach(function(btn) {
-        btn.onclick = function() {
-            document.querySelectorAll('#filtro-estado .filtro-btn').forEach(function(b) { b.classList.remove('active'); });
-            this.classList.add('active');
-            estadoActual = this.dataset.value;
-            persistirEstado();
-            actualizarInfoPanel();
-            buscarEnServidor(true);
-        };
-    });
+    // Event delegation: en lugar de attach a cada .filtro-btn (que son reemplazados),
+    // escuchamos en el contenedor padre y delegamos según el target
+    var filtroEstado = document.getElementById('filtro-estado');
+    var filtroSegmento = document.getElementById('filtro-segmento');
 
-    // Eventos para los botones de filtro de segmento
-    document.querySelectorAll('#filtro-segmento .filtro-btn').forEach(function(btn) {
-        btn.onclick = function() {
-            document.querySelectorAll('#filtro-segmento .filtro-btn').forEach(function(b) { b.classList.remove('active'); });
-            this.classList.add('active');
-            segmentoActual = this.dataset.value;
+    function manejarClickFiltro(container, esEstado) {
+        return function(e) {
+            var btn = e.target.closest('.filtro-btn');
+            if (!btn) return;
+            container.querySelectorAll('.filtro-btn').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            if (esEstado) {
+                estadoActual = btn.dataset.value;
+            } else {
+                segmentoActual = btn.dataset.value;
+            }
             persistirEstado();
             actualizarInfoPanel();
             buscarEnServidor(true);
         };
-    });
+    }
+
+    if (filtroEstado) filtroEstado.onclick = manejarClickFiltro(filtroEstado, true);
+    if (filtroSegmento) filtroSegmento.onclick = manejarClickFiltro(filtroSegmento, false);
 
     // Evento para el buscador
     var inputBusqueda = document.getElementById('cedula');
