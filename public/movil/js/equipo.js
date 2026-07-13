@@ -370,20 +370,20 @@ function abrirDetalleAgente(index) {
     bodyHtml += '<div class="equipo-detalle-actions">';
 
     // Ver campañas asignadas
-    bodyHtml += '<button class="equipo-detalle-btn" onclick="cerrarSheetDetalle(); verCampanasAgente(' + agente.id + ', \\'' + escapeHtmlMovil(agente.username) + '\\')">';
+    bodyHtml += '<button class="equipo-detalle-btn" onclick="cerrarSheetDetalle(); verCampanasAgente(' + agente.id + ', \'' + escapeHtmlMovil(agente.username) + '\')">';
     bodyHtml += '<span class="equipo-detalle-btn-icon">📢</span>';
     bodyHtml += 'Ver Campañas Asignadas';
     bodyHtml += '</button>';
 
     // Acciones de administración
     // Editar agente
-    bodyHtml += '<button class="equipo-detalle-btn" onclick="cerrarSheetDetalle(); editarAgente(' + agente.id + ', \\'' + escapeHtmlMovil(agente.username) + '\\', \\'' + escapeHtmlMovil(agente.nombre || '') + '\\')">';
+    bodyHtml += '<button class="equipo-detalle-btn" onclick="cerrarSheetDetalle(); editarAgente(' + agente.id + ', \'' + escapeHtmlMovil(agente.username) + '\'' + ', \'' + escapeHtmlMovil(agente.nombre || '') + '\')">';
     bodyHtml += '<span class="equipo-detalle-btn-icon">✏️</span>';
     bodyHtml += 'Editar Agente';
     bodyHtml += '</button>';
 
     // Reset password
-    bodyHtml += '<button class="equipo-detalle-btn" onclick="cerrarSheetDetalle(); resetPasswordAgente(' + agente.id + ', \\'' + escapeHtmlMovil(agente.username) + '\\')">';
+    bodyHtml += '<button class="equipo-detalle-btn" onclick="cerrarSheetDetalle(); resetPasswordAgente(' + agente.id + ', \'' + escapeHtmlMovil(agente.username) + '\')">';
     bodyHtml += '<span class="equipo-detalle-btn-icon">🔑</span>';
     bodyHtml += 'Cambiar Contraseña';
     bodyHtml += '</button>';
@@ -391,7 +391,7 @@ function abrirDetalleAgente(index) {
     bodyHtml += '<div class="equipo-detalle-divider"></div>';
 
     // Activar/Desactivar
-    bodyHtml += '<button class="equipo-detalle-btn ' + estadoAccionClase + '" onclick="cerrarSheetDetalle(); toggleActivoAgente(' + agente.id + ', ' + (activo ? 'false' : 'true') + ', \\'' + escapeHtmlMovil(agente.username) + '\\')">';
+    bodyHtml += '<button class="equipo-detalle-btn ' + estadoAccionClase + '" onclick="cerrarSheetDetalle(); toggleActivoAgente(' + agente.id + ', ' + (activo ? 'false' : 'true') + ', \'' + escapeHtmlMovil(agente.username) + '\')">';
     bodyHtml += '<span class="equipo-detalle-btn-icon">' + (activo ? '🔴' : '🟢') + '</span>';
     bodyHtml += estadoAccion;
     bodyHtml += '</button>';
@@ -648,7 +648,8 @@ async function guardarResetPassword(agenteId) {
     }
 }
 
-// Toggle activo/inactivoasync function toggleActivoAgente(agenteId, nuevoEstado, username) {
+// Toggle activo/inactivo
+async function toggleActivoAgente(agenteId, nuevoEstado, username) {
     var accion = nuevoEstado ? 'activar' : 'desactivar';
     var confirmado = await new Promise(function(resolve) {
         Modal.confirmar({
