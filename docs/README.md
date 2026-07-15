@@ -1,647 +1,1375 @@
-# 📚 ARCHIVOX — Documentación Técnica
+# 📋 Archivox - Documentación Completa del Sistema
 
-**Versión:** 1.0.0  
-**Stack:** Node.js + Express 5 + PostgreSQL (producción) / SQLite (local)  
-**Frontend:** HTML5 + CSS3 + JavaScript vanilla (responsive: Desktop + Móvil)  
-**Despliegue:** Render  
-
----
-
-## 📑 Índice de Documentos
-
-### Documentación Principal
-
-| Documento | Descripción |
-|-----------|-------------|
-| [`docs/informe-auditoria-rendimiento.md`](informe-auditoria-rendimiento.md) | Auditoría completa de rendimiento y escalabilidad — análisis de backend, PostgreSQL, pool, caché, SSE, frontend y escenarios de carga |
-| [`docs/informe-optimizacion-arquitectura.md`](informe-optimizacion-arquitectura.md) | Informe de optimización — cambios realizados, justificación técnica, comparativas antes/después y recomendaciones |
-| [`docs/informe-drawer-movil.md`](informe-drawer-movil.md) | Auditoría y reparación del Drawer Móvil — causa raíz, comparativa Desktop vs Mobile, cambios realizados |
-
-### Registro de Cambios (Changelog)
-
-| Fecha | Versión | Cambio |
-|------|---------|--------|
-| Jul 2026 | 1.0 → 2.1 | 🏗️ **Estandarización Frontend (Fases 2-5)** — Botones, badges, modales, análisis legacy |
-| Jul 2026 | 2.1 → 2.1.1 | 🐛 **Hotfix Drawer Móvil** — Import missing `drawer.css` en 8 HTML móviles + z-index nav-bottom corregido |
-| Jul 2026 | 1.0 → 2.0 | **Optimización de Arquitectura** — Caché, índices, pool, SSE |
-| Jul 2026 | 1.0 | Versión inicial del sistema |
+**Versión:** 3.0 (Arquitectura Multi-Equipo)
+**Fecha:** Julio 2026
+**Propósito:** Sistema de gestión de solicitudes, relaciones y equipos para operaciones comerciales.
 
 ---
 
-## 🚀 Changelog v2.1 — Estandarización Frontend (Julio 2026)
+## Índice
 
-### Resumen
-
-Estandarización completa de la interfaz de usuario: sistema unificado de **botones**, **badges**, **modales**, más análisis de pendientes (página legacy, admin header).
-
-### 🎯 Fase 2 — Botones y Badges (Alta prioridad)
-
-**Sistema unificado de botones** (en `public/desktop/css/base.css` + `public/movil/css/estilos.css`):
-
-| Clase | Propósito |
-|-------|-----------|
-| `.btn` | Botón base (inline-flex, gap, border-radius 8px) |
-| `.btn-primary` | Acción principal (azul #2563eb) |
-| `.btn-secondary` | Acción secundaria (gris) |
-| `.btn-success` | Éxito/confirmación (verde) |
-| `.btn-warning` | Advertencia (amarillo) |
-| `.btn-danger` | Peligro/eliminar (rojo) |
-| `.btn-ghost` | Sutil/transparente |
-| `.btn-outline` | Outline azul |
-| `.btn-sm` / `.btn-lg` / `.btn-block` | Tamaños |
-
-**Sistema unificado de badges** (por color canónico en inglés):
-
-| Canónico | Aliases legacy |
-|----------|---------------|
-| `.badge-green` | `.badge-verde`, `.badge-success` |
-| `.badge-red` | `.badge-rojo`, `.badge-danger` |
-| `.badge-yellow` | `.badge-amarillo`, `.badge-warning` |
-| `.badge-blue` | `.badge-azul`, `.badge-info` |
-| `.badge-purple` | — |
-| `.badge-gray` | `.badge-secondary` |
-
-**Etiquetas de estado** unificadas (`.estado-ACTIVADA`, `-RECHAZADA`, `-DEVUELTA`, `-PENDIENTE`, `-EN_REVISION`) — eliminados duplicados de `main.css`.
+1. [Descripción General](#1--descripción-general)
+2. [Arquitectura General](#2--arquitectura-general)
+3. [Stack Tecnológico](#3--stack-tecnológico)
+4. [Estructura del Proyecto](#4--estructura-del-proyecto)
+5. [Base de Datos](#5--base-de-datos)
+6. [Backend (API REST)](#6--backend-api-rest)
+7. [Frontend](#7--frontend)
+8. [Sistema Multi-Equipo v3.0](#8--sistema-multi-equipo-v30)
+9. [Autenticación y Seguridad](#9--autenticación-y-seguridad)
+10. [Notificaciones en Tiempo Real (SSE)](#10--notificaciones-en-tiempo-real-sse)
+11. [Módulos del Sistema](#11--módulos-del-sistema)
+12. [API REST - Endpoints](#12--api-rest---endpoints)
+13. [Renderizado Responsivo](#13--renderizado-responsivo)
+14. [Migraciones de Base de Datos](#14--migraciones-de-base-de-datos)
+15. [Scripts de Utilidad](#15--scripts-de-utilidad)
+16. [Despliegue](#16--despliegue)
+17. [Deep Link Router](#17--deep-link-router)
+18. [Caché en Servidor](#18--caché-en-servidor)
+19. [Glosario](#19--glosario)
 
 ---
 
-## 🚀 Changelog v2.0 — Optimización de Arquitectura (Julio 2026)
+## 1. 📋 Descripción General
 
-### Resumen
+**Archivox** es un sistema web full-stack para la gestión operativa de solicitudes comerciales, relaciones con clientes, equipos de trabajo y campañas de gestión por lotes. Está diseñado para operar tanto en **escritorio** como en **dispositivos móviles**, con detección automática del dispositivo del usuario.
 
-Optimización completa de la arquitectura para soportar **100 usuarios registrados** y **30–50 concurrentes** en Render.
+### Funcionalidades Principales
 
-### Cambios Implementados
-
-#### 🔧 Backend — Nuevos Archivos
-
-| Archivo | Descripción |
-|---------|-------------|
-| `src/config/cache.js` | Módulo de caché en servidor con `node-cache` — dashboard (TTL 30s), datos globales (TTL 300s), estadísticas admin (TTL 60s) |
-| `src/controllers/dashboard.controller.js` | Controlador independiente para dashboard (SRP) — extraído del monolito `excel.controller.js` |
-| `migrations/002_add_compound_indexes.js` | Script ejecutable de migración — crea 11 índices compuestos en PostgreSQL |
-| `migrations/002_add_compound_indexes.sql` | Script SQL de migración |
-
-#### 🔧 Backend — Archivos Modificados
-
-| Archivo | Cambio |
-|---------|--------|
-| `src/config/db.js` | Pool: `max: 20`, `idleTimeoutMillis: 30000`, `connectionTimeoutMillis: 5000`, monitoreo cada 5 min |
-| `app.js` | Middleware global de errores agregado (compatible Express 5) |
-| `src/controllers/excel.controller.js` | Cache invalidación agregada en 6 mutaciones (import, create, edit, delete, clear). Código duplicado de dashboard eliminado (~300 líneas) |
-| `src/routes/excel.routes.js` | Rutas redirigidas a `dashboardController`. `requiresAuth` agregado a ruta `/dashboard` |
-| `src/services/notificationBus.js` | Límites: máx 500 clientes totales, máx 5 por usuario, cleanup automático al cerrar |
-| `src/config/initDb.pg.js` | 11 índices compuestos agregados para PostgreSQL |
-| `src/config/initDb.js` | 11 índices compuestos agregados para SQLite |
-| `package.json` | Dependencia `node-cache` agregada |
-
-#### 🎨 Frontend — Modificaciones
-
-| Archivo | Cambio |
-|---------|--------|
-| `public/desktop/js/dashboard.js` | Polling reducido de 5s → **60s** (reducción del 92%) |
-| `public/movil/js/dashboard.js` | Polling eliminado — carga solo al abrir la página y al volver |
-
-#### 🗄️ Base de Datos — Migración Ejecutada en Producción
-
-El **12 de Julio de 2026** se ejecutó la migración `002_add_compound_indexes.js` contra la base de datos PostgreSQL en Render.
-
-**Resultado:** 11/11 índices creados, 0 errores.
-
-| Índice | Tabla | Columnas |
-|--------|-------|----------|
-| `idx_solicitudes_usuario_id_desc` | solicitudes | (usuario_id, id_solicitud DESC) |
-| `idx_solicitudes_usuario_estado` | solicitudes | (usuario_id, estado) |
-| `idx_solicitudes_usuario_segmento` | solicitudes | (usuario_id, segmento) |
-| `idx_solicitudes_usuario_fecha` | solicitudes | (usuario_id, fecha_solicitud) |
-| `idx_solicitudes_cedula` | solicitudes | (cedula) |
-| `idx_gestiones_solicitud_usuario_fecha` | gestiones | (solicitud_id, usuario_id, fecha_gestion DESC) |
-| `idx_gestiones_usuario_created` | gestiones | (usuario_id, created_at) |
-| `idx_gestiones_maestro_id_solicitud` | gestiones | (gestion_maestro_id, solicitud_id) |
-| `idx_notificaciones_destinatario_leida` | notificaciones | (destinatario_id, leida, created_at DESC) |
-| `idx_historial_usuario_fecha` | historial_actualizaciones | (usuario_id, fecha_actualizacion DESC) |
-| `idx_audit_log_accion_fecha` | audit_log | (accion, created_at DESC) |
-
-### Impacto Esperado
-
-| Métrica | Antes | Después | Mejora |
-|---------|-------|---------|--------|
-| Polling dashboard | 5s (720 req/hora) | 60s (60 req/hora) | **-92%** |
-| Dashboard | Sin caché (cada request a PostgreSQL) | Caché en RAM (TTL 30s) | **-90% consultas** |
-| Listar solicitudes (100K rows) | Sequential Scan (~500ms) | Index Scan (~2ms) | **250x** |
-| Dashboard GROUP BY (100K rows) | Sequential Scan (~800ms) | Index Only Scan (~3ms) | **266x** |
-| LATERAL JOIN gestiones | Seq Scan (~2s) | Index Scan (~10ms) | **200x** |
-| Pool de conexiones | max 10 (default) | max 20 | **2x capacidad** |
-| Conexiones SSE | Sin límite | 500 total, 5/usuario | **Controlado** |
-
----
-
-### 🎯 Fase 3 — Sistema Unificado de Modales (Media prioridad)
-
-**Nuevos archivos creados:**
-
-| Archivo | Descripción |
-|---------|-------------|
-| `public/css/modal.css` | Estilos compartidos — overlay, content, header, body, footer, animaciones, responsive |
-| `public/js/modal.js` | API unificada con backward compatibility |
-
-**API de Modal:**
-```javascript
-Modal.abrir(html, { ancho: 'wide'|'narrow' })   // Modal genérico
-Modal.cerrar()                                    // Cerrar con animación
-Modal.confirmar({ titulo, mensaje, icono, onConfirm })  // Confirmación
-Modal.formulario({ titulo, html, onGuardar })     // Formulario con header+footer
-```
-
-**Archivos migrados (eliminado inline `crearModal`/`cerrarModal`):**
-
-| Archivo | Líneas eliminadas | Sistema anterior |
-|---------|:-----------------:|-----------------|
-| `desktop/js/solicitudes.js` | ~15 | `crearModal()` inline con `modal-overlay` |
-| `desktop/js/gestiones.js` | ~28 | `crearModal()` inline con ID `modal-gestiones` |
-| `desktop/js/relaciones.js` | ~16 | `crearModal()` inline con estilo inline |
-| `desktop/js/gestion-lote.js` | ~30 | `crearModal()` inline con estilo inline |
-
-**SweetAlert2 reemplazado:**
-- `public/desktop/js/ventas.js` — `Swal.fire()` → `Modal.formulario()` + `alert()`
-- `public/desktop/ventas.html` — CDN `sweetalert2@11` eliminado
-
-**Páginas actualizadas con `modal.css` + `modal.js`:**
-`solicitudes.html`, `gestiones.html`, `relaciones.html`, `gestion-lote.html`, `ventas.html`
-
-**Excepción documentada:** Panel Admin (`admin/index.html`) mantiene su propio sistema de modales (HTML en DOM + clase `.active` + overlay compartido). No se migró porque:
-- Tiene 4 modales con lógica compleja (validación, AJAX, reset de campos)
-- Tiene overlay compartido entre múltiples modales
-- Es más seguro mantenerlo estable que refactorizarlo
-
----
-
-### 🎯 Fase 4 — Análisis Página Legacy (`public/index.html`)
-
-**Estado actual:**
-- Sidebar antiguo (`sidebar.movable` con `toggleMenu()`)
-- Sin autenticación (links a `/login`)
-- Sin Drawer, sin notificaciones, sin `.page-header`
-- Usa `css/main.css` (~2000 líneas)
-- Usa `js/dashboard.js` independiente
-- Sin versión responsive funcional
-
-**Estrategia de migración (estimado ~45 min):**
-1. Reemplazar `<aside class="sidebar movable">` por `<div id="drawer-wrapper">`
-2. Cambiar `css/main.css` por `desktop/css/base.css` + `css/drawer.css`
-3. Eliminar `toggleMenu()` y su JS asociado
-4. Agregar `.page-header` con título y campanita de notificaciones
-5. Cargar `drawer.js` + `notificaciones-dashboard.js`
-6. Migrar dashboard stats a `desktop/js/dashboard.js`
-
-**Riesgo:** Bajo — la página es un placeholder simple sin funcionalidad real.
-
----
-
-### 🎯 Fase 5 — Análisis Admin Header (Baja prioridad)
-
-**Decisión: NO unificar.** El `admin-header` tiene funcionalidades que `.page-header` no soporta:
-- Botón de menú específico (`.admin-menu-btn`)
-- Reloj en vivo (`.admin-clock`)
-- Badge de rol (`.admin-badge`: "Super Admin" / "Admin")
-- Layout con tabs debajo del header
-
-**Recomendación futura:** En un rediseño del panel admin, `.admin-header` podría heredar de `.page-header` con extensiones CSS. También se podría eliminar ~100 líneas de CSS duplicado de modales en `admin.css` importando `modal.css`.
-
----
-
-### 📊 Resumen de cambios — Sesión Estandarización Frontend
-
-| Concepto | Antes | Después |
-|---------|-------|---------|
-| Sistemas de botones | ~50 clases en ~12 archivos CSS | 1 sistema unificado (8 variantes) en `base.css` + `estilos.css` |
-| Sistemas de badges | 3 sistemas independientes | 1 sistema por color con aliases legacy |
-| Sistemas de modales | 4 implementaciones inline + SweetAlert2 | 1 compartido (`modal.js` + `modal.css`) + 1 excepción (admin) |
-| SweetAlert2 | CDN externo en ventas.html | Eliminado (reemplazado por Modal) |
-| Código eliminado | ~160+ líneas (inline crearModal + Swal + script temp) | Código más limpio y mantenible |
-
-### 📌 Pendientes para próximas fases
-
-- [ ] Integrar `modal.js` en `drawer.js` para auto-carga en nuevas páginas
-- [ ] Unificar CSS de modales admin con `modal.css` (~100 líneas duplicadas)
-- [ ] Migrar `public/index.html` legacy (~45 min)
-- [ ] Rediseñar panel admin (incluye header + modales)
-
----
-
-## 📋 Arquitectura del Sistema (v2.1 → v3.0)
-
-### Visión General
-
-**ANTES (v2.1): Sistema plano sin equipos**
-```
-Frontend (HTML/CSS/JS Vanilla)         Frontend (Desktop + Móvil + Admin)
-    Desktop  ───  Móvil  ───  Admin         ↕ HTTP REST + SSE (NotificationBus)
-        ↕ HTTP REST + SSE              Backend (Express.js 5)
-Backend (Express.js 5)                      Routes → Middleware (auth) → Controllers → Services → DB
-    Routes → Middleware → Controllers → DB     ↕ SQL parametrizado + Pool de conexiones
-        ↕ SQL parametrizado + Pool          PostgreSQL (producción) / SQLite (local)
-PostgreSQL (producción) / SQLite (local)      • 18 tablas (12 originales + 6 nuevas)
-    • 12 tablas • 26 índices • WAL mode          • 43 índices (26 originales + 17 nuevos)
-```                                         • Capa organizacional multi-equipo
-
-### 🆕 Arquitectura Multi-Equipo (v3.0)
-
-```
-                    ┌─────────────────────┐
-                    │     SUPERADMIN       │
-                    └──────────┬──────────┘
-                               │
-              ┌────────────────┼────────────────┐
-              │                │                │
-    ┌─────────┴─────────┐  ┌──┴──────────┐  ┌──┴──────────┐
-    │   EQUIPO "VENTAS"  │  │ EQUIPO "COB" │  │EQUIPO "SISTEMA"│
-    │  (Nuevo)           │  │ (Nuevo)      │  │(Migración auto)│
-    └─────────┬─────────┘  └──┬──────────┘  └──┬──────────┘
-              │                │                │
-    ┌─────────┴─────────┐  ┌──┴──────────┐  ┌──┴──────────┐
-    │  LÍDER: Carlos    │  │ LÍDER: María │  │  SUPERADMIN  │
-    └─────────┬─────────┘  └──┬──────────┘  └──────┬───────┘
-              │                │                     │
-    ┌─────────┴─────────┐  ┌──┴──────────┐     Usuarios
-    │ AGENTE: Pedro     │  │AGENTE: Juan  │    actuales
-    │ AGENTE: Ana       │  │AGENTE: Luis  │
-    └───────────────────┘  └──────────────┘
-```
-
-### Estructura del Sistema
-
-```
-SUPERADMIN → EQUIPOS → LÍDER → AGENTES → CAMPAÑAS → SOLICITUDES → GESTIONES
-```
-
-### Filosofía: Separación de Conceptos
-
-| Concepto | Qué determina | Dónde se almacena |
-|----------|---------------|-------------------|
-| **ROL** | Quién es el usuario | `usuarios.rol` (existente) |
-| **EQUIPO** | Con quién trabaja | `equipo_usuarios` (NUEVA) |
-| **PERMISOS** | Qué puede hacer | `permisos_roles` (NUEVA) |
-| **ASIGNACIONES** | Sobre qué solicitudes trabaja | `asignaciones_solicitudes` (NUEVA) |
+| Módulo | Descripción |
+|--------|-------------|
+| **Solicitudes** | CRUD completo de solicitudes con importación desde Excel |
+| **Dashboard** | KPIs, gráficos por estado/segmento, promedios y ventas mensuales |
+| **Gestiones** | Registro de acciones sobre solicitudes (individual y por lotes) |
+| **Relaciones** | Gestión de relaciones ALTA/BAJA con clientes |
+| **Equipos** | Sistema multi-equipo con líderes y agentes (v3.0) |
+| **Campañas** | Gestión por lotes de solicitudes para acción masiva |
+| **Ventas** | Control de ventas por vendedor con configuración de bonos |
+| **Administración** | Panel de superadmin con auditoría, usuarios y estadísticas |
+| **Notificaciones** | Centro de notificaciones con SSE en tiempo real |
 
 ### Roles del Sistema
 
-| Rol | Level | ¿Puede crear? | ¿Puede asignar? | ¿Qué ve? |
-|-----|:-----:|---------------|-----------------|----------|
-| **superadmin** | 100 | Equipos, Líderes, Admins | Todo | Todo el sistema |
-| **admin** | 50 | Usuarios (no admins) | No | Sistema completo |
-| **lider** | 30 | Agentes (solo en su equipo) | Solicitudes a sus agentes | Solo su equipo |
-| **agente** | 20 | Nada | Nada | Sus campañas, solicitudes, gestiones |
-| **user** | 10 | Nada | Nada | Sus propios datos (legacy) |
+| Rol | Nivel | Descripción |
+|-----|-------|-------------|
+| **SuperAdmin** | 100 | Control total del sistema. Acceso al Panel de Administración. |
+| **Admin** | 50 | Administración de usuarios (herencia de versiones anteriores). |
+| **Líder** | 30 | Gestiona su equipo, crea agentes, asigna solicitudes y campañas. |
+| **Agente** | 20 | Opera sobre solicitudes y campañas asignadas por su líder. |
+| **User** | 10 | Usuario base (compatibilidad con versiones anteriores). |
 
-### Capa de Caché
-
-```
-Cliente → API → Cache (node-cache, RAM)
-                ├── Hit (≤30s) → Responde inmediato
-                └── Miss (>30s) → Consulta PostgreSQL → Almacena en caché → Responde
-                
-Invalidación: uploadExcel, crearSolicitudManual, eliminarSolicitud, 
-              limpiarSolicitudes, actualizarSolicitudEditar
-```
+> **Nota importante:** El SuperAdmin tiene un flujo completamente separado del Dashboard Operativo. Al iniciar sesión, es redirigido automáticamente al **Panel de Administración** y **no tiene acceso** a las rutas operativas (solicitudes, dashboard, etc.).
 
 ---
 
-## 🗄️ Modelo de Datos Multi-Equipo
-
-### 6 Tablas Nuevas
-
-| # | Tabla | Propósito | FK |
-|---|-------|-----------|:--:|
-| 1 | `equipos` | Catálogo de equipos organizacionales | — |
-| 2 | `equipo_usuarios` | Membresía usuario↔equipo con historial | equipos, usuarios |
-| 3 | `permisos_roles` | Permisos por rol (extensible) | — |
-| 4 | `permisos_equipo` | Permisos extras por equipo | equipos |
-| 5 | `asignaciones_solicitudes` | **Corazón del sistema**: qué solicitud→qué equipo/agente | equipos, usuarios |
-| 6 | `campañas_equipo` | Asociación campaña↔equipo | equipos |
-
-### 1 Tabla Modificada
-
-| Tabla | Cambio | Default |
-|-------|--------|:-------:|
-| `gestiones_maestro` | + `equipo_id` (INTEGER, nullable) | `NULL` = comportamiento actual |
-
-### 17 Nuevos Índices
-
-| Tabla | Índice | Columnas |
-|-------|--------|----------|
-| `equipos` | `idx_equipos_activo` | activo |
-| `equipo_usuarios` | `idx_equipo_usuarios_usuario_activo` | (usuario_id, fecha_salida) |
-| `equipo_usuarios` | `idx_equipo_usuarios_equipo` | (equipo_id, es_lider, fecha_salida) |
-| `equipo_usuarios` | `idx_equipo_usuarios_lider` | (equipo_id, es_lider) WHERE líder activo |
-| `permisos_roles` | `idx_permisos_roles_rol` | (rol) |
-| `permisos_equipo` | `idx_permisos_equipo_equipo` | equipo_id |
-| `asignaciones_solicitudes` | `idx_asignaciones_solicitud_activa` | (solicitud_id, fecha_desasignacion) |
-| `asignaciones_solicitudes` | `idx_asignaciones_usuario_activas` | (usuario_id, fecha_desasignacion) |
-| `asignaciones_solicitudes` | `idx_asignaciones_equipo_activas` | (equipo_id, fecha_desasignacion) |
-| `asignaciones_solicitudes` | `idx_asignaciones_campaña` | (desde_campaña_id, fecha_desasignacion) |
-| `asignaciones_solicitudes` | `idx_asignaciones_fecha` | fecha_asignacion DESC |
-| `campañas_equipo` | `idx_campañas_equipo_equipo` | equipo_id |
-| `gestiones_maestro` | `idx_gestiones_maestro_equipo` | equipo_id |
-
-### 47 Permisos por Rol
-
-| Rol | Permisos |
-|-----|----------|
-| **líder** (20) | equipo:ver/gestionar, agentes:ver/crear/editar, campañas:ver/crear/gestionar/asignar, solicitudes:importar/ver-equipo/asignar/reasignar, dashboard:ver-equipo/ver-agentes, gestiones:ver-equipo, relaciones:ver-equipo, historial:ver-equipo |
-| **agente** (12) | campañas:ver-propias, solicitudes:ver-asignadas/gestionar/editar-estado/completar-info, gestiones:crear/ver-propias/editar, relaciones:gestionar, historial:ver-propio, perfil:ver/editar |
-| **user** (15) | solicitudes:importar/ver-propias/gestionar, campañas:crear/gestionar, gestiones:crear/ver-propias/editar, relaciones:gestionar, ventas:gestionar, historial:ver-propio, perfil:ver/editar |
-
----
-
-## 🔐 Flujo de Permisos
+## 2. 🏗️ Arquitectura General
 
 ```
-Petición del usuario
-        │
-        ▼
-Middleware: requiresAuth
-        │
-    ┌───┴───┐
-    │       │
-  NO (401) SÍ (continúa)
-    │       │
-    ▼       ▼
-¿Requiere permiso específico?
-    │       │
-  NO (pasa) SÍ (verificar)
-                │
-        ┌──────┴──────┐
-        │             │
-    SUPERADMIN?    NO → Buscar en permisos_roles
-        │                  (según su rol)
-        │             │
-      ✅ PASA        Buscar en permisos_equipo
-                         (según su equipo)
-                          │
-                    ┌─────┴─────┐
-                    │           │
-                  SÍ (✅)    NO (403)
+┌─────────────────────────────────────────────────────────────┐
+│                    CLIENTE (Navegador)                       │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────┐   │
+│  │ Desktop UI  │  │  Mobile UI   │  │  Admin Panel     │   │
+│  │ (HTML+CSS+  │  │ (HTML+CSS+   │  │ (HTML+CSS+JS)    │   │
+│  │  VanillaJS) │  │  VanillaJS)  │  │                  │   │
+│  └──────┬──────┘  └──────┬───────┘  └────────┬─────────┘   │
+│         │                │                    │             │
+│         └────────────────┴────────────────────┘             │
+│                        │  SSE (Event Stream)                │
+└────────────────────────┼────────────────────────────────────┘
+                         │ HTTP / SSE
+┌────────────────────────┼────────────────────────────────────┐
+│              EXPRESS.JS SERVER (app.js)                     │
+│                         │                                    │
+│  ┌──────────────────────┴──────────────────────────────┐    │
+│  │              MIDDLEWARE STACK                        │    │
+│  │  Helmet → Rate Limiting → Session → Auth → Routes   │    │
+│  └──────────────────────┬──────────────────────────────┘    │
+│                         │                                    │
+│  ┌──────────────────────┴──────────────────────────────┐    │
+│  │              API ROUTES (REST)                       │    │
+│  │  /api/auth  /api/excel  /api/admin  /api/equipos     │    │
+│  │  /api/relaciones  /api/gestiones-maestro             │    │
+│  └──────────────────────┬──────────────────────────────┘    │
+│                         │                                    │
+│  ┌──────────────────────┴──────────────────────────────┐    │
+│  │              CONTROLADORES                           │    │
+│  │  auth  excel  dashboard  admin  equipos              │    │
+│  │  notificaciones  relaciones  gestionesMaestro        │    │
+│  │  estadisticas  relacionesGestion                     │    │
+│  └──────────────────────┬──────────────────────────────┘    │
+│                         │                                    │
+│  ┌──────────────────────┴──────────────────────────────┐    │
+│  │              SERVICIOS                               │    │
+│  │  excel.service  relaciones.service  notificationBus  │    │
+│  └──────────────────────┬──────────────────────────────┘    │
+│                         │                                    │
+│  ┌──────────────────────┴──────────────────────────────┐    │
+│  │              CAPA DE DATOS                           │    │
+│  │  ┌─────────────┐  ┌──────────────┐  ┌───────────┐  │    │
+│  │  │ PostgreSQL  │  │   SQLite     │  │  Cache    │  │    │
+│  │  │ (Producción)│  │  (Desarrollo)│  │(node-cache)│  │    │
+│  │  └─────────────┘  └──────────────┘  └───────────┘  │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Separación de Flujos: Operativo vs Administración
+
+```
+                    ┌─── USUARIO LOGUEADO ───┐
+                    │                         │
+                    ▼                         ▼
+          ┌──────────────────┐      ┌──────────────────┐
+          │  DASHBOARD       │      │  PANEL DE        │
+          │  OPERATIVO       │      │  ADMINISTRACIÓN   │
+          │                  │      │                  │
+          │ • Solicitudes    │      │ • Gestión de     │
+          │ • Dashboard      │      │   Usuarios       │
+          │ • Gestiones      │      │ • Estadísticas   │
+          │ • Relaciones     │      │   del Sistema    │
+          │ • Ventas         │      │ • Logs de        │
+          │ • Campañas       │      │   Auditoría      │
+          │ • Equipos        │      │ • Notificaciones │
+          │ • Historial      │      │   Globales       │
+          └──────────────────┘      └──────────────────┘
+                    │                         │
+                    ▼                         ▼
+          ┌──────────────────┐      ┌──────────────────┐
+          │  Usuarios:       │      │  Solo:           │
+          │  user, agente,   │      │  superadmin      │
+          │  lider           │      │  (is_superadmin  │
+          └──────────────────┘      │   = TRUE)        │
+                                    └──────────────────┘
 ```
 
 ---
 
-## 🔄 Flujo de Asignaciones
+## 3. 🛠️ Stack Tecnológico
+
+### Backend
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
+| **Node.js** | - | Runtime de JavaScript |
+| **Express.js** | ^5.2.1 | Framework web (HTTP server y routing) |
+| **better-sqlite3** | ^11.7.0 | Base de datos local (desarrollo) |
+| **pg** | ^8.13.0 | Cliente PostgreSQL (producción) |
+| **bcryptjs** | ^3.0.3 | Hashing de contraseñas |
+| **express-session** | ^1.19.0 | Manejo de sesiones |
+| **helmet** | ^8.0.0 | Headers de seguridad HTTP |
+| **express-rate-limit** | ^7.4.0 | Rate limiting |
+| **multer** | ^2.1.1 | Subida de archivos (Excel, imágenes) |
+| **exceljs** | ^3.4.0 | Procesamiento de archivos Excel |
+| **node-cache** | ^5.1.2 | Caché en memoria del servidor |
+| **dotenv** | ^16.6.1 | Variables de entorno |
+
+### Frontend
+| Tecnología | Propósito |
+|------------|-----------|
+| **HTML5 + CSS3** | Estructura y estilos |
+| **Vanilla JavaScript** | Lógica del cliente (sin frameworks) |
+| **Chart.js** (CDN) | Gráficos del dashboard |
+| **CSS Grid / Flexbox** | Layout responsivo |
+
+### Base de Datos
+| Entorno | Motor |
+|---------|-------|
+| **Producción** | PostgreSQL (Render) |
+| **Desarrollo Local** | SQLite (better-sqlite3) |
+
+### Seguridad
+- **bcryptjs**: Hash de contraseñas (10 rondas)
+- **helmet**: Headers de seguridad (CSP, XSS, etc.)
+- **express-rate-limit**: Rate limiting por ruta
+- **express-session**: Cookies httpOnly, secure, sameSite strict
+- **Bloqueo de cuenta**: 5 intentos fallidos → 15 min de bloqueo
+
+---
+
+## 4. 📁 Estructura del Proyecto
 
 ```
-LÍDER importa Excel o crea solicitud
-        │
-        ▼
-  Solicitud INSERT en DB
-  (usuario_id = líder)
-        │
-        ▼
-  Asignación automática al equipo del líder
-  (sin agente específico)
-        │
-    ┌───┴───┐
-    │       │
-  Directa  Campaña
-    │       │
-    ▼       ▼
-  INSERT INTO    LÍDER asigna campaña
-  asignaciones   a agente(s)
-    │            │
-    └────┬───────┘
-         │
-         ▼
-  AGENTE ve solicitud asignada
-         │
-         ▼
-  AGENTE realiza gestiones
-         │
-         ▼
-  LÍDER monitorea progreso
-  desde dashboard del equipo
+ARCHIVOX/
+├── app.js                          # Punto de entrada del servidor Express
+├── package.json                    # Dependencias y scripts
+├── .env                            # Variables de entorno (no trackeado)
+├── commit_push.bat                 # Script de deploy (Windows)
+│
+├── docs/                           # Documentación del sistema
+│   ├── README.md                   # Este archivo
+│   └── anteriores/                 # Documentación histórica
+│       ├── informe-arquitectura-multi-equipo.md
+│       ├── informe-auditoria-flujo-multi-equipo.md
+│       ├── informe-auditoria-rendimiento.md
+│       ├── informe-tecnico-sesion.md
+│       ├── informe-modelo-datos-multi-equipo.md
+│       ├── informe-optimizacion-arquitectura.md
+│       ├── informe-deep-links-arquitectura.md
+│       ├── informe-drawer-movil.md
+│       ├── informe-funcional-multiequipo.md
+│       ├── informe-correccion-errores-lider-equipos.md
+│       ├── progreso-multi-equipo.md
+│       ├── progreso-correccion-sistema.md
+│       ├── progreso-simplificacion.md
+│       ├── migration-accion-modulo-produccion.md
+│       ├── analisis-admin.md
+│       └── analisis-solicitud-manual.md
+│
+├── src/                            # CÓDIGO FUENTE BACKEND
+│   ├── config/                     # Configuraciones del sistema
+│   │   ├── database.js             # SQLite - Conexión directa (better-sqlite3)
+│   │   ├── database.pg.js          # PostgreSQL - Pool de conexiones (pg)
+│   │   ├── db.js                   # DB UNIFICADA - Abstraction layer (SQLite↔PostgreSQL)
+│   │   ├── initDb.js               # SQLite - Inicialización y migraciones automáticas
+│   │   ├── initDb.pg.js            # PostgreSQL - Inicialización y migraciones automáticas
+│   │   ├── cache.js                # Caché en servidor (node-cache)
+│   │   ├── permissions.js          # Sistema de roles y permisos
+│   │   ├── multer.config.js        # Configuración de subida de archivos
+│   │   └── auth.controller.js      # [DEPRECATED] Replaced by src/controllers/auth.controller.js
+│   │
+│   ├── middleware/                  # Middleware Express
+│   │   └── auth.middleware.js       # Autenticación, roles, permisos, equipos
+│   │
+│   ├── controllers/                # Controladores (lógica de negocio)
+│   │   ├── auth.controller.js      # Registro, login, logout, perfil
+│   │   ├── excel.controller.js     # Solicitudes CRUD, gestiones, upload Excel
+│   │   ├── dashboard.controller.js # Dashboard KPIs, segmentos, estados, ventas
+│   │   ├── admin.controller.js     # Admin: usuarios, estadísticas, auditoría
+│   │   ├── equipos.controller.js   # Multi-equipo: equipos, agentes, dashboard
+│   │   ├── gestionesMaestro.controller.js  # Campañas por lotes
+│   │   ├── relaciones.controller.js        # Relaciones ALTA/BAJA
+│   │   ├── relacionesGestion.controller.js # Gestiones de relaciones
+│   │   ├── notificaciones.controller.js    # Centro de notificaciones + SSE
+│   │   └── estadisticas.controller.js      # Métricas por usuario (escalable)
+│   │
+│   ├── routes/                     # Definición de rutas Express
+│   │   ├── auth.routes.js          # /api/auth/*
+│   │   ├── excel.routes.js         # /api/excel/*
+│   │   ├── admin.routes.js         # /api/admin/*
+│   │   ├── equipos.routes.js       # /api/equipos/*
+│   │   ├── relaciones.routes.js    # /api/relaciones/*
+│   │   ├── relacionesGestion.routes.js  # /api/relaciones/gestiones/*
+│   │   ├── gestionesMaestro.routes.js   # /api/gestiones-maestro/*
+│   │   └── debug.routes.js         # /api/debug/* (diagnóstico)
+│   │
+│   └── services/                   # Servicios (lógica reutilizable)
+│       ├── excel.service.js        # Procesamiento de archivos Excel (solicitudes)
+│       ├── relaciones.service.js   # Procesamiento de archivos Excel (relaciones)
+│       └── notificationBus.js      # SSE Bus - Notificaciones en tiempo real
+│
+├── public/                         # CÓDIGO FRONTEND (estático)
+│   ├── index.html                  # Entry point (redirección a login)
+│   ├── perfil.html                 # Página de perfil de usuario
+│   │
+│   ├── css/                        # Estilos compartidos
+│   │   ├── main.css                # Estilos globales
+│   │   ├── login.css               # Estilos de login
+│   │   ├── solicitudes.css         # Estilos de solicitudes
+│   │   ├── drawer.css              # Estilos del drawer móvil
+│   │   ├── modal.css               # Estilos de modales
+│   │   ├── notificaciones.css      # Estilos de notificaciones
+│   │   ├── perfil.css              # Estilos de perfil
+│   │   ├── importar.css            # Estilos de importación
+│   │   └── gestion-lote.css        # Estilos de gestión por lotes
+│   │
+│   ├── js/                         # JavaScript compartido
+│   │   ├── login.js                # Lógica de login/registro
+│   │   ├── dashboard.js            # Redirección a login (fallback)
+│   │   ├── deep-link-router.js     # Router de deep links para notificaciones
+│   │   ├── drawer.js               # Drawer de navegación móvil
+│   │   ├── modal.js                # Sistema de modales
+│   │   ├── notificaciones-dashboard.js  # Widget de notificaciones
+│   │   └── perfil.js               # Lógica de perfil de usuario
+│   │
+│   ├── desktop/                    # VERSIÓN ESCRITORIO
+│   │   ├── login.html              # Login (escritorio)
+│   │   ├── index.html              # Dashboard principal (escritorio)
+│   │   ├── solicitudes.html        # Listado de solicitudes (escritorio)
+│   │   ├── importar.html           # Importación Excel (escritorio)
+│   │   ├── gestiones.html          # Gestión de campañas (escritorio)
+│   │   ├── gestion-lote.html       # Gestión por lotes (escritorio)
+│   │   ├── relaciones.html         # Relaciones (escritorio)
+│   │   ├── ventas.html             # Control de ventas (escritorio)
+│   │   ├── historial.html          # Historial de actualizaciones (escritorio)
+│   │   ├── equipo.html             # Panel del líder (escritorio)
+│   │   │
+│   │   ├── css/                    # Estilos específicos escritorio
+│   │   │   ├── base.css            # Base layout
+│   │   │   ├── dashboard.css       # Dashboard
+│   │   │   ├── solicitudes.css     # Solicitudes
+│   │   │   ├── gestiones.css       # Gestiones
+│   │   │   ├── importar.css        # Importar
+│   │   │   ├── ventas.css          # Ventas
+│   │   │   ├── equipo.css          # Panel líder
+│   │   │   ├── historial.css       # Historial
+│   │   │   └── relaciones.css      # Relaciones
+│   │   │
+│   │   └── js/                     # JavaScript específico escritorio
+│   │       ├── dashboard.js        # Dashboard
+│   │       ├── solicitudes.js      # Solicitudes (con caché cliente + AbortController)
+│   │       ├── importar.js         # Importación
+│   │       ├── gestiones.js        # Gestiones
+│   │       ├── gestion-lote.js     # Gestión por lotes
+│   │       ├── relaciones.js       # Relaciones
+│   │       ├── ventas.js           # Ventas
+│   │       ├── historial.js        # Historial
+│   │       └── equipo.js           # Panel líder
+│   │
+│   └── movil/                      # VERSIÓN MÓVIL
+│       ├── login.html              # Login (móvil)
+│       ├── index.html              # Dashboard (móvil)
+│       ├── solicitudes.html        # Solicitudes (móvil)
+│       ├── importar.html           # Importación (móvil)
+│       ├── gestiones.html          # Campañas (móvil)
+│       ├── gestion-lote.html       # Gestión por lotes (móvil)
+│       ├── relaciones.html         # Relaciones (móvil)
+│       ├── ventas.html             # Ventas (móvil)
+│       ├── historial.html          # Historial (móvil)
+│       ├── equipo.html             # Panel líder (móvil)
+│       │
+│       ├── css/                    # Estilos específicos móvil
+│       │   ├── estilos.css         # Estilos base móvil
+│       │   ├── solicitudes-mobile.css  # Solicitudes móvil
+│       │   ├── gestiones.css       # Gestiones móvil
+│       │   ├── gestion-lote.css    # Gestión por lotes móvil
+│       │   └── importar.css        # Importar móvil
+│       │
+│       └── js/                     # JavaScript específico móvil
+│           ├── dashboard.js        # Dashboard
+│           ├── solicitudes.js      # Solicitudes
+│           ├── importar.js         # Importación
+│           ├── gestiones.js        # Gestiones
+│           ├── gestion-lote.js     # Gestión por lotes
+│           ├── relaciones.js       # Relaciones
+│           ├── ventas.js           # Ventas
+│           ├── historial.js        # Historial
+│           └── equipo.js           # Panel líder
+│
+│   └── admin/                      # PANEL DE ADMINISTRACIÓN
+│       ├── index.html              # Panel admin (HTML)
+│       ├── css/admin.css           # Estilos admin
+│       └── js/admin.js             # Lógica admin
+│
+├── migrations/                     # Migraciones de base de datos
+│   ├── 001_add_admin_columns.js    # Admin Fase 1 (PostgreSQL script)
+│   ├── 001_add_admin_columns.sql   # Admin Fase 1 (PostgreSQL SQL)
+│   ├── 001_add_admin_columns.sqlite.sql  # Admin Fase 1 (SQLite SQL)
+│   ├── 002_add_compound_indexes.js       # Índices compuestos (script)
+│   ├── 002_add_compound_indexes.sql      # Índices compuestos (SQL)
+│   ├── 003_create_team_tables.js         # Multi-equipo tablas (script)
+│   ├── 003_create_team_tables.pg.sql     # Multi-equipo PostgreSQL SQL
+│   ├── 003_create_team_tables.sqlite.sql # Multi-equipo SQLite SQL
+│   ├── 003_rollback_team_tables.sql      # Rollback multi-equipo
+│   ├── 003_rollback_team_tables.sqlite.sql # Rollback SQLite
+│   ├── 003_seed_team_data.js             # Seed datos multi-equipo (script)
+│   ├── 003_seed_team_data.sql            # Seed datos multi-equipo (SQL)
+│   ├── 003_seed_team_data.sqlite.sql     # Seed datos multi-equipo SQLite
+│   └── 004_add_asignado_a_columna.js     # Columna asignado_a (script)
+│
+├── scripts/                        # Scripts de utilidad
+│   ├── audit-funciones.js          # Auditoría de funciones JS llamadas desde HTML
+│   ├── audit-production-schema.js  # Auditoría de esquema PostgreSQL
+│   ├── fix-production-notificaciones.js  # Corrección de notificaciones en producción
+│   ├── migrate-production-accion-modulo.js # Migración deep links en producción
+│   └── optimize-solicitudes-performance.js # Optimización de rendimiento
+│
+├── fix_escapes.js                  # Script de corrección de escapes
+├── fix_final.js                    # Script de corrección final
+└── fix_team.js                     # Script de corrección de equipos
 ```
 
 ---
 
-## 🌐 Endpoints API Multi-Equipo
+## 5. 🗄️ Base de Datos
 
-| Método | Ruta | Propósito | Acceso |
-|--------|------|-----------|:------:|
-| GET | `/api/equipos` | Listar equipos | Autenticado |
-| GET | `/api/equipos/mi-equipo` | Info del equipo del usuario | Autenticado |
-| GET | `/api/equipos/:id` | Ver equipo con detalle | requiresEquipo |
-| POST | `/api/equipos` | Crear equipo | superadmin |
-| PUT | `/api/equipos/:id` | Actualizar equipo | superadmin |
-| DELETE | `/api/equipos/:id` | Eliminar equipo | superadmin |
-| GET | `/api/equipos/:id/miembros` | Listar miembros del equipo | Autenticado |
-| GET | `/api/equipos/:id/dashboard` | Dashboard del equipo | requiresEquipo |
-| GET | `/api/equipos/:id/gestiones` | Gestiones del equipo | requiresEquipo |
-| GET | `/api/equipos/:id/campanas` | Campañas del equipo | Autenticado |
-| POST | `/api/equipos/:id/agentes` | Crear agente en equipo | requiresPermissionAsync('agentes:crear') |
-| PUT | `/api/equipos/:id/asignar-lider` | Asignar líder del equipo | superadmin |
-| PUT | `/api/equipos/:id/remover-miembro` | Remover miembro del equipo | superadmin |
-| POST | `/api/equipos/:id/mover-usuario` | Mover usuario entre equipos | superadmin |
+### 5.1 Arquitectura Dual (SQLite ↔ PostgreSQL)
+
+El sistema utiliza una **capa de abstracción unificada** (`src/config/db.js`) que permite funcionar con ambos motores sin cambiar el código de los controladores.
+
+| Característica | SQLite (Local) | PostgreSQL (Producción) |
+|----------------|---------------|------------------------|
+| Driver | better-sqlite3 | pg (node-postgres) |
+| Archivo | `database.db` | Servicio Render |
+| WAL Mode | ✅ | N/A |
+| Placeholders | `?` | `$1, $2, ...` |
+| Funciones Fecha | `datetime('now')` | `CURRENT_TIMESTAMP` |
+| INTERVAL | No nativo | Nativo |
+| JSON | No nativo | JSONB |
+| RETURNING | No nativo | Nativo |
+
+El wrapper en `db.js` se encarga automáticamente de:
+- Convertir `?` a `$1, $2, ...` para PostgreSQL
+- Convertir `$1, $2, ...` a `?` para SQLite
+- Convertir sintaxis `INTERVAL` de PostgreSQL a SQLite
+- Convertir `TO_CHAR()` a `strftime()` para SQLite
+- Agregar `RETURNING id` automáticamente a INSERTs para PostgreSQL
+
+### 5.2 Esquema de Tablas
+
+#### `usuarios`
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | SERIAL/INTEGER PK | ID único |
+| username | TEXT UNIQUE NOT NULL | Nombre de usuario |
+| password | TEXT NOT NULL | Hash bcrypt |
+| nombre | TEXT | Nombre completo |
+| email | TEXT UNIQUE | Correo electrónico |
+| email_verified | BOOLEAN/INTEGER | ¿Email verificado? |
+| rol | TEXT DEFAULT 'user' | Rol: user, agente, lider, admin, superadmin |
+| is_active | BOOLEAN/INTEGER DEFAULT 1 | ¿Cuenta activa? |
+| is_superadmin | BOOLEAN/INTEGER DEFAULT 0 | ¿Es superadmin? |
+| failed_login_attempts | INTEGER DEFAULT 0 | Intentos fallidos de login |
+| locked_until | TIMESTAMP/TEXT | ¿Bloqueado hasta? |
+| password_changed_at | TIMESTAMP/TEXT | Último cambio de contraseña |
+| created_at | TIMESTAMP/TEXT | Fecha de creación |
+| updated_at | TIMESTAMP/TEXT | Fecha de actualización |
+| last_login | TIMESTAMP/TEXT | Último inicio de sesión |
+
+#### `solicitudes`
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | SERIAL/INTEGER PK | ID interno |
+| id_solicitud | INTEGER UNIQUE | ID de solicitud (externo) |
+| estado | TEXT | Estado (ACTIVADA, RECHAZADA, etc.) |
+| cedula | TEXT | Cédula de identidad |
+| nombre | TEXT | Nombre del cliente |
+| celular | TEXT | Número de celular |
+| segmento | TEXT | Segmento comercial |
+| producto | TEXT | Producto solicitado |
+| codigo_plus | TEXT | Código adicional |
+| correo_electronico | TEXT | Email del cliente |
+| direccion | TEXT | Dirección |
+| fecha_solicitud | TEXT | Fecha de solicitud |
+| usuario_id | INTEGER FK | Usuario propietario |
+| destacado | INTEGER DEFAULT 0 | ¿Destacado? |
+| fecha_importacion | TIMESTAMP/TEXT | Fecha de importación |
+| fecha_actualizacion | TIMESTAMP/TEXT | Fecha de actualización |
+
+#### `gestiones`
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | SERIAL/INTEGER PK | ID único |
+| solicitud_id | INTEGER NOT NULL | Solicitud asociada |
+| usuario_id | INTEGER NOT NULL | Usuario que gestiona |
+| tipo_gestion | TEXT NOT NULL | Tipo: RECHAZADO, APROBADO, etc. |
+| observacion | TEXT | Notas de la gestión |
+| gestion_maestro_id | INTEGER FK | Campaña asociada (opcional) |
+| fecha_gestion | TIMESTAMP/TEXT | Fecha de gestión |
+| created_at | TIMESTAMP/TEXT | Fecha de creación |
+| updated_at | TIMESTAMP/TEXT | Fecha de actualización |
+
+#### `gestiones_maestro` (Campañas)
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | SERIAL/INTEGER PK | ID único |
+| nombre | TEXT NOT NULL | Nombre de la campaña |
+| descripcion | TEXT | Descripción |
+| usuario_id | INTEGER NOT NULL | Creador |
+| estado | TEXT DEFAULT 'activa' | Estado de la campaña |
+| total_solicitudes | INTEGER DEFAULT 0 | Total de solicitudes asignadas |
+| gestionadas | INTEGER DEFAULT 0 | Solicitudes ya gestionadas |
+| fecha_limite | DATE | Fecha límite |
+| solicitudes_ids | TEXT | IDs de solicitudes (JSON) |
+| equipo_id | INTEGER FK | Equipo asignado (v3.0) |
+| asignado_a | INTEGER FK | Agente asignado (v3.0) |
+| fecha_inicio | TIMESTAMP/TEXT | Fecha de inicio |
+| fecha_fin | TIMESTAMP/TEXT | Fecha de finalización |
+
+#### `relaciones`
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | SERIAL/INTEGER PK | ID único |
+| usuario_id | INTEGER NOT NULL FK | Usuario propietario |
+| identificacion | TEXT | Identificación del cliente |
+| cliente | TEXT | Nombre del cliente |
+| celular | TEXT | Celular |
+| estado_relacion | TEXT CHECK('ALTA','BAJA') | Estado de la relación |
+| fecha_inicio_relacion | DATE | Inicio de relación |
+| fecha_fin_relacion | DATE | Fin de relación |
+| fecha_fin_credito | DATE | Fin de crédito |
+| fecha_fin_fidelizacion | DATE | Fin de fidelización |
+| proxima_baja | DATE | Próxima baja estimada |
+| motivo_ruptura | TEXT | Motivo de ruptura |
+| numero_operaciones | INTEGER DEFAULT 0 | Número de operaciones |
+
+#### `equipos` (v3.0)
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | SERIAL/INTEGER PK | ID único |
+| nombre | VARCHAR(100) UNIQUE NOT NULL | Nombre del equipo |
+| descripcion | TEXT | Descripción |
+| activo | INTEGER DEFAULT 1 | ¿Equipo activo? |
+
+#### `equipo_usuarios` (v3.0)
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | SERIAL/INTEGER PK | ID único |
+| equipo_id | INTEGER NOT NULL FK | Equipo |
+| usuario_id | INTEGER NOT NULL FK | Usuario |
+| es_lider | INTEGER DEFAULT 0 | ¿Es líder? |
+| fecha_ingreso | TIMESTAMP/TEXT | Fecha de ingreso |
+| fecha_salida | TIMESTAMP/TEXT | Fecha de salida (NULL = activo) |
+| motivo_salida | TEXT | Motivo de salida |
+
+#### Otras tablas
+- `ventas_vendedores` - Ventas por vendedor por mes
+- `config_bonos` - Configuración de bonos por mes
+- `solicitudes_referencias` - Referencias de solicitudes
+- `historial_actualizaciones` - Auditoría de cambios en solicitudes
+- `gestiones_relaciones` - Gestiones específicas de relaciones
+- `audit_log` - Registro de auditoría del sistema
+- `notificaciones` - Centro de notificaciones
+- `permisos_roles` - Permisos por rol (v3.0)
+- `permisos_equipo` - Permisos adicionales por equipo (v3.0)
+- `asignaciones_solicitudes` - Asignaciones de solicitudes a equipos/agentes (v3.0)
+- `campañas_equipo` - Asociación campañas ↔ equipos (v3.0)
+
+### 5.3 Índices Compuestos
+
+El sistema cuenta con índices compuestos optimizados para las consultas más frecuentes:
+
+| Índice | Tabla | Columnas | Propósito |
+|--------|-------|----------|-----------|
+| `idx_solicitudes_usuario_id_desc` | solicitudes | (usuario_id, id_solicitud DESC) | Listado principal con ORDER BY |
+| `idx_solicitudes_usuario_estado` | solicitudes | (usuario_id, estado) | Dashboard por estado |
+| `idx_solicitudes_usuario_segmento` | solicitudes | (usuario_id, segmento) | Dashboard por segmento |
+| `idx_solicitudes_usuario_fecha` | solicitudes | (usuario_id, fecha_solicitud) | Promedios mensuales/semanales |
+| `idx_solicitudes_cedula` | solicitudes | (cedula) | Búsqueda por cédula |
+| `idx_gestiones_solicitud_usuario_fecha` | gestiones | (solicitud_id, usuario_id, fecha_gestion DESC) | LATERAL JOIN (consulta más frecuente) |
+| `idx_gestiones_usuario_created` | gestiones | (usuario_id, created_at) | Dashboard actividad (últimos 7/30 días) |
+| `idx_gestiones_maestro_id_solicitud` | gestiones | (gestion_maestro_id, solicitud_id) | Progreso de campañas |
+| `idx_notificaciones_destinatario_leida` | notificaciones | (destinatario_id, leida, created_at DESC) | Listado de notificaciones |
+| `idx_historial_usuario_fecha` | historial_actualizaciones | (usuario_id, fecha_actualizacion DESC) | Historial por usuario |
+| `idx_audit_log_accion_fecha` | audit_log | (accion, created_at DESC) | Consulta de auditoría |
 
 ---
 
-## 📱 Frontend — Páginas Multi-Equipo
+## 6. 🔧 Backend (API REST)
 
-| Ruta | Página | Para quién |
-|------|--------|:----------:|
-| `/` | Dashboard con card "Mi Equipo" | Todos (con equipo) |
-| `/equipo` (nueva) | Panel del Líder | Líderes / Admins |
-| `/admin` → pestaña Equipos | Gestión de equipos | SuperAdmin |
+### 6.1 Punto de Entrada (`app.js`)
 
-### Panel del Líder (`/equipo`)
-- Dashboard con stats (agentes, asignaciones, campañas, gestiones)
-- Acciones rápidas (crear agente, importar Excel, crear campaña)
-- Tabla de agentes con asignaciones y gestiones 7d
-- Tabla de campañas con barras de progreso
-- Gestiones recientes del equipo
-- Modal para crear agente
-- Modal para ver asignaciones por agente
+El servidor se inicia con Express.js y aplica el siguiente stack de middleware en orden:
 
-### Card "Mi Equipo" en Dashboard
-- Visible para todos los usuarios con equipo
-- Muestra: nombre del equipo, líder, agentes totales, asignaciones activas
-- Badge de rol (líder/agente/miembro)
+1. **trust proxy** - Habilita confianza en proxies (Render, Nginx)
+2. **helmet** - Headers de seguridad HTTP
+3. **express.json/urlencoded** - Parseo de body
+4. **Rate Limiting General** - 100 req / 15 min
+5. **Session** - Sesiones con cookies seguras
+6. **Static Files** - `public/` como raíz estática
+7. **API Routes** - Todas bajo `/api/*`
+8. **Error Handler Global** - Captura errores no manejados
 
----
+### 6.2 Configuración de Sesión
 
-## 📁 Migraciones Ejecutadas
+```javascript
+{
+    secret: process.env.SESSION_SECRET || 'default-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        maxAge: 24 * 60 * 60 * 1000,  // 24 horas
+        httpOnly: true,                // Protección XSS
+        secure: process.env.NODE_ENV === 'production',  // Solo HTTPS
+        sameSite: 'strict'             // Protección CSRF
+    }
+}
+```
 
-| Migración | Archivo | Descripción | Fecha |
-|-----------|---------|-------------|:----:|
-| 002 | `migrations/002_add_compound_indexes.js` | 11 índices compuestos de rendimiento | Jul 2026 |
-| 003a | `migrations/003_create_team_tables.js` | 6 tablas multi-equipo + modificar gestiones_maestro | Jul 2026 |
-| 003b | `migrations/003_seed_team_data.js` | Seed: equipo Sistema, 9 usuarios, 47 permisos | Jul 2026 |
+### 6.3 Middleware de Autenticación (`auth.middleware.js`)
 
----
+| Middleware | Propósito |
+|-----------|-----------|
+| `requiresAuth` | API: 401 si no hay sesión |
+| `requireAuthPage` | HTML: redirecciona a login si no hay sesión |
+| `requiresRole(...roles)` | Verifica que el rol esté en la lista |
+| `requiresPermission(permiso)` | Verifica permiso específico (síncrono) |
+| `requiresPermissionAsync(permiso)` | Verifica permiso en BD (asíncrono) |
+| `requiresLevel(minLevel)` | Verifica nivel mínimo de rol |
+| `requiresEquipo(accion)` | Verifica pertenencia al equipo |
+| `requiresSuperAdmin` | Solo SuperAdmin |
 
-## 📊 Archivos del Proyecto (v3.0)
+### 6.4 Sistema de Caché (`cache.js`)
 
-### Backend (`src/`)
+Estrategia **cache-aside** con invalidación explícita:
 
-| Ruta | Archivos | Propósito |
-|------|----------|-----------|
-| `src/config/` | `db.js`, `cache.js`, `permissions.js`, `initDb*.js`, `multer.config.js`, `database*.js` | Configuración global, pool BD, caché, roles |
-| `src/controllers/` | `auth`, `excel`, `dashboard`, `admin`, `estadisticas`, `equipos` (🆕), `gestionesMaestro`, `notificaciones`, `relaciones`, `relacionesGestion` | Lógica de negocio |
-| `src/middleware/` | `auth.middleware.js` | Autenticación, autorización, sesión |
-| `src/routes/` | `auth`, `admin`, `equipos` (🆕), `excel`, `gestionesMaestro`, `relaciones`, `relacionesGestion`, `debug` | Definición de rutas API |
-| `src/services/` | `excel.service.js`, `relaciones.service.js`, `notificationBus.js` | Lógica reutilizable |
+| Cache | TTL | Invalidación |
+|-------|-----|-------------|
+| Dashboard totals (por usuario) | 30s | Importación, creación, edición, eliminación |
+| Dashboard segmentos/estados | 30s | Mismo que arriba |
+| Estados disponibles (global) | 300s | Manual (rara vez cambia) |
+| Segmentos disponibles (global) | 300s | Manual |
+| Estadísticas admin | 60s | Creación/modificación de usuarios |
 
-### Frontend (`public/`)
+### 6.5 Configuración de Permisos (`permissions.js`)
 
-| Ruta | Propósito |
-|------|-----------|
-| `public/desktop/` | Versión escritorio (+ `equipo.html` 🆕) |
-| `public/movil/` | Versión móvil |
-| `public/admin/` | Panel de administración (+ pestaña Equipos 🆕) |
-| `public/desktop/css/equipo.css` 🆕 | Estilos del Panel del Líder |
-| `public/desktop/js/equipo.js` 🆕 | JS del Panel del Líder |
-| `public/css/` | Estilos compartidos |
-| `public/js/` | JS compartido, drawer.js (🆕 enlace líder), deep-link-router.js |
+Los permisos se definen con la convención `<recurso>:<acción>`:
 
-### Migraciones (`migrations/`)
-
-| Archivo | Descripción |
-|---------|-------------|
-| `001_add_admin_columns.*` | Columnas admin + audit_log |
-| `002_add_compound_indexes.*` | 11 índices compuestos ( ⚡ejecutado en producción) |
-| `003_create_team_tables.*` 🆕 | 6 tablas multi-equipo ( ⚡ejecutado en producción) |
-| `003_seed_team_data.*` 🆕 | Seed datos iniciales ( ⚡ejecutado en producción) |
-| `003_rollback_team_tables.*` 🆕 | Rollback completo |
-
-### Documentación (`docs/`)
-
-| Archivo | Descripción |
-|---------|-------------|
-| `README.md` | **Este archivo** — índice central actualizado v3.0 |
-| `informe-arquitectura-multi-equipo.md` 🆕 | Diseño completo de arquitectura multi-equipo |
-| `informe-modelo-datos-multi-equipo.md` 🆕 | Especificación detallada del modelo de datos |
-| `progreso-multi-equipo.md` 🆕 | Seguimiento de progreso del proyecto v3.0 |
-| `informe-auditoria-rendimiento.md` | Auditoría de rendimiento (v2.0) |
-| `informe-optimizacion-arquitectura.md` | Optimización de arquitectura (v2.0) |
-| `anteriores/` | Documentación de sesiones anteriores |
+```
+equipo:ver, equipo:gestionar
+agentes:ver, agentes:crear, agentes:editar, agentes:desactivar
+campañas:ver, campañas:crear, campañas:gestionar, campañas:asignar
+solicitudes:importar, solicitudes:ver-equipo, solicitudes:asignar
+gestiones:ver-equipo, gestiones:crear, gestiones:editar
+dashboard:ver-equipo, dashboard:ver-agentes
+relaciones:ver-equipo, relaciones:gestionar
+historial:ver-equipo, historial:ver-propio
+perfil:ver, perfil:editar
+```
 
 ---
 
-## 🔐 Comandos Útiles
+## 7. 🎨 Frontend
+
+### 7.1 Arquitectura Frontend
+
+El frontend está construido con **HTML + CSS + Vanilla JavaScript** (sin frameworks). Sigue una arquitectura de **páginas independientes** servidas por el backend según la ruta y el dispositivo.
+
+#### Páginas Compartidas
+- **Login/Registro** - `login.html` (versiones desktop y móvil)
+- **Perfil** - `perfil.html` (única versión)
+
+#### Versión Desktop
+- Dashboard, Solicitudes, Importar, Gestiones, Gestión por Lotes
+- Relaciones, Ventas, Historial, Panel del Líder
+
+#### Versión Móvil
+- Mismas funcionalidades que desktop pero con UI adaptada
+- Drawer de navegación (`drawer.js`)
+- Diseño responsivo para pantallas táctiles
+
+#### Panel de Administración
+- Accesible solo para SuperAdmin
+- Gestión de usuarios, estadísticas, auditoría, notificaciones
+
+### 7.2 JavaScript Compartido (`public/js/`)
+
+| Archivo | Propósito |
+|---------|-----------|
+| `login.js` | Autenticación (login, registro, verificación de sesión) |
+| `deep-link-router.js` | Resolución de deep links para notificaciones |
+| `drawer.js` | Drawer de navegación lateral para móvil |
+| `modal.js` | Sistema de modales reutilizables |
+| `notificaciones-dashboard.js` | Widget de notificaciones en tiempo real (SSE) |
+| `perfil.js` | Gestión de perfil de usuario |
+
+### 7.3 Características del Cliente
+
+- **Caché cliente**: Las solicitudes se cachean en `localStorage` con TTL
+- **AbortController**: Las peticiones fetch usan AbortController para cancelar peticiones obsoletas
+- **SSE (Server-Sent Events)**: Notificaciones en tiempo real
+- **Deep Link Router**: Navegación inteligente desde notificaciones
+- **Drawer Móvil**: Navegación lateral con menú hamburguesa
+
+---
+
+## 8. 👥 Sistema Multi-Equipo v3.0
+
+### 8.1 Conceptos
+
+| Concepto | Descripción |
+|----------|-------------|
+| **Equipo** | Grupo organizacional con nombre, descripción y estado |
+| **Líder** | Usuario con nivel 30 que gestiona su equipo |
+| **Agente** | Usuario con nivel 20, miembro de un equipo |
+| **Asignación** | Solicitud asignada a un equipo/agente |
+| **Campaña** | Gestión por lotes asociada a un equipo |
+
+### 8.2 Jerarquía de Equipos
+
+```
+SUPERADMIN (Nivel 100)
+│
+├── Equipo "Ventas Norte"
+│   ├── Líder: Juan Pérez
+│   ├── Agente: María García
+│   ├── Agente: Carlos López
+│   └── Campañas: ...
+│
+├── Equipo "Ventas Sur"
+│   ├── Líder: Ana Martínez
+│   ├── Agente: Pedro Sánchez
+│   └── Campañas: ...
+│
+└── Equipo "Sistema" (técnico, creado automáticamente en migración)
+    └── Usuarios sin equipo real asignado
+```
+
+### 8.3 Flujo de Trabajo
+
+1. **SuperAdmin** crea equipos y promueve líderes
+2. **Líder** gestiona su equipo: crea agentes, asigna solicitudes
+3. **Líder** crea campañas y las asigna a agentes
+4. **Agente** ve sus campañas y solicitudes asignadas
+5. **Agente** realiza gestiones sobre las solicitudes asignadas
+
+### 8.4 Tablas del Sistema Multi-Equipo
+
+| Tabla | Propósito |
+|-------|-----------|
+| `equipos` | Definición de equipos |
+| `equipo_usuarios` | Miembros de equipos (con liderazgo) |
+| `permisos_roles` | Permisos por rol extendido |
+| `permisos_equipo` | Permisos adicionales por equipo |
+| `asignaciones_solicitudes` | Solicitudes asignadas a equipos/agentes |
+| `campañas_equipo` | Campañas asociadas a equipos |
+
+### 8.5 Permisos del Líder vs Agente
+
+| Permiso | Líder | Agente |
+|---------|-------|--------|
+| Ver equipo | ✅ | ❌ |
+| Gestionar equipo | ✅ | ❌ |
+| Crear agentes | ✅ | ❌ |
+| Ver campañas del equipo | ✅ | ❌ |
+| Ver campañas propias | ✅ | ✅ |
+| Ver solicitudes del equipo | ✅ | ❌ |
+| Ver solicitudes asignadas | ✅ | ✅ |
+| Gestionar solicitudes | ✅ | ✅ |
+| Asignar solicitudes | ✅ | ❌ |
+
+---
+
+## 9. 🔒 Autenticación y Seguridad
+
+### 9.1 Flujo de Autenticación
+
+```
+Login Request
+    │
+    ▼
+Rate Limiting (5 intentos / 15 min)
+    │
+    ▼
+Buscar usuario en BD
+    │
+    ▼
+Verificar bloqueo temporal (locked_until)
+    │
+    ▼
+Verificar cuenta activa (is_active)
+    │
+    ▼
+Verificar contraseña (bcrypt.compareSync)
+    │
+    ▼
+    ├── Éxito: Resetear intentos → Actualizar last_login → Crear sesión
+    │
+    └── Fallo: Incrementar failed_login_attempts
+                ├── ¿Alcanzó límite? → Bloquear cuenta 15 min
+                └── No → Responder con intentos restantes
+```
+
+### 9.2 Políticas de Seguridad
+
+| Política | Valor |
+|----------|-------|
+| Mínimo de caracteres en contraseña | 8 |
+| Requisitos de contraseña | 1 mayúscula + 1 número |
+| Intentos de login antes de bloqueo | 5 |
+| Duración del bloqueo | 15 minutos |
+| Tiempo de sesión | 24 horas |
+| Cookie httpOnly | ✅ |
+| Cookie secure (producción) | ✅ |
+| Cookie sameSite | strict |
+| Rate limit general | 100 req / 15 min |
+| Rate limit login | 5 req / 15 min |
+| Rate limit admin | 30 req / 1 min |
+| CSP (Content Security Policy) | Desactivado (scripts inline) |
+
+### 9.3 Auditoría
+
+Todas las acciones importantes se registran en `audit_log`:
+
+- `user.created` - Creación de usuario
+- `user.updated` - Actualización de usuario
+- `user.deactivated` / `user.activated` - Cambio de estado
+- `user.password_reset` - Reseteo de contraseña
+- `user.promoted_to_lider` - Promoción a líder
+- `user.lider_revoked` - Revocación de líder
+- `user.unlocked` - Desbloqueo de cuenta
+- `user.password_changed` - Cambio de contraseña
+- `user.profile_updated` - Actualización de perfil
+- `login.success` / `login.blocked` / `login.locked` - Eventos de login
+- `equipo.created` / `equipo.updated` - Gestión de equipos
+- `agente.created` / `agente.updated` - Gestión de agentes
+- `notification.created` - Creación de notificación
+- `system.migration` - Migraciones del sistema
+
+---
+
+## 10. 🔔 Notificaciones en Tiempo Real (SSE)
+
+### 10.1 Arquitectura
+
+```
+┌──────────────┐           SSE Stream           ┌──────────────┐
+│   Servidor   │ ◄──────────────────────────►   │   Cliente    │
+│  (Express)   │     GET /api/admin/             │  (Navegador) │
+│              │     notificaciones/stream       │              │
+│              │                                 │              │
+│  notification │  Eventos:                       │  notificaciones│
+│  Bus         │   • notification.created        │  -dashboard.js│
+│  (EventEmitter)│   • notification.read          │              │
+│              │   • notification.archived       │              │
+│              │   • count.updated               │              │
+│              │   • ping (cada 30s)             │              │
+└──────────────┘                                 └──────────────┘
+```
+
+### 10.2 NotificationBus
+
+El `notificationBus` (singleton) gestiona conexiones SSE:
+
+- **Máximo de conexiones totales**: 500
+- **Máximo por usuario**: 5 (cierra la más antigua si excede)
+- **KeepAlive**: Ping cada 30 segundos
+- **Limpieza automática**: Al desconectarse el cliente
+
+### 10.3 Tipos de Eventos SSE
+
+| Evento | Data | Propósito |
+|--------|------|-----------|
+| `connected` | `{clientId, timestamp}` | Confirmación de conexión |
+| `ping` | `{time}` | Mantener conexión viva |
+| `notification.created` | `{id, titulo, mensaje, tipo, ...}` | Nueva notificación |
+| `notification.read` | `{id, usuarioId}` | Notificación leída |
+| `notification.archived` | `{id, usuarioId}` | Notificación archivada |
+| `count.updated` | `{no_leidas}` | Actualización de contador |
+
+### 10.4 Deep Link Router
+
+Las notificaciones pueden incluir un `accion_modulo` que permite navegar directamente al módulo correspondiente:
+
+| Módulo | Destino |
+|--------|---------|
+| `dashboard` | `/` o `/m` |
+| `dashboard-admin` | `/admin` o `/m/admin` |
+| `solicitudes` | `/solicitudes` o `/m/solicitudes` |
+| `importar` | `/importar` o `/m/importar` |
+| `historial` | `/historial` o `/m/historial` |
+| `gestiones` | `/gestiones` o `/m/gestiones` |
+| `gestion-lote` | `/gestion-lote` o `/m/gestion-lote` |
+| `relaciones` | `/relaciones` o `/m/relaciones` |
+| `ventas` | `/equipo-ventas` o `/m/ventas` |
+| `perfil` | `/perfil` |
+| `perfil-config` | `/perfil?tab=config` |
+| `perfil-ayuda` | `/perfil?tab=ayuda` |
+
+---
+
+## 11. 📦 Módulos del Sistema
+
+### 11.1 Dashboard
+
+**Ruta:** `/` (desktop), `/m` (móvil)
+**Archivos:** `dashboard.controller.js`, `public/desktop/js/dashboard.js`, `public/movil/js/dashboard.js`
+
+- KPIs principales: total, activadas, rechazadas, devueltas, pendientes
+- Gráfico de distribución por estado
+- Gráfico de distribución por segmento
+- Promedio mensual (últimos 3 meses)
+- Promedio semanal (últimas 9 semanas)
+- Ventas mensuales (últimos 12 meses, solo ACTIVADAS)
+- Caché en servidor (30s) y en cliente (localStorage)
+
+### 11.2 Solicitudes
+
+**Ruta:** `/solicitudes` (desktop), `/m/solicitudes` (móvil)
+**Archivos:** `excel.controller.js`, `public/desktop/js/solicitudes.js`, `public/movil/js/solicitudes.js`
+
+- Listado paginado con scroll infinito
+- Búsqueda en servidor con filtros (estado, segmento, cédula, nombre)
+- Vista de tarjetas con información detallada
+- Edición de estado y segmento (con auditoría)
+- Completar información (código plus, referencias, dirección)
+- Destacar solicitudes
+- Gestión directa (crear gestión)
+- Exportación de seleccionadas
+- Eliminación individual/masiva
+
+### 11.3 Importación Excel
+
+**Ruta:** `/importar` (desktop), `/m/importar` (móvil)
+**Archivos:** `excel.service.js`, `public/desktop/js/importar.js`, `public/movil/js/importar.js`
+
+- Subida de archivos Excel (.xlsx, .xls)
+- Procesamiento de hasta 50 archivos simultáneamente
+- Auto-detección de columnas (IDSOLICITUD, ESTADO, CEDULA, NOMBRE, etc.)
+- Auto-generación de IDs cuando IDSOLICITUD está vacío
+- Asignación de "SIN ESTADO" cuando ESTADO está vacío
+- Detección de duplicados por CÉDULA
+- Auditoría de cambios (estado, segmento)
+- Reporte de resultados (inserts, updates, errores)
+- Conversión automática de fechas (serial Excel, DD/MM/YYYY, Date object)
+
+### 11.4 Gestiones
+
+**Ruta:** `/gestiones` (desktop/móvil)
+**Archivos:** `public/desktop/js/gestiones.js`, `public/movil/js/gestiones.js`
+
+- Vista de campañas con progreso
+- Creación y gestión de campañas (gestiones_maestro)
+- Asignación de solicitudes a campañas
+- Progreso: solicitudes gestionadas vs total
+
+### 11.5 Gestión por Lotes
+
+**Ruta:** `/gestion-lote` (desktop/móvil)
+**Archivos:** `gestionesMaestro.controller.js`, `public/desktop/js/gestion-lote.js`
+
+- Asignar agentes a campañas
+- Visualizar solicitudes de una campaña
+- Gestionar solicitudes en lote dentro de una campaña
+
+### 11.6 Relaciones
+
+**Ruta:** `/relaciones` (desktop), `/m/relaciones` (móvil)
+**Archivos:** `relaciones.controller.js`, `relaciones.service.js`, `public/desktop/js/relaciones.js`
+
+- Importación de relaciones desde Excel
+- Estados: ALTA / BAJA
+- Campos: identificación, cliente, celular, fechas (inicio_relacion, fin_relacion, fin_credito, fidelización), próxima_baja, motivo_ruptura, número de operaciones
+- Dashboard de relaciones (totales, altas, bajas)
+- Gestión individual de relaciones
+- Historial de gestiones por relación
+
+### 11.7 Ventas (Control de Equipo)
+
+**Ruta:** `/equipo-ventas` (desktop), `/m/equipo-ventas` (móvil)
+**Archivos:** `public/desktop/js/ventas.js`, `public/movil/js/ventas.js`
+
+- Registro de ventas por vendedor
+- Dos períodos de venta por mes
+- Configuración de bonos escalonados (bono1-bono6)
+- Meta de equipo
+- Cálculo automático de cumplimiento
+
+### 11.8 Panel del Líder
+
+**Ruta:** `/equipo` (desktop), `/m/equipo` (móvil)
+**Archivos:** `equipos.controller.js`, `public/desktop/js/equipo.js`, `public/movil/js/equipo.js`
+
+- Dashboard del equipo (miembros, campañas, asignaciones)
+- Gestión de agentes (crear, editar, activar/desactivar, resetear contraseña)
+- Campañas del equipo
+- Gestiones del equipo
+
+### 11.9 Panel de Administración
+
+**Ruta:** `/admin` (solo SuperAdmin)
+**Archivos:** `admin.controller.js`, `admin.routes.js`, `public/admin/js/admin.js`
+
+- Gestión completa de usuarios (CRUD, roles, activar/desactivar)
+- Promover/revocar líderes
+- Resetear contraseñas
+- Desbloquear cuentas
+- Estadísticas del sistema
+- Logs de auditoría
+- Centro de notificaciones (crear, listar, eliminar)
+
+### 11.10 Perfil de Usuario
+
+**Ruta:** `/perfil`
+**Archivos:** `public/perfil.html`, `public/js/perfil.js`
+
+- Visualización de datos del perfil
+- Edición de nombre y email
+- Cambio de contraseña
+- Configuración de cuenta
+
+### 11.11 Historial de Actualizaciones
+
+**Ruta:** `/historial` (desktop/móvil)
+**Archivos:** `public/desktop/js/historial.js`, `public/movil/js/historial.js`
+
+- Visualización de cambios en solicitudes
+- Filtros por usuario y fecha
+- Detalle: campo, valor anterior, valor nuevo
+
+---
+
+## 12. 🌐 API REST - Endpoints
+
+### 12.1 Autenticación (`/api/auth`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| POST | `/api/auth/registrar` | ❌ | Registrar nuevo usuario |
+| POST | `/api/auth/login` | ❌ (rate limited) | Iniciar sesión |
+| POST | `/api/auth/logout` | ❌ | Cerrar sesión |
+| GET | `/api/auth/sesion` | ✅ | Verificar sesión actual |
+| GET | `/api/auth/perfil` | ✅ | Obtener perfil |
+| PUT | `/api/auth/perfil` | ✅ | Actualizar perfil |
+| PUT | `/api/auth/cambiar-password` | ✅ | Cambiar contraseña |
+| GET | `/api/auth/usuarios` | ✅ (admin) | Listar usuarios |
+
+### 12.2 Solicitudes y Excel (`/api/excel`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| POST | `/api/excel/upload` | ✅ | Subir archivos Excel |
+| POST | `/api/excel/upload-imagen` | ✅ | Subir imagen para gestión |
+| DELETE | `/api/excel/upload-imagen/:nombre` | ✅ | Eliminar imagen temporal |
+| POST | `/api/excel/solicitudes` | ✅ | Crear solicitud manual |
+| GET | `/api/excel/solicitudes` | ✅ | Listar solicitudes (paginado) |
+| GET | `/api/excel/solicitudes/buscar` | ✅ | Buscar solicitudes |
+| GET | `/api/excel/solicitudes/:id` | ✅ | Obtener solicitud |
+| GET | `/api/excel/solicitudes/:id/completa` | ✅ | Solicitud completa (con referencias) |
+| PUT | `/api/excel/solicitudes/:id/editar` | ✅ | Editar estado/segmento |
+| PUT | `/api/excel/solicitudes/:id/completar-info` | ✅ | Completar información |
+| PUT | `/api/excel/solicitudes/:id/codigo-plus` | ✅ | Actualizar código plus |
+| PUT | `/api/excel/solicitudes/:id/destacar` | ✅ | Destacar solicitud |
+| DELETE | `/api/excel/solicitudes/:id` | ✅ | Eliminar solicitud |
+| DELETE | `/api/excel/limpiar` | ✅ | Borrar todas las solicitudes |
+
+### 12.3 Dashboard (`/api/excel/dashboard`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/api/excel/dashboard` | ✅ | KPIs principales |
+| GET | `/api/excel/dashboard/segmentos` | ✅ | Distribución por segmento |
+| GET | `/api/excel/dashboard/estados` | ✅ | Distribución por estado |
+| GET | `/api/excel/dashboard/segmentos/filtrado` | ✅ | Segmentos filtrados por estado |
+| GET | `/api/excel/dashboard/estados/filtrado` | ✅ | Estados filtrados por segmento |
+| GET | `/api/excel/dashboard/promedio/mes` | ✅ | Promedio mensual |
+| GET | `/api/excel/dashboard/promedio/semana` | ✅ | Promedio semanal |
+| GET | `/api/excel/dashboard/ventas-mensuales` | ✅ | Ventas mensuales |
+
+### 12.4 Gestiones (`/api/excel`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| POST | `/api/excel/gestiones` | ✅ | Crear gestión |
+| GET | `/api/excel/gestiones/:solicitud_id` | ✅ | Obtener gestiones de solicitud |
+| GET | `/api/excel/gestiones/ultimas` | ✅ | Últimas gestiones (batch) |
+| GET | `/api/excel/gestiones/todas` | ✅ | Todas las gestiones (global) |
+| PUT | `/api/excel/gestiones/:id` | ✅ | Actualizar gestión |
+| DELETE | `/api/excel/gestiones/:id` | ✅ | Eliminar gestión |
+
+### 12.5 Campañas (`/api/excel/gestiones-maestro`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/api/excel/gestiones-maestro` | ✅ | Listar campañas |
+| GET | `/api/excel/gestiones-maestro/:id` | ✅ | Obtener campaña |
+| POST | `/api/excel/gestiones-maestro` | ✅ | Crear campaña |
+| PUT | `/api/excel/gestiones-maestro/:id` | ✅ | Actualizar campaña |
+| DELETE | `/api/excel/gestiones-maestro/:id` | ✅ | Eliminar campaña |
+
+### 12.6 Campañas v2 (`/api/gestiones-maestro`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/api/gestiones-maestro` | ✅ | Listar campañas |
+| GET | `/api/gestiones-maestro/:id` | ✅ | Obtener campaña con solicitudes |
+| GET | `/api/gestiones-maestro/:id/progreso` | ✅ | Progreso de campaña |
+| POST | `/api/gestiones-maestro` | ✅ | Crear campaña |
+| PUT | `/api/gestiones-maestro/:id` | ✅ | Actualizar campaña |
+| DELETE | `/api/gestiones-maestro/:id` | ✅ | Eliminar campaña |
+| PUT | `/api/gestiones-maestro/:id/agregar-solicitudes` | ✅ | Agregar solicitudes |
+| PUT | `/api/gestiones-maestro/:id/quitar-solicitud` | ✅ | Quitar solicitud |
+| PUT | `/api/gestiones-maestro/:id/asignar-agente` | ✅ | Asignar agente |
+| PUT | `/api/gestiones-maestro/:id/quitar-asignacion` | ✅ | Quitar asignación |
+
+### 12.7 Ventas (`/api/excel`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/api/excel/ventas-equipo` | ✅ | Obtener ventas del equipo |
+| POST | `/api/excel/ventas-equipo` | ✅ | Agregar/actualizar vendedor |
+| DELETE | `/api/excel/ventas-equipo/:id` | ✅ | Eliminar vendedor |
+| GET | `/api/excel/config-bonos` | ✅ | Configuración de bonos |
+| POST | `/api/excel/config-bonos` | ✅ | Guardar configuración |
+
+### 12.8 Relaciones (`/api/relaciones`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| POST | `/api/relaciones/upload` | ✅ | Subir Excel de relaciones |
+| GET | `/api/relaciones` | ✅ | Listar relaciones |
+| GET | `/api/relaciones/stats` | ✅ | Estadísticas de relaciones |
+| DELETE | `/api/relaciones` | ✅ | Limpiar relaciones |
+
+### 12.9 Gestiones de Relaciones (`/api/relaciones/gestiones`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| POST | `/api/relaciones/gestiones` | ✅ | Crear gestión |
+| GET | `/api/relaciones/gestiones/:relacion_id` | ✅ | Gestiones de una relación |
+| GET | `/api/relaciones/gestiones/ultimas` | ✅ | Últimas gestiones (batch) |
+| DELETE | `/api/relaciones/gestiones/:id` | ✅ | Eliminar gestión |
+
+### 12.10 Administración (`/api/admin`) — Solo SuperAdmin
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/api/admin/usuarios` | ✅ superadmin | Listar usuarios |
+| GET | `/api/admin/usuarios/:id` | ✅ superadmin | Obtener usuario |
+| POST | `/api/admin/usuarios` | ✅ superadmin | Crear usuario |
+| PUT | `/api/admin/usuarios/:id` | ✅ superadmin | Actualizar usuario |
+| PUT | `/api/admin/usuarios/:id/toggle-active` | ✅ superadmin | Activar/Desactivar |
+| PUT | `/api/admin/usuarios/:id/reset-password` | ✅ superadmin | Resetear contraseña |
+| PUT | `/api/admin/usuarios/:id/unlock` | ✅ superadmin | Desbloquear |
+| POST | `/api/admin/usuarios/:id/promover-lider` | ✅ superadmin | Promover a líder |
+| POST | `/api/admin/usuarios/:id/revocar-lider` | ✅ superadmin | Revocar líder |
+| GET | `/api/admin/estadisticas` | ✅ superadmin | Estadísticas del sistema |
+| GET | `/api/admin/estadisticas/usuario/:id` | ✅ superadmin | Estadísticas por usuario |
+| GET | `/api/admin/estadisticas/listado` | ✅ superadmin | Resumen de estadísticas |
+| GET | `/api/admin/auditoria` | ✅ superadmin | Logs de auditoría |
+| GET | `/api/admin/notificaciones` | ✅ | Listar notificaciones |
+| GET | `/api/admin/notificaciones/stream` | ✅ | SSE Stream |
+| GET | `/api/admin/notificaciones/no-leidas` | ✅ | Contar no leídas |
+| PUT | `/api/admin/notificaciones/:id/leer` | ✅ | Marcar leída |
+| PUT | `/api/admin/notificaciones/marcar-todas-leidas` | ✅ | Marcar todas leídas |
+| PUT | `/api/admin/notificaciones/:id/archivar` | ✅ | Archivar |
+| POST | `/api/admin/notificaciones` | ✅ superadmin | Crear notificación |
+| DELETE | `/api/admin/notificaciones/:id` | ✅ superadmin | Eliminar notificación |
+
+### 12.11 Equipos (`/api/equipos`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/api/equipos` | ✅ | Listar equipos |
+| GET | `/api/equipos/mi-equipo` | ✅ | Mi equipo actual |
+| GET | `/api/equipos/:id` | ✅ (equipo) | Obtener equipo |
+| GET | `/api/equipos/:id/miembros` | ✅ (equipo) | Miembros del equipo |
+| GET | `/api/equipos/:id/dashboard` | ✅ (equipo) | Dashboard del equipo |
+| GET | `/api/equipos/:id/gestiones` | ✅ (equipo) | Gestiones del equipo |
+| GET | `/api/equipos/:id/campanas` | ✅ (equipo) | Campañas del equipo |
+| POST | `/api/equipos` | ✅ superadmin | Crear equipo |
+| PUT | `/api/equipos/:id` | ✅ superadmin | Actualizar equipo |
+| DELETE | `/api/equipos/:id` | ✅ superadmin | Eliminar equipo |
+| POST | `/api/equipos/:id/mover-usuario` | ✅ superadmin | Mover usuario de equipo |
+| PUT | `/api/equipos/:id/asignar-lider` | ✅ superadmin | Asignar líder |
+| PUT | `/api/equipos/:id/remover-miembro` | ✅ superadmin | Remover miembro |
+| POST | `/api/equipos/:id/agentes` | ✅ (lider+) | Crear agente |
+| PUT | `/api/equipos/:id/agentes/:agenteId` | ✅ (lider+) | Editar agente |
+| PUT | `/api/equipos/:id/agentes/:agenteId/toggle-active` | ✅ (lider+) | Activar/Desactivar agente |
+| PUT | `/api/equipos/:id/agentes/:agenteId/reset-password` | ✅ (lider+) | Resetear contraseña |
+
+### 12.12 Debug (`/api/debug`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/api/debug/health` | ❌ | Health check del sistema |
+| GET | `/api/debug/tablas` | ✅ | Listar tablas |
+| GET | `/api/debug/usuarios` | ✅ | Listar usuarios |
+| GET | `/api/debug/foreign-keys/:tabla` | ✅ | Foreign keys de tabla |
+
+---
+
+## 13. 📱 Renderizado Responsivo
+
+### 13.1 Detección de Dispositivo
+
+En el servidor (`app.js`), se detecta el dispositivo mediante el User-Agent:
+
+```javascript
+function isMobileDevice(userAgent) {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+}
+```
+
+### 13.2 Rutas por Dispositivo
+
+| Ruta Desktop | Ruta Móvil | Descripción |
+|-------------|-----------|-------------|
+| `/` | `/m` | Dashboard |
+| `/login` | `/m/login` | Login |
+| `/solicitudes` | `/m/solicitudes` | Solicitudes |
+| `/importar` | `/m/importar` | Importación |
+| `/gestiones` | `/m/gestiones` | Campañas |
+| `/gestion-lote` | `/m/gestion-lote` | Gestión por lotes |
+| `/relaciones` | `/m/relaciones` | Relaciones |
+| `/equipo-ventas` | `/m/equipo-ventas` | Ventas |
+| `/historial` | `/m/historial` | Historial |
+| `/equipo` | `/m/equipo` | Panel líder |
+| `/admin` | `/m/admin` | Admin |
+| `/perfil` | (única) | Perfil |
+
+### 13.3 Redirección de SuperAdmin
+
+El SuperAdmin es redirigido automáticamente al Panel de Administración y **nunca** debe acceder al Dashboard Operativo:
+
+```javascript
+// En app.js, para cada ruta operativa:
+function redirectSuperAdmin(req, res) {
+    if (req.session?.usuario?.is_superadmin) {
+        res.redirect('/admin');  // o /m/admin si es móvil
+        return true;
+    }
+    return false;
+}
+```
+
+---
+
+## 14. 🔄 Migraciones de Base de Datos
+
+### 14.1 Historial de Migraciones
+
+| Migración | Descripción | Estado |
+|-----------|-------------|--------|
+| **001** | Panel de Administración Fase 1: columnas de seguridad en usuarios, tabla audit_log, índices | ✅ Completa |
+| **002** | Índices compuestos para optimización de rendimiento (11 índices) | ✅ Completa |
+| **003a** | Sistema Multi-Equipo: 6 tablas nuevas (equipos, equipo_usuarios, permisos_roles, permisos_equipo, asignaciones_solicitudes, campañas_equipo) | ✅ Completa |
+| **003b** | Seed de datos multi-equipo: equipo "Sistema", permisos de líder/agente/user | ✅ Completa |
+| **004** | Columna asignado_a en gestiones_maestro para asignación a agentes | ✅ Completa |
+
+### 14.2 Migraciones Automáticas
+
+Además de las migraciones explícitas, `initDb.js` y `initDb.pg.js` ejecutan migraciones automáticas al iniciar el servidor:
+
+- Creación de tablas con `CREATE TABLE IF NOT EXISTS`
+- Agregado de columnas faltantes con `ALTER TABLE ADD COLUMN IF NOT EXISTS`
+- Migración `ultimo_login` → `last_login`
+- Migración `accion_url` → `accion_modulo` en notificaciones legacy
+- Auto-seed de datos multi-equipo
+- Asignación de superadmin para `daviddlaa`
+- Notificación de bienvenida/email
+
+---
+
+## 15. 📜 Scripts de Utilidad
+
+| Script | Propósito |
+|--------|-----------|
+| `scripts/audit-funciones.js` | Audita funciones JS llamadas desde HTML (detecta funciones no definidas) |
+| `scripts/audit-production-schema.js` | Compara el esquema de PostgreSQL en producción vs el esperado |
+| `scripts/fix-production-notificaciones.js` | Corrige problemas de notificaciones en producción |
+| `scripts/migrate-production-accion-modulo.js` | Migra deep links en producción |
+| `scripts/optimize-solicitudes-performance.js` | Optimiza el rendimiento del módulo de solicitudes |
+| `fix_escapes.js` | Script auxiliar de corrección de escapes |
+| `fix_final.js` | Script de corrección final |
+| `fix_team.js` | Script de corrección del sistema de equipos |
+
+---
+
+## 16. 🚀 Despliegue
+
+### 16.1 Variables de Entorno
+
+| Variable | Obligatoria | Descripción |
+|----------|-------------|-------------|
+| `DATABASE_URL` | Sí (producción) | URL de conexión PostgreSQL |
+| `SESSION_SECRET` | Recomendada | Secreto para cifrar sesiones |
+| `PORT` | No (default 3000) | Puerto del servidor |
+| `NODE_ENV` | Recomendada | `production` o `development` |
+
+### 16.2 Entornos
+
+#### Desarrollo Local
+- **Base de datos**: SQLite (`database.db`)
+- **Servidor**: `node app.js` en `http://localhost:3000`
+- **No requiere** `DATABASE_URL`
+
+#### Producción (Render u otro host)
+- **Base de datos**: PostgreSQL (vía `DATABASE_URL`)
+- **SSL**: Habilitado (`rejectUnauthorized: false`)
+- **Trust proxy**: Habilitado (para funcionar detrás de proxy)
+
+### 16.3 Comandos
 
 ```bash
-# Iniciar servidor local
+# Iniciar en desarrollo
 node app.js
 
-# Migrar a PostgreSQL (ejecutado en producción)
-DATABASE_URL=postgresql://... node migrations/002_add_compound_indexes.js
-DATABASE_URL=postgresql://... node migrations/003_create_team_tables.js
-DATABASE_URL=postgresql://... node migrations/003_seed_team_data.js
+# Migraciones (producción)
+node migrations/001_add_admin_columns.js "$DATABASE_URL"
+node migrations/002_add_compound_indexes.js
+node migrations/003_create_team_tables.js "$DATABASE_URL"
+node migrations/003_seed_team_data.js "$DATABASE_URL"
+node migrations/004_add_asignado_a_columna.js "$DATABASE_URL"
 
-# Rollback multi-equipo (solo si es necesario)
-# Ejecutar script SQL: migrations/003_rollback_team_tables.sql
-
-# Commit y push
-git add .
-git commit -m "Actualizacion general"
-git push
+# Deploy (Windows)
+commit_push.bat
 ```
 
 ---
 
-## ✅ Resumen Fases del Proyecto v3.0
+## 17. 🔗 Deep Link Router
 
-| Fase | Descripción | Archivos clave |
-|:----:|-------------|----------------|
-| **0** | Auditoría completa del sistema | Sin cambios de código |
-| **1** | Diseño de arquitectura multi-equipo | `docs/informe-arquitectura-multi-equipo.md` |
-| **2** | Diseño del modelo de datos | `docs/informe-modelo-datos-multi-equipo.md` |
-| **3** | Migraciones generadas (PG + SQLite + rollback) | 8 archivos en `migrations/003_*` |
-| **4** | Migraciones ejecutadas en producción | 6 tablas, 9 usuarios, 47 permisos |
-| **5** | Backend: controllers, middleware, permisos | `permissions.js`, `auth.middleware.js`, `equipos.controller.js` |
-| **6** | Panel SuperAdmin: gestión de equipos | `admin/index.html` + pestaña Equipos |
-| **7** | Panel del Líder: dashboard + agentes + campañas | `desktop/equipo.html` + JS/CSS |
-| **8** | Panel del Agente: card Mi Equipo | `desktop/index.html` + card en dashboard |
-| **9** | Pruebas de regresión | 28 módulos OK, 20 endpoints OK, 22 HTML OK, 18 JS OK |
+El **Deep Link Router** (`public/js/deep-link-router.js`) resuelve navegación inteligente desde notificaciones.
 
----
+### 17.1 Funcionamiento
 
-## 📌 Notas de Producción (Render)
+1. Una notificación incluye `accion_modulo` (ej: `solicitudes`, `gestiones`)
+2. El router resuelve el módulo a una URL concreta según el dispositivo
+3. Si es escritorio: usa rutas desktop, si es móvil: usa rutas `/m/`
+4. Navega a la página correspondiente y ejecuta acciones opcionales
 
-- Base de datos PostgreSQL se actualiza automáticamente al iniciar (`initDb.pg.js`)
-- Las migraciones multi-equipo ya se ejecutaron en producción (FASE 4)
-- `SESSION_SECRET` debe configurarse como variable de entorno
-- Plan Free Render: 512MB RAM — suficiente para 50 usuarios concurrentes
-- Pool de conexiones: `max: 20`, `idleTimeoutMillis: 30000`
-- Caché en RAM: dashboard TTL 30s, datos globales TTL 300s
+### 17.2 Arquitectura de Resolución
 
----
-
-## 📊 Archivos del Proyecto
-
-### Backend (`src/`)
-
-| Ruta | Archivos | Propósito |
-|------|----------|-----------|
-| `src/config/` | `db.js`, `cache.js`, `permissions.js`, `initDb*.js`, `multer.config.js`, `database*.js` | Configuración global, pool BD, caché, roles |
-| `src/controllers/` | `auth`, `excel`, `dashboard`, `admin`, `estadisticas`, `gestionesMaestro`, `notificaciones`, `relaciones`, `relacionesGestion` | Lógica de negocio |
-| `src/middleware/` | `auth.middleware.js` | Autenticación, autorización, sesión |
-| `src/routes/` | `auth`, `excel`, `admin`, `gestionesMaestro`, `relaciones`, `relacionesGestion`, `debug` | Definición de rutas API |
-| `src/services/` | `excel.service.js`, `relaciones.service.js`, `notificationBus.js` | Lógica de negocio reutilizable |
-
-### Frontend (`public/`)
-
-| Ruta | Propósito |
-|------|-----------|
-| `public/desktop/` | Versión escritorio (HTML + CSS + JS) |
-| `public/movil/` | Versión móvil (HTML + CSS + JS) |
-| `public/admin/` | Panel de administración |
-| `public/css/` | Estilos compartidos |
-| `public/js/` | JS compartido (login, dashboard base) |
-
-### Migraciones (`migrations/`)
-
-| Archivo | Descripción |
-|---------|-------------|
-| `001_add_admin_columns.sql` | Migración PostgreSQL — columnas admin + audit_log |
-| `001_add_admin_columns.sqlite.sql` | Migración SQLite — columnas admin + audit_log |
-| `001_add_admin_columns.js` | Script ejecutable para migración 001 |
-| `002_add_compound_indexes.sql` | Migración SQL — 11 índices compuestos |
-| `002_add_compound_indexes.js` | **Script ejecutado en producción** — 11 índices compuestos |
-
-### Documentación (`docs/`)
-
-| Archivo | Descripción |
-|---------|-------------|
-| `README.md` | **Este archivo** — índice central |
-| `informe-auditoria-rendimiento.md` | Auditoría completa de rendimiento y escalabilidad |
-| `informe-optimizacion-arquitectura.md` | Informe detallado de optimización con comparativas |
-| `anteriores/` | Documentación de sesiones anteriores (archivada) |
-
----
-
-## 🔐 Comandos Útiles
-
-```bash
-# Iniciar servidor local
-node app.js
-
-# Migrar índices compuestos a PostgreSQL (ejecutado en producción)
-DATABASE_URL=postgresql://... node migrations/002_add_compound_indexes.js
-
-# Commit y push
-git add .
-git commit -m "Mensaje descriptivo"
-git push
+```
+Notificación con accion_modulo = "solicitudes"
+    │
+    ▼
+Deep Link Router
+    │
+    ├── ¿Es móvil? → /m/solicitudes
+    └── ¿Es desktop? → /solicitudes
+    │
+    ▼
+Cargar página + ejecutar callback (opcional)
 ```
 
 ---
 
-## 📌 Notas de Producción (Render)
+## 18. 💾 Caché en Servidor
 
-- La base de datos PostgreSQL en Render se actualiza automáticamente al iniciar el servidor (`initDb.pg.js`)
-- Las migraciones deben ejecutarse manualmente con `node migrations/002_*.js`
-- `SESSION_SECRET` debe configurarse como variable de entorno
-- El plan Free de Render tiene 512MB RAM — suficiente para 50 usuarios concurrentes con las optimizaciones actuales
+### 18.1 Estrategia
+
+El sistema utiliza **node-cache** con estrategia **cache-aside**:
+
+1. El controlador verifica el caché antes de consultar la BD
+2. Si hay dato en caché y no ha expirado, lo sirve directamente
+3. Si no hay caché, consulta la BD, guarda en caché y responde
+4. Después de operaciones de escritura, invalida el caché correspondiente
+
+### 18.2 TTLs Configurados
+
+| Dato | TTL | Justificación |
+|------|-----|---------------|
+| Dashboard totals | 30s | Datos semi-dinámicos que cambian con frecuencia |
+| Dashboard segmentos | 30s | Misma sesión de usuario, datos estánticos |
+| Dashboard estados | 30s | Misma sesión de usuario, datos estánticos |
+| Estados disponibles | 300s | Catálogo que cambia muy rara vez |
+| Segmentos disponibles | 300s | Catálogo que cambia muy rara vez |
+| Estadísticas admin | 60s | Consulta pesada que no necesita ser precisa al segundo |
 
 ---
 
-> *Documentación actualizada al 12 de Julio de 2026*
+## 19. 📖 Glosario
+
+| Término | Definición |
+|---------|-----------|
+| **Solicitud** | Registro de una petición comercial de un cliente |
+| **Gestión** | Acción realizada sobre una solicitud (llamada, seguimiento, etc.) |
+| **Campaña** | Conjunto de solicitudes agrupadas para gestión por lotes |
+| **Gestión Maestro** | Sinónimo de campaña (nomenclatura legacy) |
+| **Relación** | Estado de relación con un cliente (ALTA/BAJA) |
+| **Equipo** | Grupo organizacional de usuarios bajo un líder |
+| **Líder** | Usuario que gestiona un equipo y sus agentes |
+| **Agente** | Usuario miembro de un equipo que opera sobre asignaciones |
+| **Asignación** | Solicitud asignada a un equipo o agente específico |
+| **SSE** | Server-Sent Events - Tecnología para notificaciones en tiempo real |
+| **Deep Link** | Enlace que navega directamente a una sección específica |
+| **SuperAdmin** | Usuario con control total del sistema (panel de administración) |
+| **Drawer** | Menú de navegación lateral (móvil) |
+| **Rate Limiting** | Límite de peticiones para prevenir abuso |
+| **Cache-Aside** | Estrategia de caché: consultar caché → si no hay, consultar BD → guardar en caché |
+
+---
+
+## 📝 Notas Finales
+
+- El sistema fue desarrollado como una **aplicación web progresiva** (no PWA, sino multi-dispositivo desde el servidor)
+- No se utilizan frameworks frontend (React, Vue, etc.) — todo es Vanilla JavaScript
+- La **capa de abstracción de BD** (`db.js`) permite desarrollar localmente con SQLite y desplegar en producción con PostgreSQL sin cambios de código
+- El sistema **no usa ORM** — todas las consultas son SQL directo para máximo control y rendimiento
+- La **auditoría** está presente en todas las operaciones críticas del sistema
+- El **SuperAdmin** tiene un flujo completamente separado del Dashboard Operativo por seguridad
+
+---
+
+> **Última actualización:** Julio 2026  
+> **Documentación generada automáticamente** con análisis del código fuente.

@@ -286,6 +286,9 @@ app.use('/api/admin', require('./src/routes/admin.routes'));
 // 🆕 Rutas multi-equipo
 app.use('/api/equipos', require('./src/routes/equipos.routes'));
 
+// Catálogos dinámicos (estados, segmentos, etc.)
+app.use('/api/catalogos', require('./src/routes/catalog.routes'));
+
 // Archivos estáticos
 app.use(express.static('public'));
 

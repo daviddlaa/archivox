@@ -1764,23 +1764,23 @@ let segmentosDisponiblesMovil = [];
 
 // Abrir modal de nueva solicitud (móvil)
 async function abrirModalNuevaSolicitudMovil() {
-    // Cargar estados y segmentos dinámicamente
+    // Cargar estados y segmentos desde el catálogo inteligente
     if (estadosDisponiblesMovil.length === 0) {
         try {
-            var res = await fetch('/api/excel/dashboard/estados', { credentials: 'include' });
+            var res = await fetch('/api/catalogos/estados', { credentials: 'include' });
             if (res.ok) {
                 var data = await res.json();
-                estadosDisponiblesMovil = data.map(function(e) { return e.estado; });
+                estadosDisponiblesMovil = Array.isArray(data) ? data : data.map(function(e) { return e.estado; });
                 if (estadosDisponiblesMovil.indexOf('SIN ESTADO') === -1) estadosDisponiblesMovil.unshift('SIN ESTADO');
             }
         } catch (e) { console.error('Error cargando estados:', e); }
     }
     if (segmentosDisponiblesMovil.length === 0) {
         try {
-            var res = await fetch('/api/excel/dashboard/segmentos', { credentials: 'include' });
+            var res = await fetch('/api/catalogos/segmentos', { credentials: 'include' });
             if (res.ok) {
                 var data = await res.json();
-                segmentosDisponiblesMovil = data.map(function(s) { return s.segmento; });
+                segmentosDisponiblesMovil = Array.isArray(data) ? data : data.map(function(s) { return s.segmento; });
             }
         } catch (e) { console.error('Error cargando segmentos:', e); }
     }

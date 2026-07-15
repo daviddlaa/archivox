@@ -1215,16 +1215,16 @@ let estadosDisponibles = [];
 let segmentosDisponibles = [];
 
 function abrirModalNuevaSolicitud() {
-    // Cargar estados y segmentos si no se han cargado
+    // Cargar estados y segmentos desde el catálogo inteligente
     Promise.all([
-        fetch('/api/excel/dashboard/estados', { credentials: 'include' }).then(function(r) { return r.ok ? r.json() : []; }),
-        fetch('/api/excel/dashboard/segmentos', { credentials: 'include' }).then(function(r) { return r.ok ? r.json() : []; })
+        fetch('/api/catalogos/estados', { credentials: 'include' }).then(function(r) { return r.ok ? r.json() : []; }),
+        fetch('/api/catalogos/segmentos', { credentials: 'include' }).then(function(r) { return r.ok ? r.json() : []; })
     ]).then(function(resultados) {
         var estadosData = resultados[0] || [];
         var segmentosData = resultados[1] || [];
 
-        estadosDisponibles = estadosData.map(function(e) { return e.estado || e; });
-        segmentosDisponibles = segmentosData.map(function(s) { return s.segmento || s; });
+        estadosDisponibles = Array.isArray(estadosData) ? estadosData : estadosData.map(function(e) { return e.estado || e; });
+        segmentosDisponibles = Array.isArray(segmentosData) ? segmentosData : segmentosData.map(function(s) { return s.segmento || s; });
 
         if (estadosDisponibles.indexOf('SIN ESTADO') === -1) estadosDisponibles.unshift('SIN ESTADO');
 
