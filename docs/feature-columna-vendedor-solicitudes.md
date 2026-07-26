@@ -429,3 +429,213 @@ Al recargar la página, los filtros se restauran automáticamente.
 | `public/movil/solicitudes.html` | Sección `#filtrosLider` responsive |
 | `public/movil/js/solicitudes.js` | Variables, funciones de filtro, init, buscarEnServidor |
 | `public/movil/css/solicitudes-mobile.css` | Estilos inputs filtros + `.vendedor-badge` |
+
+---
+
+## Badge "Campaña" en tarjetas de solicitudes
+
+**Agregado:** Julio 2026
+
+### Descripción
+
+Se agregó un badge/etiqueta que muestra el nombre de la campaña asociada a cada solicitud en el listado de tarjetas (Desktop y Móvil). El badge es **visible para todos los usuarios** (agentes y líderes) porque es información de contexto.
+
+### Migración
+
+Se creó la columna `campana_id` en la tabla `solicitudes` para establecer una relación directa con `gestiones_maestro`.
+
+```bash
+# Migración 009: Agregar campana_id a solicitudes
+node migrations/009_add_campana_id_to_solicitudes.js
+```
+
+**Estructura de la migración:**
+
+```sql
+ALTER TABLE solicitudes ADD COLUMN campana_id INTEGER;
+CREATE INDEX IF NOT EXISTS idx_solicitudes_campana ON solicitudes(campana_id);
+```
+
+### Modelo de datos
+
+| Tabla | Columna | Tipo | Referencia |
+|-------|---------|------|------------|
+| `solicitudes` | `campana_id` | INTEGER | `gestiones_maestro.id` (opcional) |
+| `gestiones_maestro` | `id` | SERIAL | PK |
+| `gestiones_maestro` | `solicitudes_ids` | TEXT | JSON array de IDs (legado) |
+
+**Notas:**
+- La columna `campana_id` se establece automáticamente al agregar solicitudes a una campaña
+- Se limpia (`NULL`) al quitar una solicitud de una campaña
+- `gestiones_maestro.solicitudes_ids` se mantiene por compatibilidad, pero `campana_id` es la fuente de verdad para consultas
+
+### Backend
+
+#### `listarSolicitudes` y `buscarSolicitudes` (`src/controllers/excel.controller.js`)
+
+**Cambio en la consulta SQL:**
+
+```sql
+SELECT s.*,
+       g.tipo_gestion as ultima_gestion_tipo,
+       g.observacion as ultima_gestion_obs,
+       g.fecha_gestion as ultima_gestion_fecha,
+       gm.nombre as nombre_campana
+FROM solicitudes s
+LEFT JOIN LATERAL (
+    SELECT g2.tipo_gestion, g2.observacion, g2.fecha_gestion
+    FROM gestiones g2
+    WHERE g2.solicitud_id = s.id_solicitud 
+      AND g2.usuario_id = s.usuario_id
+    ORDER BY g2.fecha_gestion DESC
+    LIMIT 1
+) g ON TRUE
+LEFT JOIN gestiones_maestro gm ON s.campana_id = gm.id
+WHERE s.usuario_id = $1
+```
+
+El campo `nombre_campana` se retorna en la respuesta (puede ser `null` si la solicitud no tiene campaña).
+
+#### `agregarSolicitudesACampana` (`src/controllers/gestionesMaestro.controller.js`)
+
+Al agregar solicitudes a una campaña, se actualiza `campana_id` en cada solicitud:
+
+```javascript
+// Actualizar campana_id en las solicitudes nuevas
+for (var i = 0; i < nuevosIds.length; i++) {
+    await pool.query(
+        'UPDATE solicitudes SET campana_id = ? WHERE id_solicitud = ? AND (campana_id IS NULL OR campana_id != ?)',
+        [id, nuevosIds[i], id]
+    );
+}
+```
+
+#### `quitarSolicitudDeCampana` (`src/controllers/gestionesMaestro.controller.js`)
+
+Al quitar una solicitud de una campaña, se limpia `campana_id`:
+
+```javascript
+// Limpiar campana_id de la solicitud quitada
+await pool.query(
+    'UPDATE solicitudes SET campana_id = NULL WHERE id_solicitud = ? AND campana_id = ?',
+    [solicitud_id, id]
+);
+```
+
+### Frontend Desktop
+
+**Archivo:** `public/desktop/js/solicitudes.js`
+
+En la función `renderizarCards()`, FILA 5:
+
+```javascript
+// FILA 5: Producto + Fecha + Vendedor + Campaña
+html += '  <div class="card-fila-5">';
+html += '    <span class="card-tag">📦 <span>' + (item.producto || '—') + '</span></span>';
+html += '    <span class="card-tag">📅 <span>' + (item.fecha_solicitud || '—') + '</span></span>';
+if (_esLider && item.vendedor) {
+    html += '    <span class="card-tag vendedor-badge">👤 <span>' + item.vendedor + '</span></span>';
+}
+if (item.nombre_campana) {
+    html += '    <span class="card-tag campana-badge">📢 <span>' + item.nombre_campana + '</span></span>';
+}
+html += '  </div>';
+```
+
+### Frontend Móvil
+
+**Archivo:** `public/movil/js/solicitudes.js`
+
+Misma lógica que Desktop en la función `renderizarCards()`.
+
+### CSS
+
+**Desktop** (`public/css/solicitudes.css`):
+
+```css
+.card-fila-5 .campana-badge {
+    background: #e3f2fd;
+    color: #0d47a1;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.card-fila-5 .campana-badge span {
+    font-weight: 600;
+}
+```
+
+**Móvil** (`public/movil/css/solicitudes-mobile.css`):
+
+```css
+.card-fila-5 .campana-badge {
+    background: #e3f2fd;
+    color: #0d47a1;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.card-fila-5 .campana-badge span {
+    font-weight: 700;
+    color: #0d47a1;
+}
+```
+
+### Comportamiento
+
+- **Ubicación**: FILA 5 de la tarjeta, junto a Producto, Fecha y Vendedor
+- **Estilo**: Badge con fondo azul claro (`#e3f2fd`) y texto azul oscuro (`#0d47a1`)
+- **Visibilidad**: Aparece para todos los usuarios si `item.nombre_campana` no es null
+- **Valores null**: Si la solicitud no tiene campaña, el badge no se muestra
+
+### Pruebas de validación
+
+| Caso | Resultado esperado |
+|------|--------------------|
+| Listar solicitudes | Campo `nombre_campana` llega en la respuesta (puede ser null) |
+| Solicitud en campaña | Badge `📢 NombreCampaña` aparece en la tarjeta |
+| Solicitud sin campaña | NO aparece badge de campaña |
+| Desktop y Móvil | Badge se ve correctamente sin romper layout |
+| Agente ve listado | Badge visible (es información de contexto) |
+| Líder ve listado | Badge visible |
+| Agregar solicitud a campaña | `campana_id` se actualiza en la solicitud |
+| Quitar solicitud de campaña | `campana_id` se limpia a NULL |
+
+### Índices
+
+| Índice | Tabla | Columna | Propósito |
+|--------|-------|---------|-----------|
+| `idx_solicitudes_campana` | `solicitudes` | `campana_id` | Búsquedas por campaña |
+
+---
+
+## Resumen final de archivos modificados
+
+### Backend
+
+| Archivo | Cambios |
+|---------|---------|
+| `src/controllers/excel.controller.js` | `listarSolicitudes`, `buscarSolicitudes`: LEFT JOIN para `nombre_campana` + filtros fecha/vendedor. Nuevo: `getVendedoresUnicos` |
+| `src/controllers/gestionesMaestro.controller.js` | `agregarSolicitudesACampana`: actualiza `campana_id`. `quitarSolicitudDeCampana`: limpia `campana_id` |
+| `src/routes/excel.routes.js` | Nueva ruta `/solicitudes/vendedores` |
+| `src/config/initDb.js` | Columna `campana_id` + índice en SQLite |
+| `src/config/initDb.pg.js` | Columna `campana_id` + índice en PostgreSQL |
+| `migrations/009_add_campana_id_to_solicitudes.js` | Nueva migración |
+
+### Frontend Desktop
+
+| Archivo | Cambios |
+|---------|---------|
+| `public/desktop/solicitudes.html` | Sección `#filtrosLider` con inputs date + vendedor |
+| `public/desktop/js/solicitudes.js` | Badge campaña en FILA 5 + funciones de filtro Lider+ |
+| `public/css/solicitudes.css` | Estilos `.filtro-input-date`, `.filtro-input-text`, `.vendedor-badge`, `.campana-badge` |
+
+### Frontend Móvil
+
+| Archivo | Cambios |
+|---------|---------|
+| `public/movil/solicitudes.html` | Sección `#filtrosLider` responsive |
+| `public/movil/js/solicitudes.js` | Badge campaña en FILA 5 + funciones de filtro Lider+ |
+| `public/movil/css/solicitudes-mobile.css` | Estilos inputs filtros + `.vendedor-badge` + `.campana-badge` |

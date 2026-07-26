@@ -135,7 +135,8 @@ exports.listarSolicitudes = async (req, res) => {
     let sql = `SELECT s.*,
                    g.tipo_gestion as ultima_gestion_tipo,
                    g.observacion as ultima_gestion_obs,
-                   g.fecha_gestion as ultima_gestion_fecha
+                   g.fecha_gestion as ultima_gestion_fecha,
+                   gm.nombre as nombre_campana
             FROM solicitudes s
             LEFT JOIN LATERAL (
                 SELECT g2.tipo_gestion, g2.observacion, g2.fecha_gestion
@@ -145,6 +146,7 @@ exports.listarSolicitudes = async (req, res) => {
                 ORDER BY g2.fecha_gestion DESC
                 LIMIT 1
             ) g ON TRUE
+            LEFT JOIN gestiones_maestro gm ON s.campana_id = gm.id
             WHERE s.usuario_id = $1`;
     const params = [usuarioId];
     let paramIndex = 2;
