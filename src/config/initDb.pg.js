@@ -46,6 +46,8 @@ const initTables = async () => {
                 ingreso_mensual DECIMAL(12,2),
                 fecha_solicitud TEXT,
                 usuario_id INTEGER,
+                vendedor TEXT,
+                campana_id INTEGER,
                 destacado INTEGER DEFAULT 0,
                 fecha_importacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -389,6 +391,12 @@ const initTables = async () => {
         await client.query(`
             CREATE INDEX IF NOT EXISTS idx_solicitudes_cedula
             ON solicitudes(cedula)
+        `);
+
+        // Solicitudes: búsqueda por campaña
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_solicitudes_campana
+            ON solicitudes(campana_id)
         `);
 
         // Gestiones: LATERAL JOIN (la consulta más frecuente del sistema)

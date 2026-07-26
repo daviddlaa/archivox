@@ -169,18 +169,263 @@ Los registros históricos (anteriores a la migración 007) tienen `vendedor = NU
 
 ---
 
-## Pruebas de validación
+## Badge "Vendedor" en tarjetas de solicitudes
+
+**Agregado:** Julio 2026
+
+### Descripción
+
+Se agregó un badge/etiqueta que muestra el vendedor asociado a cada solicitud en el listado de tarjetas (Desktop y Móvil). El badge **solo es visible para usuarios con rol Líder, Admin o SuperAdmin** (nivel >= 30).
+
+### Comportamiento
+
+- **Ubicación**: FILA 5 de la tarjeta, junto a Producto y Fecha
+- **Estilo**: Badge discreto con fondo `#e0e7ff` y texto `#3730a3` (indigo suave)
+- **Visibilidad**: Solo aparece si `_esLider === true && item.vendedor` no está vacío
+- **Valores null**: Si `vendedor` es null/undefined, el badge no se muestra (ni siquiera "Sin vendedor")
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `public/desktop/js/solicitudes.js` | `renderizarCards()` agrega badge vendedor en FILA 5 |
+| `public/movil/js/solicitudes.js` | Mismo cambio para móvil |
+| `public/css/solicitudes.css` | Clase `.vendedor-badge` |
+| `public/movil/css/solicitudes-mobile.css` | Clase `.vendedor-badge` para móvil |
+
+### CSS
+
+```css
+.card-fila-5 .vendedor-badge {
+    background: #e0e7ff;
+    color: #3730a3;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 600;
+}
+```
+
+---
+
+## Filtros de Fecha y Vendedor (Solo Líder+)
+
+**Agregado:** Julio 2026
+
+### Descripción
+
+Se agregaron dos filtros adicionales en el listado de solicitudes para usuarios con rol Líder+:
+1. **Rango de fechas** (desde/hasta) para filtrar por `fecha_solicitud`
+2. **Vendedor** (búsqueda parcial) para filtrar por el campo `vendedor`
+
+### Backend
+
+#### Endpoint modificado: `listarSolicitudes` y `buscarSolicitudes`
+
+**Nuevos parámetros query:**
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `fecha_desde` | string | Fecha mínima (formato YYYY-MM-DD) |
+| `fecha_hasta` | string | Fecha máxima (formato YYYY-MM-DD) |
+| `vendedor` | string | Búsqueda parcial (LIKE %texto%) |
+
+**Role validation:**
+
+```javascript
+const rolNormalizado = (req.session.usuario?.rol || '').toLowerCase();
+const nivelMap = { superadmin: 100, admin: 50, lider: 30, agente: 20, user: 10 };
+const nivel = nivelMap[rolNormalizado] || 0;
+const isLeader = nivel >= 30;
+
+// Solo aplicar filtros si isLeader
+if (isLeader) {
+    if (fecha_desde) { sql += ' AND s.fecha_solicitud >= $' + paramIndex++; params.push(fecha_desde); }
+    if (fecha_hasta) { sql += ' AND s.fecha_solicitud <= $' + paramIndex++; params.push(fecha_hasta); }
+    if (vendedor && vendedor.trim() !== '') {
+        sql += ' AND LOWER(s.vendedor) LIKE LOWER($' + paramIndex++ + ')';
+        params.push('%' + vendedor.trim() + '%');
+    }
+}
+```
+
+**Seguridad:** Si un Agente intenta enviar `fecha_desde`, `fecha_hasta` o `vendedor` por URL, el backend los **ignora completamente** (no los aplica a la consulta).
+
+#### Nuevo endpoint: `getVendedoresUnicos`
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/api/excel/solicitudes/vendedores` | Lista de vendedores únicos del usuario |
+
+- Solo accesible para Lider+ (nivel >= 30)
+- Retorna array de strings: `["Juan", "María", "Pedro"]`
+- Útil para autocompletado/datalist en el frontend
+
+### Frontend Desktop
+
+#### HTML (`public/desktop/solicitudes.html`)
+
+Se agregó una sección `#filtrosLider` dentro de `.filtros-unificado`, oculta por defecto:
+
+```html
+<div id="filtrosLider" class="filtros-row" style="display:none;margin-top:8px;">
+    <div class="filtro-grupo">
+        <span class="filtro-label">📅 Desde</span>
+        <input type="date" id="fechaDesde" class="filtro-input-date">
+    </div>
+    <div class="filtro-grupo">
+        <span class="filtro-label">📅 Hasta</span>
+        <input type="date" id="fechaHasta" class="filtro-input-date">
+    </div>
+    <div class="filtro-grupo">
+        <span class="filtro-label">👤 Vendedor</span>
+        <input type="text" id="filtroVendedor" placeholder="Buscar vendedor..." class="filtro-input-text" list="vendedoresList">
+        <datalist id="vendedoresList"></datalist>
+    </div>
+    <div class="filtro-grupo" style="align-self:flex-end;">
+        <button class="filtro-btn" onclick="aplicarFiltrosLider()" style="background:#2563eb;color:white;">Aplicar</button>
+        <button class="filtro-btn" onclick="limpiarFiltrosLider()" style="background:#f3f4f6;">Limpiar</button>
+    </div>
+</div>
+```
+
+#### JavaScript (`public/desktop/js/solicitudes.js`)
+
+**Variables globales:**
+
+```javascript
+let fechaDesdeActual = sessionStorage.getItem('sol_fecha_desde') || '';
+let fechaHastaActual = sessionStorage.getItem('sol_fecha_hasta') || '';
+let vendedorActual = sessionStorage.getItem('sol_vendedor') || '';
+```
+
+**Funciones:**
+
+| Función | Descripción |
+|---------|-------------|
+| `mostrarFiltrosLider()` | Muestra la sección de filtros y restaura valores de sessionStorage |
+| `cargarVendedores()` | Carga lista de vendedores para el datalist |
+| `aplicarFiltrosLider()` | Guarda valores en sessionStorage y ejecuta búsqueda |
+| `limpiarFiltrosLider()` | Limpia inputs, sessionStorage y ejecuta búsqueda |
+
+**Init:**
+
+```javascript
+// En init(), después de cargar sesión:
+if (_esLider) mostrarFiltrosLider();
+```
+
+**Búsqueda:**
+
+```javascript
+// En buscarEnServidor():
+if (_esLider) {
+    if (fechaDesdeActual) url += `&fecha_desde=${encodeURIComponent(fechaDesdeActual)}`;
+    if (fechaHastaActual) url += `&fecha_hasta=${encodeURIComponent(fechaHastaActual)}`;
+    if (vendedorActual) url += `&vendedor=${encodeURIComponent(vendedorActual)}`;
+}
+```
+
+### Frontend Móvil
+
+Misma lógica que Desktop, adaptada a IDs móviles (`fechaDesdeMovil`, etc.) y layout responsive.
+
+**Archivos:**
+- `public/movil/solicitudes.html` - HTML con filtros
+- `public/movil/js/solicitudes.js` - Lógica JavaScript
+- `public/movil/css/solicitudes-mobile.css` - Estilos responsive
+
+### CSS
+
+**Desktop** (`public/css/solicitudes.css`):
+
+```css
+.filtros-unificado .filtro-input-date,
+.filtros-unificado .filtro-input-text {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    color: #374151;
+    background: white;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.filtros-unificado .filtro-input-date:focus,
+.filtros-unificado .filtro-input-text:focus {
+    border-color: #2563eb;
+}
+```
+
+**Móvil** (`public/movil/css/solicitudes-mobile.css`):
+
+```css
+.filtros-unificado .filtro-input-date,
+.filtros-unificado .filtro-input-text {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: #374151;
+    background: white;
+    outline: none;
+    width: 100%;
+}
+.filtros-unificado .filtro-input-date:focus,
+.filtros-unificado .filtro-input-text:focus {
+    border-color: #6366f1;
+}
+```
+
+### Persistencia
+
+Los filtros se persisten en `sessionStorage`:
+
+| Clave | Valor |
+|-------|-------|
+| `sol_fecha_desde` | Fecha desde (YYYY-MM-DD) |
+| `sol_fecha_hasta` | Fecha hasta (YYYY-MM-DD) |
+| `sol_vendedor` | Texto de búsqueda vendedor |
+
+Al recargar la página, los filtros se restauran automáticamente.
+
+### Pruebas de validación
 
 | Caso | Resultado esperado |
 |------|--------------------|
-| SuperAdmin crea solicitud con vendedor "Test" | Se guarda "Test" en BD |
-| Líder crea solicitud con vendedor "Juan" | Se guarda "Juan" en BD |
-| Agente intenta crear solicitud con vendedor "Pedro" (inyectado) | Se guarda NULL en BD |
-| Rol en BD como "SuperAdmin" (mayúsculas) | Se reconoce correctamente (case-insensitive) |
-| Líder no envía vendedor | Se guarda NULL |
-| Importar Excel con columna "VENDEDOR" (Líder) | Se guarda en `solicitudes.vendedor` |
-| Importar Excel con columna "VENDEDOR" (Agente) | Se guarda NULL |
-| Crear gestión | NO se envía vendedor (ya no existe en gestiones) |
-| Listar gestiones | Vendedor aparece via JOIN con solicitudes |
-| Crear solicitud manual | Campo vendedor visible solo para Líder+ |
-| Editar solicitud | Campo vendedor visible solo para Líder+ |
+| Login como Líder → filtros visibles | Aparecen fecha y vendedor en Desktop y Móvil |
+| Login como Agente → filtros ocultos | NO aparecen los filtros adicionales |
+| Líder selecciona rango de fechas | Listado se filtra por `fecha_solicitud` |
+| Líder escribe "Juan" en vendedor | Muestra solicitudes donde vendedor contiene "Juan" |
+| Líder combina segmento + estado + fecha + vendedor | Todos los filtros se aplican |
+| Agente envía `?fecha_desde=2026-01-01` por URL | Backend ignora el parámetro |
+| Datalist se carga con vendedores existentes | Al escribir sugiere opciones |
+| Filtros persisten al recargar | sessionStorage mantiene valores |
+| Botón "Limpiar" resetea todo | Inputs vacíos, búsqueda sin filtros Lider |
+
+---
+
+## Resumen de archivos modificados (Sesión completa)
+
+### Backend
+
+| Archivo | Cambios |
+|---------|---------|
+| `src/controllers/excel.controller.js` | `listarSolicitudes`, `buscarSolicitudes`: filtros fecha/vendedor. Nuevo: `getVendedoresUnicos` |
+| `src/routes/excel.routes.js` | Nueva ruta `/solicitudes/vendedores` |
+
+### Frontend Desktop
+
+| Archivo | Cambios |
+|---------|---------|
+| `public/desktop/solicitudes.html` | Sección `#filtrosLider` con inputs date + vendedor |
+| `public/desktop/js/solicitudes.js` | Variables, funciones de filtro, init, buscarEnServidor |
+| `public/css/solicitudes.css` | Estilos `.filtro-input-date`, `.filtro-input-text`, `.vendedor-badge` |
+
+### Frontend Móvil
+
+| Archivo | Cambios |
+|---------|---------|
+| `public/movil/solicitudes.html` | Sección `#filtrosLider` responsive |
+| `public/movil/js/solicitudes.js` | Variables, funciones de filtro, init, buscarEnServidor |
+| `public/movil/css/solicitudes-mobile.css` | Estilos inputs filtros + `.vendedor-badge` |

@@ -653,12 +653,15 @@ function renderizarCards(datos) {
             html += '  <div class="card-fila-4 vacia">Sin gestiones</div>';
         }
 
-        // FILA 5: Producto + Fecha + Vendedor (solo Lider+)
+        // FILA 5: Producto + Fecha + Vendedor + Campaña
         html += '  <div class="card-fila-5">';
         html += '    <span class="card-tag">📦 <span>' + (item.producto || '—') + '</span></span>';
         html += '    <span class="card-tag">📅 <span>' + (item.fecha_solicitud || '—') + '</span></span>';
         if (_esLider && item.vendedor) {
             html += '    <span class="card-tag vendedor-badge">👤 <span>' + item.vendedor + '</span></span>';
+        }
+        if (item.nombre_campana) {
+            html += '    <span class="card-tag campana-badge">📢 <span>' + item.nombre_campana + '</span></span>';
         }
         html += '  </div>';
 

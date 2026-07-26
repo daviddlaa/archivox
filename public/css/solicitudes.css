@@ -435,6 +435,17 @@
 .card-fila-5 .vendedor-badge span {
     font-weight: 600;
 }
+.card-fila-5 .campana-badge {
+    background: #e3f2fd;
+    color: #0d47a1;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.card-fila-5 .campana-badge span {
+    font-weight: 600;
+}
 
 /* ========================================================================
    SELECTION BAR - Barra de selección profesional (unificada)

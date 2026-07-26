@@ -558,6 +558,18 @@ async function agregarSolicitudesACampana(req, res) {
             WHERE id = ?
         `, [solicitudesIdsJson, idsActualizados.length, nuevasGestionadas, id]);
 
+        // Actualizar campana_id en las solicitudes nuevas
+        for (var i = 0; i < nuevosIds.length; i++) {
+            try {
+                await pool.query(
+                    'UPDATE solicitudes SET campana_id = ? WHERE id_solicitud = ? AND (campana_id IS NULL OR campana_id != ?)',
+                    [id, nuevosIds[i], id]
+                );
+            } catch (e) {
+                console.error('[agregarSolicitudesACampana] Error actualizando campana_id:', e);
+            }
+        }
+
         console.log('[agregarSolicitudesACampana] Agregados', agregados, 'solicitudes a campaña', id, 'Total:', idsActualizados.length, 'Gestionadas:', nuevasGestionadas);
 
         res.json({
@@ -640,6 +652,16 @@ async function quitarSolicitudDeCampana(req, res) {
             SET solicitudes_ids = ?, total_solicitudes = ?, gestionadas = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         `, [solicitudesIdsJson, idsExistentes.length, nuevasGestionadas, id]);
+
+        // Limpiar campana_id de la solicitud quitada
+        try {
+            await pool.query(
+                'UPDATE solicitudes SET campana_id = NULL WHERE id_solicitud = ? AND campana_id = ?',
+                [solicitud_id, id]
+            );
+        } catch (e) {
+            console.error('[quitarSolicitudDeCampana] Error limpiando campana_id:', e);
+        }
 
         console.log('[quitarSolicitudDeCampana] Quitada solicitud', solicitud_id, 'de campaña', id, 'Total:', idsExistentes.length);
 

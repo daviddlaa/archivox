@@ -98,6 +98,8 @@ db.exec(`
         ingreso_mensual REAL,
         fecha_solicitud TEXT,
         usuario_id INTEGER,
+        vendedor TEXT,
+        campana_id INTEGER,
         destacado INTEGER DEFAULT 0,
         fecha_importacion DATETIME DEFAULT CURRENT_TIMESTAMP,
         fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -670,6 +672,9 @@ try {
 } catch (e) { /* ignorar */ }
 try {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_solicitudes_cedula ON solicitudes(cedula)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_solicitudes_campana ON solicitudes(campana_id)`);
 } catch (e) { /* ignorar */ }
 try {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_gestiones_solicitud_usuario_fecha ON gestiones(solicitud_id, usuario_id, fecha_gestion DESC)`);
