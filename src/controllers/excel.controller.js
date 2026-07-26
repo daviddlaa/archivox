@@ -587,16 +587,22 @@ exports.actualizarSolicitudEditar = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { estado, segmento } = req.body;
+    const { estado, segmento, vendedor } = req.body;
 
     if (!id) {
         return res.status(400).json({ error: 'ID de solicitud requerido' });
     }
 
+    // Solo Lider o superior (nivel >= 30) puede actualizar vendedor
+    const rolNormalizado = (req.session.usuario?.rol || '').toLowerCase();
+    const nivelMap = { superadmin: 100, admin: 50, lider: 30, agente: 20, user: 10 };
+    const nivel = nivelMap[rolNormalizado] || 0;
+    const vendedorValue = nivel >= 30 ? (vendedor !== undefined ? (vendedor || null) : undefined) : undefined;
+
     try {
         // 1. Obtener datos actuales de la solicitud
         const solicitudResult = await pool.query(
-            'SELECT id_solicitud, estado, segmento FROM solicitudes WHERE id_solicitud = $1 AND usuario_id = $2',
+            'SELECT id_solicitud, estado, segmento, vendedor FROM solicitudes WHERE id_solicitud = $1 AND usuario_id = $2',
             [id, usuarioId]
         );
 
@@ -628,6 +634,17 @@ exports.actualizarSolicitudEditar = async (req, res) => {
             setClauses.push('segmento = $' + paramIdx++);
             updateParams.push(nuevoSegmento);
             huboCambios = true;
+        }
+
+        // Actualizar vendedor si se proporciono (solo Lider+)
+        if (vendedorValue !== undefined) {
+            const oldVendedor = solicitudActual.vendedor || '';
+            const nuevoVendedor = vendedorValue || '';
+            if (nuevoVendedor !== oldVendedor) {
+                setClauses.push('vendedor = $' + paramIdx++);
+                updateParams.push(vendedorValue);
+                huboCambios = true;
+            }
         }
 
         // Siempre actualizar fecha_actualizacion
@@ -969,7 +986,8 @@ exports.crearSolicitudManual = async (req, res) => {
         direccion,
         direccion_trabajo,
         ocupacion,
-        ingreso_mensual
+        ingreso_mensual,
+        vendedor
     } = req.body;
 
     // Validar campos obligatorios
@@ -982,6 +1000,12 @@ exports.crearSolicitudManual = async (req, res) => {
     if (!celular || !celular.trim()) {
         return res.status(400).json({ error: 'El campo celular es obligatorio' });
     }
+
+    // Solo Lider o superior (nivel >= 30) puede guardar vendedor
+    const rolNormalizado = (req.session.usuario?.rol || '').toLowerCase();
+    const nivelMap = { superadmin: 100, admin: 50, lider: 30, agente: 20, user: 10 };
+    const nivel = nivelMap[rolNormalizado] || 0;
+    const vendedorValue = nivel >= 30 ? (vendedor || null) : null;
 
     const isPostgres = !!process.env.DATABASE_URL;
 
@@ -1022,14 +1046,14 @@ exports.crearSolicitudManual = async (req, res) => {
                     id_solicitud, estado, cedula, nombre, celular,
                     segmento, producto, codigo_plus, correo_electronico,
                     direccion, direccion_trabajo, ocupacion, ingreso_mensual,
-                    fecha_solicitud, usuario_id
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                    fecha_solicitud, usuario_id, vendedor
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
                 RETURNING id_solicitud`,
                 [
                     nextId, estadoFinal, cedula.trim(), nombre.trim(), celular.trim(),
                     segmento || null, producto || null, codigo_plus || null,
                     correo_electronico || null, direccion || null, direccion_trabajo || null,
-                    ocupacion || null, ingreso_mensual || null, fechaActual, usuarioId
+                    ocupacion || null, ingreso_mensual || null, fechaActual, usuarioId, vendedorValue
                 ]
             );
             
@@ -1044,20 +1068,20 @@ exports.crearSolicitudManual = async (req, res) => {
                 nombre: duplicado.nombre
             } : null
         });
-    } else {
-        const dbDirect = require('../config/database');
-        dbDirect.prepare(`
-            INSERT INTO solicitudes (
-                id_solicitud, estado, cedula, nombre, celular,
-                segmento, producto, codigo_plus, correo_electronico,
-                direccion, direccion_trabajo, ocupacion, ingreso_mensual,
-                fecha_solicitud, usuario_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
-            nextId, estadoFinal, cedula.trim(), nombre.trim(), celular.trim(),
-            segmento || null, producto || null, codigo_plus || null,
-            correo_electronico || null, direccion || null, direccion_trabajo || null,
-            ocupacion || null, ingreso_mensual || null, fechaActual, usuarioId
+        } else {
+            const dbDirect = require('../config/database');
+            dbDirect.prepare(`
+                INSERT INTO solicitudes (
+                    id_solicitud, estado, cedula, nombre, celular,
+                    segmento, producto, codigo_plus, correo_electronico,
+                    direccion, direccion_trabajo, ocupacion, ingreso_mensual,
+                    fecha_solicitud, usuario_id, vendedor
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(
+                nextId, estadoFinal, cedula.trim(), nombre.trim(), celular.trim(),
+                segmento || null, producto || null, codigo_plus || null,
+                correo_electronico || null, direccion || null, direccion_trabajo || null,
+                ocupacion || null, ingreso_mensual || null, fechaActual, usuarioId, vendedorValue
         );
 
         // Invalidar caché del dashboard
@@ -1286,7 +1310,8 @@ const {
                    COALESCE(s.cedula, '') as cedula, 
                    COALESCE(s.nombre, '') as nombre, 
                    COALESCE(s.celular, '') as celular, 
-                   COALESCE(s.estado, '') as estado_solicitud
+                   COALESCE(s.estado, '') as estado_solicitud,
+                   s.vendedor
             FROM gestiones g
             LEFT JOIN solicitudes s ON g.solicitud_id = s.id_solicitud AND g.usuario_id = s.usuario_id
             WHERE g.usuario_id = $1

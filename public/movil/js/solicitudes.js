@@ -11,6 +11,8 @@ let datosFilas = {};
 let filasSeleccionadas = [];
 let idsVisibles = [];
 let filtros = { estado: '', segmento: '', busqueda: '' };
+var _esLider = false;
+var _nivelRol = 0;
 
 // Toggle selección de card
 function toggleCard(id) {
@@ -224,6 +226,18 @@ async function init() {
         currentOffset = 0;
         todosDatos = [];
         
+        // Cargar sesión para obtener nivel de rol
+        try {
+            var sesionRes = await fetch('/api/auth/sesion');
+            var sesionData = await sesionRes.json();
+            if (sesionData.autenticado) {
+                var rol = (sesionData.usuario?.rol || '').toLowerCase();
+                var nivelMap = { superadmin: 100, admin: 50, lider: 30, agente: 20, user: 10 };
+                _nivelRol = nivelMap[rol] || 0;
+                _esLider = _nivelRol >= 30;
+            }
+        } catch (e) { console.error('[Solicitudes Móvil] Error cargando sesión:', e); }
+
         await cargarLoteInicial();
         renderizarFiltros();
         
@@ -564,10 +578,13 @@ function renderizarCards(datos) {
             html += '  <div class="card-fila-4 vacia">Sin gestiones</div>';
         }
 
-        // FILA 5: Producto + Fecha
+        // FILA 5: Producto + Fecha + Vendedor (solo Lider+)
         html += '  <div class="card-fila-5">';
         html += '    <span class="card-tag">📦 <span>' + (item.producto || '—') + '</span></span>';
         html += '    <span class="card-tag">📅 <span>' + (item.fecha_solicitud || '—') + '</span></span>';
+        if (_esLider && item.vendedor) {
+            html += '    <span class="card-tag vendedor-badge">👤 <span>' + item.vendedor + '</span></span>';
+        }
         html += '  </div>';
 
         html += '</div>';
@@ -1864,6 +1881,10 @@ async function abrirModalNuevaSolicitudMovil() {
     html += '        <label>💰 Ingreso Mensual</label>';
     html += '        <input type="number" id="ns-movil-ingreso" placeholder="0.00" step="0.01" min="0" inputmode="decimal">';
     html += '      </div>';
+    html += '      <div class="ns-movil-field" id="ns-movil-vendedor-field" style="display:none;">';
+    html += '        <label>👤 Vendedor</label>';
+    html += '        <input type="text" id="ns-movil-vendedor" placeholder="Nombre del vendedor">';
+    html += '      </div>';
     html += '    </div>';
 
     html += '  </div>'; // fin body
@@ -1882,6 +1903,14 @@ async function abrirModalNuevaSolicitudMovil() {
     setTimeout(function() {
         var input = document.getElementById('ns-movil-nombre');
         if (input) input.focus();
+        fetch('/api/auth/sesion').then(function(r){ return r.json(); }).then(function(sesion) {
+            if (sesion.autenticado) {
+                var rol = sesion.usuario.rol;
+                var esLider = (rol === 'lider' || rol === 'admin' || rol === 'superadmin');
+                var vf = document.getElementById('ns-movil-vendedor-field');
+                if (vf) vf.style.display = esLider ? 'block' : 'none';
+            }
+        }).catch(function(){});
     }, 300);
 }
 
@@ -2047,6 +2076,12 @@ async function guardarNuevaSolicitudMovil() {
             ocupacion: document.getElementById('ns-movil-ocupacion').value.trim() || undefined,
             ingreso_mensual: document.getElementById('ns-movil-ingreso').value ? parseFloat(document.getElementById('ns-movil-ingreso').value) : undefined
         };
+
+        var vendedorField = document.getElementById('ns-movil-vendedor');
+        if (vendedorField) {
+            var vendedorVal = vendedorField.value.trim();
+            if (vendedorVal) body.vendedor = vendedorVal;
+        }
 
         var response = await fetch('/api/excel/solicitudes', {
             method: 'POST',

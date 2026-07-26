@@ -80,6 +80,18 @@ async function init() {
         currentOffset = 0;
         todosDatos = [];
         
+        // Cargar sesión para obtener nivel de rol
+        try {
+            var sesionRes = await fetch('/api/auth/sesion');
+            var sesionData = await sesionRes.json();
+            if (sesionData.autenticado) {
+                var rol = (sesionData.usuario?.rol || '').toLowerCase();
+                var nivelMap = { superadmin: 100, admin: 50, lider: 30, agente: 20, user: 10 };
+                _nivelRol = nivelMap[rol] || 0;
+                _esLider = _nivelRol >= 30;
+            }
+        } catch (e) { console.error('[Solicitudes] Error cargando sesión:', e); }
+
         // Cargar datos y dashboard en paralelo (2 requests en lugar de 4+)
         await Promise.all([
             cargarLoteInicial(),
@@ -536,6 +548,7 @@ function generarInformeSeleccionadas() {
 
 // Variable global para saber si el usuario es líder y su equipo_id
 var _esLider = false;
+var _nivelRol = 0;
 var _equipoId = null;
 
 async function abrirModalNuevaGestion() {
@@ -912,10 +925,13 @@ function renderizarCards(datos) {
             html += '  <div class="card-fila-4 vacia">Sin gestiones</div>';
         }
 
-        // FILA 5: Producto + Fecha
+        // FILA 5: Producto + Fecha + Vendedor (solo Lider+)
         html += '  <div class="card-fila-5">';
         html += '    <span class="card-tag">📦 <span>' + (item.producto || '—') + '</span></span>';
         html += '    <span class="card-tag">📅 <span>' + (item.fecha_solicitud || '—') + '</span></span>';
+        if (_esLider && item.vendedor) {
+            html += '    <span class="card-tag vendedor-badge">👤 <span>' + item.vendedor + '</span></span>';
+        }
         html += '  </div>';
 
         html += '</div>';
@@ -1305,6 +1321,10 @@ function abrirModalNuevaSolicitud() {
         contenido += '            <label>💰 Ingreso Mensual</label>';
         contenido += '            <input type="number" id="ns-desktop-ingreso" placeholder="0.00" step="0.01" min="0">';
         contenido += '          </div>';
+        contenido += '          <div class="ns-field" id="ns-desktop-vendedor-field" style="display:none;">';
+        contenido += '            <label>👤 Vendedor</label>';
+        contenido += '            <input type="text" id="ns-desktop-vendedor" placeholder="Nombre del vendedor">';
+        contenido += '          </div>';
         contenido += '        </div>';
         contenido += '      </div>';
 
@@ -1324,6 +1344,14 @@ function abrirModalNuevaSolicitud() {
         setTimeout(function() {
             var input = document.getElementById('ns-desktop-nombre');
             if (input) input.focus();
+            fetch('/api/auth/sesion').then(function(r){ return r.json(); }).then(function(sesion) {
+                if (sesion.autenticado) {
+                    var rol = sesion.usuario.rol;
+                    var esLider = (rol === 'lider' || rol === 'admin' || rol === 'superadmin');
+                    var vf = document.getElementById('ns-desktop-vendedor-field');
+                    if (vf) vf.style.display = esLider ? 'block' : 'none';
+                }
+            }).catch(function(){});
         }, 300);
     }).catch(function(err) {
         console.error('Error cargando datos para nueva solicitud:', err);
@@ -1362,6 +1390,12 @@ async function guardarNuevaSolicitudDesktop() {
             ocupacion: document.getElementById('ns-desktop-ocupacion').value.trim() || undefined,
             ingreso_mensual: document.getElementById('ns-desktop-ingreso').value ? parseFloat(document.getElementById('ns-desktop-ingreso').value) : undefined
         };
+
+        var vendedorField = document.getElementById('ns-desktop-vendedor');
+        if (vendedorField) {
+            var vendedorVal = vendedorField.value.trim();
+            if (vendedorVal) body.vendedor = vendedorVal;
+        }
 
         var response = await fetch('/api/excel/solicitudes', {
             method: 'POST',
@@ -1486,14 +1520,16 @@ function guardarGestionDesktop(id) {
     var btn = document.querySelector('button[onclick="guardarGestionDesktop(\'' + id + '\')"]');
     if (btn) { btn.textContent = '⏳ Guardando...'; btn.disabled = true; }
 
+    var body = {
+        solicitud_id: id,
+        tipo_gestion: tipo.value,
+        observacion: observacion.value.trim()
+    };
+
     fetch('/api/excel/gestiones', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            solicitud_id: id,
-            tipo_gestion: tipo.value,
-            observacion: observacion.value.trim()
-        })
+        body: JSON.stringify(body)
     })
     .then(function(res) { return res.json(); })
     .then(function(resultado) {

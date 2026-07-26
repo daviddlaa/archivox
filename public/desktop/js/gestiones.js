@@ -158,7 +158,7 @@ function renderizarTabla(datos) {
     }
     
     if (!datos.length) {
-        tabla.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">No se encontraron gestiones</td></tr>';
+        tabla.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;">No se encontraron gestiones</td></tr>';
         return;
     }
     
@@ -183,6 +183,7 @@ function renderizarTabla(datos) {
         html += '<td>' + (g.cedula || '') + '</td>';
         html += '<td>' + (g.nombre || '') + '</td>';
         html += '<td><span style="background:' + color + ';padding:4px 8px;border-radius:4px;font-size:12px;">' + (g.tipo_gestion || '') + '</span></td>';
+        html += '<td>' + (g.vendedor || '-') + '</td>';
         html += '<td>' + (g.observacion || '') + '</td>';
         html += '<td>' + fechaFormateada + '</td>';
         html += '<td>';
@@ -235,6 +236,7 @@ function renderizarCards(datos) {
         html += '<div class="gestion-card-body">';
         html += '<p><strong>Nombre:</strong> ' + (g.nombre || '-') + '</p>';
         html += '<p><strong>Cédula:</strong> ' + (g.cedula || '-') + '</p>';
+        if (g.vendedor) html += '<p><strong>Vendedor:</strong> ' + g.vendedor + '</p>';
         html += '<p><strong>Obs:</strong> ' + (g.observacion || '-') + '</p>';
         html += '</div>';
         html += '<div class="gestion-card-footer">';
@@ -265,6 +267,7 @@ function verGestion(id) {
     contenido += '<p><strong>Nombre:</strong> ' + (gestion.nombre || '') + '</p>';
     contenido += '<p><strong>Celular:</strong> ' + (gestion.celular || '') + '</p>';
     contenido += '<p><strong>Tipo:</strong> ' + gestion.tipo_gestion + '</p>';
+    if (gestion.vendedor) contenido += '<p><strong>Vendedor:</strong> ' + gestion.vendedor + '</p>';
     contenido += '<p><strong>Fecha:</strong> ' + formatFechaGestion(gestion.fecha_gestion) + '</p>';
     contenido += '<p><strong>Observación:</strong></p>';
     contenido += '<div style="background:white;padding:10px;border-radius:4px;margin-top:5px;">' + (gestion.observacion || 'Sin observación') + '</div>';
@@ -330,6 +333,7 @@ function exportarExcel() {
             'Cédula': g.cedula || '',
             'Nombre': g.nombre || '',
             'Tipo Gestión': g.tipo_gestion || '',
+            'Vendedor': g.vendedor || '',
             'Observación': g.observacion || '',
             'Fecha Gestión': formatFechaGestion(g.fecha_gestion)
         });

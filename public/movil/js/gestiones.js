@@ -114,6 +114,7 @@ function renderizarLista(datos) {
         html += '<div class="gestion-body">';
         html += '<p><strong>' + (g.nombre || 'Sin nombre') + '</strong></p>';
         html += '<p class="gestion-cedula">Cédula: ' + (g.cedula || '-') + '</p>';
+        if (g.vendedor) html += '<p class="gestion-vendedor" style="color:#2563eb;font-weight:600;">🏷️ ' + g.vendedor + '</p>';
         html += '<p class="gestion-obs">' + (g.observacion || 'Sin observación') + '</p>';
         html += '</div>';
         html += '<div class="gestion-footer">';
@@ -144,6 +145,7 @@ function verGestion(id) {
     contenido += '<p><strong>Nombre:</strong> ' + (gestion.nombre || '') + '</p>';
     contenido += '<p><strong>Celular:</strong> ' + (gestion.celular || '') + '</p>';
     contenido += '<p><strong>Tipo:</strong> ' + gestion.tipo_gestion + '</p>';
+    if (gestion.vendedor) contenido += '<p><strong>Vendedor:</strong> ' + gestion.vendedor + '</p>';
     contenido += '<p><strong>Fecha:</strong> ' + formatFechaGestion(gestion.fecha_gestion) + '</p>';
     contenido += '<p><strong>Observación:</strong></p>';
     contenido += '<div class="obs-box">' + (gestion.observacion || 'Sin observación') + '</div>';

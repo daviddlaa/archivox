@@ -593,15 +593,17 @@ async function guardarGestionIndividual(solicitudId) {
     btn.disabled = true;
     
     try {
+        var bodyLote = {
+            solicitud_id: solicitudId,
+            tipo_gestion: tipo,
+            observacion: observacion,
+            gestion_maestro_id: gestionId
+        };
+
         var response = await fetch('/api/excel/gestiones', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                solicitud_id: solicitudId,
-                tipo_gestion: tipo,
-                observacion: observacion,
-                gestion_maestro_id: gestionId
-            })
+            body: JSON.stringify(bodyLote)
         });
         
         var resultado = await response.json();
@@ -708,6 +710,7 @@ async function verHistorial(solicitudId) {
                 contenido += '<div style="flex:1;padding-bottom:' + (isLast ? '0' : '16px') + ';">';
                 contenido += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">';
                 contenido += '<span style="background:' + colorBadge + ';padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;color:#374151;">' + (g.tipo_gestion || '—') + '</span>';
+                if (g.vendedor) contenido += '<span style="font-size:11px;color:#2563eb;font-weight:600;">🏷️ ' + g.vendedor + '</span>';
                 contenido += '<span style="font-size:11px;color:#9ca3af;">' + fecha + '</span>';
                 contenido += '</div>';
                 contenido += '<div style="background:#f9fafb;padding:10px 12px;border-radius:8px;font-size:13px;color:#374151;line-height:1.5;">' + (g.observacion || 'Sin observación') + '</div>';

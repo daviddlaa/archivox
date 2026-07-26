@@ -155,6 +155,9 @@ exports.procesarExcel = async (filePath, usuarioId) => {
         
         // Convertir fecha a formato YYYY-MM-DD (tolera cualquier formato: serial, Date, string)
         registro.FECHASOLICITUD = convertirFecha(registro.FECHASOLICITUD);
+        
+        // Normalizar vendedor desde Excel (columna VENDEDOR o VENDEDOR)
+        const vendedorExcel = registro.VENDEDOR ? String(registro.VENDEDOR).trim() : null;
 
         try {
             if (isPostgres) {
@@ -198,8 +201,9 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                             producto = $6,
                             fecha_solicitud = $7,
                             usuario_id = $8,
+                            vendedor = $9,
                             fecha_actualizacion = CURRENT_TIMESTAMP
-                        WHERE id_solicitud = $9`,
+                        WHERE id_solicitud = $10`,
                         [
                             registro.ESTADO,
                             registro.CEDULA,
@@ -209,6 +213,7 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                             registro.PRODUCTO,
                             registro.FECHASOLICITUD,
                             usuarioId,
+                            vendedorExcel,
                             existingIdSol
                         ]
                     );
@@ -239,8 +244,8 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                     await pool.query(
                         `INSERT INTO solicitudes (
                             id_solicitud, estado, cedula, nombre, celular,
-                            segmento, producto, fecha_solicitud, usuario_id
-                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                            segmento, producto, fecha_solicitud, usuario_id, vendedor
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
                         [
                             registro.IDSOLICITUD,
                             registro.ESTADO,
@@ -250,7 +255,8 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                             registro.SEGMENTO,
                             registro.PRODUCTO,
                             registro.FECHASOLICITUD,
-                            usuarioId
+                            usuarioId,
+                            vendedorExcel
                         ]
                     );
                     inserts++;
@@ -293,6 +299,7 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                             producto = ?,
                             fecha_solicitud = ?,
                             usuario_id = ?,
+                            vendedor = ?,
                             fecha_actualizacion = datetime('now')
                         WHERE id_solicitud = ?
                     `).run(
@@ -304,6 +311,7 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                         registro.PRODUCTO,
                         registro.FECHASOLICITUD,
                         usuarioId,
+                        vendedorExcel,
                         existingIdSol
                     );
                     
@@ -333,8 +341,8 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                     dbDirect.prepare(`
                         INSERT INTO solicitudes (
                             id_solicitud, estado, cedula, nombre, celular,
-                            segmento, producto, fecha_solicitud, usuario_id
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            segmento, producto, fecha_solicitud, usuario_id, vendedor
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     `).run(
                         registro.IDSOLICITUD,
                         registro.ESTADO,
@@ -344,7 +352,8 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                         registro.SEGMENTO,
                         registro.PRODUCTO,
                         registro.FECHASOLICITUD,
-                        usuarioId
+                        usuarioId,
+                        vendedorExcel
                     );
                     inserts++;
                 }
