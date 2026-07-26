@@ -115,7 +115,7 @@ exports.listarSolicitudes = async (req, res) => {
 // LISTAR SOLICITUDES CON PAGINACIÓN OPTIMIZADA
 // ============================================================================
 // VERSIÓN OPTIMIZADA:
-// 1. Usa LATERAL JOIN en lugar de subquery correlacionada (mucho más rápido con miles de registros)
+// 1. Subconsultas correlacionadas (compatible con SQLite y PostgreSQL)
 // 2. LIMIT/OFFSET con parámetros (seguridad, sin SQL injection)
 // 3. COUNT con los mismos filtros para paginación precisa
 // 4. Ordenamiento por columnas mapeado a nombres reales de columna (evita SQL injection)
@@ -133,19 +133,17 @@ exports.listarSolicitudes = async (req, res) => {
     };
     
     let sql = `SELECT s.*,
-                   g.tipo_gestion as ultima_gestion_tipo,
-                   g.observacion as ultima_gestion_obs,
-                   g.fecha_gestion as ultima_gestion_fecha,
+                   (SELECT g2.tipo_gestion FROM gestiones g2 
+                    WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id 
+                    ORDER BY g2.fecha_gestion DESC LIMIT 1) as ultima_gestion_tipo,
+                   (SELECT g2.observacion FROM gestiones g2 
+                    WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id 
+                    ORDER BY g2.fecha_gestion DESC LIMIT 1) as ultima_gestion_obs,
+                   (SELECT g2.fecha_gestion FROM gestiones g2 
+                    WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id 
+                    ORDER BY g2.fecha_gestion DESC LIMIT 1) as ultima_gestion_fecha,
                    gm.nombre as nombre_campana
             FROM solicitudes s
-            LEFT JOIN LATERAL (
-                SELECT g2.tipo_gestion, g2.observacion, g2.fecha_gestion
-                FROM gestiones g2
-                WHERE g2.solicitud_id = s.id_solicitud 
-                  AND g2.usuario_id = s.usuario_id
-                ORDER BY g2.fecha_gestion DESC
-                LIMIT 1
-            ) g ON TRUE
             LEFT JOIN gestiones_maestro gm ON s.campana_id = gm.id
             WHERE s.usuario_id = $1`;
     const params = [usuarioId];
@@ -177,7 +175,7 @@ exports.listarSolicitudes = async (req, res) => {
     }
 
     if (telefono) {
-        sql += ' AND s.celular::text LIKE $' + paramIndex++;
+        sql += ' AND CAST(s.celular AS TEXT) LIKE $' + paramIndex++;
         params.push('%' + telefono + '%');
     }
 
@@ -1232,7 +1230,7 @@ exports.limpiarSolicitudes = async (req, res) => {
 // BUSCAR SOLICITUDES - OPTIMIZADA
 // ============================================================================
 // Características:
-// - LATERAL JOIN (más rápido que subquery)
+// - Subconsultas correlacionadas (compatible SQLite + PostgreSQL)
 // - Parámetros seguros (LIMIT/OFFSET con bind params)
 // - COUNT con mismos filtros para paginación precisa
 // - Búsqueda por cédula, nombre, celular o ID
@@ -1261,21 +1259,19 @@ exports.buscarSolicitudes = async (req, res) => {
     const isLeader = nivel >= 30;
 
     try {
-        // Query principal con LATERAL JOIN optimizado
+        // Query principal con subconsultas correlacionadas
     let sql = `SELECT s.*,
-                   g.tipo_gestion as ultima_gestion_tipo,
-                   g.observacion as ultima_gestion_obs,
-                   g.fecha_gestion as ultima_gestion_fecha,
+                   (SELECT g2.tipo_gestion FROM gestiones g2 
+                    WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id 
+                    ORDER BY g2.fecha_gestion DESC LIMIT 1) as ultima_gestion_tipo,
+                   (SELECT g2.observacion FROM gestiones g2 
+                    WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id 
+                    ORDER BY g2.fecha_gestion DESC LIMIT 1) as ultima_gestion_obs,
+                   (SELECT g2.fecha_gestion FROM gestiones g2 
+                    WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id 
+                    ORDER BY g2.fecha_gestion DESC LIMIT 1) as ultima_gestion_fecha,
                    gm.nombre as nombre_campana
             FROM solicitudes s
-            LEFT JOIN LATERAL (
-                SELECT g2.tipo_gestion, g2.observacion, g2.fecha_gestion
-                FROM gestiones g2
-                WHERE g2.solicitud_id = s.id_solicitud 
-                  AND g2.usuario_id = s.usuario_id
-                ORDER BY g2.fecha_gestion DESC
-                LIMIT 1
-            ) g ON TRUE
             LEFT JOIN gestiones_maestro gm ON s.campana_id = gm.id
             WHERE s.usuario_id = $1`;
         const params = [usuarioId];
