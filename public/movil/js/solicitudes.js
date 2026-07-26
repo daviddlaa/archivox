@@ -11,6 +11,9 @@ let datosFilas = {};
 let filasSeleccionadas = [];
 let idsVisibles = [];
 let filtros = { estado: '', segmento: '', busqueda: '' };
+let fechaDesdeActual = sessionStorage.getItem('sol_fecha_desde') || '';
+let fechaHastaActual = sessionStorage.getItem('sol_fecha_hasta') || '';
+let vendedorActual = sessionStorage.getItem('sol_vendedor') || '';
 var _esLider = false;
 var _nivelRol = 0;
 
@@ -235,6 +238,7 @@ async function init() {
                 var nivelMap = { superadmin: 100, admin: 50, lider: 30, agente: 20, user: 10 };
                 _nivelRol = nivelMap[rol] || 0;
                 _esLider = _nivelRol >= 30;
+                if (_esLider) mostrarFiltrosLider();
             }
         } catch (e) { console.error('[Solicitudes Móvil] Error cargando sesión:', e); }
 
@@ -363,6 +367,72 @@ function renderizarFiltros() {
     adjuntarEventos();
 }
 
+// ============================================================================
+// FILTROS LIDER+ (Fecha y Vendedor)
+// ============================================================================
+function mostrarFiltrosLider() {
+    var filtrosLider = document.getElementById('filtrosLider');
+    if (filtrosLider) {
+        filtrosLider.style.display = 'flex';
+        var fd = document.getElementById('fechaDesde');
+        var fh = document.getElementById('fechaHasta');
+        var fv = document.getElementById('filtroVendedor');
+        if (fd && fechaDesdeActual) fd.value = fechaDesdeActual;
+        if (fh && fechaHastaActual) fh.value = fechaHastaActual;
+        if (fv && vendedorActual) fv.value = vendedorActual;
+        cargarVendedores();
+    }
+}
+
+async function cargarVendedores() {
+    try {
+        var res = await fetch('/api/excel/solicitudes/vendedores', { credentials: 'include' });
+        if (res.ok) {
+            var vendedores = await res.json();
+            var datalist = document.getElementById('vendedoresList');
+            if (datalist) {
+                datalist.innerHTML = '';
+                vendedores.forEach(function(v) {
+                    var option = document.createElement('option');
+                    option.value = v;
+                    datalist.appendChild(option);
+                });
+            }
+        }
+    } catch (e) {
+        console.warn('[Solicitudes Móvil] No se pudo cargar lista de vendedores:', e);
+    }
+}
+
+function aplicarFiltrosLider() {
+    var fd = document.getElementById('fechaDesde');
+    var fh = document.getElementById('fechaHasta');
+    var fv = document.getElementById('filtroVendedor');
+    fechaDesdeActual = fd ? fd.value : '';
+    fechaHastaActual = fh ? fh.value : '';
+    vendedorActual = fv ? fv.value.trim() : '';
+    sessionStorage.setItem('sol_fecha_desde', fechaDesdeActual);
+    sessionStorage.setItem('sol_fecha_hasta', fechaHastaActual);
+    sessionStorage.setItem('sol_vendedor', vendedorActual);
+    buscarEnServidor(true);
+}
+
+function limpiarFiltrosLider() {
+    var fd = document.getElementById('fechaDesde');
+    var fh = document.getElementById('fechaHasta');
+    var fv = document.getElementById('filtroVendedor');
+    if (fd) fd.value = '';
+    if (fh) fh.value = '';
+    if (fv) fv.value = '';
+    fechaDesdeActual = '';
+    fechaHastaActual = '';
+    vendedorActual = '';
+    sessionStorage.removeItem('sol_fecha_desde');
+    sessionStorage.removeItem('sol_fecha_hasta');
+    sessionStorage.removeItem('sol_vendedor');
+    buscarEnServidor(true);
+}
+
 // ================== BÚSQUEDA EN SERVIDOR ==================
 // Nueva implementación: buscar directamente en el servidor
 var busquedaActiva = false;
@@ -395,10 +465,15 @@ async function buscarEnServidor(resetOffset = false, extraOffset = null) {
             return;
         }
         
-        if (tieneFiltros) {
+        if (tieneFiltros || fechaDesdeActual || fechaHastaActual || vendedorActual) {
             var url = '/api/excel/solicitudes/buscar?q=' + encodeURIComponent(termino || '%') + '&limite=' + TAMANO_LOTE + '&offset=' + nuevoOffset;
             if (filtros.estado) url += '&estado=' + encodeURIComponent(filtros.estado);
             if (filtros.segmento) url += '&segmento=' + encodeURIComponent(filtros.segmento);
+            if (_esLider) {
+                if (fechaDesdeActual) url += '&fecha_desde=' + encodeURIComponent(fechaDesdeActual);
+                if (fechaHastaActual) url += '&fecha_hasta=' + encodeURIComponent(fechaHastaActual);
+                if (vendedorActual) url += '&vendedor=' + encodeURIComponent(vendedorActual);
+            }
             
             var response = await fetch(url, { signal: signal });
             var result = await response.json();

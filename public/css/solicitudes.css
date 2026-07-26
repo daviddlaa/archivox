@@ -87,6 +87,21 @@
     border-color: #2563eb;
     color: white;
 }
+.filtros-unificado .filtro-input-date,
+.filtros-unificado .filtro-input-text {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    color: #374151;
+    background: white;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.filtros-unificado .filtro-input-date:focus,
+.filtros-unificado .filtro-input-text:focus {
+    border-color: #2563eb;
+}
 
 /* ===== BUSCADOR ===== */
 .buscador-unificado {

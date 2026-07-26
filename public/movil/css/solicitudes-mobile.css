@@ -578,6 +578,21 @@
         background: #e5e7eb;
         border-color: #d1d5db;
     }
+    .filtros-unificado .filtro-input-date,
+    .filtros-unificado .filtro-input-text {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 13px;
+        color: #374151;
+        background: white;
+        outline: none;
+        width: 100%;
+    }
+    .filtros-unificado .filtro-input-date:focus,
+    .filtros-unificado .filtro-input-text:focus {
+        border-color: #6366f1;
+    }
 
     /* ========================================================================
        BUSCADOR - Tipo app nativa

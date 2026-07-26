@@ -65,6 +65,26 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Filtros solo para Lider+ -->
+                    <div id="filtrosLider" class="filtros-row" style="display:none;margin-top:8px;">
+                        <div class="filtro-grupo">
+                            <span class="filtro-label">📅 Desde</span>
+                            <input type="date" id="fechaDesde" class="filtro-input-date">
+                        </div>
+                        <div class="filtro-grupo">
+                            <span class="filtro-label">📅 Hasta</span>
+                            <input type="date" id="fechaHasta" class="filtro-input-date">
+                        </div>
+                        <div class="filtro-grupo">
+                            <span class="filtro-label">👤 Vendedor</span>
+                            <input type="text" id="filtroVendedor" placeholder="Buscar vendedor..." class="filtro-input-text" list="vendedoresList">
+                            <datalist id="vendedoresList"></datalist>
+                        </div>
+                        <div class="filtro-grupo" style="align-self:flex-end;">
+                            <button class="filtro-btn" onclick="aplicarFiltrosLider()" style="background:#2563eb;color:white;">Aplicar</button>
+                            <button class="filtro-btn" onclick="limpiarFiltrosLider()" style="background:#f3f4f6;">Limpiar</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Buscador + Seleccionar Todo -->

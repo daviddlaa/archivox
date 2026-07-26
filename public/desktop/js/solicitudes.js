@@ -38,6 +38,9 @@ let activeController = null;
 // Filtros con persistencia
 let estadoActual = sessionStorage.getItem('sol_estado') || '';
 let segmentoActual = sessionStorage.getItem('sol_segmento') || '';
+let fechaDesdeActual = sessionStorage.getItem('sol_fecha_desde') || '';
+let fechaHastaActual = sessionStorage.getItem('sol_fecha_hasta') || '';
+let vendedorActual = sessionStorage.getItem('sol_vendedor') || '';
 var TAMANO_LOTE = CONFIG.TAMANO_LOTE;
 
 // Cache de consultas
@@ -69,6 +72,9 @@ function persistirEstado() {
     try {
         sessionStorage.setItem('sol_estado', estadoActual);
         sessionStorage.setItem('sol_segmento', segmentoActual);
+        sessionStorage.setItem('sol_fecha_desde', fechaDesdeActual);
+        sessionStorage.setItem('sol_fecha_hasta', fechaHastaActual);
+        sessionStorage.setItem('sol_vendedor', vendedorActual);
     } catch (e) { /* ignore */ }
 }
 
@@ -89,6 +95,7 @@ async function init() {
                 var nivelMap = { superadmin: 100, admin: 50, lider: 30, agente: 20, user: 10 };
                 _nivelRol = nivelMap[rol] || 0;
                 _esLider = _nivelRol >= 30;
+                if (_esLider) mostrarFiltrosLider();
             }
         } catch (e) { console.error('[Solicitudes] Error cargando sesión:', e); }
 
@@ -160,10 +167,15 @@ async function buscarEnServidor(resetOffset, extraOffset) {
     }
 
     try {
-        if (tieneFiltros) {
+        if (tieneFiltros || fechaDesdeActual || fechaHastaActual || vendedorActual) {
             let url = `/api/excel/solicitudes/buscar?q=${encodeURIComponent(termino || '%')}&limite=${CONFIG.TAMANO_LOTE}&offset=${nuevoOffset}`;
             if (estadoActual) url += `&estado=${encodeURIComponent(estadoActual)}`;
             if (segmentoActual) url += `&segmento=${encodeURIComponent(segmentoActual)}`;
+            if (_esLider) {
+                if (fechaDesdeActual) url += `&fecha_desde=${encodeURIComponent(fechaDesdeActual)}`;
+                if (fechaHastaActual) url += `&fecha_hasta=${encodeURIComponent(fechaHastaActual)}`;
+                if (vendedorActual) url += `&vendedor=${encodeURIComponent(vendedorActual)}`;
+            }
 
             const response = await fetch(url, { signal });
             const result = await response.json();
@@ -1011,6 +1023,73 @@ async function cargarSegmentos() {
     } catch (error) {
         console.error('[Solicitudes] Error cargando segmentos:', error);
     }
+}
+
+// ============================================================================
+// FILTROS LIDER+ (Fecha y Vendedor)
+// ============================================================================
+function mostrarFiltrosLider() {
+    var filtrosLider = document.getElementById('filtrosLider');
+    if (filtrosLider) {
+        filtrosLider.style.display = 'flex';
+        // Restaurar valores de session
+        var fd = document.getElementById('fechaDesde');
+        var fh = document.getElementById('fechaHasta');
+        var fv = document.getElementById('filtroVendedor');
+        if (fd && fechaDesdeActual) fd.value = fechaDesdeActual;
+        if (fh && fechaHastaActual) fh.value = fechaHastaActual;
+        if (fv && vendedorActual) fv.value = vendedorActual;
+        cargarVendedores();
+    }
+}
+
+async function cargarVendedores() {
+    try {
+        var res = await fetch('/api/excel/solicitudes/vendedores', { credentials: 'include' });
+        if (res.ok) {
+            var vendedores = await res.json();
+            var datalist = document.getElementById('vendedoresList');
+            if (datalist) {
+                datalist.innerHTML = '';
+                vendedores.forEach(function(v) {
+                    var option = document.createElement('option');
+                    option.value = v;
+                    datalist.appendChild(option);
+                });
+            }
+        }
+    } catch (e) {
+        console.warn('[Solicitudes] No se pudo cargar lista de vendedores:', e);
+    }
+}
+
+function aplicarFiltrosLider() {
+    var fd = document.getElementById('fechaDesde');
+    var fh = document.getElementById('fechaHasta');
+    var fv = document.getElementById('filtroVendedor');
+    fechaDesdeActual = fd ? fd.value : '';
+    fechaHastaActual = fh ? fh.value : '';
+    vendedorActual = fv ? fv.value.trim() : '';
+    sessionStorage.setItem('sol_fecha_desde', fechaDesdeActual);
+    sessionStorage.setItem('sol_fecha_hasta', fechaHastaActual);
+    sessionStorage.setItem('sol_vendedor', vendedorActual);
+    buscarEnServidor(true);
+}
+
+function limpiarFiltrosLider() {
+    var fd = document.getElementById('fechaDesde');
+    var fh = document.getElementById('fechaHasta');
+    var fv = document.getElementById('filtroVendedor');
+    if (fd) fd.value = '';
+    if (fh) fh.value = '';
+    if (fv) fv.value = '';
+    fechaDesdeActual = '';
+    fechaHastaActual = '';
+    vendedorActual = '';
+    sessionStorage.removeItem('sol_fecha_desde');
+    sessionStorage.removeItem('sol_fecha_hasta');
+    sessionStorage.removeItem('sol_vendedor');
+    buscarEnServidor(true);
 }
 
 // ============================================================================

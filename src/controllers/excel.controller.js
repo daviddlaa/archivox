@@ -91,7 +91,10 @@ exports.listarSolicitudes = async (req, res) => {
         direccion,
         limite = 50,
         offset = 0,
-        cargarMas = 'false'
+        cargarMas = 'false',
+        fecha_desde,
+        fecha_hasta,
+        vendedor
     } = req.query;
 
     // Obtener ID del usuario de la sesi�n
@@ -101,6 +104,12 @@ exports.listarSolicitudes = async (req, res) => {
             error: 'No autenticado'
         });
     }
+
+    // Verificar si el usuario es Lider+ (nivel >= 30)
+    const rolNormalizado = (req.session.usuario?.rol || '').toLowerCase();
+    const nivelMap = { superadmin: 100, admin: 50, lider: 30, agente: 20, user: 10 };
+    const nivel = nivelMap[rolNormalizado] || 0;
+    const isLeader = nivel >= 30;
 
     // ============================================================================
 // LISTAR SOLICITUDES CON PAGINACIÓN OPTIMIZADA
@@ -170,6 +179,22 @@ exports.listarSolicitudes = async (req, res) => {
         params.push('%' + telefono + '%');
     }
 
+    // Filtros adicionales solo para Lider+ (nivel >= 30)
+    if (isLeader) {
+        if (fecha_desde) {
+            sql += ' AND s.fecha_solicitud >= $' + paramIndex++;
+            params.push(fecha_desde);
+        }
+        if (fecha_hasta) {
+            sql += ' AND s.fecha_solicitud <= $' + paramIndex++;
+            params.push(fecha_hasta);
+        }
+        if (vendedor && vendedor.trim() !== '') {
+            sql += ' AND LOWER(s.vendedor) LIKE LOWER($' + paramIndex++ + ')';
+            params.push('%' + vendedor.trim() + '%');
+        }
+    }
+
     // Ordenamiento seguro (solo columnas permitidas)
     const columnaOrden = columnasPermitidas[orden] || 's.id';
     const direccionOrden = direccion === 'ASC' ? 'ASC' : 'DESC';
@@ -190,6 +215,11 @@ exports.listarSolicitudes = async (req, res) => {
                 let countIdx = 2;
                 if (estado) { countSql += ' AND s.estado = $' + countIdx++; countParams.push(estado); }
                 if (segmento) { countSql += ' AND s.segmento = $' + countIdx++; countParams.push(segmento); }
+                if (isLeader) {
+                    if (fecha_desde) { countSql += ' AND s.fecha_solicitud >= $' + countIdx++; countParams.push(fecha_desde); }
+                    if (fecha_hasta) { countSql += ' AND s.fecha_solicitud <= $' + countIdx++; countParams.push(fecha_hasta); }
+                    if (vendedor && vendedor.trim() !== '') { countSql += ' AND LOWER(s.vendedor) LIKE LOWER($' + countIdx++ + ')'; countParams.push('%' + vendedor.trim() + '%'); }
+                }
                 return pool.query(countSql, countParams);
             })()
         ]);
@@ -209,6 +239,38 @@ exports.listarSolicitudes = async (req, res) => {
     }
 
 };
+
+// ================== VENDEDORES ÚNICOS ==================
+
+// Obtener lista de vendedores únicos (solo para Lider+)
+exports.getVendedoresUnicos = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    // Solo Lider+ puede ver esta lista
+    const rolNormalizado = (req.session.usuario?.rol || '').toLowerCase();
+    const nivelMap = { superadmin: 100, admin: 50, lider: 30, agente: 20, user: 10 };
+    const nivel = nivelMap[rolNormalizado] || 0;
+    if (nivel < 30) {
+        return res.status(403).json({ error: 'No autorizado' });
+    }
+
+    try {
+        const result = await pool.query(
+            `SELECT DISTINCT vendedor FROM solicitudes 
+             WHERE usuario_id = $1 AND vendedor IS NOT NULL AND vendedor != '' 
+             ORDER BY vendedor`,
+            [usuarioId]
+        );
+        res.json(result.rows.map(function(r) { return r.vendedor; }));
+    } catch (err) {
+        console.error('Error getVendedoresUnicos:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // ================== CONTROL DE VENTAS DEL EQUIPO ==================
 
 // Obtener ventas del equipo por mes
@@ -1184,8 +1246,17 @@ exports.buscarSolicitudes = async (req, res) => {
         estado = '',
         segmento = '',
         limite = 50,
-        offset = 0
+        offset = 0,
+        fecha_desde,
+        fecha_hasta,
+        vendedor
     } = req.query;
+
+    // Verificar si el usuario es Lider+ (nivel >= 30)
+    const rolNormalizado = (req.session.usuario?.rol || '').toLowerCase();
+    const nivelMap = { superadmin: 100, admin: 50, lider: 30, agente: 20, user: 10 };
+    const nivel = nivelMap[rolNormalizado] || 0;
+    const isLeader = nivel >= 30;
 
     try {
         // Query principal con LATERAL JOIN optimizado
@@ -1229,6 +1300,22 @@ exports.buscarSolicitudes = async (req, res) => {
             params.push(segmento);
         }
 
+        // Filtros adicionales solo para Lider+ (nivel >= 30)
+        if (isLeader) {
+            if (fecha_desde) {
+                sql += ` AND s.fecha_solicitud >= $${paramIdx++}`;
+                params.push(fecha_desde);
+            }
+            if (fecha_hasta) {
+                sql += ` AND s.fecha_solicitud <= $${paramIdx++}`;
+                params.push(fecha_hasta);
+            }
+            if (vendedor && vendedor.trim() !== '') {
+                sql += ` AND LOWER(s.vendedor) LIKE LOWER($${paramIdx++})`;
+                params.push('%' + vendedor.trim() + '%');
+            }
+        }
+
         // Paginación con parámetros seguros
         const limitVal = parseInt(limite) || 50;
         const offsetVal = parseInt(offset) || 0;
@@ -1256,6 +1343,11 @@ exports.buscarSolicitudes = async (req, res) => {
                 }
                 if (estado) { countSql += ` AND s.estado = $${cIdx++}`; countParams.push(estado); }
                 if (segmento) { countSql += ` AND s.segmento = $${cIdx++}`; countParams.push(segmento); }
+                if (isLeader) {
+                    if (fecha_desde) { countSql += ` AND s.fecha_solicitud >= $${cIdx++}`; countParams.push(fecha_desde); }
+                    if (fecha_hasta) { countSql += ` AND s.fecha_solicitud <= $${cIdx++}`; countParams.push(fecha_hasta); }
+                    if (vendedor && vendedor.trim() !== '') { countSql += ` AND LOWER(s.vendedor) LIKE LOWER($${cIdx++})`; countParams.push('%' + vendedor.trim() + '%'); }
+                }
                 
                 return pool.query(countSql, countParams);
             })()

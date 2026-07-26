@@ -46,6 +46,13 @@ router.get(
     excelController.buscarSolicitudes
 );
 
+// Lista de vendedores únicos (solo Lider+)
+router.get(
+    '/solicitudes/vendedores',
+    requiresAuth,
+    excelController.getVendedoresUnicos
+);
+
 router.get(
     '/dashboard',
     requiresAuth,
