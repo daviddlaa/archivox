@@ -233,6 +233,9 @@ exports.listarSolicitudes = async (req, res) => {
             offset: offsetVal
         });
     } catch (err) {
+        console.error('Error en listarSolicitudes:', err.message);
+        console.error('SQL:', sql);
+        console.error('Params:', params);
         return res.status(500).json({
             error: err.message
         });
