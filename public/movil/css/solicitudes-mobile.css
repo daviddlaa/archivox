@@ -302,11 +302,12 @@
 
     /* Botón WhatsApp */
     .card-fila-3 .btn-whatsapp {
-        background: #f0fdf4;
-        color: #166534;
+        background: #f3f4f6;
+        color: #6b7280;
+        border: 1px solid #e5e7eb;
     }
     .card-fila-3 .btn-whatsapp:active {
-        background: #bbf7d0;
+        background: #e5e7eb;
     }
 
     /* Botón Completar */
@@ -320,11 +321,22 @@
 
     /* Botón Llamar */
     .card-fila-3 .btn-llamar {
-        background: #ecfdf5;
-        color: #065f46;
+        background: #10b981;
+        color: white;
+        font-weight: 800;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+        animation: pulse-llamar-movil 2s infinite;
     }
     .card-fila-3 .btn-llamar:active {
-        background: #a7f3d0;
+        background: #059669;
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.25);
+        animation: none;
+    }
+
+    @keyframes pulse-llamar-movil {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+        70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
     /* Íconos dentro de botones - más grandes en mobile */

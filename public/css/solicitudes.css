@@ -348,20 +348,34 @@
 }
 .card-fila-3 .btn-gestiones:hover { background: #bfdbfe; }
 .card-fila-3 .btn-whatsapp {
-    background: #dcfce7;
-    color: #166534;
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
 }
-.card-fila-3 .btn-whatsapp:hover { background: #bbf7d0; }
+.card-fila-3 .btn-whatsapp:hover { background: #e5e7eb; color: #4b5563; }
 .card-fila-3 .btn-completar {
     background: #e0e7ff;
     color: #3730a3;
 }
 .card-fila-3 .btn-completar:hover { background: #c7d2fe; }
 .card-fila-3 .btn-llamar {
-    background: #d1fae5;
-    color: #065f46;
+    background: #10b981;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+    animation: pulse-llamar 2s infinite;
 }
-.card-fila-3 .btn-llamar:hover { background: #a7f3d0; }
+.card-fila-3 .btn-llamar:hover {
+    background: #059669;
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.25);
+    animation: none;
+}
+
+@keyframes pulse-llamar {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+    70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
 
 /* ========================================================================
    FILA 4: Seguimiento (última gestión)
@@ -707,36 +721,6 @@
     font-size: 20px;
     line-height: 1;
     flex-shrink: 0;
-}
-
-/* ========================================================================
-   REFORZAR ÉNFASIS VISUAL DEL ESTADO + VISIBILIDAD LLAMAR
-   ======================================================================== */
-/* Darle al badge de estado un borde sutil como el de segmento */
-.card-fila-1 .card-badge.badge-estado {
-    border: 1.5px solid #6ee7b7;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-.card-fila-1 .card-badge.badge-estado.estado-RECHAZADA {
-    border-color: #fca5a5;
-}
-.card-fila-1 .card-badge.badge-estado.estado-DEVUELTA {
-    border-color: #fcd34d;
-}
-.card-fila-1 .card-badge.badge-estado.estado-APROBADA {
-    border-color: #6ee7b7;
-}
-
-/* Botón Llamar: solo visible en móvil */
-@media (min-width: 769px) {
-    .card-fila-3 .btn-llamar {
-        display: none !important;
-    }
-}
-@media (max-width: 768px) {
-    .card-fila-3 .btn-llamar {
-        display: flex !important;
-    }
 }
 
 /* ========================================================================

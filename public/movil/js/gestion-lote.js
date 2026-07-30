@@ -294,7 +294,7 @@ html += '<div class="sol-botones">';
         // Acciones táctiles — diseño touch-optimizado (min 48px altura)
         html += '<button class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')" title="Llamar">📞</button>';
         html += '<button class="btn-sol btn-sol-primary" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
-        html += "<button class=\"btn-sol btn-sol-whatsapp\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
+        html += '<button class="btn-sol btn-sol-whatsapp" onclick="abrirGestionWhatsApp(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.celular || '') + '\')">💬 WhatsApp</button>';
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {

@@ -910,8 +910,9 @@ function renderizarCards(datos) {
         // FILA 3: Botones de acción
         html += '  <div class="card-fila-3">';
         html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesCard(' + id + ')">📋 Gestiones</button>';
-        html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); whatsAppClienteDesktop(\'' + (item.celular || '') + '\', \'' + escaparParaAtributoDesktop(item.nombre || '') + '\')">💬 WhatsApp</button>';
+        html += '    <button class="card-btn btn-llamar" onclick="event.stopPropagation(); llamarClienteDesktop(\'' + (item.celular || '') + '\')">📞 Llamar</button>';
         html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletarInfoCard(' + id + ')">✏️ Completar</button>';
+        html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); whatsAppClienteDesktop(\'' + (item.celular || '') + '\', \'' + escaparParaAtributoDesktop(item.nombre || '') + '\')">💬 WhatsApp</button>';
         html += '    <div class="card-actions-more" onclick="event.stopPropagation()">';
         html += '      <button class="card-btn btn-more" onclick="toggleCardMenuDesktop(event, \'' + id + '\')" title="Más acciones">⋮</button>';
         html += '      <div class="card-dropdown-menu" id="card-menu-desktop-' + id + '">';
@@ -1630,6 +1631,16 @@ function guardarGestionDesktop(id) {
     .finally(function() {
         if (btn) { btn.textContent = '💾 Guardar Gestión'; btn.disabled = false; }
     });
+}
+
+// ============================================================================
+// LLAMAR DESKTOP
+// ============================================================================
+function llamarClienteDesktop(celular) {
+    if (!celular) { alert('No hay número de celular'); return; }
+    var numeroLimpio = celular.replace(/\D/g, '');
+    if (!numeroLimpio) { alert('No hay número de celular'); return; }
+    window.open('tel:' + numeroLimpio, '_self');
 }
 
 // ============================================================================

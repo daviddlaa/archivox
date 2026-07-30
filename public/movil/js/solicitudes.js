@@ -619,13 +619,13 @@ function renderizarCards(datos) {
         html +=      (item.nombre || 'Sin nombre') + ' 📋';
         html += '  </div>';
 
-        // FILA 3: Botones (4 en móvil: Gestiones, WhatsApp, Completar, Llamar)
+        // FILA 3: Botones (4 en móvil: Gestiones, Llamar, Completar, WhatsApp)
         // Diseñado con icono + label para touch targets grandes tipo app nativa
         html += '  <div class="card-fila-3">';
         html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesMovil(\'' + id + '\')"><span class="btn-icon">📋</span><span class="btn-label">Gestiones</span></button>';
-        html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); abrirWhatsAppChatMovil(\'' + escaparParaAtributo(item.celular || '') + '\')"><span class="btn-icon">💬</span><span class="btn-label">WhatsApp</span></button>';
-        html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletarInfoMovil(\'' + id + '\')"><span class="btn-icon">✏️</span><span class="btn-label">Completar</span></button>';
         html += '    <button class="card-btn btn-llamar" onclick="event.stopPropagation(); llamarCliente(\'' + escaparParaAtributo(item.celular || '') + '\')"><span class="btn-icon">📞</span><span class="btn-label">Llamar</span></button>';
+        html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletarInfoMovil(\'' + id + '\')"><span class="btn-icon">✏️</span><span class="btn-label">Completar</span></button>';
+        html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); abrirWhatsAppChatMovil(\'' + escaparParaAtributo(item.celular || '') + '\')"><span class="btn-icon">💬</span><span class="btn-label">WhatsApp</span></button>';
         html += '    <div class="card-actions-more-movil" onclick="event.stopPropagation();">';
         html += '      <button class="card-btn btn-more-movil" onclick="toggleCardMenuMovil(event, \'' + id + '\')" title="Más acciones">⋮</button>';
         html += '      <div class="card-dropdown-menu-movil" id="card-menu-movil-' + id + '">';

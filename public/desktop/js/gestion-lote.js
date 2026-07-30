@@ -424,6 +424,7 @@ function renderizarSolicitudes(lista) {
         
         // Botones de acción SIEMPRE visibles (independientemente del estado)
         html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
+        html += '<button class="btn-accion btn-llamar-gl" onclick="llamarDesdeGestionLoteDesktop(\'' + escaparParaAtributo(sol.celular || '') + '\')">📞 Llamar</button>';
         html += "<button class=\"btn-accion btn-whatsapp-img\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
         
         // Botón ver gestión (si tiene gestión registrada)
@@ -1065,6 +1066,14 @@ function formatearNumeroWhatsApp(celular) {
     
     // Si es un número local (sin código de país), agregar el código configurado
     return PAIS_CODIGO + numero;
+}
+
+// Función para llamar al cliente (desktop)
+function llamarDesdeGestionLoteDesktop(celular) {
+    if (!celular) { alert('No hay número de celular'); return; }
+    var numeroLimpio = String(celular).replace(/\D/g, '');
+    if (!numeroLimpio) { alert('No hay número de celular'); return; }
+    window.open('tel:' + numeroLimpio, '_self');
 }
 
 // Función para abrir WhatsApp Web (desktop: wa.me)
