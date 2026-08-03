@@ -16,23 +16,23 @@
     --radius-sm: 8px;
     --radius-md: 10px;
     --radius-lg: 12px;
-    /* Semáforo — Paleta premium iOS-style (muted) */
+    /* Semáforo — Colores reales de semáforo (verde/amarillo/rojo) + gris sin clasificar */
     --sem-sin: #94a3b8;
     --sem-sin-bg: #f1f5f9;
-    --sem-sin-surface: #e8ecf1;
+    --sem-sin-surface: #cbd5e1;
     --sem-sin-text: #475569;
-    --sem-verde: #6b9e78;
-    --sem-verde-bg: #f0f7f2;
-    --sem-verde-surface: #d4e8da;
-    --sem-verde-text: #2d5a3a;
-    --sem-amarillo: #c5975b;
-    --sem-amarillo-bg: #fdf6ed;
-    --sem-amarillo-surface: #f0e2ca;
-    --sem-amarillo-text: #7a5c2f;
-    --sem-rojo: #c27070;
-    --sem-rojo-bg: #fdf0f0;
-    --sem-rojo-surface: #f0d4d4;
-    --sem-rojo-text: #8b3a3a;
+    --sem-verde: #22c55e;
+    --sem-verde-bg: #f0fdf4;
+    --sem-verde-surface: #86efac;
+    --sem-verde-text: #166534;
+    --sem-amarillo: #f59e0b;
+    --sem-amarillo-bg: #fffbeb;
+    --sem-amarillo-surface: #fcd34d;
+    --sem-amarillo-text: #92400e;
+    --sem-rojo: #ef4444;
+    --sem-rojo-bg: #fef2f2;
+    --sem-rojo-surface: #fca5a5;
+    --sem-rojo-text: #991b1b;
 }
 
 /* ===== BODY ===== */
@@ -111,42 +111,42 @@ body {
     background: #e2e8f0;
 }
 
-/* ===== SEMÁFORO PANEL — Premium Horizontal Blocks (V3) ===== */
+/* ===== SEMÁFORO PANEL — Tarjetas protagonistas por estado (V4) ===== */
 .progreso-panel {
     background: var(--bg-card);
     border-radius: var(--radius-lg);
-    padding: 18px 22px;
+    padding: 20px 22px;
     margin-bottom: 18px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
     border: 1px solid rgba(0,0,0,0.04);
 }
 
 .semaforo-meta {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
 }
 
 .semaforo-meta-label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--text-muted);
-    opacity: 0.8;
 }
 
 .semaforo-meta-total {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-muted);
     font-weight: 500;
 }
 
 .semaforo-meta-total strong {
     color: var(--text-dark);
-    font-weight: 700;
+    font-weight: 800;
+    font-size: 18px;
 }
 
 .semaforo-clear {
@@ -155,7 +155,7 @@ body {
     background: transparent;
     color: var(--text-muted);
     border-radius: 6px;
-    padding: 5px 10px;
+    padding: 6px 12px;
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
@@ -168,62 +168,85 @@ body {
     border-color: #cbd5e1;
 }
 
-/* Horizontal Blocks — Premium status summary */
+/* Tarjetas grandes — una por cada estado del semáforo */
 .semaforo-barra {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    gap: 12px;
     width: 100%;
 }
 
 .semaforo-seg {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     justify-content: space-between;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 10px 14px;
+    gap: 10px;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 16px 14px;
+    min-height: 108px;
     cursor: pointer;
     font: inherit;
     position: relative;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     background: var(--bg-card);
+    text-align: left;
 }
 
+/* Banda superior de color (como el foco del semáforo) */
+.semaforo-seg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+}
+
+.semaforo-seg-sin::before { background: var(--sem-sin); }
+.semaforo-seg-verde::before { background: var(--sem-verde); }
+.semaforo-seg-amarillo::before { background: var(--sem-amarillo); }
+.semaforo-seg-rojo::before { background: var(--sem-rojo); }
+
 .semaforo-seg:hover {
-    border-color: #cbd5e1;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 
 .semaforo-seg.active {
     border-width: 2px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    transform: translateY(-1px);
 }
 
 .semaforo-seg.is-empty {
-    opacity: 0.5;
+    opacity: 0.45;
 }
 
 .semaforo-seg-label {
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 700;
     color: var(--text-muted);
     display: flex;
     align-items: center;
     gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
 .semaforo-seg-dot {
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     flex-shrink: 0;
 }
 
 .semaforo-seg-count {
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1;
     color: var(--text-dark);
     font-variant-numeric: tabular-nums;
 }
@@ -233,17 +256,27 @@ body {
 .semaforo-seg-amarillo .semaforo-seg-dot { background: var(--sem-amarillo); }
 .semaforo-seg-rojo .semaforo-seg-dot { background: var(--sem-rojo); }
 
-.semaforo-seg-sin.active { background: var(--sem-sin-bg); border-color: var(--sem-sin-surface); }
-.semaforo-seg-verde.active { background: var(--sem-verde-bg); border-color: var(--sem-verde-surface); }
-.semaforo-seg-amarillo.active { background: var(--sem-amarillo-bg); border-color: var(--sem-amarillo-surface); }
-.semaforo-seg-rojo.active { background: var(--sem-rojo-bg); border-color: var(--sem-rojo-surface); }
+.semaforo-seg-sin .semaforo-seg-count { color: var(--sem-sin-text); }
+.semaforo-seg-verde .semaforo-seg-count { color: var(--sem-verde-text); }
+.semaforo-seg-amarillo .semaforo-seg-count { color: var(--sem-amarillo-text); }
+.semaforo-seg-rojo .semaforo-seg-count { color: var(--sem-rojo-text); }
+
+.semaforo-seg-sin.active { background: var(--sem-sin-bg); border-color: var(--sem-sin); }
+.semaforo-seg-verde.active { background: var(--sem-verde-bg); border-color: var(--sem-verde); }
+.semaforo-seg-amarillo.active { background: var(--sem-amarillo-bg); border-color: var(--sem-amarillo); }
+.semaforo-seg-rojo.active { background: var(--sem-rojo-bg); border-color: var(--sem-rojo); }
 
 .semaforo-seg-sin.active .semaforo-seg-label { color: var(--sem-sin-text); }
 .semaforo-seg-verde.active .semaforo-seg-label { color: var(--sem-verde-text); }
 .semaforo-seg-amarillo.active .semaforo-seg-label { color: var(--sem-amarillo-text); }
 .semaforo-seg-rojo.active .semaforo-seg-label { color: var(--sem-rojo-text); }
 
-/* Legend — hidden (integrated into blocks) */
+.semaforo-seg-sin.active .semaforo-seg-count { color: var(--sem-sin-text); }
+.semaforo-seg-verde.active .semaforo-seg-count { color: var(--sem-verde-text); }
+.semaforo-seg-amarillo.active .semaforo-seg-count { color: var(--sem-amarillo-text); }
+.semaforo-seg-rojo.active .semaforo-seg-count { color: var(--sem-rojo-text); }
+
+/* Legend — hidden (integrated into tarjetas) */
 .semaforo-legend {
     display: none;
 }
@@ -321,21 +354,21 @@ body {
     transition: box-shadow 0.25s ease, transform 0.2s ease, background 0.3s ease;
 }
 
-/* Subtle gradient backgrounds for status */
+/* Subtle gradient backgrounds for status — acorde a la paleta de semáforo real */
 .sol-card.sol-semaforo-sin_clasificar {
-    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    background: linear-gradient(180deg, #f1f5f9 0%, #ffffff 100%);
 }
 
 .sol-card.sol-semaforo-verde {
-    background: linear-gradient(180deg, #f0f7f2 0%, #ffffff 100%);
+    background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
 }
 
 .sol-card.sol-semaforo-amarillo {
-    background: linear-gradient(180deg, #fdf6ed 0%, #ffffff 100%);
+    background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
 }
 
 .sol-card.sol-semaforo-rojo {
-    background: linear-gradient(180deg, #fdf0f0 0%, #ffffff 100%);
+    background: linear-gradient(180deg, #fef2f2 0%, #ffffff 100%);
 }
 
 /* ===== CARD FLASH — Visible but elegant (V2) ===== */
@@ -443,15 +476,25 @@ body {
 .semaforo-fly.amarillo { background: var(--sem-amarillo); }
 .semaforo-fly.rojo { background: var(--sem-rojo); }
 
-/* Bar segment bump */
+/* Bar segment bump + count pop */
 .semaforo-seg.bump {
     animation: semaforo-bump 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes semaforo-bump {
-    0% { transform: scaleY(1); }
-    30% { transform: scaleY(1.6); }
-    100% { transform: scaleY(1); }
+    0% { transform: scale(1); }
+    30% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+}
+
+.semaforo-seg-count.bump-num {
+    animation: semaforo-num-bump 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes semaforo-num-bump {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.25); }
+    100% { transform: scale(1); }
 }
 
 .sol-header {
