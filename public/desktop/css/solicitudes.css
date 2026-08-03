@@ -2239,7 +2239,8 @@ td .cell-combinado {
 }
 
 .ns-field input,
-.ns-field select {
+.ns-field select,
+.ns-field textarea {
     padding: 10px 12px;
     border: 2px solid #e5e7eb;
     border-radius: 8px;
@@ -2251,7 +2252,8 @@ td .cell-combinado {
 }
 
 .ns-field input:focus,
-.ns-field select:focus {
+.ns-field select:focus,
+.ns-field textarea:focus {
     outline: none;
     border-color: #6366f1;
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);

@@ -1364,7 +1364,8 @@
     }
 
     .ns-movil-field input,
-    .ns-movil-field select {
+    .ns-movil-field select,
+    .ns-movil-field textarea {
         padding: 12px 14px;
         border: 2px solid #e5e7eb;
         border-radius: 10px;

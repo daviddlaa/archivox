@@ -1937,6 +1937,10 @@ async function abrirModalNuevaSolicitudMovil() {
     html += '        <label>📌 Estado <span class="required">*</span></label>';
     html += '        <select id="ns-movil-estado">' + estadosOptions + '</select>';
     html += '      </div>';
+    html += '      <div class="ns-movil-field">';
+    html += '        <label>📝 Observaciones <span class="optional-badge">Opcional</span></label>';
+    html += '        <textarea id="ns-movil-observaciones" rows="3" placeholder="Escriba aquí cualquier observación o nota adicional..."></textarea>';
+    html += '      </div>';
     html += '    </div>';
 
     // Sección: Información Adicional (campos secundarios / opcionales)
@@ -2160,7 +2164,8 @@ async function guardarNuevaSolicitudMovil() {
             codigo_plus: document.getElementById('ns-movil-codigo-plus').value.trim() || undefined,
             direccion: document.getElementById('ns-movil-direccion').value.trim() || undefined,
             ocupacion: document.getElementById('ns-movil-ocupacion').value.trim() || undefined,
-            ingreso_mensual: document.getElementById('ns-movil-ingreso').value ? parseFloat(document.getElementById('ns-movil-ingreso').value) : undefined
+            ingreso_mensual: document.getElementById('ns-movil-ingreso').value ? parseFloat(document.getElementById('ns-movil-ingreso').value) : undefined,
+            observaciones: document.getElementById('ns-movil-observaciones').value.trim() || undefined
         };
 
         var vendedorField = document.getElementById('ns-movil-vendedor');

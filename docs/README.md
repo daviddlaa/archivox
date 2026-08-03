@@ -899,6 +899,9 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
   `PUT /api/excel/solicitudes/:id/completar-info`. La columna
   `solicitudes.observaciones` se crea automáticamente al iniciar el
   servidor (idempotente) en SQLite y PostgreSQL.
+- Creación manual (Nueva Solicitud): incluye el campo opcional
+  "Observaciones" (textarea) en la sección Información Principal, tanto
+  en escritorio como en móvil; se guarda vía `POST /api/excel/solicitudes`.
 - Destacar solicitudes
 - Gestión directa (crear gestión)
 - Exportación de seleccionadas

@@ -1375,6 +1375,10 @@ function abrirModalNuevaSolicitud() {
         contenido += '            <select id="ns-desktop-estado">' + estadosOptions + '</select>';
         contenido += '          </div>';
         contenido += '        </div>';
+        contenido += '        <div class="ns-field ns-field-full">';
+        contenido += '          <label>📝 Observaciones <span class="optional-badge">Opcional</span></label>';
+        contenido += '          <textarea id="ns-desktop-observaciones" rows="3" placeholder="Escriba aquí cualquier observación o nota adicional..."></textarea>';
+        contenido += '        </div>';
         contenido += '      </div>';
 
         // Sección Adicional
@@ -1472,7 +1476,8 @@ async function guardarNuevaSolicitudDesktop() {
             codigo_plus: document.getElementById('ns-desktop-codigo-plus').value.trim() || undefined,
             direccion: document.getElementById('ns-desktop-direccion').value.trim() || undefined,
             ocupacion: document.getElementById('ns-desktop-ocupacion').value.trim() || undefined,
-            ingreso_mensual: document.getElementById('ns-desktop-ingreso').value ? parseFloat(document.getElementById('ns-desktop-ingreso').value) : undefined
+            ingreso_mensual: document.getElementById('ns-desktop-ingreso').value ? parseFloat(document.getElementById('ns-desktop-ingreso').value) : undefined,
+            observaciones: document.getElementById('ns-desktop-observaciones').value.trim() || undefined
         };
 
         var vendedorField = document.getElementById('ns-desktop-vendedor');

@@ -1053,6 +1053,7 @@ exports.crearSolicitudManual = async (req, res) => {
         direccion_trabajo,
         ocupacion,
         ingreso_mensual,
+        observaciones,
         vendedor
     } = req.body;
 
@@ -1112,14 +1113,15 @@ exports.crearSolicitudManual = async (req, res) => {
                     id_solicitud, estado, cedula, nombre, celular,
                     segmento, producto, codigo_plus, correo_electronico,
                     direccion, direccion_trabajo, ocupacion, ingreso_mensual,
-                    fecha_solicitud, usuario_id, vendedor
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+                    observaciones, fecha_solicitud, usuario_id, vendedor
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                 RETURNING id_solicitud`,
                 [
                     nextId, estadoFinal, cedula.trim(), nombre.trim(), celular.trim(),
                     segmento || null, producto || null, codigo_plus || null,
                     correo_electronico || null, direccion || null, direccion_trabajo || null,
-                    ocupacion || null, ingreso_mensual || null, fechaActual, usuarioId, vendedorValue
+                    ocupacion || null, ingreso_mensual || null, observaciones || null,
+                    fechaActual, usuarioId, vendedorValue
                 ]
             );
             
@@ -1141,13 +1143,14 @@ exports.crearSolicitudManual = async (req, res) => {
                     id_solicitud, estado, cedula, nombre, celular,
                     segmento, producto, codigo_plus, correo_electronico,
                     direccion, direccion_trabajo, ocupacion, ingreso_mensual,
-                    fecha_solicitud, usuario_id, vendedor
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    observaciones, fecha_solicitud, usuario_id, vendedor
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).run(
                 nextId, estadoFinal, cedula.trim(), nombre.trim(), celular.trim(),
                 segmento || null, producto || null, codigo_plus || null,
                 correo_electronico || null, direccion || null, direccion_trabajo || null,
-                ocupacion || null, ingreso_mensual || null, fechaActual, usuarioId, vendedorValue
+                ocupacion || null, ingreso_mensual || null, observaciones || null,
+                fechaActual, usuarioId, vendedorValue
         );
 
         // Invalidar caché del dashboard
