@@ -111,7 +111,7 @@ body {
     background: #e2e8f0;
 }
 
-/* ===== PROGRESO / SEMÁFORO PANEL — Premium Distribution Bar ===== */
+/* ===== SEMÁFORO PANEL — Premium Horizontal Blocks (V3) ===== */
 .progreso-panel {
     background: var(--bg-card);
     border-radius: var(--radius-lg);
@@ -168,100 +168,84 @@ body {
     border-color: #cbd5e1;
 }
 
-/* Distribution Bar — Smooth, proportional segments */
+/* Horizontal Blocks — Premium status summary */
 .semaforo-barra {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
     width: 100%;
-    height: 8px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: #f1f5f9;
-    gap: 2px;
 }
 
 .semaforo-seg {
     display: flex;
     align-items: center;
-    justify-content: center;
-    border: none;
+    justify-content: space-between;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
     cursor: pointer;
     font: inherit;
     position: relative;
-    height: 100%;
-    border-radius: 999px;
-    transition: flex 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, filter 0.2s ease;
-    opacity: 1;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--bg-card);
 }
 
 .semaforo-seg:hover {
-    filter: brightness(0.95);
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
 }
 
 .semaforo-seg.active {
-    filter: brightness(0.9);
-    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.15);
-    z-index: 1;
+    border-width: 2px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .semaforo-seg.is-empty {
-    opacity: 0.3;
-    min-width: 6px;
-    flex: 0 0 6px !important;
+    opacity: 0.5;
 }
 
-.semaforo-seg-label,
-.semaforo-seg-count {
-    display: none;
-}
-
-.semaforo-seg-sin {
-    background: var(--sem-sin);
-}
-
-.semaforo-seg-verde {
-    background: var(--sem-verde);
-}
-
-.semaforo-seg-amarillo {
-    background: var(--sem-amarillo);
-}
-
-.semaforo-seg-rojo {
-    background: var(--sem-rojo);
-}
-
-/* Legend — below the bar */
-.semaforo-legend {
-    display: flex;
-    gap: 16px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-}
-
-.semaforo-legend-item {
+.semaforo-seg-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
-    color: var(--text-muted);
-    font-weight: 500;
 }
 
-.semaforo-legend-dot {
+.semaforo-seg-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     flex-shrink: 0;
 }
 
-.semaforo-legend-dot.sin { background: var(--sem-sin); }
-.semaforo-legend-dot.verde { background: var(--sem-verde); }
-.semaforo-legend-dot.amarillo { background: var(--sem-amarillo); }
-.semaforo-legend-dot.rojo { background: var(--sem-rojo); }
-
-.semaforo-legend-count {
+.semaforo-seg-count {
+    font-size: 16px;
     font-weight: 700;
     color: var(--text-dark);
+    font-variant-numeric: tabular-nums;
+}
+
+.semaforo-seg-sin .semaforo-seg-dot { background: var(--sem-sin); }
+.semaforo-seg-verde .semaforo-seg-dot { background: var(--sem-verde); }
+.semaforo-seg-amarillo .semaforo-seg-dot { background: var(--sem-amarillo); }
+.semaforo-seg-rojo .semaforo-seg-dot { background: var(--sem-rojo); }
+
+.semaforo-seg-sin.active { background: var(--sem-sin-bg); border-color: var(--sem-sin-surface); }
+.semaforo-seg-verde.active { background: var(--sem-verde-bg); border-color: var(--sem-verde-surface); }
+.semaforo-seg-amarillo.active { background: var(--sem-amarillo-bg); border-color: var(--sem-amarillo-surface); }
+.semaforo-seg-rojo.active { background: var(--sem-rojo-bg); border-color: var(--sem-rojo-surface); }
+
+.semaforo-seg-sin.active .semaforo-seg-label { color: var(--sem-sin-text); }
+.semaforo-seg-verde.active .semaforo-seg-label { color: var(--sem-verde-text); }
+.semaforo-seg-amarillo.active .semaforo-seg-label { color: var(--sem-amarillo-text); }
+.semaforo-seg-rojo.active .semaforo-seg-label { color: var(--sem-rojo-text); }
+
+/* Legend — hidden (integrated into blocks) */
+.semaforo-legend {
+    display: none;
 }
 
 /* ===== FILTROS ROW ===== */
@@ -330,31 +314,29 @@ body {
     transform: translateY(-1px);
 }
 
-/* ===== TARJETAS — Wide colored band (V2) ===== */
+/* ===== TARJETAS — Subtle gradient background (V3) ===== */
 .sol-card {
     position: relative;
-    padding-top: 18px;
+    padding-top: 14px;
+    transition: box-shadow 0.25s ease, transform 0.2s ease, background 0.3s ease;
 }
 
-/* Wide horizontal band — premium status indicator */
-.sol-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
-    opacity: 1;
-    transition: opacity 0.3s ease, background 0.3s ease;
+/* Subtle gradient backgrounds for status */
+.sol-card.sol-semaforo-sin_clasificar {
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
 }
 
-.sol-card.sol-semaforo-sin_clasificar::before { background: var(--sem-sin); }
-.sol-card.sol-semaforo-verde::before { background: var(--sem-verde); }
-.sol-card.sol-semaforo-amarillo::before { background: var(--sem-amarillo); }
-.sol-card.sol-semaforo-rojo::before { background: var(--sem-rojo); }
+.sol-card.sol-semaforo-verde {
+    background: linear-gradient(180deg, #f0f7f2 0%, #ffffff 100%);
+}
 
-.sol-card:hover::before { opacity: 0.9; }
+.sol-card.sol-semaforo-amarillo {
+    background: linear-gradient(180deg, #fdf6ed 0%, #ffffff 100%);
+}
+
+.sol-card.sol-semaforo-rojo {
+    background: linear-gradient(180deg, #fdf0f0 0%, #ffffff 100%);
+}
 
 /* ===== CARD FLASH — Visible but elegant (V2) ===== */
 .sol-card.sol-semaforo-flash {
@@ -368,31 +350,26 @@ body {
     100% { box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.03); }
 }
 
-/* ===== STATUS PILLS — Premium Filter Chips (V2) ===== */
+/* ===== STATUS PILLS — Integrated with Observation (V3) ===== */
 .sol-semaforo-pills {
     display: flex;
-    gap: 6px;
-    margin: 10px 0 8px;
+    gap: 5px;
+    margin-top: 8px;
     flex-wrap: wrap;
-    align-items: center;
 }
 
 .sol-semaforo-pills-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-muted);
-    letter-spacing: 0.02em;
-    margin-right: 2px;
+    display: none;
 }
 
 .sol-semaforo-pill {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 5px 10px 5px 8px;
-    font-size: 11px;
+    border-radius: 5px;
+    padding: 4px 8px 4px 6px;
+    font-size: 10px;
     font-weight: 500;
     cursor: pointer;
     line-height: 1.2;
@@ -409,43 +386,43 @@ body {
 }
 
 .sol-semaforo-pill.active {
-    font-weight: 700;
+    font-weight: 600;
     border-width: 1.5px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
 .sol-semaforo-pill-dot {
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     flex-shrink: 0;
     transition: transform 0.2s ease, box-shadow 0.4s ease;
 }
 
 .sol-semaforo-pill.active .sol-semaforo-pill-dot {
-    transform: scale(1.2);
+    transform: scale(1.3);
 }
 
-/* Pill color variants — muted */
+/* Pill color variants */
 .sol-semaforo-pill[data-val="sin_clasificar"] .sol-semaforo-pill-dot { background: var(--sem-sin); }
 .sol-semaforo-pill[data-val="verde"] .sol-semaforo-pill-dot { background: var(--sem-verde); }
 .sol-semaforo-pill[data-val="amarillo"] .sol-semaforo-pill-dot { background: var(--sem-amarillo); }
 .sol-semaforo-pill[data-val="rojo"] .sol-semaforo-pill-dot { background: var(--sem-rojo); }
 
-/* Active pill — premium colored background */
+/* Active pill */
 .sol-semaforo-pill[data-val="sin_clasificar"].active { background: var(--sem-sin-bg); color: var(--sem-sin-text); border-color: var(--sem-sin-surface); }
 .sol-semaforo-pill[data-val="verde"].active { background: var(--sem-verde-bg); color: var(--sem-verde-text); border-color: var(--sem-verde-surface); }
 .sol-semaforo-pill[data-val="amarillo"].active { background: var(--sem-amarillo-bg); color: var(--sem-amarillo-text); border-color: var(--sem-amarillo-surface); }
 .sol-semaforo-pill[data-val="rojo"].active { background: var(--sem-rojo-bg); color: var(--sem-rojo-text); border-color: var(--sem-rojo-surface); }
 
-/* Active pill — visible breathing glow */
+/* Active pill breathing */
 .sol-semaforo-pill.active .sol-semaforo-pill-dot {
-    animation: pill-glow-v2 2s ease-in-out infinite;
+    animation: pill-glow-v3 2s ease-in-out infinite;
 }
 
-@keyframes pill-glow-v2 {
+@keyframes pill-glow-v3 {
     0%, 100% { box-shadow: 0 0 0 0 transparent; }
-    50% { box-shadow: 0 0 0 4px rgba(0,0,0,0.08); }
+    50% { box-shadow: 0 0 0 3px rgba(0,0,0,0.06); }
 }
 
 /* ===== FLY PARTICLE — Premium smooth transition ===== */
@@ -546,29 +523,21 @@ body {
 }
 
 .sol-observacion {
-    font-size: 13px;
-    color: var(--text-dark);
-    padding: 10px 12px;
-    background: #f8fafc;
-    border-radius: var(--radius-sm);
-    margin-bottom: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 8px 0 0 0;
+    margin-bottom: 0;
     line-height: 1.5;
-    border: 1px solid rgba(0,0,0,0.04);
+    border-top: 1px solid rgba(0,0,0,0.04);
 }
 
 .sol-observacion::before {
     content: "📝 ";
-    font-size: 12px;
+    font-size: 11px;
 }
 
 .sol-observacion-vacia {
-    font-size: 11px;
-    color: #cbd5e1;
-    font-style: italic;
-    padding: 6px 8px;
-    background: transparent;
-    border-radius: var(--radius-sm);
-    margin-bottom: 10px;
+    display: none;
 }
 
 .sol-acciones {
@@ -1602,20 +1571,17 @@ body {
         width: min(100vw - 32px, 380px);
     }
 
-    .semaforo-legend {
-        gap: 10px;
-    }
-
-    .semaforo-legend-item {
-        font-size: 10px;
+    .semaforo-barra {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
     }
 
     .sol-semaforo-pills {
-        gap: 5px;
+        gap: 4px;
     }
 
     .sol-semaforo-pill {
-        padding: 4px 8px 4px 6px;
-        font-size: 10px;
+        padding: 3px 6px 3px 5px;
+        font-size: 9px;
     }
 }

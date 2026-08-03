@@ -418,14 +418,8 @@ function actualizarBarraSemaforo(conteoExterno) {
         var countEl = document.getElementById('count-' + key);
         if (countEl) countEl.textContent = n;
 
-        // Update legend counts
-        var legendEl = document.getElementById('legend-' + key);
-        if (legendEl) legendEl.textContent = n;
-
         var btn = document.querySelector('.semaforo-seg[data-semaforo="' + key + '"]');
         if (!btn) continue;
-        var pct = total > 0 ? Math.max((n / total) * 100, n > 0 ? 4 : 2) : 25;
-        btn.style.flex = pct + ' 1 0%';
         if (n === 0) btn.classList.add('is-empty');
         else btn.classList.remove('is-empty');
         if (filtroSemaforo === key) btn.classList.add('active');
@@ -703,9 +697,8 @@ function renderizarSolicitudes(lista) {
             html += '<div class="sol-observacion-vacia">Sin observación registrada</div>';
         }
 
-        // Semáforo — Premium filter chips (V2)
+        // Semáforo — Integrated chips (V3)
         html += '<div class="sol-semaforo-pills" role="group" aria-label="Semáforo">';
-        html += '<span class="sol-semaforo-pills-label">Semáforo:</span>';
         for (var s = 0; s < SEMAFORO_ORDEN.length; s++) {
             var keyS = SEMAFORO_ORDEN[s];
             var activeCls = semaforo === keyS ? ' active' : '';

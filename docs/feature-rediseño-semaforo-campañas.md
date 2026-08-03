@@ -1,6 +1,6 @@
 # 🎨 Feature: Rediseño del Indicador de Estado (Semáforo) de Campañas
 
-**Versión:** 2.0  
+**Versión:** 3.0  
 **Fecha:** Agosto 2026  
 **Estado:** Implementado ✅
 
@@ -8,9 +8,9 @@
 
 ## 📋 Resumen
 
-Rediseño completo del indicador de estado visual (semáforo) utilizado en las campañas de gestión por lotes. El sistema evolucionó desde un diseño industrial con border-left saturado hasta un estilo premium inspirado en Apple Wallet, Linear y Notion.
+Rediseño completo del indicador de estado visual (semáforo) utilizado en las campañas de gestión por lotes. El sistema evolucionó desde un diseño industrial hasta un estilo premium inspirado en Apple Wallet, Linear y Notion.
 
-**V2 (Actual):** Banda horizontal 4px + chips premium con borde + label + animaciones más visibles.
+**V3 (Actual):** Gradiente sutil en tarjetas + bloques horizontales con números + chips integrados con observación.
 
 ---
 
@@ -44,64 +44,65 @@ Rediseño completo del indicador de estado visual (semáforo) utilizado en las c
 - `--sem-{color}-surface`: Borde del pill activo
 - `--sem-{color}-text`: Texto del pill activo
 
-### 2. Tarjetas de Solicitud — Wide Horizontal Band (V2)
+### 2. Tarjetas de Solicitud — Subtle Gradient Background (V3)
 
-**ANTES (V1):**
+**ANTES (V2):** Banda horizontal 4px en la parte superior
+
+**AHORA (V3):** Degradado sutil en toda la tarjeta
+
 ```css
-/* Línea sutil 2px */
-.sol-card::before {
-    left: 16px;
-    right: 16px;
-    height: 2px;
-    opacity: 0.55;
+.sol-card.sol-semaforo-verde {
+    background: linear-gradient(180deg, #f0f7f2 0%, #ffffff 100%);
+}
+
+.sol-card.sol-semaforo-amarillo {
+    background: linear-gradient(180deg, #fdf6ed 0%, #ffffff 100%);
+}
+
+.sol-card.sol-semaforo-rojo {
+    background: linear-gradient(180deg, #fdf0f0 0%, #ffffff 100%);
 }
 ```
 
-**AHORA (V2):**
-```css
-/* Banda horizontal completa 4px */
-.sol-card::before {
-    left: 0;
-    right: 0;
-    height: 4px;
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
-    opacity: 1;
-}
+### 3. Bloques Horizontales de Estado (V3)
 
-.sol-card.sol-semaforo-verde::before { background: var(--sem-verde); }
-```
+**ANTES (V2):** Barra de distribución de 8px
 
-### 3. Barra de Distribución (Distribution Bar)
-
-**ANTES:** Bloques segmentados con texto y colores saturados  
-**AHORA:** Barra horizontal suave de 8px con segmentos proporcionales
+**AHORA (V3):** Bloques horizontales con label, dot y número
 
 ```css
 .semaforo-barra {
-    height: 8px;
-    border-radius: 999px;
-    gap: 2px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
 }
 
 .semaforo-seg {
-    border-radius: 999px;
-    transition: flex 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
 }
 ```
 
 **Características:**
-- Segmentos vacíos se comprimen automáticamente (`min-width: 6px`)
-- Transiciones suaves con `cubic-bezier`
-- Leyenda debajo con puntos de color + conteos
+- 4 bloques iguales en cuadrícula
+- Cada bloque: dot + label + número
+- Borde sutil, esquinas redondeadas
+- Hover: elevación con sombra
+- Activo: fondo coloreado + borde coloreado
 
-### 4. Premium Filter Chips (V2)
+### 4. Chips Integrados con Observación (V3)
 
-**ANTES (V1):** Pills compactos sin borde  
-**AHORA (V2):** Chips premium estilo Apple/Linear con borde, label y mejor contraste
+**ANTES (V2):** Chips con label "Semáforo:" separados
+
+**AHORA (V3):** Chips integrados directamente después de la observación
 
 ```html
+<div class="sol-observacion">No quiere nada, respondió la llamada</div>
 <div class="sol-semaforo-pills">
-    <span class="sol-semaforo-pills-label">Semáforo:</span>
     <button class="sol-semaforo-pill active" data-val="verde">
         <span class="sol-semaforo-pill-dot"></span>
         Verde
@@ -110,37 +111,21 @@ Rediseño completo del indicador de estado visual (semáforo) utilizado en las c
 </div>
 ```
 
-**Características (V2):**
-- Chips con borde suave (`border-radius: 6px`)
-- Label "Semáforo:" para contexto
-- Pills inactivos: fondo blanco, borde gris claro
-- Pills activos: fondo coloreado suave + borde coloreado + sombra sutil
-- Hover: elevación con sombra y `translateY(-1px)`
-- Punto de color con `breathing glow` más visible
+**Características (V3):**
+- Sin label "Semáforo:" (integrado visualmente)
+- Chips más compactos (`border-radius: 5px`)
+- Observación sin fondo (solo borde superior sutil)
+- Los chips aparecen justo después de la observación
 
-### 5. Animaciones Premium (V2 — Más visibles)
+### 5. Animaciones Premium (V3)
 
 | Animación | Descripción | Duración |
 |-----------|-------------|----------|
-| **Breathing Glow** | Halo visible en el punto activo | 2s infinite |
+| **Breathing Glow** | Halo en el punto del chip activo | 2s infinite |
 | **Card Flash** | Sombra + borde al cambiar estado | 0.8s |
-| **Bar Bump** | Escala vertical del segmento | 0.5s |
-| **Fly Particle** | Partícula animada hacia la barra | 0.6s |
+| **Block Hover** | Elevación con sombra en bloques | 0.2s |
+| **Fly Particle** | Partícula animada hacia el panel | 0.6s |
 | **Chip Hover** | Elevación con sombra al pasar mouse | 0.2s |
-
-```css
-@keyframes pill-glow-v2 {
-    0%, 100% { box-shadow: 0 0 0 0 transparent; }
-    50% { box-shadow: 0 0 0 4px rgba(0,0,0,0.08); }
-}
-
-@keyframes sol-semaforo-flash-v2 {
-    0% { box-shadow: var(--shadow-sm); }
-    30% { box-shadow: 0 4px 20px rgba(99,102,241,0.12), 0 0 0 2px rgba(99,102,241,0.15); }
-    60% { box-shadow: 0 2px 10px rgba(99,102,241,0.08); }
-    100% { box-shadow: var(--shadow-sm); }
-}
-```
 
 ---
 
@@ -148,9 +133,9 @@ Rediseño completo del indicador de estado visual (semáforo) utilizado en las c
 
 | Archivo | Cambios |
 |---------|---------|
-| `public/css/gestion-lote.css` | Paleta, banda 4px, chips premium, animaciones V2 |
-| `public/desktop/gestion-lote.html` | Leyenda del semáforo |
-| `public/desktop/js/gestion-lote.js` | Renderizado de chips con label "Semáforo:" |
+| `public/css/gestion-lote.css` | Gradiente sutil, bloques horizontales, chips integrados |
+| `public/desktop/gestion-lote.html` | Bloques con dot + label + count |
+| `public/desktop/js/gestion-lote.js` | Chips sin label, barra actualizada |
 
 ---
 
@@ -234,8 +219,8 @@ Rediseño completo del indicador de estado visual (semáforo) utilizado en las c
 ## 📝 Notas para Desarrolladores
 
 1. **Variables CSS:** Todas las variables del semáforo están en `:root` al inicio de `gestion-lote.css`
-2. **Clases CSS:** `.sol-semaforo-pills`, `.sol-semaforo-pill`, `.sol-semaforo-pill-dot`, `.sol-semaforo-pills-label`
-3. **Banda superior:** El `::before` de `.sol-card` crea la banda de color (4px, full width)
-4. **Label:** El label "Semáforo:" se agrega dinámicamente en `renderizarSolicitudes()`
-5. **Animaciones V2:** `pill-glow-v2` (2s) y `sol-semaforo-flash-v2` (0.8s) son más visibles
-6. **Responsive:** Los pills se adaptan con `font-size: 10px` y `padding` reducido
+2. **Clases CSS:** `.sol-semaforo-pills`, `.sol-semaforo-pill`, `.sol-semaforo-pill-dot`
+3. **Gradiente:** Los fondos degradados se aplican directamente a `.sol-card.sol-semaforo-*`
+4. **Bloques:** La barra usa `display: grid` con `grid-template-columns: repeat(4, 1fr)`
+5. **Responsive:** En móvil, los bloques se convierten a 2 columnas
+6. **Observación:** Sin fondo, solo borde superior sutil y texto muted
