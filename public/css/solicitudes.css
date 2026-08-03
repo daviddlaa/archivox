@@ -260,7 +260,6 @@
     margin-bottom: 6px;
     overflow: hidden;
     min-width: 0;
-    flex-wrap: wrap;
 }
 .card-fila-1 .card-id {
     font-size: 10px;
@@ -284,37 +283,27 @@
     background: #e0e7ff;
     color: #4338ca;
     border: 1.5px solid #a5b4fc;
-    max-width: 100%;
+    max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
     flex-shrink: 1;
     min-width: 0;
 }
-.card-fila-2 .card-badge.badge-estado {
+.card-fila-1 .card-badge.badge-estado {
     background: #dcfce7;
     color: #065f46;
     flex-shrink: 0;
-    white-space: nowrap;
-    max-width: 100%;
-    border: 1.5px solid #6ee7b7;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-    font-size: 10px;
-    padding: 4px 10px;
-    border-radius: 20px;
+    margin-left: auto;
 }
-.card-fila-2 .card-badge.badge-estado.estado-RECHAZADA { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
-.card-fila-2 .card-badge.badge-estado.estado-DEVUELTA { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
-.card-fila-2 .card-badge.badge-estado.estado-APROBADA { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
-.card-fila-2 .card-badge.badge-estado.estado-ACTIVADA { background: #dcfce7; color: #065f46; border-color: #6ee7b7; }
+.card-fila-1 .card-badge.badge-estado.estado-RECHAZADA { background: #fee2e2; color: #991b1b; }
+.card-fila-1 .card-badge.badge-estado.estado-DEVUELTA { background: #fef3c7; color: #92400e; }
+.card-fila-1 .card-badge.badge-estado.estado-APROBADA { background: #d1fae5; color: #065f46; }
+.card-fila-1 .card-badge.badge-estado.estado-ACTIVADA { background: #dcfce7; color: #065f46; }
 
 /* ========================================================================
    FILA 2: Nombre de la solicitud
    ======================================================================== */
 .card-fila-2 {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
     font-size: 14px;
     font-weight: 600;
     color: #1f2937;
@@ -322,14 +311,7 @@
     line-height: 1.3;
     cursor: pointer;
 }
-.card-fila-2 .card-nombre {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.card-fila-2:hover .card-nombre {
+.card-fila-2:hover {
     color: #2563eb;
 }
 
@@ -338,13 +320,11 @@
    ======================================================================== */
 .card-fila-3 {
     display: flex;
-    flex-wrap: wrap;
     gap: 6px;
     margin-bottom: 8px;
 }
 .card-fila-3 .card-btn {
-    flex: 1 1 auto;
-    min-width: 0;
+    flex: 1;
     padding: 7px 6px;
     border: none;
     border-radius: 6px;

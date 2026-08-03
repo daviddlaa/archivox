@@ -892,19 +892,19 @@ function renderizarCards(datos) {
 
         html += '<div class="solicitud-card ' + seleccionado + '" data-id="' + id + '" onclick="toggleCardDesktop(\'' + id + '\', event)">';
 
-        // FILA 1: Checkbox + ID + Segmento
+        // FILA 1: Checkbox + ID + Segmento + Estado
         html += '  <div class="card-fila-1">';
         html += '    <div class="card-checkbox-wrapper" onclick="event.stopPropagation()">';
         html += '      <input type="checkbox" class="checkbox-fila card-checkbox" value="' + id + '" onchange="toggleFilaCheckbox(this)" ' + (seleccionado ? 'checked' : '') + '>';
         html += '    </div>';
         html += '    <span class="card-id">#' + id + '</span>';
         html += '    <span class="card-badge badge-segmento" title="' + (item.segmento || 'Sin segmento') + '">' + (item.segmento || '—') + '</span>';
+        html += '    <span class="card-badge badge-estado ' + estadoClase + '" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
         html += '  </div>';
 
-        // FILA 2: Nombre + Estado
-        html += '  <div class="card-fila-2">';
-        html += '    <span class="card-nombre" title="' + (item.nombre || 'Sin nombre') + '">' + (item.nombre || 'Sin nombre') + '</span>';
-        html += '    <span class="card-badge badge-estado ' + estadoClase + '" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
+        // FILA 2: Nombre
+        html += '  <div class="card-fila-2" title="' + (item.nombre || 'Sin nombre') + '">';
+        html +=      (item.nombre || 'Sin nombre');
         html += '  </div>';
 
         // FILA 3: Botones de acción
