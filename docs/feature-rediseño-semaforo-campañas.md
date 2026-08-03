@@ -177,33 +177,39 @@ Rediseño completo del indicador de estado visual (semáforo) utilizado en las c
 └─────────────────────────────────┘
 ```
 
-### V1 (primera mejora)
+### V2 (banda 4px)
 ```
 ┌─────────────────────────────────┐
-│  ─────────────────────────────  │  ← Línea 2px (muy sutil)
-│ #12345 | 🔥 Destacar | Pendiente │
-│ Nombre del Cliente              │
-│ 📱 0991234567 | 🏷️ Segmento   │
-│ 📝 Observación...               │
-│ ● Sin Clasificar ● Verde ● Amarillo ● Rojo  ← Pills pequeños
-│ 📋 Seguimiento | 💬 Directo    │
-└─────────────────────────────────┘
-```
-
-### V2 (actual — premium)
-```
-┌─────────────────────────────────┐
-│ ████████████████████████████████│  ← Banda 4px completa
-│                                 │
+│ ████████████████████████████████│  ← Banda 4px
 │ #12345 | 🔥 Destacar | Pendiente │
 │ Nombre del Cliente              │
 │ 📱 0991234567 | 🏷️ Segmento   │
 │ 📝 Observación...               │
 │ Semáforo:                       │
-│ [● Sin Clasificar] [● Verde]   │  ← Chips premium con borde
+│ [● Sin Clasificar] [● Verde]   │
 │ [● Amarillo] [● Rojo]          │
 │ 📋 Seguimiento | 💬 Directo    │
 └─────────────────────────────────┘
+```
+
+### V3 (actual — premium)
+```
+┌─────────────────────────────────┐
+│ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│  ← Gradiente sutil
+│ #12345 | 🔥 Destacar | Pendiente │
+│ Nombre del Cliente              │
+│ 📱 0991234567 | 🏷️ Segmento   │
+│ 📝 No quiere nada...            │
+│ [● Sin Clasificar] [● Verde]   │  ← Chips integrados
+│ [● Amarillo] [● Rojo]          │
+│ 📋 Seguimiento | 💬 Directo    │
+└─────────────────────────────────┘
+
+Panel superior:
+┌──────────┬──────────┬──────────┬──────────┐
+│ ● Sin    │ ● Verde  │ ● Amar.  │ ● Rojo   │
+│   63     │   0      │   1      │   1      │
+└──────────┴──────────┴──────────┴──────────┘
 ```
 
 ---

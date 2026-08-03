@@ -540,6 +540,11 @@ body {
     display: none;
 }
 
+/* Hide empty observation */
+.sol-observacion:empty {
+    display: none;
+}
+
 .sol-acciones {
     display: flex;
     gap: 8px;
