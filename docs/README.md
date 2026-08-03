@@ -402,6 +402,8 @@ El wrapper en `db.js` se encarga automáticamente de:
 - Convertir sintaxis `INTERVAL` de PostgreSQL a SQLite
 - Convertir `TO_CHAR()` a `strftime()` para SQLite
 - Agregar `RETURNING id` automáticamente a INSERTs para PostgreSQL
+- Registrar la función `translate()` en SQLite local (usada para
+  normalizar acentos en búsquedas; PostgreSQL la trae nativa).
 
 ### 5.2 Esquema de Tablas
 
@@ -889,19 +891,39 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - Listado paginado con scroll infinito
 - Búsqueda en servidor con filtros (estado, segmento, cédula, nombre)
 - Vista de tarjetas con información detallada
-- Edición de estado y segmento (con auditoría)
+- **Panel lateral de detalle/edición (escritorio):** hacer clic en una
+  tarjeta abre un panel deslizante (drawer) desde la derecha con la vista
+  de detalle (datos personales, ubicación, laboral/económico, detalles,
+  observaciones, referencias y última gestión) y la edición unificada
+  dentro del mismo panel. La selección de tarjetas solo se hace con el
+  checkbox; la tarjeta ya no muestra botón ⋮ ni `#id`. El menú ⋮ fue
+  reemplazado por el panel. Implementado en
+  `public/desktop/js/solicitudes.js` (funciones `abrirPanelSolicitud`,
+  `cargarPanelSolicitud`, `abrirEditarEnPanel`, `renderPanelEditar`,
+  `guardarPanelEditarSolicitud`, `cerrarPanelSolicitud`, helpers
+  `panelCampo/panelSeccion/panelEscapeHtml/estadoPanelColor/...`) y
+  estilos en `public/desktop/css/solicitudes.css`.
+- Edición de estado y segmento (con auditoría) — también desde el panel
+  lateral vía `PUT /api/excel/solicitudes/:id/editar`
 - Completar información: formulario completo en escritorio y móvil
   (código plus, dirección, dirección de trabajo, ocupación, correo,
   ingreso mensual, observaciones de texto libre y 3 referencias
-  personales). En escritorio se abre con el sistema de modales compartido
-  (`/js/modal.js`), por lo que el cierre funciona con ✕, Cancelar, clic
-  fuera o tecla Escape; el guardado va a
+  personales). En escritorio la edición se abre dentro del panel lateral
+  (botón "✏️ Editar"); el guardado va a
   `PUT /api/excel/solicitudes/:id/completar-info`. La columna
   `solicitudes.observaciones` se crea automáticamente al iniciar el
   servidor (idempotente) en SQLite y PostgreSQL.
 - Creación manual (Nueva Solicitud): incluye el campo opcional
   "Observaciones" (textarea) en la sección Información Principal, tanto
   en escritorio como en móvil; se guarda vía `POST /api/excel/solicitudes`.
+- **Búsqueda por palabras sin orden:** la búsqueda por nombre/segmento
+  separa el término en palabras y las combina con AND, de modo que
+  "julia yepez" encuentra registros aunque en la DB estén como
+  "YEPEZ GONZALEZ JULIA MARIA" (apellidos primero). Además normaliza
+  acentos con `translate(lower(nombre), 'áéíóúüñ', 'aeiouun')` para
+  que la búsqueda sea insensible a tildes. En SQLite local la función
+  `translate()` se registra como `db.function(...)` en `src/config/db.js`
+  porque el SQLite nativo no la incluye.
 - Destacar solicitudes
 - Gestión directa (crear gestión)
 - Exportación de seleccionadas
@@ -921,6 +943,11 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - Auditoría de cambios (estado, segmento)
 - Reporte de resultados (inserts, updates, errores)
 - Conversión automática de fechas (serial Excel, DD/MM/YYYY, Date object)
+- **Celdas con fórmula:** al importar se usa `extraerValorCelda()` en
+  `src/services/excel.service.js`, que toma el valor **visible** de la
+  celda (`result` o `text` de ExcelJS) en lugar del objeto crudo de la
+  fórmula. Esto evita que se guarde en la base un JSON de fórmula
+  (`{"formula":"C211&...","result":"..."}`) como contenido del registro.
 
 ### 11.4 Gestiones
 
@@ -1032,7 +1059,7 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 | DELETE | `/api/excel/upload-imagen/:nombre` | ✅ | Eliminar imagen temporal |
 | POST | `/api/excel/solicitudes` | ✅ | Crear solicitud manual |
 | GET | `/api/excel/solicitudes` | ✅ | Listar solicitudes (paginado) |
-| GET | `/api/excel/solicitudes/buscar` | ✅ | Buscar solicitudes |
+| GET | `/api/excel/solicitudes/buscar` | ✅ | Buscar solicitudes (palabras AND + sin acentos) |
 | GET | `/api/excel/solicitudes/:id` | ✅ | Obtener solicitud |
 | GET | `/api/excel/solicitudes/:id/completa` | ✅ | Solicitud completa (con referencias) |
 | PUT | `/api/excel/solicitudes/:id/editar` | ✅ | Editar estado/segmento |
@@ -1376,7 +1403,7 @@ El sistema utiliza **node-cache** con estrategia **cache-aside**:
 | **SSE** | Server-Sent Events - Tecnología para notificaciones en tiempo real |
 | **Deep Link** | Enlace que navega directamente a una sección específica |
 | **SuperAdmin** | Usuario con control total del sistema (panel de administración) |
-| **Drawer** | Menú de navegación lateral (móvil) |
+| **Drawer** | Panel lateral deslizante: menú de navegación (móvil) o panel de detalle/edición de solicitudes (escritorio) |
 | **Rate Limiting** | Límite de peticiones para prevenir abuso |
 | **Cache-Aside** | Estrategia de caché: consultar caché → si no hay, consultar BD → guardar en caché |
 
@@ -1393,5 +1420,5 @@ El sistema utiliza **node-cache** con estrategia **cache-aside**:
 
 ---
 
-> **Última actualización:** Julio 2026  
+> **Última actualización:** Agosto 2026  
 > **Documentación generada automáticamente** con análisis del código fuente.

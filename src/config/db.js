@@ -59,6 +59,24 @@ if (process.env.DATABASE_URL) {
     const dbPath = path.join(__dirname, '../../database.db');
     const db = new Database(dbPath);
     db.pragma('journal_mode = WAL');
+
+    // Emular translate() de PostgreSQL (usado en búsquedas sin acentos)
+    db.function('translate', function(texto, desde, hacia) {
+        if (texto === null || texto === undefined) return texto;
+        texto = String(texto);
+        desde = String(desde || '');
+        hacia = String(hacia || '');
+        const mapa = {};
+        for (let i = 0; i < desde.length; i++) {
+            mapa[desde[i]] = i < hacia.length ? hacia[i] : '';
+        }
+        let salida = '';
+        for (let i = 0; i < texto.length; i++) {
+            const ch = texto[i];
+            salida += (ch in mapa) ? mapa[ch] : ch;
+        }
+        return salida;
+    });
     
     // Create a wrapper that mimics PostgreSQL's pool.query() interface
     // Convert PostgreSQL placeholders and syntax to SQLite

@@ -1641,8 +1641,7 @@ function whatsAppClienteDesktop(celular, nombre) {
     if (!numeroLimpio.startsWith('593') && numeroLimpio.length <= 10) {
         numeroLimpio = '593' + numeroLimpio;
     }
-    var mensaje = encodeURIComponent('Hola ' + (nombre || '') + ', te contactamos de Archivox. ¿En qué podemos ayudarte?');
-    window.open('https://wa.me/' + numeroLimpio + '?text=' + mensaje, '_blank');
+    window.open('https://wa.me/' + numeroLimpio, '_blank');
 }
 
 // ============================================================================

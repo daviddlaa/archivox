@@ -743,11 +743,8 @@ function whatsAppCliente(celular, nombre) {
         numeroLimpio = '593' + numeroLimpio;
     }
     
-    // Mensaje predeterminado
-    var mensaje = encodeURIComponent('Hola ' + (nombre || '') + ', te contactamos de Archivox. ¿En qué podemos ayudarte?');
-    
-    // Abrir WhatsApp
-    var urlWhatsApp = 'https://wa.me/' + numeroLimpio + '?text=' + mensaje;
+    // Abrir WhatsApp sin mensaje predeterminado
+    var urlWhatsApp = 'https://wa.me/' + numeroLimpio;
     window.open(urlWhatsApp, '_blank');
 }
 

@@ -8,6 +8,20 @@ const pool = db;
 const isPostgres = !!process.env.DATABASE_URL;
 
 /**
+ * Extrae el valor visible de una celda de Excel.
+ * ExcelJS devuelve objetos para celdas con fórmula ({ formula, result }),
+ * hipervínculo ({ text, hyperlink }) o richText ({ richText }). Aquí tomamos
+ * el valor mostrado (result/text) para no guardar el objeto como JSON.
+ */
+function extraerValorCelda(valor) {
+    if (valor && typeof valor === 'object' && !(valor instanceof Date)) {
+        if (valor.result !== undefined && valor.result !== null) return valor.result;
+        if (valor.text !== undefined && valor.text !== null) return valor.text;
+    }
+    return valor;
+}
+
+/**
  * Convierte valores de fecha Excel (números seriales, objetos Date o cadenas) a formato DATE ISO (YYYY-MM-DD)
  */
 function convertirFecha(valor) {
@@ -134,7 +148,7 @@ exports.procesarExcel = async (filePath, usuarioId) => {
         const registro = {};
 
         row.eachCell((cell, colNumber) => {
-            registro[headers[colNumber - 1]] = cell.value;
+            registro[headers[colNumber - 1]] = extraerValorCelda(cell.value);
         });
 
         // ===== NORMALIZAR VALORES VACÍOS =====

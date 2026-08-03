@@ -1284,17 +1284,24 @@ exports.buscarSolicitudes = async (req, res) => {
         const params = [usuarioId];
         let paramIdx = 2;
 
-        // Filtro de búsqueda unificada
+        // Filtro de búsqueda unificada: cada palabra debe coincidir (AND) en cualquier campo,
+        // sin importar el orden de las palabras y normalizando acentos en el nombre.
         if (q && q.trim()) {
-            const termino = '%' + q.trim() + '%';
-            sql += ` AND (
-                s.cedula LIKE $${paramIdx} 
-                OR LOWER(s.nombre) LIKE LOWER($${paramIdx}) 
-                OR s.celular LIKE $${paramIdx}
-                OR CAST(s.id_solicitud AS TEXT) LIKE $${paramIdx}
-            )`;
-            params.push(termino);
-            paramIdx++;
+            const palabras = q.trim().split(/\s+/).filter(Boolean);
+            if (palabras.length) {
+                const conds = palabras.map(function(palabra) {
+                    const termino = '%' + palabra + '%';
+                    params.push(termino);
+                    const i = paramIdx++;
+                    return `(
+                        s.cedula LIKE $${i}
+                        OR translate(lower(s.nombre), 'áéíóúüñ', 'aeiouun') LIKE translate(lower($${i}), 'áéíóúüñ', 'aeiouun')
+                        OR s.celular LIKE $${i}
+                        OR CAST(s.id_solicitud AS TEXT) LIKE $${i}
+                    )`;
+                });
+                sql += ' AND (' + conds.join(' AND ') + ')';
+            }
         }
 
         if (estado) {
@@ -1338,15 +1345,21 @@ exports.buscarSolicitudes = async (req, res) => {
                 let cIdx = 2;
                 
                 if (q && q.trim()) {
-                    const termino = '%' + q.trim() + '%';
-                    countSql += ` AND (
-                        s.cedula LIKE $${cIdx} 
-                        OR LOWER(s.nombre) LIKE LOWER($${cIdx}) 
-                        OR s.celular LIKE $${cIdx}
-                        OR CAST(s.id_solicitud AS TEXT) LIKE $${cIdx}
-                    )`;
-                    countParams.push(termino);
-                    cIdx++;
+                    const palabras = q.trim().split(/\s+/).filter(Boolean);
+                    if (palabras.length) {
+                        const conds = palabras.map(function(palabra) {
+                            const termino = '%' + palabra + '%';
+                            countParams.push(termino);
+                            const i = cIdx++;
+                            return `(
+                                s.cedula LIKE $${i}
+                                OR translate(lower(s.nombre), 'áéíóúüñ', 'aeiouun') LIKE translate(lower($${i}), 'áéíóúüñ', 'aeiouun')
+                                OR s.celular LIKE $${i}
+                                OR CAST(s.id_solicitud AS TEXT) LIKE $${i}
+                            )`;
+                        });
+                        countSql += ' AND (' + conds.join(' AND ') + ')';
+                    }
                 }
                 if (estado) { countSql += ` AND s.estado = $${cIdx++}`; countParams.push(estado); }
                 if (segmento) { countSql += ` AND s.segmento = $${cIdx++}`; countParams.push(segmento); }
