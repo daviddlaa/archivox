@@ -1224,3 +1224,19 @@ body {
         margin-left: 0;
     }
 }
+
+/* ===== DRAWER TOGGLE junto al sidebar de campañas (escritorio) =====
+   El sidebar-campañas ocupa 340px (300px en pantallas medianas) a la
+   izquierda y no se colapsa. El toggle ☰ flotante de drawer.js queda
+   pegado a su borde derecho para no tapar el contenido. */
+@media (min-width: 769px) {
+    #drawer-toggle {
+        left: 355px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1200px) {
+    #drawer-toggle {
+        left: 315px;
+    }
+}

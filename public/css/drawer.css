@@ -7,7 +7,7 @@
 .drawer-toggle {
     position: fixed;
     top: 15px;
-    right: 15px;
+    left: 15px;
     z-index: 1002;
     background: linear-gradient(135deg, #1f2937, #111827);
     color: white;
@@ -182,6 +182,17 @@
 @media (max-width: 768px) {
     .drawer-toggle {
         display: none !important;
+    }
+}
+
+/* ───────── espacio para el toggle flotante en escritorio ─────────
+   El botón ☰ queda fijo arriba a la izquierda (15px). Para que no
+   tape los títulos de página, se reserva espacio en los headers
+   compartidos del escritorio. */
+@media (min-width: 769px) {
+    .page-header,
+    .equipo-header {
+        padding-left: 80px;
     }
 }
 

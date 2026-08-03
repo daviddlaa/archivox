@@ -21,6 +21,13 @@
     margin-bottom: 20px;
 }
 
+/* Espacio para el drawer-toggle ☰ flotante (arriba-izquierda, desktop) */
+@media (min-width: 769px) {
+    .equipo-header {
+        padding-left: 80px;
+    }
+}
+
 .equipo-header-left {
     display: flex;
     align-items: center;
