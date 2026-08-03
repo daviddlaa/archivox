@@ -703,8 +703,9 @@ function renderizarSolicitudes(lista) {
             html += '<div class="sol-observacion-vacia">Sin observación registrada</div>';
         }
 
-        // Semáforo — Compact status pills (Apple Wallet style)
+        // Semáforo — Premium filter chips (V2)
         html += '<div class="sol-semaforo-pills" role="group" aria-label="Semáforo">';
+        html += '<span class="sol-semaforo-pills-label">Semáforo:</span>';
         for (var s = 0; s < SEMAFORO_ORDEN.length; s++) {
             var keyS = SEMAFORO_ORDEN[s];
             var activeCls = semaforo === keyS ? ' active' : '';

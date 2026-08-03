@@ -330,21 +330,22 @@ body {
     transform: translateY(-1px);
 }
 
-/* ===== TARJETAS — Estado visual sutil (sin border-left) ===== */
+/* ===== TARJETAS — Wide colored band (V2) ===== */
 .sol-card {
     position: relative;
+    padding-top: 18px;
 }
 
-/* Tiny top-edge accent line — premium touch */
+/* Wide horizontal band — premium status indicator */
 .sol-card::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 16px;
-    right: 16px;
-    height: 2px;
-    border-radius: 0 0 2px 2px;
-    opacity: 0.55;
+    left: 0;
+    right: 0;
+    height: 4px;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    opacity: 1;
     transition: opacity 0.3s ease, background 0.3s ease;
 }
 
@@ -353,64 +354,76 @@ body {
 .sol-card.sol-semaforo-amarillo::before { background: var(--sem-amarillo); }
 .sol-card.sol-semaforo-rojo::before { background: var(--sem-rojo); }
 
-.sol-card:hover::before { opacity: 0.85; }
+.sol-card:hover::before { opacity: 0.9; }
 
-/* ===== CARD FLASH — Soft breathing glow ===== */
+/* ===== CARD FLASH — Visible but elegant (V2) ===== */
 .sol-card.sol-semaforo-flash {
-    animation: sol-semaforo-breath 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: sol-semaforo-flash-v2 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes sol-semaforo-breath {
-    0% { box-shadow: var(--shadow-sm); }
-    40% { box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08), var(--shadow-md); }
-    100% { box-shadow: var(--shadow-sm); }
+@keyframes sol-semaforo-flash-v2 {
+    0% { box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.03); }
+    30% { box-shadow: 0 4px 20px rgba(99, 102, 241, 0.12), 0 0 0 2px rgba(99, 102, 241, 0.15); }
+    60% { box-shadow: 0 2px 10px rgba(99, 102, 241, 0.08), 0 0 0 1px rgba(99, 102, 241, 0.1); }
+    100% { box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.03); }
 }
 
-/* ===== STATUS PILLS — Compact per-card indicator ===== */
+/* ===== STATUS PILLS — Premium Filter Chips (V2) ===== */
 .sol-semaforo-pills {
     display: flex;
-    gap: 4px;
-    margin: 8px 0 2px;
+    gap: 6px;
+    margin: 10px 0 8px;
     flex-wrap: wrap;
+    align-items: center;
+}
+
+.sol-semaforo-pills-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    margin-right: 2px;
 }
 
 .sol-semaforo-pill {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    border: none;
-    border-radius: 999px;
-    padding: 3px 8px 3px 6px;
-    font-size: 10px;
-    font-weight: 600;
+    gap: 5px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px 5px 8px;
+    font-size: 11px;
+    font-weight: 500;
     cursor: pointer;
-    line-height: 1;
+    line-height: 1.2;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    background: transparent;
+    background: var(--bg-card);
     color: var(--text-muted);
-    border: 1px solid transparent;
 }
 
 .sol-semaforo-pill:hover {
     background: var(--bg-general);
-    border-color: var(--border);
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 
 .sol-semaforo-pill.active {
-    transform: scale(1.05);
     font-weight: 700;
+    border-width: 1.5px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
 .sol-semaforo-pill-dot {
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     flex-shrink: 0;
-    transition: transform 0.2s ease, box-shadow 0.3s ease;
+    transition: transform 0.2s ease, box-shadow 0.4s ease;
 }
 
 .sol-semaforo-pill.active .sol-semaforo-pill-dot {
-    transform: scale(1.3);
+    transform: scale(1.2);
 }
 
 /* Pill color variants — muted */
@@ -419,20 +432,20 @@ body {
 .sol-semaforo-pill[data-val="amarillo"] .sol-semaforo-pill-dot { background: var(--sem-amarillo); }
 .sol-semaforo-pill[data-val="rojo"] .sol-semaforo-pill-dot { background: var(--sem-rojo); }
 
-/* Active pill gets soft colored background */
+/* Active pill — premium colored background */
 .sol-semaforo-pill[data-val="sin_clasificar"].active { background: var(--sem-sin-bg); color: var(--sem-sin-text); border-color: var(--sem-sin-surface); }
 .sol-semaforo-pill[data-val="verde"].active { background: var(--sem-verde-bg); color: var(--sem-verde-text); border-color: var(--sem-verde-surface); }
 .sol-semaforo-pill[data-val="amarillo"].active { background: var(--sem-amarillo-bg); color: var(--sem-amarillo-text); border-color: var(--sem-amarillo-surface); }
 .sol-semaforo-pill[data-val="rojo"].active { background: var(--sem-rojo-bg); color: var(--sem-rojo-text); border-color: var(--sem-rojo-surface); }
 
-/* Active pill breathing glow */
+/* Active pill — visible breathing glow */
 .sol-semaforo-pill.active .sol-semaforo-pill-dot {
-    animation: pill-glow 2.5s ease-in-out infinite;
+    animation: pill-glow-v2 2s ease-in-out infinite;
 }
 
-@keyframes pill-glow {
+@keyframes pill-glow-v2 {
     0%, 100% { box-shadow: 0 0 0 0 transparent; }
-    50% { box-shadow: 0 0 0 3px rgba(0,0,0,0.06); }
+    50% { box-shadow: 0 0 0 4px rgba(0,0,0,0.08); }
 }
 
 /* ===== FLY PARTICLE — Premium smooth transition ===== */
@@ -1594,6 +1607,15 @@ body {
     }
 
     .semaforo-legend-item {
+        font-size: 10px;
+    }
+
+    .sol-semaforo-pills {
+        gap: 5px;
+    }
+
+    .sol-semaforo-pill {
+        padding: 4px 8px 4px 6px;
         font-size: 10px;
     }
 }

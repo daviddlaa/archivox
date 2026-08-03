@@ -196,6 +196,7 @@ ARCHIVOX/
 │
 ├── docs/                           # Documentación del sistema
 │   ├── README.md                   # Este archivo
+│   ├── feature-rediseño-semaforo-campañas.md  # Rediseño del indicador de estado v2 (Agosto 2026)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
 │       ├── informe-auditoria-flujo-multi-equipo.md
@@ -969,6 +970,7 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - Asignar agentes a campañas
 - Visualizar solicitudes de una campaña
 - Gestionar solicitudes en lote dentro de una campaña
+- **Indicador de Estado (Semáforo) v2:** Sistema visual premium para clasificar solicitudes con 4 estados (Sin clasificar, Verde, Amarillo, Rojo). Incluye banda horizontal 4px, chips premium con borde, label "Semáforo:" y animaciones más visibles. Ver `docs/feature-rediseño-semaforo-campañas.md` para documentación completa (Agosto 2026).
 
 ### 11.6 Relaciones
 

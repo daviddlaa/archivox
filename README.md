@@ -381,4 +381,10 @@ El servidor detecta User-Agent y sirve la version correspondiente:
 
 ## Documentacion
 
-Ver `docs/README.md` para documentacion completa del sistema (1375 lineas), incluyendo esquema de tablas detallado, todos los endpoints, y diagramas de arquitectura.
+Ver `docs/README.md` para documentacion completa del sistema (1375+ lineas), incluyendo esquema de tablas detallado, todos los endpoints, y diagramas de arquitectura.
+
+### Features Recientes
+
+| Feature | Fecha | Documento |
+|---------|-------|-----------|
+| Rediseño del Indicador de Estado (Semáforo) v2 | Agosto 2026 | `docs/feature-rediseño-semaforo-campañas.md` |
