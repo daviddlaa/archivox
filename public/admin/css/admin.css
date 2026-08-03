@@ -365,6 +365,32 @@ body {
 .stat-loading { text-align: center; padding: 60px !important; color: #9ca3af; grid-column: 1 / -1; justify-content: center; }
 
 /* ============================================================================
+   CONEXIONES Y SEGURIDAD (estadísticas SuperAdmin)
+   ============================================================================ */
+.conexiones-section {
+    margin-top: 34px;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb;
+}
+.conexiones-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+.conexiones-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #1f2937;
+}
+.conexiones-updated {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+/* ============================================================================
    MODAL
    ============================================================================ */
 .admin-modal, .admin-modal-overlay {
@@ -1262,10 +1288,20 @@ body {
     /* ── Ocultar tablas en móvil, mostrar cards ── */
     #tab-usuarios .admin-table-wrapper,
     #tab-notificaciones .admin-table-wrapper,
-    #tab-auditoria .admin-table-wrapper {
+    #tab-auditoria .admin-table-wrapper,
+    #tab-estadisticas .admin-table-wrapper {
         display: none !important;
     }
     .mobile-cards { display: block; }
+
+    /* ── Conexiones en móvil ── */
+    .conexiones-section {
+        margin-top: 24px;
+        padding-top: 18px;
+    }
+    .conexiones-header h3 {
+        font-size: 16px;
+    }
 
     /* ── Paginación táctil ── */
     .admin-pagination {

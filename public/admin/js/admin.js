@@ -204,6 +204,8 @@ function actualizarReloj() {
 // ============================================================================
 // TABS
 // ============================================================================
+let conexionesTimer = null;
+
 function cambiarTab(tab) {
     document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.admin-tab-content').forEach(t => t.classList.remove('active'));
@@ -211,9 +213,160 @@ function cambiarTab(tab) {
     document.querySelector(`.admin-tab[data-tab="${tab}"]`).classList.add('active');
     document.getElementById(`tab-${tab}`).classList.add('active');
 
-    if (tab === 'estadisticas') cargarEstadisticas();
+    if (tab === 'estadisticas') {
+        cargarEstadisticas();
+        cargarConexiones();
+        iniciarRefreshConexiones();
+    }
     if (tab === 'auditoria') cargarAuditoria();
     if (tab === 'notificaciones') { cargarNotificaciones(); actualizarBadgeNotif(); }
+}
+
+// ============================================================================
+// CONEXIONES Y SEGURIDAD (tiempo real)
+// ============================================================================
+// Se alimenta de GET /api/admin/conexiones (solo superadmin).
+// Se auto-refresca cada 30s mientras la pestaña está activa.
+// ============================================================================
+function iniciarRefreshConexiones() {
+    if (conexionesTimer) return;
+    conexionesTimer = setInterval(() => {
+        const tabActivo = document.querySelector('.admin-tab.active');
+        if (tabActivo && tabActivo.dataset.tab === 'estadisticas') {
+            cargarConexiones();
+        } else {
+            clearInterval(conexionesTimer);
+            conexionesTimer = null;
+        }
+    }, 30000);
+}
+
+function formatearUptime(segundos) {
+    const h = Math.floor(segundos / 3600);
+    const m = Math.floor((segundos % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m`;
+    return `${segundos}s`;
+}
+
+async function cargarConexiones() {
+    const grid = document.getElementById('conexionesGrid');
+    const tbody = document.getElementById('conexionesTableBody');
+    const cardsDiv = document.getElementById('conexionesMobileCards');
+    const updatedEl = document.getElementById('conexionesUpdated');
+    if (!grid) return;
+
+    try {
+        const res = await fetch('/api/admin/conexiones');
+        if (!res.ok) {
+            grid.innerHTML = `<div class="stat-card stat-loading" style="color:#dc2626">Error ${res.status} al cargar conexiones</div>`;
+            return;
+        }
+        const data = await res.json();
+
+        const sse = data.sse || {};
+        const pool = data.pool || {};
+        const mon = data.monitor || {};
+        const bloques = mon.bloqueos || {};
+
+        const poolInfo = pool.engine === 'postgres'
+            ? `${pool.total} total · ${pool.idle} idle · ${pool.waiting} esperando`
+            : 'SQLite (local)';
+
+        // Tarjetas resumen (reutilizan estilos de stat-card)
+        grid.innerHTML = `
+            <div class="stat-card">
+                <div class="stat-icon">🟢</div>
+                <div class="stat-label">Conectados ahora</div>
+                <div class="stat-value">${sse.usuarios_conectados || 0}</div>
+                <div class="stat-sub">${sse.total_conexiones || 0} conexiones SSE</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-label">Peticiones (15 min)</div>
+                <div class="stat-value">${(mon.total_peticiones || 0).toLocaleString()}</div>
+                <div class="stat-sub">${mon.usuarios_activos || 0} usuarios activos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-label">Uptime servidor</div>
+                <div class="stat-value">${formatearUptime(mon.uptime_segundos || 0)}</div>
+                <div class="stat-sub">desde el último reinicio</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🛡️</div>
+                <div class="stat-label">Bloqueos Rate Limit</div>
+                <div class="stat-value">${bloques.total || 0}</div>
+                <div class="stat-sub">${bloques.ultimo ? 'último: ' + formatearFecha(bloques.ultimo) : 'sin bloqueos'}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🗄️</div>
+                <div class="stat-label">Pool BD</div>
+                <div class="stat-value">${pool.engine === 'postgres' ? pool.total : 'SQLite'}</div>
+                <div class="stat-sub">${poolInfo}</div>
+            </div>
+        `;
+
+        // Usuarios con actividad
+        const usuarios = data.usuarios || [];
+        if (tbody) {
+            if (usuarios.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="admin-loading">Sin actividad en los últimos 15 min</td></tr>';
+            } else {
+                tbody.innerHTML = usuarios.map(u => {
+                    const rolClass = u.rol === 'lider' ? 'lider' : u.rol;
+                    return `<tr>
+                        <td><span class="admin-username">${escapeHtml(u.username)}</span></td>
+                        <td>${escapeHtml(u.nombre || '-')}</td>
+                        <td><span class="role-badge ${rolClass}">${rolLabel({ rol: u.rol, is_superadmin: u.rol === 'superadmin' })}</span></td>
+                        <td>${u.peticiones_15min}</td>
+                        <td>${u.conexiones_sse > 0 ? '🔌 ' + u.conexiones_sse : '—'}</td>
+                        <td>${u.conectado_ahora ? '<span style="color:#10b981">●</span>' : '—'}</td>
+                    </tr>`;
+                }).join('');
+            }
+        }
+
+        // Mobile cards
+        if (cardsDiv) {
+            if (usuarios.length === 0) {
+                cardsDiv.innerHTML = '<div class="admin-loading">Sin actividad en los últimos 15 min</div>';
+            } else {
+                cardsDiv.innerHTML = usuarios.map(u => {
+                    const rolClass = u.rol === 'lider' ? 'lider' : u.rol;
+                    return `<div class="user-card">
+                        <div class="admin-user-card-header">
+                            <div class="admin-user-card-avatar">${escapeHtml((u.nombre || u.username).charAt(0).toUpperCase())}</div>
+                            <div class="admin-user-card-info">
+                                <div class="admin-user-card-name">${escapeHtml(u.nombre || u.username)}</div>
+                                <div class="admin-user-card-username">@${escapeHtml(u.username)}</div>
+                            </div>
+                            <span class="role-badge ${rolClass}">${rolLabel({ rol: u.rol, is_superadmin: u.rol === 'superadmin' })}</span>
+                        </div>
+                        <div class="admin-user-card-body">
+                            <div class="admin-user-card-row">
+                                <span class="admin-user-card-label">📈 Peticiones (15 min)</span>
+                                <span class="admin-user-card-value">${u.peticiones_15min}</span>
+                            </div>
+                            <div class="admin-user-card-row">
+                                <span class="admin-user-card-label">🔌 SSE</span>
+                                <span class="admin-user-card-value">${u.conexiones_sse > 0 ? u.conexiones_sse + ' conexión(es)' : 'Inactivo'}</span>
+                            </div>
+                            <div class="admin-user-card-row">
+                                <span class="admin-user-card-label">🟢 Estado</span>
+                                <span class="admin-user-card-value">${u.conectado_ahora ? 'Conectado ahora' : 'Sin conexión SSE'}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+        }
+
+        if (updatedEl) updatedEl.textContent = 'Actualizado: ' + formatearFecha(new Date().toISOString());
+    } catch (err) {
+        console.error('Error cargar conexiones:', err);
+        grid.innerHTML = '<div class="stat-card stat-loading" style="color:var(--admin-danger)">Error al cargar conexiones</div>';
+    }
 }
 
 // ============================================================================

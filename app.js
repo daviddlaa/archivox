@@ -5,6 +5,7 @@ const path = require('path');
 const session = require('express-session');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const monitor = require('./src/services/monitor.js');
 const { requireAuthPage } = require('./src/middleware/auth.middleware');
 
 // Automático: PostgreSQL en producción (Render), SQLite localmente
@@ -30,24 +31,9 @@ app.use(helmet({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// SEGURIDAD: Rate limiting general
-const generalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // máximo 100 solicitudes por ventana
-    message: { error: 'Demasiadas solicitudes, intenta más tarde' }
-});
-app.use(generalLimiter);
-
-// SEGURIDAD: Rate limiting específico para login
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 5, // máximo 5 intentos de login
-    message: { error: 'Demasiados intentos de login, intenta en 15 minutos' },
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-
 // Configuración de sesión SEGURA
+// NOTA: La sesión va ANTES del rate limiter para poder contar por usuario
+// autenticado (no por IP), evitando bloquear usuarios legítimos.
 app.use(session({
     secret: process.env.SESSION_SECRET || 'default-secret-change-me',
     resave: false,
@@ -59,6 +45,52 @@ app.use(session({
         sameSite: 'strict' // Previene CSRF
     }
 }));
+
+// SEGURIDAD: Rate limiting general (solo API, sin estáticos ni SSE)
+// ----------------------------------------------------------------
+// Antes: 100 solicitudes / 15 min POR IP aplicado a TODO (CSS/JS + SSE + API),
+// lo que bloqueaba usuarios legítimos (la reconexión SSE cada 3s quemaba el cupo).
+// Ahora:
+//  - Cuenta por USUARIO autenticado (fallback: IP para login/registro).
+//  - Excluye archivos estáticos (CSS/JS/imágenes) y el endpoint SSE /stream.
+//  - Límite generoso: 600 req / 15 min por usuario (un humano no lo alcanza).
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 600, // máximo 600 solicitudes por ventana
+    message: { error: 'Demasiadas solicitudes, intenta más tarde' },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => {
+        // No limitar el stream SSE (conexión persistente de notificaciones)
+        if (req.path.includes('/notificaciones/stream')) return true;
+        // No limitar archivos estáticos
+        const ext = req.path.split('.').pop();
+        if (['css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico', 'webp', 'woff', 'woff2', 'ttf'].includes(ext)) return true;
+        return false;
+    },
+    keyGenerator: (req) => {
+        // Usuario autenticado → limitar por usuario (no por IP compartida)
+        if (req.session?.usuario?.id) return `user:${req.session.usuario.id}`;
+        // Sin sesión (login/registro) → limitar por IP
+        return req.ip;
+    },
+    handler: (req, res) => {
+        const retryAfter = Math.ceil(req.rateLimit.resetTime ? (req.rateLimit.resetTime - Date.now()) / 1000 : 60);
+        monitor.registerBlock(req.rateLimit.key || req.ip);
+        res.set('Retry-After', String(Math.max(retryAfter, 1)));
+        res.status(429).json({ error: 'Demasiadas solicitudes, intenta de nuevo en unos minutos' });
+    }
+});
+app.use(generalLimiter);
+
+// MONITOREO: contar peticiones por usuario (para panel SuperAdmin)
+app.use((req, res, next) => {
+    monitor.registerRequest(req);
+    next();
+});
+
+// SEGURIDAD: Rate limiting específico para login (5 intentos / 15 min)
+// Definido en src/routes/auth.routes.js (loginLimiter).
 
 // Detectar dispositivo móvil
 function isMobileDevice(userAgent) {

@@ -95,6 +95,9 @@ router.post('/usuarios/:id/revocar-lider', adminController.revocarLider);
 // Estadísticas globales del sistema
 router.get('/estadisticas', adminController.estadisticas);
 
+// Conexiones en tiempo real (SSE, pool, rate limit) — Panel SuperAdmin
+router.get('/conexiones', adminController.conexiones);
+
 // Estadísticas detalladas por usuario (nueva arquitectura escalable)
 router.get('/estadisticas/usuario/:id', estadisticasController.usuario);
 

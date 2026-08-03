@@ -552,8 +552,8 @@ El servidor se inicia con Express.js y aplica el siguiente stack de middleware e
 1. **trust proxy** - Habilita confianza en proxies (Render, Nginx)
 2. **helmet** - Headers de seguridad HTTP
 3. **express.json/urlencoded** - Parseo de body
-4. **Rate Limiting General** - 100 req / 15 min
-5. **Session** - Sesiones con cookies seguras
+4. **Session** - Sesiones con cookies seguras (ANTES del rate limiter para contar por usuario)
+5. **Rate Limiting General** - 600 req / 15 min por usuario (solo API, excluye estáticos y SSE)
 6. **Static Files** - `public/` como raíz estática
 7. **API Routes** - Todas bajo `/api/*`
 8. **Error Handler Global** - Captura errores no manejados
@@ -770,7 +770,7 @@ Verificar contraseña (bcrypt.compareSync)
 | Cookie httpOnly | ✅ |
 | Cookie secure (producción) | ✅ |
 | Cookie sameSite | strict |
-| Rate limit general | 100 req / 15 min |
+| Rate limit API | 600 req / 15 min por usuario |
 | Rate limit login | 5 req / 15 min |
 | Rate limit admin | 30 req / 1 min |
 | CSP (Content Security Policy) | Desactivado (scripts inline) |
@@ -823,6 +823,16 @@ El `notificationBus` (singleton) gestiona conexiones SSE:
 - **Máximo por usuario**: 5 (cierra la más antigua si excede)
 - **KeepAlive**: Ping cada 30 segundos
 - **Limpieza automática**: Al desconectarse el cliente
+
+### 10.2.1 Reconexión del Cliente (Backoff Exponencial)
+
+El cliente (`public/js/notificaciones-dashboard.js`) reconecta el SSE con **backoff exponencial**:
+
+- Esperas: **5s → 10s → 20s → 40s → 60s (máx)**
+- Si la pestaña está oculta, **no reconecta** hasta que vuelva a estar visible (evita tráfico inútil).
+- Al reconectarse con éxito, el contador de backoff se reinicia.
+- **Motivo**: antes reconectaba cada 3s fijos, lo que quemaba el cupo del rate limiter
+  (100 req / 15 min) y bloqueaba usuarios legítimos.
 
 ### 10.3 Tipos de Eventos SSE
 
@@ -1114,6 +1124,7 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 | GET | `/api/admin/estadisticas` | ✅ superadmin | Estadísticas del sistema |
 | GET | `/api/admin/estadisticas/usuario/:id` | ✅ superadmin | Estadísticas por usuario |
 | GET | `/api/admin/estadisticas/listado` | ✅ superadmin | Resumen de estadísticas |
+| GET | `/api/admin/conexiones` | ✅ superadmin | Conexiones en tiempo real (SSE, pool BD, peticiones por usuario, bloqueos rate limit) |
 | GET | `/api/admin/auditoria` | ✅ superadmin | Logs de auditoría |
 | GET | `/api/admin/notificaciones` | ✅ | Listar notificaciones |
 | GET | `/api/admin/notificaciones/stream` | ✅ | SSE Stream |

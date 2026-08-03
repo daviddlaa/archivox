@@ -17,7 +17,12 @@
 const NOTIF_CONFIG = {
     POLL_INTERVAL: 30000,    // 30s - fallback polling
     MAX_TOAST_DURATION: 5000, // 5s - duración del toast
-    SSE_RECONNECT_DELAY: 3000, // 3s - reconexión SSE
+    // Backoff exponencial: 5s → 10s → 20s → 40s → 60s (máx)
+    // Evita quemar el cupo del rate limiter con reconexiones cada 3s.
+    SSE_RECONNECT_DELAY: 5000,
+    SSE_RECONNECT_MAX_DELAY: 60000,
+    SSE_RECONNECT_FACTOR: 2,
+    SSE_HIDDEN_POLL_DELAY: 5000, // chequear visibilidad al reconectar en segundo plano
     MAX_VISIBLE_NOTIFS: 50,   // máx notificaciones en el panel
     TIPO_ICONOS: { info: 'ℹ️', warning: '⚠️', success: '✅', danger: '🚨' },
     TIPO_COLORES: { info: '#3b82f6', warning: '#f59e0b', success: '#10b981', danger: '#ef4444' },
@@ -32,6 +37,7 @@ let notifState = {
     eventSource: null,        // Conexión SSE
     isPanelOpen: false,       // ¿Panel abierto?
     reconnecting: false,      // ¿Reconectando SSE?
+    reconnectAttempts: 0,     // Intentos seguidos (para backoff exponencial)
     toastTimeout: null,       // Timeout del toast actual
     pendingCount: 0,          // Contador actual de no leídas
     isInitialized: false,     // ¿Inicializado?
@@ -145,6 +151,7 @@ function iniciarSSE() {
         es.addEventListener('connected', function(e) {
             actualizarEstadoConexion(true);
             notifState.reconnecting = false;
+            notifState.reconnectAttempts = 0; // Reconexión exitosa → resetear backoff
             console.log('[Notificaciones] SSE conectado');
         });
 
@@ -211,17 +218,43 @@ function iniciarSSE() {
             // No hacer nada, solo mantiene la conexión viva
         });
 
-        // Error de conexión
+        // Error de conexión — reconexión con BACKOFF EXPONENCIAL
+        // Antes: reintento cada 3s fijo → quemaba el cupo del rate limiter.
+        // Ahora: 5s, 10s, 20s, 40s, 60s (máx) y pausa si la pestaña está oculta.
         es.onerror = function(err) {
-            console.warn('[Notificaciones] SSE error, reconectando...');
+            console.warn('[Notificaciones] SSE error, programando reconexión...');
             actualizarEstadoConexion(false);
 
-            if (!notifState.reconnecting) {
-                notifState.reconnecting = true;
-                setTimeout(function() {
-                    notifState.eventSource = null;
-                    iniciarSSE();
-                }, NOTIF_CONFIG.SSE_RECONNECT_DELAY);
+            if (notifState.reconnecting) return;
+            notifState.reconnecting = true;
+
+            const delay = Math.min(
+                NOTIF_CONFIG.SSE_RECONNECT_DELAY * Math.pow(NOTIF_CONFIG.SSE_RECONNECT_FACTOR, notifState.reconnectAttempts),
+                NOTIF_CONFIG.SSE_RECONNECT_MAX_DELAY
+            );
+            notifState.reconnectAttempts++;
+
+            const reconectar = function() {
+                notifState.reconnecting = false;
+                notifState.eventSource = null;
+                iniciarSSE();
+            };
+
+            // Si la pestaña está oculta (usuario en otra app/pestaña), no reconectar
+            // de inmediato: esperar a que vuelva a estar visible para no generar
+            // tráfico inútil ni quemar el límite del servidor.
+            const esperarVisibleYReconectar = function() {
+                if (document.hidden) {
+                    setTimeout(esperarVisibleYReconectar, NOTIF_CONFIG.SSE_HIDDEN_POLL_DELAY);
+                    return;
+                }
+                reconectar();
+            };
+
+            if (document.hidden) {
+                setTimeout(esperarVisibleYReconectar, NOTIF_CONFIG.SSE_HIDDEN_POLL_DELAY);
+            } else {
+                setTimeout(reconectar, delay);
             }
         };
     } catch (err) {

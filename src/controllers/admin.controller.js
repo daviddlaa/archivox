@@ -7,6 +7,8 @@
 
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db.js');
+const notificationBus = require('../services/notificationBus.js');
+const monitor = require('../services/monitor.js');
 
 // ============================================================================
 // HELPERS
@@ -613,6 +615,89 @@ exports.estadisticas = async (req, res) => {
         });
     } catch (err) {
         console.error('[Admin] Error estadisticas:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// ============================================================================
+// CONEXIONES EN TIEMPO REAL (Panel SuperAdmin)
+// ============================================================================
+// GET /api/admin/conexiones
+// Devuelve: conexiones SSE activas, estado del pool PostgreSQL, peticiones
+// por usuario (últimos 15 min) y bloqueos por rate limit.
+exports.conexiones = async (req, res) => {
+    try {
+        // 1) Conexiones SSE activas (notificationBus singleton)
+        const sseStats = notificationBus.getStats(); // { totalClients, clients: [{usuarioId}] }
+        const sseByUser = new Map(); // usuarioId -> conteo de conexiones
+        for (const c of sseStats.clients) {
+            const id = Number(c.usuarioId);
+            sseByUser.set(id, (sseByUser.get(id) || 0) + 1);
+        }
+        const sseUsuarios = [...sseByUser.keys()];
+
+        // 2) Monitoreo de peticiones y bloqueos (en memoria)
+        const mon = monitor.getStats();
+        const peticionesByUser = new Map(
+            mon.usuarios.map(u => [u.usuario_id, u.peticiones_15min])
+        );
+
+        // 3) Unir usuarios conectados + con peticiones recientes y obtener su info
+        const todosLosIds = new Set([...sseUsuarios, ...peticionesByUser.keys()]);
+        const usuariosInfo = new Map();
+        if (todosLosIds.size > 0) {
+            const ids = [...todosLosIds];
+            const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
+            const result = await pool.query(
+                `SELECT id, username, nombre, rol FROM usuarios WHERE id IN (${placeholders})`,
+                ids
+            );
+            for (const r of result.rows) {
+                usuariosInfo.set(Number(r.id), r);
+            }
+        }
+
+        const usuarios = [...todosLosIds].map(id => {
+            const info = usuariosInfo.get(id) || {};
+            return {
+                usuario_id: id,
+                username: info.username || `Usuario #${id}`,
+                nombre: info.nombre || '',
+                rol: info.rol || 'user',
+                peticiones_15min: peticionesByUser.get(id) || 0,
+                conexiones_sse: sseByUser.get(id) || 0,
+                conectado_ahora: sseByUser.has(id),
+            };
+        }).sort((a, b) => (b.peticiones_15min + b.conexiones_sse * 50) - (a.peticiones_15min + a.conexiones_sse * 50));
+
+        // 4) Estado del pool PostgreSQL (si aplica)
+        let poolStats = { engine: 'sqlite' };
+        if (pool && typeof pool.totalCount === 'number') {
+            poolStats = {
+                engine: 'postgres',
+                total: pool.totalCount,
+                idle: pool.idleCount,
+                waiting: pool.waitingCount,
+            };
+        }
+
+        res.json({
+            timestamp: new Date().toISOString(),
+            sse: {
+                total_conexiones: sseStats.totalClients,
+                usuarios_conectados: sseUsuarios.length,
+            },
+            pool: poolStats,
+            monitor: {
+                uptime_segundos: mon.uptimeSegundos,
+                total_peticiones: mon.totalPeticiones,
+                usuarios_activos: mon.usuariosActivos,
+                bloqueos: mon.bloqueosRateLimit,
+            },
+            usuarios,
+        });
+    } catch (err) {
+        console.error('[Admin] Error conexiones:', err);
         res.status(500).json({ error: err.message });
     }
 };

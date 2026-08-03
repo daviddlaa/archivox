@@ -101,6 +101,44 @@
             <div class="stats-grid" id="statsGrid">
                 <div class="stat-card stat-loading">Cargando estadísticas...</div>
             </div>
+
+            <!-- ==================== CONEXIONES Y SEGURIDAD ==================== -->
+            <div class="conexiones-section">
+                <div class="conexiones-header">
+                    <h3>🔌 Conexiones y Seguridad</h3>
+                    <span class="conexiones-updated" id="conexionesUpdated"></span>
+                </div>
+
+                <!-- Tarjetas resumen (escritorio y móvil) -->
+                <div class="stats-grid" id="conexionesGrid">
+                    <div class="stat-card stat-loading">Cargando conexiones...</div>
+                </div>
+
+                <!-- Usuarios con actividad -->
+                <div class="admin-toolbar" style="margin-top:20px;">
+                    <h3 style="margin:0;font-size:16px;color:#1f2937;">👥 Usuarios con actividad (últimos 15 min)</h3>
+                </div>
+                <!-- Mobile cards -->
+                <div id="conexionesMobileCards" class="mobile-cards"></div>
+                <!-- Tabla escritorio -->
+                <div class="admin-table-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Nombre</th>
+                                <th>Rol</th>
+                                <th>Peticiones (15 min)</th>
+                                <th>SSE</th>
+                                <th>Conectado ahora</th>
+                            </tr>
+                        </thead>
+                        <tbody id="conexionesTableBody">
+                            <tr><td colspan="6" class="admin-loading">Cargando usuarios con actividad...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- ==================== TAB AUDITORÍA ==================== -->
