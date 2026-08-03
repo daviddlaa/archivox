@@ -16,23 +16,46 @@
     --radius-sm: 8px;
     --radius-md: 10px;
     --radius-lg: 12px;
-    /* Semáforo — Paleta suave y elegante (gris, sage, ámbar, coral) */
-    --sem-sin: #94a3b8;
-    --sem-sin-bg: #f1f5f9;
-    --sem-sin-surface: #e8ecf1;
-    --sem-sin-text: #475569;
-    --sem-verde: #6b9e78;
-    --sem-verde-bg: #f0f7f2;
-    --sem-verde-surface: #d4e8da;
-    --sem-verde-text: #2d5a3a;
-    --sem-amarillo: #c5975b;
-    --sem-amarillo-bg: #fdf6ed;
-    --sem-amarillo-surface: #f0e2ca;
-    --sem-amarillo-text: #7a5c2f;
-    --sem-rojo: #c27070;
-    --sem-rojo-bg: #fdf0f0;
-    --sem-rojo-surface: #f0d4d4;
-    --sem-rojo-text: #8b3a3a;
+    /* ===== Paleta SOLICITUDES (--sem-sol-*) =====
+       Tarjetas de solicitud (.sol-semaforo-*).
+       Independiente del panel del semáforo: cambiar aquí NO afecta al panel. */
+    --sem-sol-sin: #94a3b8;
+    --sem-sol-sin-bg: #f1f5f9;
+    --sem-sol-sin-surface: #e8ecf1;
+    --sem-sol-sin-text: #475569;
+    --sem-sol-verde: #6b9e78;
+    --sem-sol-verde-bg: #f0f7f2;
+    --sem-sol-verde-surface: #d4e8da;
+    --sem-sol-verde-text: #2d5a3a;
+    --sem-sol-amarillo: #c5975b;
+    --sem-sol-amarillo-bg: #fdf6ed;
+    --sem-sol-amarillo-surface: #f0e2ca;
+    --sem-sol-amarillo-text: #7a5c2f;
+    --sem-sol-rojo: #c27070;
+    --sem-sol-rojo-bg: #fdf0f0;
+    --sem-sol-rojo-surface: #f0d4d4;
+    --sem-sol-rojo-text: #8b3a3a;
+
+    /* ===== Paleta PANEL del semáforo (--sem-panel-*) =====
+       Tarjetas del panel de campaña (.semaforo-panel-*).
+       Colores diferenciados: gris neutro, sage, ámbar dorado, coral.
+       Desacoplada de las solicitudes: cambiar aquí NO afecta a .sol-semaforo-*. */
+    --sem-panel-sin: #94a3b8;
+    --sem-panel-sin-bg: #f1f5f9;
+    --sem-panel-sin-surface: #eceff3;
+    --sem-panel-sin-text: #4b5563;
+    --sem-panel-verde: #6b9e78;
+    --sem-panel-verde-bg: #f0f7f2;
+    --sem-panel-verde-surface: #d8e9de;
+    --sem-panel-verde-text: #2f6b45;
+    --sem-panel-amarillo: #d3a437;
+    --sem-panel-amarillo-bg: #fdf8e8;
+    --sem-panel-amarillo-surface: #f6e7c4;
+    --sem-panel-amarillo-text: #7c5a22;
+    --sem-panel-rojo: #cf6657;
+    --sem-panel-rojo-bg: #fdf1ee;
+    --sem-panel-rojo-surface: #f2d2cc;
+    --sem-panel-rojo-text: #a03d35;
 }
 
 /* ===== BODY ===== */
@@ -111,11 +134,14 @@ body {
     background: #e2e8f0;
 }
 
-/* ===== SEMÁFORO PANEL — Tarjetas premium por estado (V5) ===== */
+/* ===== SEMÁFORO PANEL — Tarjetas compactas por estado (V6) ===== */
+/* Desacoplado de las solicitudes: usa .semaforo-panel-* + --sem-panel-*.
+   La clase .semaforo-seg se conserva solo como hook del JS (querySelector)
+   y .semaforo-seg-count para la animación bump-num. */
 .progreso-panel {
     background: var(--bg-card);
     border-radius: var(--radius-lg);
-    padding: 20px 22px;
+    padding: 14px 16px;
     margin-bottom: 18px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
     border: 1px solid rgba(0,0,0,0.04);
@@ -125,66 +151,68 @@ body {
 .semaforo-barra {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+    gap: 10px;
     width: 100%;
 }
 
-/* Tarjeta por estado — fondo pintado completo, contenido centrado */
-.semaforo-seg {
+/* Tarjeta compacta del panel — fondo pintado completo, contenido centrado */
+.semaforo-panel-card {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 6px;
     border: 1.5px solid transparent;
-    border-radius: 16px;
-    padding: 26px 16px 22px;
-    min-height: 126px;
+    border-radius: 12px;
+    padding: 16px 12px 14px;
+    min-height: 88px;
     cursor: pointer;
     font: inherit;
     text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-/* Tonos suaves y elegantes por estado (gris, sage, ámbar, coral) */
-.semaforo-seg-sin      { background: var(--sem-sin-surface); color: var(--sem-sin-text); }
-.semaforo-seg-verde    { background: var(--sem-verde-surface); color: var(--sem-verde-text); }
-.semaforo-seg-amarillo { background: var(--sem-amarillo-surface); color: var(--sem-amarillo-text); }
-.semaforo-seg-rojo     { background: var(--sem-rojo-surface); color: var(--sem-rojo-text); }
+/* Tonos suaves del panel — identidad clara por estado */
+.semaforo-panel-sin      { background: var(--sem-panel-sin-surface); color: var(--sem-panel-sin-text); }
+.semaforo-panel-verde    { background: var(--sem-panel-verde-surface); color: var(--sem-panel-verde-text); }
+.semaforo-panel-amarillo { background: var(--sem-panel-amarillo-surface); color: var(--sem-panel-amarillo-text); }
+.semaforo-panel-rojo     { background: var(--sem-panel-rojo-surface); color: var(--sem-panel-rojo-text); }
 
 /* Hover — elevación ligera + sombra muy suave */
-.semaforo-seg:hover {
+.semaforo-panel-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
 }
 
 /* Seleccionado — borde más marcado + pequeña elevación */
-.semaforo-seg.active {
+.semaforo-panel-card.active {
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.1);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
 }
 
-.semaforo-seg-sin.active      { border-color: var(--sem-sin); }
-.semaforo-seg-verde.active    { border-color: var(--sem-verde); }
-.semaforo-seg-amarillo.active { border-color: var(--sem-amarillo); }
-.semaforo-seg-rojo.active     { border-color: var(--sem-rojo); }
+.semaforo-panel-sin.active      { border-color: var(--sem-panel-sin); }
+.semaforo-panel-verde.active    { border-color: var(--sem-panel-verde); }
+.semaforo-panel-amarillo.active { border-color: var(--sem-panel-amarillo); }
+.semaforo-panel-rojo.active     { border-color: var(--sem-panel-rojo); }
 
-.semaforo-seg.is-empty {
+.semaforo-panel-card.is-empty {
     opacity: 0.45;
 }
 
-/* Número protagonista — arriba, centrado */
+/* Número protagonista — arriba, centrado (hook JS: .semaforo-seg-count) */
 .semaforo-seg-count {
-    font-size: 42px;
+    font-size: 30px;
     font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
 }
 
 /* Etiqueta — debajo del número */
-.semaforo-seg-label {
-    font-size: 13px;
+.semaforo-panel-label {
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.01em;
     opacity: 0.85;
@@ -192,7 +220,7 @@ body {
 }
 
 /* Accesibilidad — foco visible */
-.semaforo-seg:focus-visible {
+.semaforo-panel-card:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
@@ -204,13 +232,13 @@ body {
 }
 
 .semaforo-clear {
-    margin-top: 16px;
+    margin-top: 12px;
     border: 1px solid var(--border);
     background: transparent;
     color: var(--text-muted);
     border-radius: 999px;
-    padding: 7px 16px;
-    font-size: 12px;
+    padding: 6px 14px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -295,21 +323,22 @@ body {
     transition: box-shadow 0.25s ease, transform 0.2s ease, background 0.3s ease;
 }
 
-/* Subtle gradient backgrounds for status — paleta suave y elegante */
+/* Subtle gradient backgrounds for status — paleta SOLICITUDES (--sem-sol-*),
+   desacoplada del panel del semáforo (--sem-panel-*) */
 .sol-card.sol-semaforo-sin_clasificar {
-    background: linear-gradient(180deg, #e8ecf1 0%, #ffffff 100%);
+    background: linear-gradient(180deg, var(--sem-sol-sin-surface) 0%, #ffffff 100%);
 }
 
 .sol-card.sol-semaforo-verde {
-    background: linear-gradient(180deg, #d4e8da 0%, #ffffff 100%);
+    background: linear-gradient(180deg, var(--sem-sol-verde-surface) 0%, #ffffff 100%);
 }
 
 .sol-card.sol-semaforo-amarillo {
-    background: linear-gradient(180deg, #f0e2ca 0%, #ffffff 100%);
+    background: linear-gradient(180deg, var(--sem-sol-amarillo-surface) 0%, #ffffff 100%);
 }
 
 .sol-card.sol-semaforo-rojo {
-    background: linear-gradient(180deg, #f0d4d4 0%, #ffffff 100%);
+    background: linear-gradient(180deg, var(--sem-sol-rojo-surface) 0%, #ffffff 100%);
 }
 
 /* ===== CARD FLASH — Visible but elegant (V2) ===== */
@@ -377,17 +406,17 @@ body {
     transform: scale(1.3);
 }
 
-/* Pill color variants */
-.sol-semaforo-pill[data-val="sin_clasificar"] .sol-semaforo-pill-dot { background: var(--sem-sin); }
-.sol-semaforo-pill[data-val="verde"] .sol-semaforo-pill-dot { background: var(--sem-verde); }
-.sol-semaforo-pill[data-val="amarillo"] .sol-semaforo-pill-dot { background: var(--sem-amarillo); }
-.sol-semaforo-pill[data-val="rojo"] .sol-semaforo-pill-dot { background: var(--sem-rojo); }
+/* Pill color variants — paleta SOLICITUDES (--sem-sol-*) */
+.sol-semaforo-pill[data-val="sin_clasificar"] .sol-semaforo-pill-dot { background: var(--sem-sol-sin); }
+.sol-semaforo-pill[data-val="verde"] .sol-semaforo-pill-dot { background: var(--sem-sol-verde); }
+.sol-semaforo-pill[data-val="amarillo"] .sol-semaforo-pill-dot { background: var(--sem-sol-amarillo); }
+.sol-semaforo-pill[data-val="rojo"] .sol-semaforo-pill-dot { background: var(--sem-sol-rojo); }
 
 /* Active pill */
-.sol-semaforo-pill[data-val="sin_clasificar"].active { background: var(--sem-sin-bg); color: var(--sem-sin-text); border-color: var(--sem-sin-surface); }
-.sol-semaforo-pill[data-val="verde"].active { background: var(--sem-verde-bg); color: var(--sem-verde-text); border-color: var(--sem-verde-surface); }
-.sol-semaforo-pill[data-val="amarillo"].active { background: var(--sem-amarillo-bg); color: var(--sem-amarillo-text); border-color: var(--sem-amarillo-surface); }
-.sol-semaforo-pill[data-val="rojo"].active { background: var(--sem-rojo-bg); color: var(--sem-rojo-text); border-color: var(--sem-rojo-surface); }
+.sol-semaforo-pill[data-val="sin_clasificar"].active { background: var(--sem-sol-sin-bg); color: var(--sem-sol-sin-text); border-color: var(--sem-sol-sin-surface); }
+.sol-semaforo-pill[data-val="verde"].active { background: var(--sem-sol-verde-bg); color: var(--sem-sol-verde-text); border-color: var(--sem-sol-verde-surface); }
+.sol-semaforo-pill[data-val="amarillo"].active { background: var(--sem-sol-amarillo-bg); color: var(--sem-sol-amarillo-text); border-color: var(--sem-sol-amarillo-surface); }
+.sol-semaforo-pill[data-val="rojo"].active { background: var(--sem-sol-rojo-bg); color: var(--sem-sol-rojo-text); border-color: var(--sem-sol-rojo-surface); }
 
 /* Active pill breathing */
 .sol-semaforo-pill.active .sol-semaforo-pill-dot {
@@ -412,19 +441,20 @@ body {
     opacity: 1;
 }
 
-.semaforo-fly.sin_clasificar { background: var(--sem-sin); }
-.semaforo-fly.verde { background: var(--sem-verde); }
-.semaforo-fly.amarillo { background: var(--sem-amarillo); }
-.semaforo-fly.rojo { background: var(--sem-rojo); }
+/* Fly particle — colores del PANEL (--sem-panel-*) */
+.semaforo-fly.sin_clasificar { background: var(--sem-panel-sin); }
+.semaforo-fly.verde { background: var(--sem-panel-verde); }
+.semaforo-fly.amarillo { background: var(--sem-panel-amarillo); }
+.semaforo-fly.rojo { background: var(--sem-panel-rojo); }
 
-/* Bar segment bump + count pop */
-.semaforo-seg.bump {
+/* Bar segment bump + count pop — .semaforo-panel-card recibe la clase .bump del JS */
+.semaforo-panel-card.bump {
     animation: semaforo-bump 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes semaforo-bump {
     0% { transform: scale(1); }
-    30% { transform: scale(1.06); }
+    30% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
 
@@ -434,7 +464,7 @@ body {
 
 @keyframes semaforo-num-bump {
     0% { transform: scale(1); }
-    30% { transform: scale(1.25); }
+    30% { transform: scale(1.22); }
     100% { transform: scale(1); }
 }
 
@@ -1565,20 +1595,20 @@ body {
 
     .semaforo-barra {
         grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        gap: 8px;
     }
 
-    .semaforo-seg {
-        padding: 20px 12px 18px;
-        min-height: 108px;
+    .semaforo-panel-card {
+        padding: 14px 10px 12px;
+        min-height: 76px;
     }
 
     .semaforo-seg-count {
-        font-size: 34px;
+        font-size: 26px;
     }
 
-    .semaforo-seg-label {
-        font-size: 12px;
+    .semaforo-panel-label {
+        font-size: 10px;
     }
 
     .sol-semaforo-pills {

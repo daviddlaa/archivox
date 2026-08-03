@@ -1,141 +1,173 @@
 # 🎨 Feature: Rediseño del Indicador de Estado (Semáforo) de Campañas
 
-**Versión:** 3.0  
-**Fecha:** Agosto 2026  
+**Versión:** 6.0
+**Fecha:** Agosto 2026
 **Estado:** Implementado ✅
 
 ---
 
 ## 📋 Resumen
 
-Rediseño completo del indicador de estado visual (semáforo) utilizado en las campañas de gestión por lotes. El sistema evolucionó desde un diseño industrial hasta un estilo premium inspirado en Apple Wallet, Linear y Notion.
+Rediseño completo del panel de estado visual (semáforo) utilizado en las campañas de gestión por lotes (**desktop**). El componente evolucionó desde bloques industriales hasta un conjunto de **tarjetas estadísticas premium compactas** completamente pintadas con tonos suaves, inspirado en Apple Wallet, Apple Reminders, Notion, Linear y Arc Browser.
 
-**V3 (Actual):** Gradiente sutil en tarjetas + bloques horizontales con números + chips integrados con observación.
-
----
-
-## 🎯 Problemas del Diseño Original
-
-| Problema | Descripción |
-|----------|-------------|
-| **Border-left industrial** | Borde vertical de 5px rompía la armonía visual de la tarjeta |
-| **Colores saturados** | `#86efac`, `#fde047`, `#fca5a5` parecían alertas permanentes |
-| **Chips de texto grandes** | 4 botones por tarjeta robaban demasiado espacio vertical |
-| **Gradientes intensos** | Fondos degradados saturados eran visualmente pesados |
-| **Animación imperceptible** | Flash casi invisible al hacer scroll rápido |
-| **Falta de integración** | El componente parecía agregado posteriormente |
+**V6 (Actual):** Tarjetas compactas por estado (~30% más pequeñas que V5), colores mejor diferenciados y **paletas CSS totalmente desacopladas** del componente de solicitudes (modificable sin efectos colaterales).
 
 ---
 
-## ✅ Solución Implementada: Opción A (Apple Wallet / Linear)
+## 🎯 Historia del Diseño
 
-### 1. Nueva Paleta de Colores (iOS-Style, Muted)
+| Versión | Descripción | Problemas |
+|---------|-------------|-----------|
+| **Original** | Border-left industrial de 5px, colores saturados, chips grandes | Rompía la armonía visual, parecía alerta permanente |
+| **V2** | Banda horizontal 4px en la parte superior de la tarjeta | Banda decorativa, colores aún saturados |
+| **V3** | Gradiente sutil + bloques horizontales con dot y número + chips integrados | El panel seguía pareciendo un bloque administrativo |
+| **V4** | Colores vivos de semáforo real + banda superior de 8px | Colores saturados, banda y puntos sobraban |
+| **V5** | Tarjetas premium pintadas con tonos suaves | Tarjetas demasiado grandes; rojo y amarillo poco diferenciados; paleta compartida con las solicitudes (efectos colaterales) |
+| **V6 (Actual)** | Tarjetas compactas, colores diferenciados, paletas desacopladas | — |
 
-| Estado | Color HEX | Nombre | Uso |
-|--------|-----------|--------|-----|
-| Sin clasificar | `#94a3b8` | Cool Gray | Punto, segmento de barra, banda superior |
-| Verde | `#6b9e78` | Sage Green | Punto, segmento de barra, banda superior |
-| Amarillo | `#c5975b` | Warm Amber | Punto, segmento de barra, banda superior |
-| Rojo | `#c27070` | Soft Coral | Punto, segmento de barra, banda superior |
+---
 
-**Variantes por estado:**
-- `--sem-{color}`: Color principal del punto
-- `--sem-{color}-bg`: Fondo del pill activo
-- `--sem-{color}-surface`: Borde del pill activo
-- `--sem-{color}-text`: Texto del pill activo
+## ✅ Solución Implementada (V6)
 
-### 2. Tarjetas de Solicitud — Subtle Gradient Background (V3)
+### 1. Encabezado Eliminado
 
-**ANTES (V2):** Banda horizontal 4px en la parte superior
+Se eliminó completamente:
 
-**AHORA (V3):** Degradado sutil en toda la tarjeta
+- ❌ El label **"Semáforo de la campaña"**
+- ❌ El contador **"Total: XX"**
+
+El usuario entiende el contexto por la propia pantalla. El contador total se conserva **oculto** en el DOM (`#total-solicitudes`, `display:none`) para no romper el JS existente.
+
+### 2. Tarjetas Completamente Pintadas (sin banda) y Desacopladas
+
+Se eliminó la **banda superior de color** (`::before`). Cada tarjeta está **completamente pintada** con tonos suaves y elegantes (no saturados), con **identidad clara por estado**:
+
+| Estado | Fondo (surface) | Texto | Acento (borde activo) | Nombre del tono |
+|--------|-----------------|-------|------------------------|-----------------|
+| Sin clasificar | `#eceff3` | `#4b5563` | `#94a3b8` | Gris neutro |
+| Verde | `#d8e9de` | `#2f6b45` | `#6b9e78` | Verde salvia |
+| Amarillo | `#f6e7c4` | `#7c5a22` | `#d3a437` | Ámbar dorado |
+| Rojo | `#f2d2cc` | `#a03d35` | `#cf6657` | Coral / terracota |
+
+**Diferenciación corregida:** En V5 el rojo se confundía con un amarillo oscuro. En V6 el amarillo es **dorado-crema** (`#f6e7c4`) y el rojo es **coral/terracota rosado** (`#f2d2cc`); ambos acentos (`#d3a437` vs `#cf6657`) y textos (`#7c5a22` vs `#a03d35`) también se distinguen claramente.
+
+### 3. Paletas CSS Desacopladas (sin efectos colaterales)
+
+**Problema detectado en V5:** el panel y las tarjetas de solicitud compartían las mismas variables `--sem-*`, por lo que modificar los colores del panel alteraba también las solicitudes.
+
+**Solución V6:** dos paletas independientes en `:root` de `gestion-lote.css`:
+
+| Paleta | Variables | Uso | Al cambiar... |
+|--------|-----------|-----|---------------|
+| **Panel del semáforo** | `--sem-panel-*` (`-surface`, `-text`, acento, `-bg`) | `.semaforo-panel-*` (tarjetas del panel), `.semaforo-fly` | No afecta a las solicitudes |
+| **Solicitudes** | `--sem-sol-*` (`-surface`, `-text`, acento, `-bg`) | `.sol-card.sol-semaforo-*` (gradientes), `.sol-semaforo-pill*` (pills) | No afecta al panel |
+
+Reglas CSS exclusivas por componente (sin selectores compartidos entre ambos):
+
+- **Panel:** `.semaforo-panel-card`, `.semaforo-panel-{sin,verde,amarillo,rojo}`, `.semaforo-panel-label`
+- **Solicitudes:** `.sol-semaforo-*`, `.sol-semaforo-pill*` (sin cambios visuales respecto a V5)
+
+### 4. Diseño Interno de las Tarjetas (compactas)
+
+Cada estado se ve como una **tarjeta rectangular con esquinas redondeadas** (12px), ~30% más pequeña que en V5 (sin perder legibilidad):
+
+```
+┌───────────────┐
+│               │
+│      63       │  ← Número protagonista (30px, centrado)
+│               │
+│ Sin clasificar│  ← Etiqueta debajo (11px)
+└───────────────┘
+```
+
+**Reglas:**
+- ✅ El número va **arriba** y es el protagonista visual
+- ✅ Centrado horizontal y verticalmente (flex column)
+- ✅ El texto va **debajo** (con `white-space: nowrap` para no partirse)
+- ✅ Sin puntos de color al lado del texto
+- ✅ Sin líneas decorativas
+- ✅ Espaciado equilibrado (`gap: 6px`)
 
 ```css
-.sol-card.sol-semaforo-verde {
-    background: linear-gradient(180deg, #f0f7f2 0%, #ffffff 100%);
-}
-
-.sol-card.sol-semaforo-amarillo {
-    background: linear-gradient(180deg, #fdf6ed 0%, #ffffff 100%);
-}
-
-.sol-card.sol-semaforo-rojo {
-    background: linear-gradient(180deg, #fdf0f0 0%, #ffffff 100%);
+.semaforo-panel-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1.5px solid transparent;
+    border-radius: 12px;
+    padding: 16px 12px 14px;
+    min-height: 88px;
+    text-align: center;
+    user-select: none;
 }
 ```
 
-### 3. Bloques Horizontales de Estado (V3)
+### 5. Cuadrícula Uniforme
 
-**ANTES (V2):** Barra de distribución de 8px
+Las cuatro tarjetas comparten **exactamente** el mismo tamaño:
 
-**AHORA (V3):** Bloques horizontales con label, dot y número
+- Mismo ancho (`grid-template-columns: repeat(4, 1fr)`)
+- Misma altura (`min-height: 88px` — se iguala por la cuadrícula)
+- Mismo radio de borde (`12px`)
+- Mismo padding (`16px 12px 14px`)
+- Misma separación (`gap: 10px`)
 
 ```css
 .semaforo-barra {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 10px;
-}
-
-.semaforo-seg {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 10px 14px;
+    width: 100%;
 }
 ```
 
-**Características:**
-- 4 bloques iguales en cuadrícula
-- Cada bloque: dot + label + número
-- Borde sutil, esquinas redondeadas
-- Hover: elevación con sombra
-- Activo: fondo coloreado + borde coloreado
+### 6. Interacción
 
-### 4. Chips Integrados con Observación (V3)
+Las tarjetas **siguen siendo botones de filtro** (sin cambios de JS).
 
-**ANTES (V2):** Chips con label "Semáforo:" separados
+| Estado | Efecto |
+|--------|--------|
+| **Hover** | Elevación ligera `translateY(-2px)` + sombra muy suave `0 6px 14px rgba(15,23,42,.08)` |
+| **Seleccionado** (`.active`) | Borde más marcado del color del estado + pequeña elevación `translateY(-1px)` + sombra |
+| **Vacío** (`.is-empty`) | Opacidad `0.45` |
+| **Foco** (`:focus-visible`) | Outline del color primario (accesibilidad) |
 
-**AHORA (V3):** Chips integrados directamente después de la observación
+Transiciones fluidas de `0.2s` — sin animaciones exageradas.
 
-```html
-<div class="sol-observacion">No quiere nada, respondió la llamada</div>
-<div class="sol-semaforo-pills">
-    <button class="sol-semaforo-pill active" data-val="verde">
-        <span class="sol-semaforo-pill-dot"></span>
-        Verde
-    </button>
-    <!-- ... más pills -->
-</div>
-```
+### 7. Botón "Ver todas"
 
-**Características (V3):**
-- Sin label "Semáforo:" (integrado visualmente)
-- Chips más compactos (`border-radius: 5px`)
-- Observación sin fondo (solo borde superior sutil)
-- Los chips aparecen justo después de la observación
+El botón `#btn-semaforo-todos` ("Ver todas") se reubicó **debajo de las tarjetas**, centrado, y solo es visible cuando hay un filtro activo (lo controla el JS existente vía `display: inline-flex`).
 
-### 5. Animaciones Premium (V3)
+### 8. Elementos Eliminados
 
-| Animación | Descripción | Duración |
-|-----------|-------------|----------|
-| **Breathing Glow** | Halo en el punto del chip activo | 2s infinite |
-| **Card Flash** | Sombra + borde al cambiar estado | 0.8s |
-| **Block Hover** | Elevación con sombra en bloques | 0.2s |
-| **Fly Particle** | Partícula animada hacia el panel | 0.6s |
-| **Chip Hover** | Elevación con sombra al pasar mouse | 0.2s |
+Se eliminó toda decoración que ya no aportaba valor:
+
+- ❌ Banda superior de color (`::before`)
+- ❌ Puntos de color (`semaforo-seg-dot`)
+- ❌ Leyenda inferior (`.semaforo-legend`)
+- ❌ Encabezado con label y total
+- ❌ Estilos heredados que no aplicaban
+- ❌ Variables `--sem-*` compartidas con las solicitudes (reemplazadas por `--sem-panel-*` / `--sem-sol-*`)
+
+### 9. Coherencia Visual Mantenida
+
+- Ambos componentes (panel y solicitudes) comparten la **misma filosofía de diseño** (tonos suaves, bordes redondeados, sombras sutiles).
+- Las **tarjetas de solicitud** (`.sol-card.sol-semaforo-*`) conservan su degradado suave original (paleta `--sem-sol-*`), **sin verse afectadas** por cambios en el panel.
+- Los **pills** (`.sol-semaforo-pill`) usan la paleta `--sem-sol-*`.
+- Las **partículas voladoras** (`.semaforo-fly`) usan la paleta `--sem-panel-*`.
 
 ---
 
-## 📁 Archivos Modificados
+## 📁 Archivos Modificados (V6)
 
 | Archivo | Cambios |
 |---------|---------|
-| `public/css/gestion-lote.css` | Gradiente sutil, bloques horizontales, chips integrados |
-| `public/desktop/gestion-lote.html` | Bloques con dot + label + count |
-| `public/desktop/js/gestion-lote.js` | Chips sin label, barra actualizada |
+| `public/css/gestion-lote.css` | Dos paletas desacopladas (`--sem-panel-*` / `--sem-sol-*`), tarjetas compactas `.semaforo-panel-*`, colores diferenciados, `user-select: none` |
+| `public/desktop/gestion-lote.html` | Clases exclusivas del panel (`semaforo-panel-card`, `semaforo-panel-{sin,verde,amarillo,rojo}`, `semaforo-panel-label`) manteniendo los hooks del JS |
+
+> **Nota:** El JS (`public/desktop/js/gestion-lote.js`) **no fue modificado**. Los ids y clases que usa se conservan intactos: `#count-*`, `.semaforo-seg[data-semaforo]`, `#btn-semaforo-todos`, `#total-solicitudes`, `.semaforo-seg-count`, animaciones `bump`/`bump-num`, `.semaforo-fly.{estado}`. `.semaforo-seg` queda como **hook exclusivo del JS** (sin reglas CSS propias).
 
 ---
 
@@ -143,80 +175,58 @@ Rediseño completo del indicador de estado visual (semáforo) utilizado en las c
 
 | Criterio | Implementación |
 |----------|----------------|
-| **Contraste** | Colores sobre fondo claro con buena legibilidad |
-| **Roles ARIA** | `role="group"` y `aria-label` en barra y pills |
-| **Tooltips** | Todos los elementos interactivos tienen `title` |
-| **No solo color** | Punto + texto + fondo proporcionan información redundante |
-| **Tamaño mínimo** | Pills tienen `min-height` adecuado para touch |
+| **Contraste** | Texto oscuro (`-text`) sobre fondos suaves con excelente legibilidad |
+| **Roles ARIA** | `role="group"` y `aria-label` en la barra de tarjetas |
+| **Tooltips** | Todas las tarjetas tienen `title` |
+| **No solo color** | Número + etiqueta + fondo proporcionan información redundante |
+| **Foco visible** | `:focus-visible` con outline del color primario |
+| **Selección** | `user-select: none` evita seleccionar texto al hacer clic rápido |
 
 ---
 
 ## 🧪 Testing Recomendado
 
-1. **Visual:** Verificar que los colores se ven correctos en diferentes monitores
-2. **Interacción:** Cambiar estados y verificar animaciones suaves
-3. **Filtrado:** Probar filtro por semáforo en la barra superior
-4. **Responsive:** Verificar en pantallas pequeñas (la leyenda se adapta)
-5. **Accesibilidad:** Navegar con teclado y verificar tooltips
+1. **Visual:** Verificar que las 4 tarjetas se ven uniformes, compactas y con colores claramente diferenciados (ámbar dorado vs coral)
+2. **Desacoplamiento:** Cambiar un color `--sem-panel-*` y verificar que las tarjetas de solicitud NO cambian; al revés con `--sem-sol-*`
+3. **Interacción:** Hover (elevación) y selección (borde marcado) en cada tarjeta
+4. **Filtrado:** Clic en tarjeta filtra; "Ver todas" aparece debajo y limpia el filtro
+5. **Responsive:** En pantallas <768px las tarjetas pasan a 2 columnas (número 26px)
+6. **Accesibilidad:** Navegar con teclado y verificar tooltips
+7. **Sin regresión JS:** Cambiar semáforo desde una tarjeta de solicitud (fly particle + bump + conteos)
 
 ---
 
 ## 📊 Comparación Visual
 
-### Original (antes del V1)
+### V5 (tarjetas grandes, colores poco diferenciados)
 ```
-┌─────────────────────────────────┐
-│ ███ #12345 | 🔥 Destacar | Pendiente │  ← Border-left industrial
-│ ─────────────────────────────── │
-│ Nombre del Cliente              │
-│ 📱 0991234567 | 🏷️ Segmento   │
-│ ─────────────────────────────── │
-│ [Sin clasificar] [Verde] [Amarillo] [Rojo]  ← 4 chips grandes
-│ ─────────────────────────────── │
-│ 📋 Seguimiento | 💬 Directo    │
-└─────────────────────────────────┘
-```
-
-### V2 (banda 4px)
-```
-┌─────────────────────────────────┐
-│ ████████████████████████████████│  ← Banda 4px
-│ #12345 | 🔥 Destacar | Pendiente │
-│ Nombre del Cliente              │
-│ 📱 0991234567 | 🏷️ Segmento   │
-│ 📝 Observación...               │
-│ Semáforo:                       │
-│ [● Sin Clasificar] [● Verde]   │
-│ [● Amarillo] [● Rojo]          │
-│ 📋 Seguimiento | 💬 Directo    │
-└─────────────────────────────────┘
+┌─────────────────┬─────────────────┬─────────────────┬─────────────────┐
+│                 │                 │                 │                 │
+│       63        │       0         │       1         │       1         │  ← Número 42px
+│                 │                 │                 │                 │
+│  Sin clasificar │      Verde      │    Amarillo     │      Rojo       │
+└─────────────────┴─────────────────┴─────────────────┴─────────────────┘
+    (gris claro)     (sage)         (ámbar suave)   (rojo coral — se     │
+                                                       confundía con el   │
+                                                       amarillo)          │
 ```
 
-### V3 (actual — premium)
+### V6 (actual — tarjetas compactas, paletas desacopladas)
 ```
-┌─────────────────────────────────┐
-│ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│  ← Gradiente sutil
-│ #12345 | 🔥 Destacar | Pendiente │
-│ Nombre del Cliente              │
-│ 📱 0991234567 | 🏷️ Segmento   │
-│ 📝 No quiere nada...            │
-│ [● Sin Clasificar] [● Verde]   │  ← Chips integrados
-│ [● Amarillo] [● Rojo]          │
-│ 📋 Seguimiento | 💬 Directo    │
-└─────────────────────────────────┘
-
-Panel superior:
-┌──────────┬──────────┬──────────┬──────────┐
-│ ● Sin    │ ● Verde  │ ● Amar.  │ ● Rojo   │
-│   63     │   0      │   1      │   1      │
-└──────────┴──────────┴──────────┴──────────┘
+┌───────────────┬───────────────┬───────────────┬───────────────┐
+│               │               │               │               │
+│      63       │      0        │      1        │      1        │  ← Número 30px
+│               │               │               │               │
+│ Sin clasificar│    Verde      │   Amarillo    │     Rojo      │  ← Etiqueta 11px
+└───────────────┴───────────────┴───────────────┴───────────────┘
+    (gris neutro)   (sage)      (ámbar dorado)   (coral)  ← distinguibles
 ```
 
 ---
 
 ## 🔗 Relacionado
 
-- **Módulo:** Gestión por Lotes (`/gestion-lote`)
+- **Módulo:** Gestión por Lotes (`/gestion-lote`) — Desktop
 - **Controlador:** `gestionesMaestro.controller.js`
 - **API:** `PUT /api/gestiones-maestro/:id/solicitudes/:solicitud_id/semaforo`
 
@@ -224,9 +234,11 @@ Panel superior:
 
 ## 📝 Notas para Desarrolladores
 
-1. **Variables CSS:** Todas las variables del semáforo están en `:root` al inicio de `gestion-lote.css`
-2. **Clases CSS:** `.sol-semaforo-pills`, `.sol-semaforo-pill`, `.sol-semaforo-pill-dot`
-3. **Gradiente:** Los fondos degradados se aplican directamente a `.sol-card.sol-semaforo-*`
-4. **Bloques:** La barra usa `display: grid` con `grid-template-columns: repeat(4, 1fr)`
-5. **Responsive:** En móvil, los bloques se convierten a 2 columnas
-6. **Observación:** Sin fondo, solo borde superior sutil y texto muted
+1. **Variables CSS:** Dos paletas en `:root` de `gestion-lote.css` — `--sem-panel-*` (panel) y `--sem-sol-*` (solicitudes). **No las mezcles.**
+2. **Clases CSS del panel:** `.semaforo-barra`, `.semaforo-panel-card`, `.semaforo-panel-label`, `.semaforo-clear`
+3. **Clases por estado del panel:** `.semaforo-panel-sin`, `.semaforo-panel-verde`, `.semaforo-panel-amarillo`, `.semaforo-panel-rojo`
+4. **Hooks del JS (no eliminar):** `.semaforo-seg` (en cada botón, junto a `semaforo-panel-card`), `.semaforo-seg-count` (span del número, estilado por CSS), `data-semaforo`, `#count-*`, `#btn-semaforo-todos`, `#total-solicitudes`
+5. **Selección:** `.semaforo-panel-card.active` (border del color) e `.is-empty` (opacidad) los gestiona el JS existente
+6. **Animaciones:** `.semaforo-panel-card.bump` (escala de tarjeta) y `.semaforo-seg-count.bump-num` (pop del número) las dispara el JS
+7. **Responsive:** En pantallas <768px, las tarjetas pasan a 2 columnas (padding 14px 10px 12px, min-height 76px, número 26px, etiqueta 10px)
+8. **Mobile:** El móvil (`public/movil/gestion-lote.html`) no tiene este panel; el semáforo es exclusivo de desktop

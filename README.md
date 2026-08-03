@@ -387,4 +387,4 @@ Ver `docs/README.md` para documentacion completa del sistema (1375+ lineas), inc
 
 | Feature | Fecha | Documento |
 |---------|-------|-----------|
-| Rediseño del Indicador de Estado (Semáforo) v3 | Agosto 2026 | `docs/feature-rediseño-semaforo-campañas.md` |
+| Rediseño del Indicador de Estado (Semáforo) v6 | Agosto 2026 | `docs/feature-rediseño-semaforo-campañas.md` |

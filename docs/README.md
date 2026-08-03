@@ -196,7 +196,7 @@ ARCHIVOX/
 │
 ├── docs/                           # Documentación del sistema
 │   ├── README.md                   # Este archivo
-│   ├── feature-rediseño-semaforo-campañas.md  # Rediseño del indicador de estado v3 (Agosto 2026)
+│   ├── feature-rediseño-semaforo-campañas.md  # Rediseño del indicador de estado v6 (Agosto 2026)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
 │       ├── informe-auditoria-flujo-multi-equipo.md
@@ -970,7 +970,7 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - Asignar agentes a campañas
 - Visualizar solicitudes de una campaña
 - Gestionar solicitudes en lote dentro de una campaña
-- **Indicador de Estado (Semáforo) v3:** Sistema visual premium para clasificar solicitudes con 4 estados. Incluye gradiente sutil en tarjetas, bloques horizontales con números y chips integrados con observación. Ver `docs/feature-rediseño-semaforo-campañas.md` para documentación completa (Agosto 2026).
+- **Indicador de Estado (Semáforo) v6:** Panel de tarjetas premium compactas por estado (desktop) con tonos suaves diferenciados (gris neutro, sage, ámbar dorado, coral), número protagonista centrado y etiqueta debajo; sin encabezado ni decoraciones. Paletas CSS totalmente desacopladas: `--sem-panel-*` para el panel y `--sem-sol-*` para las tarjetas de solicitud. Ver `docs/feature-rediseño-semaforo-campañas.md` para documentación completa (Agosto 2026).
 
 ### 11.6 Relaciones
 
