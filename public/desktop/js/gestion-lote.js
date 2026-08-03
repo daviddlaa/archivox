@@ -444,9 +444,72 @@ function setFiltroSemaforo(valor) {
     renderizarSolicitudes(todasLasSolicitudes);
 }
 
-async function cambiarSemaforoSolicitud(idSolicitud, semaforo) {
+function animarSemaforoHaciaBarra(originEl, valorSemaforo) {
+    try {
+        var target = document.querySelector('.semaforo-seg[data-semaforo="' + valorSemaforo + '"]');
+        if (!originEl || !target) {
+            if (target) {
+                target.classList.remove('bump');
+                void target.offsetWidth;
+                target.classList.add('bump');
+                var c = target.querySelector('.semaforo-seg-count');
+                if (c) {
+                    c.classList.remove('bump-num');
+                    void c.offsetWidth;
+                    c.classList.add('bump-num');
+                }
+            }
+            return;
+        }
+
+        var from = originEl.getBoundingClientRect();
+        var to = target.getBoundingClientRect();
+        var fly = document.createElement('div');
+        fly.className = 'semaforo-fly ' + valorSemaforo;
+        var startX = from.left + from.width / 2 - 6;
+        var startY = from.top + from.height / 2 - 6;
+        var endX = to.left + to.width / 2 - 6;
+        var endY = to.top + to.height / 2 - 6;
+        fly.style.left = '0';
+        fly.style.top = '0';
+        fly.style.transform = 'translate(' + startX + 'px,' + startY + 'px) scale(1)';
+        document.body.appendChild(fly);
+
+        requestAnimationFrame(function() {
+            fly.style.transform = 'translate(' + endX + 'px,' + endY + 'px) scale(0.45)';
+            fly.style.opacity = '0.15';
+        });
+
+        setTimeout(function() {
+            if (fly.parentNode) fly.parentNode.removeChild(fly);
+            target.classList.remove('bump');
+            void target.offsetWidth;
+            target.classList.add('bump');
+            var countEl = target.querySelector('.semaforo-seg-count');
+            if (countEl) {
+                countEl.classList.remove('bump-num');
+                void countEl.offsetWidth;
+                countEl.classList.add('bump-num');
+            }
+        }, 560);
+    } catch (e) {
+        console.warn('[animarSemaforoHaciaBarra]', e);
+    }
+}
+
+async function cambiarSemaforoSolicitud(idSolicitud, semaforo, eventRef) {
     if (!gestionId) return;
     var valor = normalizarSemaforo(semaforo);
+    var originBtn = (eventRef && eventRef.currentTarget) || (typeof event !== 'undefined' ? event && event.target : null);
+
+    var prev = null;
+    for (var p = 0; p < todasLasSolicitudes.length; p++) {
+        if (String(todasLasSolicitudes[p].id_solicitud) === String(idSolicitud)) {
+            prev = normalizarSemaforo(todasLasSolicitudes[p].semaforo);
+            break;
+        }
+    }
+    if (prev === valor) return;
 
     try {
         var response = await fetch(
@@ -472,6 +535,18 @@ async function cambiarSemaforoSolicitud(idSolicitud, semaforo) {
             if (String(solicitudes[j].id_solicitud) === String(idSolicitud)) {
                 solicitudes[j].semaforo = valor;
             }
+        }
+
+        if (originBtn) {
+            animarSemaforoHaciaBarra(originBtn, valor);
+            var card = originBtn.closest ? originBtn.closest('.sol-card') : null;
+            if (card) {
+                card.classList.remove('sol-semaforo-flash');
+                void card.offsetWidth;
+                card.classList.add('sol-semaforo-flash');
+            }
+        } else {
+            animarSemaforoHaciaBarra(null, valor);
         }
 
         if (data.semaforo_conteos) {
@@ -598,9 +673,9 @@ function renderizarSolicitudes(lista) {
         html += '<span class="sol-id">#' + sol.id_solicitud + '</span>';
         html += '<div class="sol-header-badges">';
         if (destacada) {
-            html += '<span class="sol-destacado-badge sol-destacado-badge-on" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 0)" title="Quitar destacado">🔥 Destacada</span>';
+            html += '<span class="sol-destacado-badge sol-destacado-badge-on" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 0, event)" title="Quitar destacado">🔥 Destacada</span>';
         } else {
-            html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1)" title="Destacar tarjeta">🔥 Destacar</span>';
+            html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1, event)" title="Destacar tarjeta">🔥 Destacar</span>';
         }
         html += '<span class="sol-estado" style="background:' + colorFondo + ';">' + estado + '</span>';
         html += '</div>';
@@ -629,15 +704,14 @@ function renderizarSolicitudes(lista) {
         for (var s = 0; s < SEMAFORO_ORDEN.length; s++) {
             var keyS = SEMAFORO_ORDEN[s];
             var activeCls = semaforo === keyS ? ' active' : '';
-            html += '<button type="button" class="sol-semaforo-btn' + activeCls + '" data-val="' + keyS + '" onclick="event.stopPropagation(); cambiarSemaforoSolicitud(\'' + sol.id_solicitud + '\', \'' + keyS + '\')" title="' + SEMAFORO_LABELS[keyS] + '">' + SEMAFORO_LABELS[keyS] + '</button>';
+            html += '<button type="button" class="sol-semaforo-btn' + activeCls + '" data-val="' + keyS + '" onclick="event.stopPropagation(); cambiarSemaforoSolicitud(\'' + sol.id_solicitud + '\', \'' + keyS + '\', event)" title="' + SEMAFORO_LABELS[keyS] + '">' + SEMAFORO_LABELS[keyS] + '</button>';
         }
         html += '</div>';
         
-        // Acciones
+        // Acciones (desktop: sin botón Llamar)
         html += '<div class="sol-acciones">';
         
         html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
-        html += '<button class="btn-accion btn-llamar-gl" onclick="llamarDesdeGestionLoteDesktop(\'' + escaparParaAtributo(sol.celular || '') + '\')">📞 Llamar</button>';
         html += "<button class=\"btn-accion btn-whatsapp-img\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
         
         if (gestionada) {
@@ -769,23 +843,55 @@ function abrirGestion(solicitudId, tipo) {
     crearModal(contenido);
 }
 
-// Alternar destacado de una solicitud
-async function toggleDestacado(solicitudId, nuevoEstado) {
+// Alternar destacado de una solicitud (solo badge; no cambia color de tarjeta)
+async function toggleDestacado(solicitudId, nuevoEstado, eventRef) {
+    var badgeEl = (eventRef && eventRef.currentTarget) || (typeof event !== 'undefined' && event ? event.target : null);
     try {
         var response = await fetch('/api/excel/solicitudes/' + solicitudId + '/destacar', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ destacado: nuevoEstado })
+            body: JSON.stringify({ destacado: Number(nuevoEstado) })
         });
         
-        var resultado = await response.json();
+        var resultado = await response.json().catch(function() { return {}; });
         
-        if (response.ok && !resultado.error) {
-            // Refrescar la lista
-            await cargarDatosGestion();
+        if (!response.ok || resultado.error) {
+            alert(resultado.error || 'No se pudo actualizar el destacado');
+            return;
         }
+
+        var val = Number(nuevoEstado) === 1 ? 1 : 0;
+        for (var i = 0; i < todasLasSolicitudes.length; i++) {
+            if (String(todasLasSolicitudes[i].id_solicitud) === String(solicitudId)) {
+                todasLasSolicitudes[i].destacado = val;
+            }
+        }
+        for (var j = 0; j < solicitudes.length; j++) {
+            if (String(solicitudes[j].id_solicitud) === String(solicitudId)) {
+                solicitudes[j].destacado = val;
+            }
+        }
+
+        renderizarSolicitudes(todasLasSolicitudes);
+
+        // Animación del badge recién pintado
+        setTimeout(function() {
+            var cards = document.querySelectorAll('.sol-card');
+            for (var c = 0; c < cards.length; c++) {
+                var idEl = cards[c].querySelector('.sol-id');
+                if (!idEl || idEl.textContent !== '#' + solicitudId) continue;
+                var badge = cards[c].querySelector('.sol-destacado-badge');
+                if (badge) {
+                    badge.classList.remove('pop');
+                    void badge.offsetWidth;
+                    badge.classList.add('pop');
+                }
+                break;
+            }
+        }, 30);
     } catch (error) {
         console.error('Error alternando destacado:', error);
+        alert('Error al actualizar el destacado');
     }
 }
 

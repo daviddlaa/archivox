@@ -269,40 +269,52 @@ body {
     padding: 14px 16px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
-    transition: all 0.2s ease;
+    transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.25s ease, transform 0.2s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 .sol-card:hover {
     box-shadow: var(--shadow-md);
 }
 
-.sol-card.gestionada {
-    border-left: 3px solid #22c55e;
-}
-
-.sol-card.pendiente {
-    border-left: 3px solid #f59e0b;
-}
-
-/* Semáforo en tarjetas (prioridad visual sobre borde gestionada/pendiente) */
+/* Semáforo: color de tarjeta completo (degradado visible) */
 .sol-card.sol-semaforo-sin_clasificar {
-    border-left: 4px solid #94a3b8;
-    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 40%);
+    border: 1px solid #cbd5e1;
+    border-left: 5px solid #64748b;
+    background: linear-gradient(145deg, #e2e8f0 0%, #f1f5f9 42%, #ffffff 100%);
+    box-shadow: 0 2px 10px rgba(100, 116, 139, 0.12);
 }
 
 .sol-card.sol-semaforo-verde {
-    border-left: 4px solid #16a34a;
-    background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 45%);
+    border: 1px solid #86efac;
+    border-left: 5px solid #16a34a;
+    background: linear-gradient(145deg, #86efac 0%, #bbf7d0 38%, #f0fdf4 72%, #ffffff 100%);
+    box-shadow: 0 2px 12px rgba(22, 163, 74, 0.16);
 }
 
 .sol-card.sol-semaforo-amarillo {
-    border-left: 4px solid #ca8a04;
-    background: linear-gradient(180deg, #fefce8 0%, #ffffff 45%);
+    border: 1px solid #fde047;
+    border-left: 5px solid #ca8a04;
+    background: linear-gradient(145deg, #fde047 0%, #fef08a 38%, #fefce8 72%, #ffffff 100%);
+    box-shadow: 0 2px 12px rgba(202, 138, 4, 0.16);
 }
 
 .sol-card.sol-semaforo-rojo {
-    border-left: 4px solid #dc2626;
-    background: linear-gradient(180deg, #fef2f2 0%, #ffffff 45%);
+    border: 1px solid #fca5a5;
+    border-left: 5px solid #dc2626;
+    background: linear-gradient(145deg, #fca5a5 0%, #fecaca 38%, #fef2f2 72%, #ffffff 100%);
+    box-shadow: 0 2px 12px rgba(220, 38, 38, 0.16);
+}
+
+.sol-card.sol-semaforo-flash {
+    animation: sol-semaforo-flash 0.45s ease;
+}
+
+@keyframes sol-semaforo-flash {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.015); filter: brightness(1.06); }
+    100% { transform: scale(1); filter: brightness(1); }
 }
 
 .sol-semaforo-btns {
@@ -313,22 +325,24 @@ body {
 }
 
 .sol-semaforo-btn {
-    border: 1px solid transparent;
+    border: 1px solid rgba(15, 23, 42, 0.08);
     border-radius: 999px;
-    padding: 4px 10px;
+    padding: 5px 11px;
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
     line-height: 1.2;
-    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 
 .sol-semaforo-btn:hover {
     transform: translateY(-1px);
+    filter: brightness(0.98);
 }
 
 .sol-semaforo-btn.active {
-    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.2);
+    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.28);
+    transform: scale(1.04);
 }
 
 .sol-semaforo-btn[data-val="sin_clasificar"] {
@@ -337,18 +351,56 @@ body {
 }
 
 .sol-semaforo-btn[data-val="verde"] {
-    background: #bbf7d0;
+    background: #4ade80;
     color: #14532d;
 }
 
 .sol-semaforo-btn[data-val="amarillo"] {
-    background: #fde68a;
+    background: #facc15;
     color: #713f12;
 }
 
 .sol-semaforo-btn[data-val="rojo"] {
-    background: #fecaca;
+    background: #f87171;
     color: #7f1d1d;
+}
+
+/* Partícula animada hacia la barra de semáforo */
+.semaforo-fly {
+    position: fixed;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 12000;
+    box-shadow: 0 0 10px rgba(0,0,0,0.18);
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.55s ease;
+    opacity: 1;
+}
+
+.semaforo-fly.sin_clasificar { background: #94a3b8; }
+.semaforo-fly.verde { background: #22c55e; }
+.semaforo-fly.amarillo { background: #eab308; }
+.semaforo-fly.rojo { background: #ef4444; }
+
+.semaforo-seg.bump {
+    animation: semaforo-bump 0.45s ease;
+}
+
+@keyframes semaforo-bump {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.06); filter: brightness(1.08); }
+    100% { transform: scale(1); filter: brightness(1); }
+}
+
+.semaforo-seg-count.bump-num {
+    animation: semaforo-count-bump 0.45s ease;
+}
+
+@keyframes semaforo-count-bump {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.25); }
+    100% { transform: scale(1); }
 }
 
 .sol-header {
@@ -906,16 +958,40 @@ body {
     padding: 24px;
 }
 
-.modal-gestion h2, .modal-ver h2 {
+/* Padding real para Modal compartido (.modal-content sin padding propio) */
+.modal-content > .modal-gestion,
+.modal-content > .modal-ver,
+.modal-content > .modal-eliminar,
+.modal-content > .modal-agregar-solicitudes,
+.modal-content > .modal-asignar,
+.modal-content > .modal-editar-campana {
+    padding: 24px 26px 22px;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.modal-gestion,
+.modal-ver,
+.modal-eliminar {
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.modal-gestion h2,
+.modal-ver h2 {
     margin-top: 0;
     color: var(--text-dark);
     margin-bottom: 16px;
+    padding-right: 8px;
     font-size: 18px;
+    line-height: 1.3;
 }
 
 .modal-info {
     background: #f8fafc;
-    padding: 12px;
+    padding: 14px 16px;
     border-radius: var(--radius-sm);
     margin-bottom: 16px;
 }
@@ -924,6 +1000,7 @@ body {
     margin: 6px 0;
     font-size: 13px;
     color: var(--text-dark);
+    line-height: 1.45;
 }
 
 .modal-form label {
@@ -956,7 +1033,14 @@ body {
     display: flex;
     gap: 10px;
     justify-content: flex-end;
-    margin-top: 16px;
+    margin-top: 18px;
+    padding-top: 4px;
+    flex-wrap: wrap;
+}
+
+.modal-gestion .btn-cerrar,
+.modal-ver .btn-cerrar {
+    margin-top: 8px;
 }
 
 .btn-cancelar {
@@ -997,11 +1081,14 @@ body {
 
 .modal-observacion {
     background: white;
-    padding: 10px;
+    padding: 12px 14px;
     border-radius: var(--radius-sm);
     margin-top: 8px;
     line-height: 1.5;
     font-size: 13px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    box-sizing: border-box;
 }
 
 .btn-cerrar {
@@ -1301,24 +1388,27 @@ body {
 .modal-advertencia {
     background: #fef3c7;
     border: 1px solid #f59e0b;
-    padding: 16px;
+    padding: 14px 16px;
     border-radius: 8px;
     margin-bottom: 16px;
 }
 
 .modal-advertencia p {
     font-weight: bold;
-    margin-bottom: 8px;
+    margin: 0 0 8px;
+    line-height: 1.45;
 }
 
 .modal-advertencia ul {
     margin: 0;
-    padding-left: 20px;
+    padding-left: 22px;
+    padding-right: 4px;
 }
 
 .modal-advertencia li {
-    margin: 4px 0;
+    margin: 6px 0;
     font-size: 13px;
+    line-height: 1.45;
 }
 
 .btn-eliminar {
@@ -1342,14 +1432,8 @@ body {
     cursor: not-allowed;
 }
 
-/* ===== TARJETA DESTACADA ===== */
-.sol-card.destacada {
-    border: 2px solid #f59e0b !important;
-    box-shadow: 0 0 0 1px #f59e0b, 0 4px 12px rgba(245, 158, 11, 0.15) !important;
-    background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%) !important;
-}
+/* Destacado: NO pisa el color del semáforo; solo el badge */
 
-/* Badge destacado en el header */
 .sol-header-badges {
     display: flex;
     gap: 8px;
@@ -1364,19 +1448,21 @@ body {
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
     user-select: none;
 }
 
 .sol-destacado-badge-on {
-    background: #fef3c7;
-    color: #92400e;
-    border: 1px solid #f59e0b;
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #78350f;
+    border: 1px solid #d97706;
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45);
+    animation: dest-pulse 1.8s ease-in-out infinite;
 }
 
 .sol-destacado-badge-on:hover {
-    background: #fde68a;
-    transform: scale(1.05);
+    filter: brightness(1.05);
+    transform: scale(1.06);
 }
 
 .sol-destacado-badge-off {
@@ -1389,6 +1475,21 @@ body {
     background: #e5e7eb;
     color: #6b7280;
     border-color: #d1d5db;
+}
+
+.sol-destacado-badge.pop {
+    animation: dest-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes dest-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.35); }
+    50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+}
+
+@keyframes dest-pop {
+    0% { transform: scale(0.86); }
+    45% { transform: scale(1.18); }
+    100% { transform: scale(1); }
 }
 
 /* ===== RESPONSIVE ===== */
