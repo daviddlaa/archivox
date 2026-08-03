@@ -10,36 +10,65 @@ var _esLider = false;
 var _equipoActual = null;
 var _agentesEquipo = [];
 
-// Objeto SidebarCampanas para manejar el toggle del sidebar
-var SidebarCampanas = {
-    isOpen: true,
-    
-    toggle: function() {
-        this.isOpen = !this.isOpen;
-        var sidebar = document.getElementById('sidebar-campañas');
-        var layout = document.querySelector('.layout');
-        
+// Popover de campañas en el header
+var CampanasPopover = {
+    isOpen: false,
+
+    toggle: function(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         if (this.isOpen) {
-            sidebar.classList.remove('oculto');
-            layout.classList.remove('sidebar-hidden');
+            this.close();
         } else {
-            sidebar.classList.add('oculto');
-            layout.classList.add('sidebar-hidden');
+            this.open();
         }
     },
-    
-    show: function() {
-        if (!this.isOpen) {
-            this.toggle();
+
+    open: function() {
+        var popover = document.getElementById('campañas-popover');
+        var selector = document.getElementById('campañas-selector');
+        var btn = document.getElementById('btn-campañas');
+        if (!popover || !selector) return;
+
+        popover.hidden = false;
+        selector.classList.add('open');
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+        this.isOpen = true;
+
+        var active = popover.querySelector('.campaña-card.active');
+        if (active && typeof active.scrollIntoView === 'function') {
+            active.scrollIntoView({ block: 'nearest' });
         }
     },
-    
-    hide: function() {
-        if (this.isOpen) {
-            this.toggle();
-        }
+
+    close: function() {
+        var popover = document.getElementById('campañas-popover');
+        var selector = document.getElementById('campañas-selector');
+        var btn = document.getElementById('btn-campañas');
+        if (!popover || !selector) return;
+
+        popover.hidden = true;
+        selector.classList.remove('open');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+        this.isOpen = false;
     }
 };
+
+document.addEventListener('click', function(e) {
+    if (!CampanasPopover.isOpen) return;
+    var selector = document.getElementById('campañas-selector');
+    if (selector && !selector.contains(e.target)) {
+        CampanasPopover.close();
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && CampanasPopover.isOpen) {
+        CampanasPopover.close();
+    }
+});
 
 // Obtener ID de la gestión de la URL
 function obtenerGestionId() {
@@ -51,18 +80,15 @@ function obtenerGestionId() {
 async function init() {
     console.log('[init] Iniciando carga de gestion-lote...');
     
-    // Primero cargar las campañas en el sidebar
     await cargarListaCampanas();
     console.log('[init] Campañas cargadas, verificando ID en URL...');
     
-    // Luego verificar si hay un ID en la URL
     gestionId = obtenerGestionId();
     console.log('[init] gestionId desde URL:', gestionId);
     
     if (gestionId) {
         console.log('[init] Cargando datos de gestión:', gestionId);
         await cargarDatosGestion();
-        // Marcar la campaña como activa
         marcarCampañaActiva(gestionId);
         console.log('[init] Carga completa');
     } else {
@@ -101,20 +127,19 @@ async function cargarAgentesEquipo(equipoId) {
     }
 }
 
-// Cargar lista de todas las campañas en el sidebar
+// Cargar lista de todas las campañas en el popover del header
 async function cargarListaCampanas() {
     try {
         console.log('[cargarListaCampanas] Iniciando fetch...');
         
-        // Verificar rol y equipo al cargar
         await verificarRolUsuario();
         if (_esLider && _equipoActual) {
             await cargarAgentesEquipo(_equipoActual);
         }
         
         var container = document.getElementById('lista-campañas');
+        var countEl = document.getElementById('campañas-count');
         
-        // Timeout de 10 segundos para el fetch
         var controller = new AbortController();
         var timeoutId = setTimeout(function() { controller.abort(); console.log('[cargarListaCampanas] Timeout!'); }, 10000);
         
@@ -129,6 +154,10 @@ async function cargarListaCampanas() {
         
         campañas = await response.json();
         console.log('[cargarListaCampanas] Campañas recibidas:', campañas ? campañas.length : 0);
+
+        if (countEl) {
+            countEl.textContent = campañas && campañas.length ? String(campañas.length) : '';
+        }
         
         if (!campañas || campañas.length === 0) {
             container.innerHTML = '<div class="empty">'+
@@ -145,15 +174,13 @@ async function cargarListaCampanas() {
             var pct = g.total_solicitudes > 0 ? Math.round((g.gestionadas / g.total_solicitudes) * 100) : 0;
             var isActive = gestionId && String(g.id) === String(gestionId) ? 'active' : '';
             
-            html += '<div class="campaña-card ' + isActive + '" onclick="seleccionarCampaña(' + g.id + ')">';
+            html += '<div class="campaña-card ' + isActive + '" data-campaña-id="' + g.id + '" onclick="seleccionarCampaña(' + g.id + ')">';
             
-            // Título con nombre e ID
             html += '<div class="campaña-nombre">';
             html += '<span class="campaña-id">#' + g.id + '</span>';
-            html += '<span>' + (g.nombre || 'Sin nombre') + '</span>';
+            html += '<span>' + escaparParaHTML(g.nombre || 'Sin nombre') + '</span>';
             html += '</div>';
             
-            // Info de asignación (debajo del título)
             if (g.asignado_a) {
                 var agenteNombre = g.asignado_username || 'Agente #' + g.asignado_a;
                 html += '<div class="campaña-asignacion" style="margin-bottom:4px;">👤 ' + escaparParaHTML(agenteNombre) + '</div>';
@@ -161,37 +188,30 @@ async function cargarListaCampanas() {
                 html += '<div class="campaña-asignacion campaña-asignacion-pendiente" style="margin-bottom:4px;">⬜ Sin asignar</div>';
             }
             
-            // Stats
             html += '<div class="campaña-stats">';
             html += '<span>📄 ' + (g.total_solicitudes || 0) + '</span>';
             html += '<span>✓ ' + (g.gestionadas || 0) + '</span>';
             html += '<span>📊 ' + pct + '%</span>';
             html += '</div>';
             
-            // Barra de progreso
             html += '<div class="campaña-progreso">';
             html += '<div class="campaña-progreso-barra" style="width: ' + pct + '%;"></div>';
             html += '</div>';
             
-            // Estado badge
             var estadoClase = (g.estado === 'Completada' || pct === 100) ? 'completada' : 'activa';
-            html += '<span class="campaña-estado ' + estadoClase + '">' + (g.estado || 'Activa') + '</span>';
+            html += '<span class="campaña-estado ' + estadoClase + '">' + escaparParaHTML(g.estado || 'Activa') + '</span>';
             
-            // Grid de 3 botones de acción
             html += '<div class="campaña-acciones-grid">';
             
-            // Botón: Ver campaña (siempre visible)
-            html += '<button class="campaña-btn-accion campaña-btn-ver" onclick="event.stopPropagation(); seleccionarCampaña(' + g.id + ')" title="Ver campaña">👁️ Ver</button>';
+            html += '<button type="button" class="campaña-btn-accion campaña-btn-ver" onclick="event.stopPropagation(); seleccionarCampaña(' + g.id + ')" title="Ver campaña">👁️ Ver</button>';
             
-            // Botón: Asignar a agente (solo líder con agentes disponibles)
             if (_esLider && _agentesEquipo.length > 0) {
-                html += '<button class="campaña-btn-accion campaña-btn-asignar" onclick="event.stopPropagation(); abrirModalAsignarAgente(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.asignado_a || 'null') + ')" title="Asignar a agente">👤 Asignar</button>';
+                html += '<button type="button" class="campaña-btn-accion campaña-btn-asignar" onclick="event.stopPropagation(); CampanasPopover.close(); abrirModalAsignarAgente(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.asignado_a || 'null') + ')" title="Asignar a agente">👤 Asignar</button>';
             } else {
-                html += '<button class="campaña-btn-accion campaña-btn-asignar" onclick="event.stopPropagation(); abrirModalEditarCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Editar campaña">✏️ Editar</button>';
+                html += '<button type="button" class="campaña-btn-accion campaña-btn-asignar" onclick="event.stopPropagation(); CampanasPopover.close(); abrirModalEditarCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Editar campaña">✏️ Editar</button>';
             }
             
-            // Botón: Eliminar (con confirmación)
-            html += '<button class="campaña-btn-accion campaña-btn-eliminar" onclick="event.stopPropagation(); confirmarEliminarCampaña(' + g.id + ', \'' + (g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ')" title="Eliminar campaña">🗑️ Eliminar</button>';
+            html += '<button type="button" class="campaña-btn-accion campaña-btn-eliminar" onclick="event.stopPropagation(); CampanasPopover.close(); confirmarEliminarCampaña(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ')" title="Eliminar campaña">🗑️ Eliminar</button>';
             
             html += '</div>';
             html += '</div>';
@@ -201,32 +221,29 @@ async function cargarListaCampanas() {
         
     } catch (error) {
         console.error('Error cargando lista:', error);
-        document.getElementById('lista-campañas').innerHTML = 
-            '<div class="error">Error al cargar las campañas</div>';
+        var listEl = document.getElementById('lista-campañas');
+        if (listEl) {
+            listEl.innerHTML = '<div class="error">Error al cargar las campañas</div>';
+        }
     }
 }
 
 // Seleccionar una campaña
 function seleccionarCampaña(id) {
-    // Actualizar el ID global
     gestionId = id;
-    
-    // Marcar visualmente como activa
     marcarCampañaActiva(id);
-    
-    // Navegar a la URL con el ID
+    CampanasPopover.close();
     window.location.href = '/gestion-lote?id=' + id;
 }
 
-// Marcar campaña como activa en el sidebar
+// Marcar campaña como activa en el popover
 function marcarCampañaActiva(id) {
     var cards = document.querySelectorAll('.campaña-card');
     for (var i = 0; i < cards.length; i++) {
         cards[i].classList.remove('active');
     }
     
-    // Encontrar la tarjeta correspondiente
-    var card = document.querySelector('.campaña-card[onclick="seleccionarCampaña(' + id + ')"]');
+    var card = document.querySelector('.campaña-card[data-campaña-id="' + id + '"]');
     if (card) {
         card.classList.add('active');
     }

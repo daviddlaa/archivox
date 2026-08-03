@@ -14,24 +14,28 @@
     <div id="drawer-wrapper"></div>
 
 <div class="layout">
-<!-- Sidebar de Campañas -->
-        <aside id="sidebar-campañas" class="sidebar-campañas">
-            <div class="sidebar-header">
-                <h2>📋 Campañas</h2>
-            </div>
-            <div class="sidebar-content" id="lista-campañas">
-                <div class="loading">Cargando campañas...</div>
-            </div>
-        </aside>
-        
         <main class="contenido">
             <div class="container">
                 <div class="page-header">
                     <div class="page-header-left">
                         <h1>🚀 Campañas</h1>
-                        <p class="subtitulo" id="gestion-nombre">Selecciona una campaña del panel lateral</p>
+                        <p class="subtitulo" id="gestion-nombre">Selecciona una campaña</p>
                     </div>
                     <div class="page-header-right">
+                        <div class="campañas-selector" id="campañas-selector">
+                            <button type="button" class="btn-header btn-header-primary" id="btn-campañas" onclick="CampanasPopover.toggle(event)" aria-haspopup="true" aria-expanded="false" aria-controls="campañas-popover">
+                                📋 Campañas <span class="campañas-count" id="campañas-count"></span>
+                                <span class="campañas-chevron" aria-hidden="true">▾</span>
+                            </button>
+                            <div class="campañas-popover" id="campañas-popover" role="menu" hidden>
+                                <div class="campañas-popover-header">
+                                    <span>Seleccionar campaña</span>
+                                </div>
+                                <div class="campañas-popover-list" id="lista-campañas">
+                                    <div class="loading">Cargando campañas...</div>
+                                </div>
+                            </div>
+                        </div>
                         <button class="notif-bell-usuario" onclick="abrirPanelNotificaciones()" title="Notificaciones">
                             🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
                         </button>
@@ -90,7 +94,7 @@
                 <!-- Lista de Solicitudes -->
                 <div class="lista-solicitudes" id="lista-solicitudes">
                     <div class="empty">
-                        <p>Selecciona una campaña del panel lateral para ver las solicitudes.</p>
+                        <p>Selecciona una campaña para ver las solicitudes.</p>
                     </div>
                 </div>
             </div>

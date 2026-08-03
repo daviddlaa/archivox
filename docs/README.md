@@ -648,7 +648,7 @@ El frontend está construido con **HTML + CSS + Vanilla JavaScript** (sin framew
 |---------|-----------|
 | `login.js` | Autenticación (login, registro, verificación de sesión) |
 | `deep-link-router.js` | Resolución de deep links para notificaciones |
-| `drawer.js` | Drawer de navegación lateral para móvil |
+| `drawer.js` | Drawer de navegación lateral unificado (desktop y móvil) |
 | `modal.js` | Sistema de modales reutilizables |
 | `notificaciones-dashboard.js` | Widget de notificaciones en tiempo real (SSE) |
 | `perfil.js` | Gestión de perfil de usuario |
@@ -659,7 +659,9 @@ El frontend está construido con **HTML + CSS + Vanilla JavaScript** (sin framew
 - **AbortController**: Las peticiones fetch usan AbortController para cancelar peticiones obsoletas
 - **SSE (Server-Sent Events)**: Notificaciones en tiempo real
 - **Deep Link Router**: Navegación inteligente desde notificaciones
-- **Drawer Móvil**: Navegación lateral con menú hamburguesa
+- **Drawer unificado**: Navegación lateral con menú hamburguesa ☰
+  - **Escritorio:** botón flotante ☰ en la **esquina superior izquierda** (`public/css/drawer.css`, `.drawer-toggle` con `left: 15px`). El drawer se desliza desde la izquierda. Se reserva espacio en los headers de página (`.page-header`, `.equipo-header`) con `padding-left: 80px` para que el botón no tape títulos. En la página de Campañas (`gestion-lote`) el botón queda junto al borde derecho del sidebar fijo de campañas (`left: 355px`, o `315px` en pantallas ≤1200px), por lo que no se superpone con la columna lateral.
+  - **Móvil:** la navegación usa `MobileMenu` (bottom sheet nativo); no hay botón flotante ☰ (se oculta con `@media (max-width: 768px)`).
 
 ---
 
