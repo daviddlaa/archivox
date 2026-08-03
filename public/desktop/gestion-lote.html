@@ -47,52 +47,29 @@
                 
                 <!-- Semáforo operativo (filtro por color) -->
                 <div class="progreso-panel" id="panel-progreso" style="display: none;">
-                    <div class="semaforo-meta">
-                        <span class="semaforo-meta-label">Semáforo de la campaña</span>
-                        <span class="semaforo-meta-total">Total: <strong id="total-solicitudes">0</strong></span>
-                        <button type="button" class="semaforo-clear" id="btn-semaforo-todos" onclick="setFiltroSemaforo(null)" style="display:none;">Ver todas</button>
-                    </div>
                     <div class="semaforo-barra" id="semaforo-barra" role="group" aria-label="Filtro por semáforo">
                         <button type="button" class="semaforo-seg semaforo-seg-sin" data-semaforo="sin_clasificar" onclick="setFiltroSemaforo('sin_clasificar')" title="Sin clasificar">
-                            <span class="semaforo-seg-label"><span class="semaforo-seg-dot"></span>Sin clasificar</span>
                             <span class="semaforo-seg-count" id="count-sin_clasificar">0</span>
+                            <span class="semaforo-seg-label">Sin clasificar</span>
                         </button>
                         <button type="button" class="semaforo-seg semaforo-seg-verde" data-semaforo="verde" onclick="setFiltroSemaforo('verde')" title="Verde">
-                            <span class="semaforo-seg-label"><span class="semaforo-seg-dot"></span>Verde</span>
                             <span class="semaforo-seg-count" id="count-verde">0</span>
+                            <span class="semaforo-seg-label">Verde</span>
                         </button>
                         <button type="button" class="semaforo-seg semaforo-seg-amarillo" data-semaforo="amarillo" onclick="setFiltroSemaforo('amarillo')" title="Amarillo">
-                            <span class="semaforo-seg-label"><span class="semaforo-seg-dot"></span>Amarillo</span>
                             <span class="semaforo-seg-count" id="count-amarillo">0</span>
+                            <span class="semaforo-seg-label">Amarillo</span>
                         </button>
                         <button type="button" class="semaforo-seg semaforo-seg-rojo" data-semaforo="rojo" onclick="setFiltroSemaforo('rojo')" title="Rojo">
-                            <span class="semaforo-seg-label"><span class="semaforo-seg-dot"></span>Rojo</span>
                             <span class="semaforo-seg-count" id="count-rojo">0</span>
+                            <span class="semaforo-seg-label">Rojo</span>
                         </button>
                     </div>
-                    <div class="semaforo-legend" id="semaforo-legend">
-                        <div class="semaforo-legend-item">
-                            <span class="semaforo-legend-dot sin"></span>
-                            <span>Sin clasificar</span>
-                            <span class="semaforo-legend-count" id="legend-sin_clasificar">0</span>
-                        </div>
-                        <div class="semaforo-legend-item">
-                            <span class="semaforo-legend-dot verde"></span>
-                            <span>Verde</span>
-                            <span class="semaforo-legend-count" id="legend-verde">0</span>
-                        </div>
-                        <div class="semaforo-legend-item">
-                            <span class="semaforo-legend-dot amarillo"></span>
-                            <span>Amarillo</span>
-                            <span class="semaforo-legend-count" id="legend-amarillo">0</span>
-                        </div>
-                        <div class="semaforo-legend-item">
-                            <span class="semaforo-legend-dot rojo"></span>
-                            <span>Rojo</span>
-                            <span class="semaforo-legend-count" id="legend-rojo">0</span>
-                        </div>
+                    <div class="semaforo-meta">
+                        <button type="button" class="semaforo-clear" id="btn-semaforo-todos" onclick="setFiltroSemaforo(null)" style="display:none;">Ver todas</button>
                     </div>
                     <!-- Contadores legacy ocultos (actualizados por JS existente) -->
+                    <span id="total-solicitudes" style="display:none">0</span>
                     <span id="gestionadas" style="display:none">0</span>
                     <span id="pendientes" style="display:none">0</span>
                     <span id="progreso-porcentaje" style="display:none">0%</span>
