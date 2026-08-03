@@ -885,12 +885,11 @@ function renderizarCards(datos) {
 
         html += '<div class="solicitud-card ' + seleccionado + '" data-id="' + id + '" onclick="toggleCardDesktop(\'' + id + '\', event)">';
 
-        // FILA 1: Checkbox + ID + Segmento + Estado
+        // FILA 1: Checkbox + Segmento + Estado
         html += '  <div class="card-fila-1">';
         html += '    <div class="card-checkbox-wrapper" onclick="event.stopPropagation()">';
         html += '      <input type="checkbox" class="checkbox-fila card-checkbox" value="' + id + '" onchange="toggleFilaCheckbox(this)" ' + (seleccionado ? 'checked' : '') + '>';
         html += '    </div>';
-        html += '    <span class="card-id">#' + id + '</span>';
         html += '    <span class="card-badge badge-segmento" title="' + (item.segmento || 'Sin segmento') + '">' + (item.segmento || '—') + '</span>';
         html += '    <span class="card-badge badge-estado ' + estadoClase + '" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
         html += '  </div>';
