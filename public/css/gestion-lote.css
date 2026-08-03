@@ -410,6 +410,56 @@ body {
     transform: scale(1.25);
 }
 
+/* ===== TÍTULO DE CAMPAÑA ACTIVA ===== */
+.page-header-left .page-kicker {
+    margin: 0 0 4px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.page-header-left #gestion-nombre {
+    margin: 0;
+    color: #0f172a;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+}
+
+.page-header-left #gestion-nombre.is-active {
+    color: #312e81;
+}
+
+.page-header-left .gestion-estado {
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.page-header-left .gestion-estado[data-estado="sin-iniciar"] {
+    color: #b45309;
+}
+
+.page-header-left .gestion-estado[data-estado="en-curso"] {
+    color: #1d4ed8;
+}
+
+.page-header-left .gestion-estado[data-estado="casi-lista"] {
+    color: #7c3aed;
+}
+
+.page-header-left .gestion-estado[data-estado="completada"] {
+    color: #15803d;
+}
+
+.page-header-left .gestion-estado[data-estado="vacia"] {
+    color: #64748b;
+}
+
 /* ===== SELECTOR DE CAMPAÑAS (header popover) ===== */
 .campañas-selector {
     position: relative;

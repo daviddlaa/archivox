@@ -272,9 +272,7 @@ async function cargarDatosGestion() {
         
         datosGestion = await response.json();
         
-        // Actualizar título
-        var tituloEl = document.getElementById('gestion-nombre');
-        if (tituloEl) tituloEl.textContent = datosGestion.nombre || 'Gestión #' + gestionId;
+        actualizarTituloCampana(datosGestion.nombre || 'Gestión #' + gestionId);
         
         // Mostrar panel de progreso y filtros
         var panelProgreso = document.getElementById('panel-progreso');
@@ -308,9 +306,72 @@ async function cargarDatosGestion() {
         console.error('Error cargando datos de gestión:', error);
         var errContainer = document.getElementById('lista-solicitudes');
         if (errContainer) errContainer.innerHTML = '<div class="error">Error al cargar: ' + error.message + '</div>';
-        var nombreEl = document.getElementById('gestion-nombre');
-        if (nombreEl) nombreEl.textContent = 'Error al cargar gestión';
+        actualizarTituloCampana('Error al cargar gestión', true);
     }
+}
+
+// Título + estado textual según KPIs
+function actualizarTituloCampana(nombre, esError) {
+    var tituloEl = document.getElementById('gestion-nombre');
+    var estadoEl = document.getElementById('gestion-estado');
+    if (!tituloEl) return;
+
+    if (nombre) {
+        tituloEl.textContent = nombre;
+    }
+
+    if (esError) {
+        tituloEl.classList.remove('is-active');
+        if (estadoEl) {
+            estadoEl.textContent = '';
+            estadoEl.removeAttribute('data-estado');
+        }
+        return;
+    }
+
+    tituloEl.classList.add('is-active');
+    if (estadoEl) {
+        actualizarEstadoCampanaTexto();
+    }
+}
+
+function actualizarEstadoCampanaTexto() {
+    var estadoEl = document.getElementById('gestion-estado');
+    if (!estadoEl || !datosGestion) return;
+
+    var total = datosGestion.total_solicitudes || 0;
+    var gestionadas = 0;
+
+    (solicitudes || []).forEach(function(sol) {
+        if (sol.gestion_id && sol.tipo_gestion && sol.tipo_gestion !== 'Pendiente') {
+            gestionadas++;
+        }
+    });
+
+    var pendientes = Math.max(total - gestionadas, 0);
+    var porcentaje = total > 0 ? Math.round((gestionadas / total) * 100) : 0;
+    var texto = '';
+    var clave = 'vacia';
+
+    if (total === 0) {
+        texto = 'Sin solicitudes';
+        clave = 'vacia';
+    } else if (porcentaje >= 100) {
+        texto = 'Completada · ' + gestionadas + '/' + total + ' gestionadas';
+        clave = 'completada';
+    } else if (porcentaje === 0) {
+        texto = 'Sin iniciar · ' + total + ' solicitud' + (total === 1 ? '' : 'es');
+        clave = 'sin-iniciar';
+    } else if (porcentaje >= 75) {
+        texto = 'Casi lista · ' + porcentaje + '% · ' + pendientes + ' pendiente' + (pendientes === 1 ? '' : 's');
+        clave = 'casi-lista';
+    } else {
+        texto = 'En curso · ' + porcentaje + '% · ' + pendientes + ' pendiente' + (pendientes === 1 ? '' : 's');
+        clave = 'en-curso';
+    }
+
+    estadoEl.textContent = texto;
+    estadoEl.setAttribute('data-estado', clave);
 }
 
 // Actualizar progreso
@@ -335,6 +396,8 @@ function actualizarProgreso() {
     document.getElementById('pendientes').textContent = pendientes;
     document.getElementById('progreso-porcentaje').textContent = porcentaje + '%';
     document.getElementById('barra-progreso').style.width = porcentaje + '%';
+
+    actualizarEstadoCampanaTexto();
 }
 
 // Renderizar lista de solicitudes
@@ -1465,10 +1528,9 @@ async function guardarEdicionCampana(id) {
             alert('✅ Campaña actualizada correctamente');
             cerrarModal();
             await cargarListaCampanas();
-            // Si es la campaña activa, actualizar el título
             if (String(gestionId) === String(id)) {
-                var tituloEl = document.getElementById('gestion-nombre');
-                if (tituloEl) tituloEl.textContent = nombre;
+                if (datosGestion) datosGestion.nombre = nombre;
+                actualizarTituloCampana(nombre);
             }
         } else {
             alert('Error: ' + (resultado.error || 'Error al actualizar campaña'));
