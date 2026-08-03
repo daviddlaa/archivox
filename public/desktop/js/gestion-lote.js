@@ -418,9 +418,13 @@ function actualizarBarraSemaforo(conteoExterno) {
         var countEl = document.getElementById('count-' + key);
         if (countEl) countEl.textContent = n;
 
+        // Update legend counts
+        var legendEl = document.getElementById('legend-' + key);
+        if (legendEl) legendEl.textContent = n;
+
         var btn = document.querySelector('.semaforo-seg[data-semaforo="' + key + '"]');
         if (!btn) continue;
-        var pct = total > 0 ? Math.max((n / total) * 100, n > 0 ? 8 : 4) : 25;
+        var pct = total > 0 ? Math.max((n / total) * 100, n > 0 ? 4 : 2) : 25;
         btn.style.flex = pct + ' 1 0%';
         if (n === 0) btn.classList.add('is-empty');
         else btn.classList.remove('is-empty');
@@ -699,12 +703,12 @@ function renderizarSolicitudes(lista) {
             html += '<div class="sol-observacion-vacia">Sin observación registrada</div>';
         }
 
-        // Semáforo (independiente del tipo de seguimiento)
-        html += '<div class="sol-semaforo-btns" role="group" aria-label="Semáforo">';
+        // Semáforo — Compact status pills (Apple Wallet style)
+        html += '<div class="sol-semaforo-pills" role="group" aria-label="Semáforo">';
         for (var s = 0; s < SEMAFORO_ORDEN.length; s++) {
             var keyS = SEMAFORO_ORDEN[s];
             var activeCls = semaforo === keyS ? ' active' : '';
-            html += '<button type="button" class="sol-semaforo-btn' + activeCls + '" data-val="' + keyS + '" onclick="event.stopPropagation(); cambiarSemaforoSolicitud(\'' + sol.id_solicitud + '\', \'' + keyS + '\', event)" title="' + SEMAFORO_LABELS[keyS] + '">' + SEMAFORO_LABELS[keyS] + '</button>';
+            html += '<button type="button" class="sol-semaforo-pill' + activeCls + '" data-val="' + keyS + '" onclick="event.stopPropagation(); cambiarSemaforoSolicitud(\'' + sol.id_solicitud + '\', \'' + keyS + '\', event)" title="' + SEMAFORO_LABELS[keyS] + '"><span class="sol-semaforo-pill-dot"></span>' + SEMAFORO_LABELS[keyS] + '</button>';
         }
         html += '</div>';
         
