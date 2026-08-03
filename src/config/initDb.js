@@ -183,6 +183,20 @@ db.exec(`
     )
 `);
 
+// Puente campaña ↔ solicitud (semáforo operativo, independiente de tipo_gestion)
+db.exec(`
+    CREATE TABLE IF NOT EXISTS gestiones_maestro_solicitudes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        gestion_maestro_id INTEGER NOT NULL,
+        id_solicitud INTEGER NOT NULL,
+        semaforo TEXT NOT NULL DEFAULT 'sin_clasificar',
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_by INTEGER,
+        UNIQUE (gestion_maestro_id, id_solicitud),
+        FOREIGN KEY (gestion_maestro_id) REFERENCES gestiones_maestro(id) ON DELETE CASCADE
+    )
+`);
+
 // Tabla de referencias de solicitudes (Completar Info)
 db.exec(`
     CREATE TABLE IF NOT EXISTS solicitudes_referencias (
@@ -693,6 +707,12 @@ try {
 } catch (e) { /* ignorar */ }
 try {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_gestiones_maestro_id_solicitud ON gestiones(gestion_maestro_id, solicitud_id)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_gms_maestro_semaforo ON gestiones_maestro_solicitudes(gestion_maestro_id, semaforo)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_gms_solicitud ON gestiones_maestro_solicitudes(id_solicitud)`);
 } catch (e) { /* ignorar */ }
 try {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_notificaciones_destinatario_leida ON notificaciones(destinatario_id, leida, created_at DESC)`);

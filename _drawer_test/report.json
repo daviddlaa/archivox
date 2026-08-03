@@ -1,0 +1,413 @@
+{
+  "NORMAL": {
+    "url": "http://localhost:3100/",
+    "data": {
+      "drawerOpen": true,
+      "drawerRect": {
+        "top": 0,
+        "bottom": 800,
+        "height": 800,
+        "width": 270
+      },
+      "navRect": {
+        "top": 76.1875,
+        "bottom": 681.609375,
+        "height": 605.421875
+      },
+      "navScroll": {
+        "clientHeight": 605,
+        "scrollHeight": 605,
+        "overflowY": "auto"
+      },
+      "footerRect": {
+        "top": 681.609375,
+        "bottom": 800,
+        "height": 118.390625
+      },
+      "footerAtBottom": true,
+      "footerDisplay": "block",
+      "sections": [
+        {
+          "h3": "Inicio",
+          "items": [
+            "📊Dashboard",
+            "👤Mi Perfil",
+            "💰Control de Ventas",
+            "🏢Gestión de Equipo"
+          ]
+        },
+        {
+          "h3": "Operaciones",
+          "items": [
+            "📤Importar Excel",
+            "📋Solicitudes",
+            "📝Gestiones",
+            "🚀Campañas",
+            "📋Relaciones",
+            "🔄Historial"
+          ]
+        },
+        {
+          "h3": "Cuenta",
+          "items": [
+            "🛡️Admin",
+            "🚪Cerrar Sesión"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "text": "📊Dashboard",
+          "href": "/",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "👤Mi Perfil",
+          "href": "/perfil",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "💰Control de Ventas",
+          "href": "/equipo-ventas",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "🏢Gestión de Equipo",
+          "href": "/equipo",
+          "display": "list-item",
+          "id": "liderEquipoLink"
+        },
+        {
+          "text": "📤Importar Excel",
+          "href": "/importar",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "📋Solicitudes",
+          "href": "/solicitudes",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "📝Gestiones",
+          "href": "/gestiones",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "🚀Campañas",
+          "href": "/gestion-lote",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "📋Relaciones",
+          "href": "/relaciones",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "🔄Historial",
+          "href": "/historial",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "🛡️Admin",
+          "href": "/admin",
+          "display": "list-item",
+          "id": "adminLink"
+        },
+        {
+          "text": "🚪Cerrar Sesión",
+          "href": "#",
+          "display": "list-item",
+          "id": ""
+        }
+      ],
+      "liderLinkDisplay": "none",
+      "adminLinkDisplay": "none",
+      "bodyOverflow": ""
+    },
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  },
+  "LIDER": {
+    "url": "http://localhost:3100/",
+    "data": {
+      "drawerOpen": false,
+      "drawerRect": {
+        "top": 0,
+        "bottom": 800,
+        "height": 800,
+        "width": 270
+      },
+      "navRect": {
+        "top": 76.1875,
+        "bottom": 681.609375,
+        "height": 605.421875
+      },
+      "navScroll": {
+        "clientHeight": 605,
+        "scrollHeight": 605,
+        "overflowY": "auto"
+      },
+      "footerRect": {
+        "top": 681.609375,
+        "bottom": 800,
+        "height": 118.390625
+      },
+      "footerAtBottom": true,
+      "footerDisplay": "block",
+      "sections": [
+        {
+          "h3": "Inicio",
+          "items": [
+            "📊Dashboard",
+            "👤Mi Perfil",
+            "💰Control de Ventas",
+            "🏢Gestión de Equipo"
+          ]
+        },
+        {
+          "h3": "Operaciones",
+          "items": [
+            "📤Importar Excel",
+            "📋Solicitudes",
+            "📝Gestiones",
+            "🚀Campañas",
+            "📋Relaciones",
+            "🔄Historial"
+          ]
+        },
+        {
+          "h3": "Cuenta",
+          "items": [
+            "🛡️Admin",
+            "🚪Cerrar Sesión"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "text": "📊Dashboard",
+          "href": "/",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "👤Mi Perfil",
+          "href": "/perfil",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "💰Control de Ventas",
+          "href": "/equipo-ventas",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "🏢Gestión de Equipo",
+          "href": "/equipo",
+          "display": "list-item",
+          "id": "liderEquipoLink"
+        },
+        {
+          "text": "📤Importar Excel",
+          "href": "/importar",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "📋Solicitudes",
+          "href": "/solicitudes",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "📝Gestiones",
+          "href": "/gestiones",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "🚀Campañas",
+          "href": "/gestion-lote",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "📋Relaciones",
+          "href": "/relaciones",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "🔄Historial",
+          "href": "/historial",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "🛡️Admin",
+          "href": "/admin",
+          "display": "list-item",
+          "id": "adminLink"
+        },
+        {
+          "text": "🚪Cerrar Sesión",
+          "href": "#",
+          "display": "list-item",
+          "id": ""
+        }
+      ],
+      "liderLinkDisplay": "none",
+      "adminLinkDisplay": "none",
+      "bodyOverflow": ""
+    },
+    "consoleErrors": []
+  },
+  "SUPERADMIN": {
+    "url": "http://localhost:3100/",
+    "data": {
+      "drawerOpen": false,
+      "drawerRect": {
+        "top": 0,
+        "bottom": 800,
+        "height": 800,
+        "width": 270
+      },
+      "navRect": {
+        "top": 76.1875,
+        "bottom": 681.609375,
+        "height": 605.421875
+      },
+      "navScroll": {
+        "clientHeight": 605,
+        "scrollHeight": 605,
+        "overflowY": "auto"
+      },
+      "footerRect": {
+        "top": 681.609375,
+        "bottom": 800,
+        "height": 118.390625
+      },
+      "footerAtBottom": true,
+      "footerDisplay": "block",
+      "sections": [
+        {
+          "h3": "Inicio",
+          "items": [
+            "📊Dashboard",
+            "👤Mi Perfil",
+            "💰Control de Ventas",
+            "🏢Gestión de Equipo"
+          ]
+        },
+        {
+          "h3": "Operaciones",
+          "items": [
+            "📤Importar Excel",
+            "📋Solicitudes",
+            "📝Gestiones",
+            "🚀Campañas",
+            "📋Relaciones",
+            "🔄Historial"
+          ]
+        },
+        {
+          "h3": "Cuenta",
+          "items": [
+            "🛡️Admin",
+            "🚪Cerrar Sesión"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "text": "📊Dashboard",
+          "href": "/",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "👤Mi Perfil",
+          "href": "/perfil",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "💰Control de Ventas",
+          "href": "/equipo-ventas",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "🏢Gestión de Equipo",
+          "href": "/equipo",
+          "display": "list-item",
+          "id": "liderEquipoLink"
+        },
+        {
+          "text": "📤Importar Excel",
+          "href": "/importar",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "📋Solicitudes",
+          "href": "/solicitudes",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "📝Gestiones",
+          "href": "/gestiones",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "🚀Campañas",
+          "href": "/gestion-lote",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "📋Relaciones",
+          "href": "/relaciones",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "🔄Historial",
+          "href": "/historial",
+          "display": "list-item",
+          "id": ""
+        },
+        {
+          "text": "🛡️Admin",
+          "href": "/admin",
+          "display": "list-item",
+          "id": "adminLink"
+        },
+        {
+          "text": "🚪Cerrar Sesión",
+          "href": "#",
+          "display": "list-item",
+          "id": ""
+        }
+      ],
+      "liderLinkDisplay": "none",
+      "adminLinkDisplay": "none",
+      "bodyOverflow": ""
+    },
+    "consoleErrors": []
+  }
+}

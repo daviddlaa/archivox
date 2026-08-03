@@ -94,7 +94,7 @@ body {
     background: #e2e8f0;
 }
 
-/* ===== PROGRESO PANEL ===== */
+/* ===== PROGRESO / SEMÁFORO PANEL ===== */
 .progreso-panel {
     background: var(--bg-card);
     border-radius: var(--radius-md);
@@ -103,47 +103,115 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
-.progreso-info {
+.semaforo-meta {
     display: flex;
-    gap: 24px;
+    align-items: center;
+    gap: 12px;
     flex-wrap: wrap;
+    margin-bottom: 12px;
 }
 
-.progreso-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.progreso-label {
+.semaforo-meta-label {
     font-size: 12px;
-    color: var(--text-muted);
-    font-weight: 500;
+    font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
 }
 
-.progreso-value {
-    font-size: 20px;
-    font-weight: 700;
+.semaforo-meta-total {
+    font-size: 13px;
     color: var(--text-dark);
 }
 
-.progreso-barra {
-    margin-top: 12px;
-    height: 8px;
-    background: #f1f5f9;
-    border-radius: 4px;
+.semaforo-clear {
+    margin-left: auto;
+    border: 1px solid var(--border);
+    background: #f8fafc;
+    color: #334155;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.semaforo-clear:hover {
+    background: #e2e8f0;
+}
+
+.semaforo-barra {
+    display: flex;
+    width: 100%;
+    min-height: 52px;
+    border-radius: 10px;
     overflow: hidden;
+    border: 1px solid var(--border);
+    background: #f1f5f9;
 }
 
-.barra-relleno {
-    height: 100%;
-    background: linear-gradient(90deg, #22c55e, #16a34a);
-    border-radius: 4px;
-    transition: width 0.3s ease;
+.semaforo-seg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 48px;
+    padding: 8px 6px;
+    border: none;
+    cursor: pointer;
+    color: #0f172a;
+    font: inherit;
+    transition: flex-basis 0.25s ease, filter 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
 }
 
+.semaforo-seg:hover {
+    filter: brightness(0.97);
+}
 
+.semaforo-seg.active {
+    box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.35);
+    z-index: 1;
+}
+
+.semaforo-seg.is-empty {
+    opacity: 0.55;
+    min-width: 36px;
+}
+
+.semaforo-seg-label {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.semaforo-seg-count {
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.semaforo-seg-sin {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.semaforo-seg-verde {
+    background: #86efac;
+    color: #14532d;
+}
+
+.semaforo-seg-amarillo {
+    background: #fde047;
+    color: #713f12;
+}
+
+.semaforo-seg-rojo {
+    background: #fca5a5;
+    color: #7f1d1d;
+}
 
 /* ===== FILTROS ROW ===== */
 .filtros-row {
@@ -151,6 +219,7 @@ body {
     gap: 12px;
     margin-bottom: 16px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .filtros-row input,
@@ -174,6 +243,16 @@ body {
 
 .filtros-row input::placeholder {
     color: #94a3b8;
+}
+
+#agregar-solicitudes-container {
+    flex: 0 0 auto;
+}
+
+.filtros-row .btn-agregar-solicitudes {
+    max-width: none;
+    white-space: nowrap;
+    height: 42px;
 }
 
 /* ===== LISTA SOLICITUDES ===== */
@@ -203,6 +282,73 @@ body {
 
 .sol-card.pendiente {
     border-left: 3px solid #f59e0b;
+}
+
+/* Semáforo en tarjetas (prioridad visual sobre borde gestionada/pendiente) */
+.sol-card.sol-semaforo-sin_clasificar {
+    border-left: 4px solid #94a3b8;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 40%);
+}
+
+.sol-card.sol-semaforo-verde {
+    border-left: 4px solid #16a34a;
+    background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 45%);
+}
+
+.sol-card.sol-semaforo-amarillo {
+    border-left: 4px solid #ca8a04;
+    background: linear-gradient(180deg, #fefce8 0%, #ffffff 45%);
+}
+
+.sol-card.sol-semaforo-rojo {
+    border-left: 4px solid #dc2626;
+    background: linear-gradient(180deg, #fef2f2 0%, #ffffff 45%);
+}
+
+.sol-semaforo-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 10px 0 4px;
+}
+
+.sol-semaforo-btn {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    line-height: 1.2;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sol-semaforo-btn:hover {
+    transform: translateY(-1px);
+}
+
+.sol-semaforo-btn.active {
+    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.2);
+}
+
+.sol-semaforo-btn[data-val="sin_clasificar"] {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.sol-semaforo-btn[data-val="verde"] {
+    background: #bbf7d0;
+    color: #14532d;
+}
+
+.sol-semaforo-btn[data-val="amarillo"] {
+    background: #fde68a;
+    color: #713f12;
+}
+
+.sol-semaforo-btn[data-val="rojo"] {
+    background: #fecaca;
+    color: #7f1d1d;
 }
 
 .sol-header {

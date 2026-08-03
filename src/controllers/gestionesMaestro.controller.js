@@ -100,6 +100,87 @@ function buildGestionSQL(access, tableAlias) {
     return parts.join(' AND ');
 }
 
+// Semáforo operativo por solicitud en campaña (independiente de tipo_gestion)
+var SEMAFORO_VALIDOS = ['sin_clasificar', 'rojo', 'amarillo', 'verde'];
+
+function normalizarIdsSolicitud(ids) {
+    if (!Array.isArray(ids)) return [];
+    var out = [];
+    var seen = {};
+    for (var i = 0; i < ids.length; i++) {
+        var n = Number(ids[i]);
+        if (!n || isNaN(n) || seen[n]) continue;
+        seen[n] = true;
+        out.push(n);
+    }
+    return out;
+}
+
+function conteoSemaforoVacio() {
+    return { sin_clasificar: 0, rojo: 0, amarillo: 0, verde: 0 };
+}
+
+async function insertarSemaforoSinClasificar(gestionMaestroId, solicitudIds, usuarioId) {
+    var ids = normalizarIdsSolicitud(solicitudIds);
+    var insertados = 0;
+    for (var i = 0; i < ids.length; i++) {
+        var sid = ids[i];
+        try {
+            var exists = await pool.query(
+                'SELECT id FROM gestiones_maestro_solicitudes WHERE gestion_maestro_id = ? AND id_solicitud = ?',
+                [gestionMaestroId, sid]
+            );
+            if (getFirstRow(exists)) continue;
+            await pool.query(
+                `INSERT INTO gestiones_maestro_solicitudes (gestion_maestro_id, id_solicitud, semaforo, updated_by)
+                 VALUES (?, ?, 'sin_clasificar', ?)`,
+                [gestionMaestroId, sid, usuarioId || null]
+            );
+            insertados++;
+        } catch (e) {
+            console.error('[insertarSemaforoSinClasificar] Error id_solicitud=' + sid + ':', e.message);
+        }
+    }
+    return insertados;
+}
+
+async function eliminarSemaforoSolicitudes(gestionMaestroId, solicitudIds) {
+    var ids = normalizarIdsSolicitud(solicitudIds);
+    for (var i = 0; i < ids.length; i++) {
+        try {
+            await pool.query(
+                'DELETE FROM gestiones_maestro_solicitudes WHERE gestion_maestro_id = ? AND id_solicitud = ?',
+                [gestionMaestroId, ids[i]]
+            );
+        } catch (e) {
+            console.error('[eliminarSemaforoSolicitudes] Error:', e.message);
+        }
+    }
+}
+
+async function obtenerConteoSemaforo(gestionMaestroId) {
+    var conteo = conteoSemaforoVacio();
+    try {
+        var result = await pool.query(
+            `SELECT semaforo, COUNT(*) as count
+             FROM gestiones_maestro_solicitudes
+             WHERE gestion_maestro_id = ?
+             GROUP BY semaforo`,
+            [gestionMaestroId]
+        );
+        var rows = getRows(result);
+        for (var i = 0; i < rows.length; i++) {
+            var key = rows[i].semaforo;
+            if (conteo.hasOwnProperty(key)) {
+                conteo[key] = parseInt(rows[i].count, 10) || 0;
+            }
+        }
+    } catch (e) {
+        console.error('[obtenerConteoSemaforo] Error:', e.message);
+    }
+    return conteo;
+}
+
 // GET /api/gestiones-maestro - Listar todas las gestione maestro
 async function getGestionesMaestro(req, res) {
     try {
@@ -153,42 +234,55 @@ async function getGestionMaestroById(req, res) {
         if (solicitudesIds.length === 0) {
             return res.json({
                 ...gestion,
-                solicitudes: []
+                solicitudes: [],
+                semaforo_conteos: conteoSemaforoVacio()
             });
+        }
+
+        // Asegurar filas puente (campañas viejas o desincronizadas)
+        try {
+            await insertarSemaforoSinClasificar(id, solicitudesIds, usuario_id);
+        } catch (e) {
+            console.error('[getGestionMaestroById] ensure semaforo:', e.message);
         }
         
         // Construir placeholders para la cláusula IN
         const placeholders = solicitudesIds.map(function() { return '?'; }).join(',');
         
-        // Obtener solicitudes con su última gestión real (si existe)
+        // Obtener solicitudes con su última gestión real + semáforo del puente
         const resultSol = await pool.query(`
             SELECT s.*, 
                    COALESCE(g.tipo_gestion, 'Pendiente') as tipo_gestion,
                    COALESCE(g.observacion, 'Por gestionar') as gestion_obs,
                    g.id as gestion_id,
-                   g.fecha_gestion
+                   g.fecha_gestion,
+                   COALESCE(gms.semaforo, 'sin_clasificar') as semaforo
             FROM solicitudes s
             LEFT JOIN gestiones g ON g.id = (
                 SELECT MAX(g2.id) FROM gestiones g2 
                 WHERE g2.solicitud_id = s.id_solicitud
                 AND (g2.gestion_maestro_id = ? OR g2.gestion_maestro_id IS NULL)
             )
+            LEFT JOIN gestiones_maestro_solicitudes gms
+                ON gms.gestion_maestro_id = ? AND gms.id_solicitud = s.id_solicitud
             WHERE s.id_solicitud IN (${placeholders})
             ORDER BY CASE WHEN g.fecha_gestion IS NULL THEN 0 ELSE 1 END DESC, g.fecha_gestion DESC
-        `, [id].concat(solicitudesIds));
+        `, [id, id].concat(solicitudesIds));
         
         const Solicitudes = getRows(resultSol);
         
-        // Debug: mostrar los primeros gestion_obs para verificar
         console.log('[getGestionMaestroById] Total solicitudes devueltas:', Solicitudes.length);
         if (Solicitudes.length > 0) {
             console.log('[getGestionMaestroById] Primeras 3 gestion_obs:', 
-                Solicitudes.slice(0, 3).map(s => ({id: s.id_solicitud, obs: s.gestion_obs, tipo: s.tipo_gestion})));
+                Solicitudes.slice(0, 3).map(s => ({id: s.id_solicitud, obs: s.gestion_obs, tipo: s.tipo_gestion, semaforo: s.semaforo})));
         }
+
+        const semaforo_conteos = await obtenerConteoSemaforo(id);
         
         res.json({
             ...gestion,
-            solicitudes: Solicitudes
+            solicitudes: Solicitudes,
+            semaforo_conteos: semaforo_conteos
         });
     } catch (error) {
         console.error('Error en getGestionMaestroById:', error);
@@ -277,6 +371,13 @@ async function createGestionMaestro(req, res) {
         // ✅ YA NO se insertan registros 'Pendiente/Por gestionar' en la tabla gestiones
         // Los IDs quedan almacenados en gestiones_maestro.solicitudes_ids como JSON
         // Las solicitudes se muestran como 'Pendiente' vía COALESCE en la consulta
+
+        // Puente semáforo: todas entran como sin_clasificar
+        try {
+            await insertarSemaforoSinClasificar(gestion_id, solicitudes_ids, usuario_id);
+        } catch (e) {
+            console.error('[gestiones-maestro] Error insertando semáforo:', e.message);
+        }
         
         console.log('[gestiones-maestro] Gestion creada exitosamente, ID:', gestion_id);
         
@@ -362,6 +463,15 @@ async function deleteGestionMaestro(req, res) {
             return res.status(404).json({ error: 'Gestión no encontrada' });
         }
         
+        // Eliminar puente semáforo
+        try {
+            await pool.query(`
+                DELETE FROM gestiones_maestro_solicitudes WHERE gestion_maestro_id = ?
+            `, [id]);
+        } catch (e) {
+            console.error('[deleteGestionMaestro] Error borrando semáforo:', e.message);
+        }
+
         // Eliminar primero las gestione individuales
         await pool.query(`
             DELETE FROM gestiones WHERE gestion_maestro_id = ?
@@ -522,10 +632,12 @@ async function agregarSolicitudesACampana(req, res) {
         // Agregar nuevos IDs evitando duplicados
         var idsActualizados = [...idsExistentes];
         var agregados = 0;
+        var idsRealmenteNuevos = [];
         for (var i = 0; i < nuevosIds.length; i++) {
             var nuevoId = nuevosIds[i];
             if (idsActualizados.indexOf(nuevoId) === -1) {
                 idsActualizados.push(nuevoId);
+                idsRealmenteNuevos.push(nuevoId);
                 agregados++;
             }
         }
@@ -559,15 +671,22 @@ async function agregarSolicitudesACampana(req, res) {
         `, [solicitudesIdsJson, idsActualizados.length, nuevasGestionadas, id]);
 
         // Actualizar campana_id en las solicitudes nuevas
-        for (var i = 0; i < nuevosIds.length; i++) {
+        for (var i = 0; i < idsRealmenteNuevos.length; i++) {
             try {
                 await pool.query(
                     'UPDATE solicitudes SET campana_id = ? WHERE id_solicitud = ? AND (campana_id IS NULL OR campana_id != ?)',
-                    [id, nuevosIds[i], id]
+                    [id, idsRealmenteNuevos[i], id]
                 );
             } catch (e) {
                 console.error('[agregarSolicitudesACampana] Error actualizando campana_id:', e);
             }
+        }
+
+        // Puente semáforo: solo las realmente nuevas → sin_clasificar
+        try {
+            await insertarSemaforoSinClasificar(id, idsRealmenteNuevos, usuario_id);
+        } catch (e) {
+            console.error('[agregarSolicitudesACampana] Error semáforo:', e.message);
         }
 
         console.log('[agregarSolicitudesACampana] Agregados', agregados, 'solicitudes a campaña', id, 'Total:', idsActualizados.length, 'Gestionadas:', nuevasGestionadas);
@@ -661,6 +780,13 @@ async function quitarSolicitudDeCampana(req, res) {
             );
         } catch (e) {
             console.error('[quitarSolicitudDeCampana] Error limpiando campana_id:', e);
+        }
+
+        // Quitar del puente semáforo
+        try {
+            await eliminarSemaforoSolicitudes(id, [solicitudIdNum]);
+        } catch (e) {
+            console.error('[quitarSolicitudDeCampana] Error semáforo:', e.message);
         }
 
         console.log('[quitarSolicitudDeCampana] Quitada solicitud', solicitud_id, 'de campaña', id, 'Total:', idsExistentes.length);
@@ -791,6 +917,87 @@ async function quitarAsignacionAgente(req, res) {
     }
 }
 
+// PUT /api/gestiones-maestro/:id/solicitudes/:solicitudId/semaforo
+async function actualizarSemaforoSolicitud(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+
+        const { id, solicitudId } = req.params;
+        const semaforo = req.body && req.body.semaforo ? String(req.body.semaforo).trim() : '';
+
+        if (SEMAFORO_VALIDOS.indexOf(semaforo) === -1) {
+            return res.status(400).json({
+                error: 'semaforo inválido',
+                valores: SEMAFORO_VALIDOS
+            });
+        }
+
+        const solicitudIdNum = Number(solicitudId);
+        if (!solicitudIdNum || isNaN(solicitudIdNum)) {
+            return res.status(400).json({ error: 'solicitudId inválido' });
+        }
+
+        const access = buildGestionAccessWhere(req, id);
+        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access);
+        const resultGM = await pool.query(checkSql, access.params);
+        const gestion = getFirstRow(resultGM);
+
+        if (!gestion) {
+            return res.status(404).json({ error: 'Gestión no encontrada' });
+        }
+
+        var idsExistentes = [];
+        try {
+            if (gestion.solicitudes_ids) {
+                idsExistentes = normalizarIdsSolicitud(JSON.parse(gestion.solicitudes_ids));
+            }
+        } catch (e) {
+            console.error('[actualizarSemaforoSolicitud] parse solicitudes_ids:', e.message);
+        }
+
+        if (idsExistentes.indexOf(solicitudIdNum) === -1) {
+            return res.status(400).json({ error: 'La solicitud no pertenece a esta campaña' });
+        }
+
+        // Upsert: si no hay fila puente, crear; si hay, actualizar
+        var existing = await pool.query(
+            'SELECT id FROM gestiones_maestro_solicitudes WHERE gestion_maestro_id = ? AND id_solicitud = ?',
+            [id, solicitudIdNum]
+        );
+        var row = getFirstRow(existing);
+
+        if (row) {
+            await pool.query(
+                `UPDATE gestiones_maestro_solicitudes
+                 SET semaforo = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
+                 WHERE gestion_maestro_id = ? AND id_solicitud = ?`,
+                [semaforo, usuario_id, id, solicitudIdNum]
+            );
+        } else {
+            await pool.query(
+                `INSERT INTO gestiones_maestro_solicitudes (gestion_maestro_id, id_solicitud, semaforo, updated_by)
+                 VALUES (?, ?, ?, ?)`,
+                [id, solicitudIdNum, semaforo, usuario_id]
+            );
+        }
+
+        const semaforo_conteos = await obtenerConteoSemaforo(id);
+
+        res.json({
+            mensaje: 'Semáforo actualizado',
+            id_solicitud: solicitudIdNum,
+            semaforo: semaforo,
+            semaforo_conteos: semaforo_conteos
+        });
+    } catch (error) {
+        console.error('Error en actualizarSemaforoSolicitud:', error);
+        res.status(500).json({ error: 'Error al actualizar semáforo' });
+    }
+}
+
 module.exports = {
     // Aliases en español para compatibilidad con las rutas
     crearGestionMaestro: createGestionMaestro,
@@ -804,6 +1011,7 @@ module.exports = {
     createGestion: createGestion,
     asignarAgenteACampana: asignarAgenteACampana,
     quitarAsignacionAgente: quitarAsignacionAgente,
+    actualizarSemaforoSolicitud: actualizarSemaforoSolicitud,
     // Aliases en inglés para excel.routes.js
     getGestionesMaestro: getGestionesMaestro,
     getGestionMaestroById: getGestionMaestroById,

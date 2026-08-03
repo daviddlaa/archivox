@@ -137,6 +137,19 @@ const initTables = async () => {
                 FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
             )
         `);
+
+        // Puente campaña ↔ solicitud (semáforo operativo)
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS gestiones_maestro_solicitudes (
+                id SERIAL PRIMARY KEY,
+                gestion_maestro_id INTEGER NOT NULL REFERENCES gestiones_maestro(id) ON DELETE CASCADE,
+                id_solicitud INTEGER NOT NULL,
+                semaforo TEXT NOT NULL DEFAULT 'sin_clasificar',
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_by INTEGER,
+                UNIQUE (gestion_maestro_id, id_solicitud)
+            )
+        `);
         
         // Tabla de referencias de solicitudes (Completar Info)
         await client.query(`
@@ -428,6 +441,16 @@ const initTables = async () => {
         await client.query(`
             CREATE INDEX IF NOT EXISTS idx_gestiones_maestro_id_solicitud
             ON gestiones(gestion_maestro_id, solicitud_id)
+        `);
+
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_gms_maestro_semaforo
+            ON gestiones_maestro_solicitudes(gestion_maestro_id, semaforo)
+        `);
+
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_gms_solicitud
+            ON gestiones_maestro_solicitudes(id_solicitud)
         `);
 
         // Notificaciones: listado por usuario

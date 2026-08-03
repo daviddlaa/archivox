@@ -1,0 +1,133 @@
+{
+  "NORMAL": {
+    "urlTrasLogin": "http://localhost:3100/",
+    "sesion": {
+      "status": 200,
+      "body": {
+        "autenticado": true,
+        "usuario": {
+          "id": 8,
+          "username": "normaltest",
+          "nombre": "Normal Test",
+          "email": null,
+          "rol": "user",
+          "is_active": 1,
+          "is_superadmin": false,
+          "equipo_id": 1,
+          "equipo_nombre": "Sistema",
+          "es_lider": false
+        }
+      }
+    },
+    "drawer": {
+      "drawerExiste": true,
+      "drawerOpen": true,
+      "drawerVersion": true,
+      "estadoLinks": {
+        "📊Dashboard": "flex",
+        "👤Mi Perfil": "flex",
+        "💰Control de Ventas": "flex",
+        "liderEquipoLink": "none",
+        "📤Importar Excel": "flex",
+        "📋Solicitudes": "flex",
+        "📝Gestiones": "flex",
+        "🚀Campañas": "flex",
+        "📋Relaciones": "flex",
+        "🔄Historial": "flex",
+        "adminLink": "none",
+        "🚪Cerrar Sesión": "flex"
+      },
+      "footerBottom": true
+    },
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  },
+  "LIDER": {
+    "urlTrasLogin": "http://localhost:3100/",
+    "sesion": {
+      "status": 200,
+      "body": {
+        "autenticado": true,
+        "usuario": {
+          "id": 9,
+          "username": "lidertest",
+          "nombre": "Lider Test",
+          "email": null,
+          "rol": "user",
+          "is_active": 1,
+          "is_superadmin": false,
+          "equipo_id": 1,
+          "equipo_nombre": "Sistema",
+          "es_lider": true
+        }
+      }
+    },
+    "drawer": {
+      "drawerExiste": true,
+      "drawerOpen": true,
+      "drawerVersion": true,
+      "estadoLinks": {
+        "📊Dashboard": "flex",
+        "👤Mi Perfil": "flex",
+        "💰Control de Ventas": "flex",
+        "liderEquipoLink": "flex",
+        "📤Importar Excel": "flex",
+        "📋Solicitudes": "flex",
+        "📝Gestiones": "flex",
+        "🚀Campañas": "flex",
+        "📋Relaciones": "flex",
+        "🔄Historial": "flex",
+        "adminLink": "none",
+        "🚪Cerrar Sesión": "flex"
+      },
+      "footerBottom": true
+    },
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  "SUPERADMIN": {
+    "urlTrasLogin": "http://localhost:3100/admin",
+    "sesion": {
+      "status": 200,
+      "body": {
+        "autenticado": true,
+        "usuario": {
+          "id": 10,
+          "username": "admintest",
+          "nombre": "Admin Test",
+          "email": null,
+          "rol": "admin",
+          "is_active": 1,
+          "is_superadmin": 1,
+          "equipo_id": null,
+          "equipo_nombre": null,
+          "es_lider": false
+        }
+      }
+    },
+    "drawer": {
+      "drawerExiste": true,
+      "drawerOpen": true,
+      "drawerVersion": true,
+      "estadoLinks": {
+        "📊Dashboard": "flex",
+        "👥Usuarios": "flex",
+        "📊Estadísticas": "flex",
+        "📋Auditoría": "flex",
+        "🔔Notificaciones": "flex",
+        "🏢Equipos": "flex",
+        "👤Mi Perfil": "flex",
+        "🚪Cerrar Sesión": "flex"
+      },
+      "footerBottom": true
+    },
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+      "[Admin] Error: [object Object]"
+    ]
+  }
+}

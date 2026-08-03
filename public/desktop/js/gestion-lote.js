@@ -9,6 +9,14 @@ var campañas = [];
 var _esLider = false;
 var _equipoActual = null;
 var _agentesEquipo = [];
+var filtroSemaforo = null;
+var SEMAFORO_ORDEN = ['sin_clasificar', 'verde', 'amarillo', 'rojo'];
+var SEMAFORO_LABELS = {
+    sin_clasificar: 'Sin clasificar',
+    verde: 'Verde',
+    amarillo: 'Amarillo',
+    rojo: 'Rojo'
+};
 
 // Popover de campañas en el header
 var CampanasPopover = {
@@ -269,6 +277,7 @@ async function cargarDatosGestion() {
         }
         
         datosGestion = await response.json();
+        filtroSemaforo = null;
         
         actualizarTituloCampana(datosGestion.nombre || 'Gestión #' + gestionId);
         
@@ -372,6 +381,111 @@ function actualizarEstadoCampanaTexto() {
     estadoEl.setAttribute('data-estado', clave);
 }
 
+function normalizarSemaforo(valor) {
+    var v = String(valor || 'sin_clasificar');
+    if (SEMAFORO_ORDEN.indexOf(v) === -1) return 'sin_clasificar';
+    return v;
+}
+
+function contarSemaforoLocal(lista) {
+    var conteo = { sin_clasificar: 0, rojo: 0, amarillo: 0, verde: 0 };
+    var arr = lista || [];
+    for (var i = 0; i < arr.length; i++) {
+        var key = normalizarSemaforo(arr[i].semaforo);
+        conteo[key] = (conteo[key] || 0) + 1;
+    }
+    return conteo;
+}
+
+function actualizarBarraSemaforo(conteoExterno) {
+    var lista = todasLasSolicitudes.length ? todasLasSolicitudes : solicitudes;
+    var conteo = conteoExterno || contarSemaforoLocal(lista);
+    var total = 0;
+    var k;
+    for (k = 0; k < SEMAFORO_ORDEN.length; k++) {
+        total += conteo[SEMAFORO_ORDEN[k]] || 0;
+    }
+    if (!total && datosGestion) {
+        total = datosGestion.total_solicitudes || 0;
+    }
+
+    var totalEl = document.getElementById('total-solicitudes');
+    if (totalEl) totalEl.textContent = total;
+
+    for (k = 0; k < SEMAFORO_ORDEN.length; k++) {
+        var key = SEMAFORO_ORDEN[k];
+        var n = conteo[key] || 0;
+        var countEl = document.getElementById('count-' + key);
+        if (countEl) countEl.textContent = n;
+
+        var btn = document.querySelector('.semaforo-seg[data-semaforo="' + key + '"]');
+        if (!btn) continue;
+        var pct = total > 0 ? Math.max((n / total) * 100, n > 0 ? 8 : 4) : 25;
+        btn.style.flex = pct + ' 1 0%';
+        if (n === 0) btn.classList.add('is-empty');
+        else btn.classList.remove('is-empty');
+        if (filtroSemaforo === key) btn.classList.add('active');
+        else btn.classList.remove('active');
+    }
+
+    var clearBtn = document.getElementById('btn-semaforo-todos');
+    if (clearBtn) {
+        clearBtn.style.display = filtroSemaforo ? 'inline-flex' : 'none';
+    }
+}
+
+function setFiltroSemaforo(valor) {
+    if (valor && filtroSemaforo === valor) {
+        filtroSemaforo = null;
+    } else {
+        filtroSemaforo = valor || null;
+    }
+    actualizarBarraSemaforo();
+    renderizarSolicitudes(todasLasSolicitudes);
+}
+
+async function cambiarSemaforoSolicitud(idSolicitud, semaforo) {
+    if (!gestionId) return;
+    var valor = normalizarSemaforo(semaforo);
+
+    try {
+        var response = await fetch(
+            '/api/gestiones-maestro/' + gestionId + '/solicitudes/' + encodeURIComponent(idSolicitud) + '/semaforo',
+            {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ semaforo: valor })
+            }
+        );
+        var data = await response.json().catch(function() { return {}; });
+        if (!response.ok) {
+            alert(data.error || 'No se pudo actualizar el semáforo');
+            return;
+        }
+
+        for (var i = 0; i < todasLasSolicitudes.length; i++) {
+            if (String(todasLasSolicitudes[i].id_solicitud) === String(idSolicitud)) {
+                todasLasSolicitudes[i].semaforo = valor;
+            }
+        }
+        for (var j = 0; j < solicitudes.length; j++) {
+            if (String(solicitudes[j].id_solicitud) === String(idSolicitud)) {
+                solicitudes[j].semaforo = valor;
+            }
+        }
+
+        if (data.semaforo_conteos) {
+            actualizarBarraSemaforo(data.semaforo_conteos);
+        } else {
+            actualizarBarraSemaforo();
+        }
+        renderizarSolicitudes(todasLasSolicitudes);
+    } catch (e) {
+        console.error('[cambiarSemaforoSolicitud]', e);
+        alert('Error al actualizar el semáforo');
+    }
+}
+
 // Actualizar progreso
 function actualizarProgreso() {
     if (!datosGestion) return;
@@ -379,7 +493,7 @@ function actualizarProgreso() {
     var total = datosGestion.total_solicitudes || 0;
     var gestionadas = 0;
     
-    // Contar gestionadas
+    // Contar gestionadas (tipo_gestion — sin cambios)
     solicitudes.forEach(function(sol) {
         if (sol.gestion_id && sol.tipo_gestion && sol.tipo_gestion !== 'Pendiente') {
             gestionadas++;
@@ -389,12 +503,18 @@ function actualizarProgreso() {
     var pendientes = total - gestionadas;
     var porcentaje = total > 0 ? Math.round((gestionadas / total) * 100) : 0;
     
-    document.getElementById('total-solicitudes').textContent = total;
-    document.getElementById('gestionadas').textContent = gestionadas;
-    document.getElementById('pendientes').textContent = pendientes;
-    document.getElementById('progreso-porcentaje').textContent = porcentaje + '%';
-    document.getElementById('barra-progreso').style.width = porcentaje + '%';
+    var elTotal = document.getElementById('total-solicitudes');
+    var elGest = document.getElementById('gestionadas');
+    var elPend = document.getElementById('pendientes');
+    var elPct = document.getElementById('progreso-porcentaje');
+    var elBar = document.getElementById('barra-progreso');
+    if (elTotal) elTotal.textContent = total;
+    if (elGest) elGest.textContent = gestionadas;
+    if (elPend) elPend.textContent = pendientes;
+    if (elPct) elPct.textContent = porcentaje + '%';
+    if (elBar) elBar.style.width = porcentaje + '%';
 
+    actualizarBarraSemaforo();
     actualizarEstadoCampanaTexto();
 }
 
@@ -407,8 +527,10 @@ function renderizarSolicitudes(lista) {
         return;
     }
     
-    var busqueda = document.getElementById('busqueda').value.toLowerCase();
-    var filtroEstado = document.getElementById('filtro-estado').value;
+    var busquedaEl = document.getElementById('busqueda');
+    var filtroEstadoEl = document.getElementById('filtro-estado');
+    var busqueda = busquedaEl ? busquedaEl.value.toLowerCase() : '';
+    var filtroEstado = filtroEstadoEl ? filtroEstadoEl.value : '';
     
     // Filtrar
     var filtradas = lista.filter(function(sol) {
@@ -421,10 +543,15 @@ function renderizarSolicitudes(lista) {
             if (!matchId && !matchCedula && !matchNombre && !matchCelular) return false;
         }
         
-        // Filtro por estado
+        // Filtro por tipo de seguimiento (sin cambios)
         if (filtroEstado) {
             var estadoActual = sol.tipo_gestion || 'Pendiente';
             if (estadoActual !== filtroEstado) return false;
+        }
+
+        // Filtro por semáforo operativo
+        if (filtroSemaforo) {
+            if (normalizarSemaforo(sol.semaforo) !== filtroSemaforo) return false;
         }
         
         return true;
@@ -447,8 +574,8 @@ function renderizarSolicitudes(lista) {
     for (var i = 0; i < filtradas.length; i++) {
         var sol = filtradas[i];
         var estado = sol.tipo_gestion || 'Pendiente';
-        var gestionId = sol.gestion_id;
         var observacion = sol.gestion_obs || '';
+        var semaforo = normalizarSemaforo(sol.semaforo);
         
         var coloresEstado = {
             'Pendiente': '#fef3c7',
@@ -464,7 +591,7 @@ function renderizarSolicitudes(lista) {
         var gestionada = estado !== 'Pendiente';
         
         var destacada = sol.destacado == 1;
-        html += '<div class="sol-card ' + (gestionada ? 'gestionada' : 'pendiente') + (destacada ? ' destacada' : '') + '">';
+        html += '<div class="sol-card ' + (gestionada ? 'gestionada' : 'pendiente') + ' sol-semaforo-' + semaforo + (destacada ? ' destacada' : '') + '">';
         
         // Header
         html += '<div class="sol-header">';
@@ -490,30 +617,35 @@ function renderizarSolicitudes(lista) {
         html += '</div>';
         html += '</div>';
         
-// Observación - mostrar siempre de forma visible
+        // Observación
         if (observacion) {
             html += '<div class="sol-observacion">' + observacion + '</div>';
         } else {
             html += '<div class="sol-observacion-vacia">Sin observación registrada</div>';
         }
+
+        // Semáforo (independiente del tipo de seguimiento)
+        html += '<div class="sol-semaforo-btns" role="group" aria-label="Semáforo">';
+        for (var s = 0; s < SEMAFORO_ORDEN.length; s++) {
+            var keyS = SEMAFORO_ORDEN[s];
+            var activeCls = semaforo === keyS ? ' active' : '';
+            html += '<button type="button" class="sol-semaforo-btn' + activeCls + '" data-val="' + keyS + '" onclick="event.stopPropagation(); cambiarSemaforoSolicitud(\'' + sol.id_solicitud + '\', \'' + keyS + '\')" title="' + SEMAFORO_LABELS[keyS] + '">' + SEMAFORO_LABELS[keyS] + '</button>';
+        }
+        html += '</div>';
         
-// Acciones
+        // Acciones
         html += '<div class="sol-acciones">';
         
-        // Botones de acción SIEMPRE visibles (independientemente del estado)
         html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
         html += '<button class="btn-accion btn-llamar-gl" onclick="llamarDesdeGestionLoteDesktop(\'' + escaparParaAtributo(sol.celular || '') + '\')">📞 Llamar</button>';
         html += "<button class=\"btn-accion btn-whatsapp-img\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
         
-        // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {
             html += '<button class="btn-accion tertiary" onclick="verGestion(\'' + sol.id_solicitud + '\')">👁️ Ver</button>';
         }
         
-        // Botón historial para TODAS las cards
         html += '<button class="btn-accion tertiary" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button>';
         
-        // Botón quitar de campaña
         html += '<button class="btn-accion btn-quitar-solicitud" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar</button>';
         
         html += '</div>';
