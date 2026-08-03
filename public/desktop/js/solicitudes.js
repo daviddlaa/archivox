@@ -308,7 +308,7 @@ function toggleFilaCheckbox(checkbox) {
     actualizarContador();
 }
 
-// Toggle card selection by clicking on the card itself (desktop)
+// Click en la tarjeta abre el panel de detalle (la selección solo se hace con el checkbox)
 function toggleCardDesktop(id, event) {
     // Si el click fue en un checkbox, botón o input, no hacer nada (ellos manejan su propio evento)
     if (event) {
@@ -322,15 +322,8 @@ function toggleCardDesktop(id, event) {
             return;
         }
     }
-    
-    var card = document.querySelector('.solicitud-card[data-id="' + id + '"]');
-    if (!card) return;
-    
-    var checkbox = card.querySelector('.checkbox-fila');
-    if (checkbox) {
-        checkbox.checked = !checkbox.checked;
-        toggleFilaCheckbox(checkbox);
-    }
+
+    abrirPanelSolicitud(id);
 }
 
 function seleccionarTodos() {
@@ -911,12 +904,11 @@ function renderizarCards(datos) {
         html += '  <div class="card-fila-3">';
         html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesCard(' + id + ')">📋 Gestiones</button>';
         html += '    <button class="card-btn btn-llamar" onclick="event.stopPropagation(); llamarClienteDesktop(\'' + (item.celular || '') + '\')">📞 Llamar</button>';
-        html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletarInfoCard(' + id + ')">✏️ Completar</button>';
         html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); whatsAppClienteDesktop(\'' + (item.celular || '') + '\', \'' + escaparParaAtributoDesktop(item.nombre || '') + '\')">💬 WhatsApp</button>';
         html += '    <div class="card-actions-more" onclick="event.stopPropagation()">';
         html += '      <button class="card-btn btn-more" onclick="toggleCardMenuDesktop(event, \'' + id + '\')" title="Más acciones">⋮</button>';
         html += '      <div class="card-dropdown-menu" id="card-menu-desktop-' + id + '">';
-        html += '        <button class="dropdown-item" onclick="event.stopPropagation(); abrirEditarSolicitudDesktop(\'' + id + '\'); cerrarTodosLosMenusDesktop()">✏️ Editar</button>';
+        html += '        <button class="dropdown-item" onclick="event.stopPropagation(); abrirEditarEnPanel(\'' + id + '\'); cerrarTodosLosMenusDesktop()">✏️ Editar</button>';
         html += '        <div class="dropdown-divider"></div>';
         html += '        <button class="dropdown-item dropdown-item-danger" onclick="event.stopPropagation(); confirmarEliminarSolicitudDesktop(\'' + id + '\'); cerrarTodosLosMenusDesktop()">🗑️ Eliminar</button>';
         html += '      </div>';
@@ -1980,6 +1972,397 @@ function confirmarEliminarSolicitudDesktop(id) {
         console.error('Error:', err);
         alert('Error al eliminar');
     });
+}
+
+// ============================================================================
+// PANEL LATERAL DE DETALLE DESKTOP (DRAWER)
+// ============================================================================
+var _panelSolicitudId = null;
+
+function inicialesNombre(nombre) {
+    var partes = String(nombre || '').trim().split(/\s+/).filter(Boolean);
+    var ini = '';
+    if (partes.length >= 2) {
+        ini = (partes[0][0] || '') + (partes[partes.length - 1][0] || '');
+    } else if (partes.length === 1) {
+        ini = partes[0].substring(0, 2);
+    }
+    return (ini || '?').toUpperCase();
+}
+
+function panelEscapeHtml(texto) {
+    return String(texto == null ? '' : texto).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function estadoPanelColor(estado) {
+    var colores = {
+        'ACTIVADA': '#dcfce7',
+        'RECHAZADA': '#fee2e2',
+        'DEVUELTA': '#fef3c7',
+        'APROBADA PARA LIBERACIÓN': '#d1fae5'
+    };
+    return colores[estado] || '#f3f4f6';
+}
+
+function formatIngreso(valor) {
+    if (valor === null || valor === undefined || valor === '') return '—';
+    var num = parseFloat(valor);
+    if (isNaN(num)) return String(valor);
+    return num.toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function panelCampo(label, valor) {
+    return '<div class="panel-campo"><span class="panel-campo-label">' + label + '</span><span class="panel-campo-value">' + panelEscapeHtml(valor) + '</span></div>';
+}
+
+function panelSeccion(titulo, contenido, grid) {
+    var attr = (grid === false) ? '' : ' class="panel-seccion-grid"';
+    return '<div class="panel-seccion"><div class="panel-seccion-titulo">' + titulo + '</div><div' + attr + '>' + contenido + '</div></div>';
+}
+
+function renderPanelReferencias(referencias) {
+    if (!referencias || !referencias.length) return '<div class="panel-texto">Sin referencias registradas</div>';
+    var html = '';
+    for (var i = 0; i < referencias.length; i++) {
+        var r = referencias[i] || {};
+        if (!r.nombre && !r.telefono) continue;
+        html += '<div class="panel-ref">';
+        html += '  <div class="panel-ref-nombre">👤 ' + panelEscapeHtml(r.nombre || 'Sin nombre') + '</div>';
+        html += '  <div class="panel-ref-detalle">📞 ' + panelEscapeHtml(r.telefono || '—') + (r.relacion ? ' · 🤝 ' + panelEscapeHtml(r.relacion) : '') + '</div>';
+        html += '</div>';
+    }
+    return html || '<div class="panel-texto">Sin referencias registradas</div>';
+}
+
+function renderPanelUltimaGestion(datos) {
+    if (!datos.ultima_gestion_tipo) return '<div class="panel-texto">Sin gestiones registradas</div>';
+    var fecha = datos.ultima_gestion_fecha ? new Date(datos.ultima_gestion_fecha).toLocaleString('es-ES') : '';
+    var html = '<div class="panel-gestion-tipo">📋 ' + panelEscapeHtml(datos.ultima_gestion_tipo) + '</div>';
+    if (fecha) html += '<div class="panel-gestion-fecha">' + fecha + '</div>';
+    if (datos.ultima_gestion_obs) html += '<div class="panel-gestion-obs">' + panelEscapeHtml(datos.ultima_gestion_obs) + '</div>';
+    return html;
+}
+
+function renderPanelDetalle(datos, info) {
+    var nombre = datos.nombre || 'Sin nombre';
+    var celular = datos.celular || '';
+    var html = '';
+
+    html += '<div class="panel-acciones">';
+    html += '  <button class="panel-accion-btn" onclick="llamarClienteDesktop(\'' + escaparParaAtributoDesktop(celular) + '\')">📞 <span>Llamar</span></button>';
+    html += '  <button class="panel-accion-btn" onclick="whatsAppClienteDesktop(\'' + escaparParaAtributoDesktop(celular) + '\', \'' + escaparParaAtributoDesktop(nombre) + '\')">💬 <span>WhatsApp</span></button>';
+    html += '</div>';
+
+    html += panelSeccion('👤 Datos Personales',
+        panelCampo('Cédula', datos.cedula) +
+        panelCampo('Celular', datos.celular) +
+        panelCampo('Correo', info.correo_electronico || datos.correo_electronico)
+    );
+
+    html += panelSeccion('📍 Ubicación',
+        panelCampo('Dirección', info.direccion || datos.direccion) +
+        panelCampo('Dirección de Trabajo', info.direccion_trabajo || datos.direccion_trabajo)
+    );
+
+    html += panelSeccion('💼 Laboral / Económico',
+        panelCampo('Ocupación', info.ocupacion || datos.ocupacion) +
+        panelCampo('Ingreso Mensual', formatIngreso(info.ingreso_mensual || datos.ingreso_mensual))
+    );
+
+    var detalle = panelCampo('Producto', datos.producto) +
+        panelCampo('Código Plus', info.codigo_plus || datos.codigo_plus) +
+        panelCampo('Segmento', datos.segmento) +
+        panelCampo('Fecha Solicitud', datos.fecha_solicitud);
+    if (_esLider && datos.vendedor) detalle += panelCampo('Vendedor', datos.vendedor);
+    if (datos.nombre_campana) detalle += panelCampo('Campaña', datos.nombre_campana);
+    html += panelSeccion('📦 Detalles', detalle);
+
+    var observaciones = info.observaciones || datos.observaciones;
+    html += panelSeccion('📝 Observaciones', '<div class="panel-texto">' + panelEscapeHtml(observaciones || 'Sin observaciones') + '</div>', false);
+
+    html += panelSeccion('👥 Referencias', renderPanelReferencias(info.referencias), false);
+
+    html += panelSeccion('🕐 Última Gestión', renderPanelUltimaGestion(datos), false);
+
+    return html;
+}
+
+function renderPanelFooterDetalle(id) {
+    return '<button class="panel-footer-btn panel-btn-primary" onclick="abrirEditarEnPanel(\'' + id + '\')">✏️ Editar</button>' +
+           '<button class="panel-footer-btn panel-btn-danger" onclick="confirmarEliminarDesdePanel(\'' + id + '\')">🗑️ Eliminar</button>';
+}
+
+function confirmarEliminarDesdePanel(id) {
+    cerrarPanelSolicitud();
+    confirmarEliminarSolicitudDesktop(id);
+}
+
+function crearEstructuraPanel() {
+    var existente = document.getElementById('panel-solicitud-overlay');
+    if (existente) return;
+
+    var html = '';
+    html += '<div class="panel-solicitud-overlay" id="panel-solicitud-overlay" onclick="cerrarPanelSolicitud()">';
+    html += '  <aside class="panel-solicitud" onclick="event.stopPropagation()">';
+    html += '    <div class="panel-solicitud-header">';
+    html += '      <div class="panel-solicitud-avatar" id="panel-solicitud-avatar">?</div>';
+    html += '      <div class="panel-solicitud-info">';
+    html += '        <div class="panel-solicitud-nombre" id="panel-solicitud-nombre">—</div>';
+    html += '        <div class="panel-solicitud-estado" id="panel-solicitud-estado"></div>';
+    html += '      </div>';
+    html += '      <button class="panel-solicitud-close" onclick="cerrarPanelSolicitud()" aria-label="Cerrar">✕</button>';
+    html += '    </div>';
+    html += '    <div class="panel-solicitud-body" id="panel-solicitud-body"><div class="panel-loading">⏳ Cargando...</div></div>';
+    html += '    <div class="panel-solicitud-footer" id="panel-solicitud-footer"></div>';
+    html += '  </aside>';
+    html += '</div>';
+
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    requestAnimationFrame(function() {
+        var overlay = document.getElementById('panel-solicitud-overlay');
+        var aside = overlay ? overlay.querySelector('.panel-solicitud') : null;
+        if (overlay) overlay.classList.add('abierto-overlay');
+        if (aside) aside.classList.add('abierto');
+    });
+}
+
+function actualizarPanelHeader(datos) {
+    var nombre = datos.nombre || 'Sin nombre';
+    var avatar = document.getElementById('panel-solicitud-avatar');
+    var nombreEl = document.getElementById('panel-solicitud-nombre');
+    var estadoEl = document.getElementById('panel-solicitud-estado');
+    if (avatar) avatar.textContent = inicialesNombre(nombre);
+    if (nombreEl) nombreEl.textContent = nombre;
+    if (estadoEl) {
+        estadoEl.textContent = datos.estado || 'Sin estado';
+        estadoEl.style.background = estadoPanelColor(datos.estado);
+    }
+}
+
+function cerrarPanelSolicitud() {
+    var overlay = document.getElementById('panel-solicitud-overlay');
+    if (!overlay || overlay.dataset.cerrando) return;
+    overlay.dataset.cerrando = '1';
+
+    overlay.classList.remove('abierto-overlay');
+    var aside = overlay.querySelector('.panel-solicitud');
+    if (aside) aside.classList.remove('abierto');
+
+    setTimeout(function() {
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }, 320);
+
+    _panelSolicitudId = null;
+}
+
+if (!window._panelSolicitudEscAttached) {
+    window._panelSolicitudEscAttached = true;
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') cerrarPanelSolicitud();
+    });
+}
+
+function abrirPanelSolicitud(id) {
+    var datos = datosFilas[id];
+    if (!datos) return;
+
+    crearEstructuraPanel();
+    _panelSolicitudId = id;
+    actualizarPanelHeader(datos);
+    cargarPanelSolicitud(id);
+}
+
+function cargarPanelSolicitud(id) {
+    var datos = datosFilas[id];
+    if (!datos) return;
+
+    var body = document.getElementById('panel-solicitud-body');
+    var footer = document.getElementById('panel-solicitud-footer');
+    if (body) body.innerHTML = '<div class="panel-loading">⏳ Cargando...</div>';
+    if (footer) footer.innerHTML = '';
+
+    fetch('/api/excel/solicitudes/' + id + '/completa', { credentials: 'include' })
+    .then(function(res) { return res.ok ? res.json() : null; })
+    .then(function(data) {
+        if (body) body.innerHTML = renderPanelDetalle(datos, data || {});
+        if (footer) footer.innerHTML = renderPanelFooterDetalle(id);
+    })
+    .catch(function() {
+        if (body) body.innerHTML = renderPanelDetalle(datos, {});
+        if (footer) footer.innerHTML = renderPanelFooterDetalle(id);
+    });
+}
+
+function panelFormCampo(label, inputHtml) {
+    return '<div class="panel-form-grupo"><label class="panel-form-label">' + label + '</label>' + inputHtml + '</div>';
+}
+
+async function renderPanelEditar(id, datos, info) {
+    var body = document.getElementById('panel-solicitud-body');
+    var footer = document.getElementById('panel-solicitud-footer');
+
+    var estadosOptions = '<option value="">Seleccionar...</option>';
+    var segmentosOptions = '<option value="">Seleccionar...</option>';
+    try {
+        var resEstados = await fetch('/api/excel/dashboard/estados', { credentials: 'include' });
+        var resSegmentos = await fetch('/api/excel/dashboard/segmentos', { credentials: 'include' });
+        var estadosData = resEstados.ok ? await resEstados.json() : [];
+        var segmentosData = resSegmentos.ok ? await resSegmentos.json() : [];
+        for (var e = 0; e < estadosData.length; e++) {
+            var val = estadosData[e].estado || estadosData[e];
+            var sel = val === datos.estado ? 'selected' : '';
+            estadosOptions += '<option value="' + panelEscapeHtml(val) + '" ' + sel + '>' + panelEscapeHtml(val) + '</option>';
+        }
+        for (var s = 0; s < segmentosData.length; s++) {
+            var val2 = segmentosData[s].segmento || segmentosData[s];
+            var sel2 = val2 === datos.segmento ? 'selected' : '';
+            segmentosOptions += '<option value="' + panelEscapeHtml(val2) + '" ' + sel2 + '>' + panelEscapeHtml(val2) + '</option>';
+        }
+    } catch (err) {
+        console.error('Error cargando estados/segmentos:', err);
+    }
+
+    var referencias = (info.referencias || []).slice();
+    while (referencias.length < 3) {
+        referencias.push({ nombre: '', telefono: '', relacion: '' });
+    }
+    var opcionesRelacion = ['Amigo', 'Familiar', 'Vecino', 'Compañero', 'Otro'];
+    var htmlRef = '';
+    for (var i = 0; i < 3; i++) {
+        var r = referencias[i] || {};
+        var num = i + 1;
+        var selectOpciones = '<option value="">Seleccionar...</option>';
+        for (var j = 0; j < opcionesRelacion.length; j++) {
+            var selRel = opcionesRelacion[j] === r.relacion ? 'selected' : '';
+            selectOpciones += '<option value="' + opcionesRelacion[j] + '" ' + selRel + '>' + opcionesRelacion[j] + '</option>';
+        }
+        htmlRef += '<div class="panel-ref-form">';
+        htmlRef += '  <div class="panel-ref-form-titulo">👤 Referencia #' + num + '</div>';
+        htmlRef += '  <label class="panel-form-label">Nombres y Apellidos</label>';
+        htmlRef += '  <input type="text" class="panel-input" id="panel-ref-' + num + '-nombre" value="' + panelEscapeHtml(r.nombre) + '" placeholder="Nombre completo">';
+        htmlRef += '  <label class="panel-form-label">📞 Teléfono</label>';
+        htmlRef += '  <input type="tel" class="panel-input" id="panel-ref-' + num + '-telefono" value="' + panelEscapeHtml(r.telefono) + '" placeholder="Número de teléfono">';
+        htmlRef += '  <label class="panel-form-label">🤝 Relación</label>';
+        htmlRef += '  <select class="panel-select" id="panel-ref-' + num + '-relacion">' + selectOpciones + '</select>';
+        htmlRef += '</div>';
+    }
+
+    var html = '';
+    html += '<div class="panel-form-encabezado"><strong>Cliente:</strong> ' + panelEscapeHtml(datos.nombre || 'N/A') + ' · <strong>#' + id + '</strong></div>';
+
+    html += panelSeccion('📌 Estado y Segmento',
+        panelFormCampo('📌 Estado', '<select class="panel-select" id="panel-editar-estado">' + estadosOptions + '</select>') +
+        panelFormCampo('🏷️ Segmento', '<select class="panel-select" id="panel-editar-segmento">' + segmentosOptions + '</select>')
+    );
+
+    html += panelSeccion('📋 Información Adicional',
+        panelFormCampo('📦 Código Plus', '<input type="text" class="panel-input" id="panel-codigo-plus" value="' + panelEscapeHtml(info.codigo_plus || '') + '" placeholder="Código Plus">') +
+        panelFormCampo('📍 Dirección', '<input type="text" class="panel-input" id="panel-direccion" value="' + panelEscapeHtml(info.direccion || '') + '" placeholder="Dirección de domicilio">') +
+        panelFormCampo('🏢 Dirección de Trabajo', '<input type="text" class="panel-input" id="panel-direccion-trabajo" value="' + panelEscapeHtml(info.direccion_trabajo || '') + '" placeholder="Dirección de trabajo">') +
+        panelFormCampo('💼 Ocupación', '<input type="text" class="panel-input" id="panel-ocupacion" value="' + panelEscapeHtml(info.ocupacion || '') + '" placeholder="Ocupación">') +
+        panelFormCampo('📧 Correo Electrónico', '<input type="email" class="panel-input" id="panel-correo" value="' + panelEscapeHtml(info.correo_electronico || '') + '" placeholder="cliente@ejemplo.com">') +
+        panelFormCampo('💰 Ingreso Mensual', '<input type="number" step="0.01" min="0" class="panel-input" id="panel-ingreso" value="' + panelEscapeHtml(info.ingreso_mensual || '') + '" placeholder="0.00">') +
+        '<div class="panel-form-grupo panel-form-grupo-ancho"><label class="panel-form-label">📝 Observaciones</label><textarea class="panel-textarea" id="panel-observaciones" rows="3" placeholder="Escriba aquí cualquier observación o nota adicional...">' + panelEscapeHtml(info.observaciones || '') + '</textarea></div>'
+    );
+
+    html += panelSeccion('👥 Referencias Personales', htmlRef, false);
+
+    if (body) body.innerHTML = html;
+    if (body) body.scrollTop = 0;
+    if (footer) {
+        footer.innerHTML = '<button class="panel-footer-btn panel-btn-secondary" onclick="cargarPanelSolicitud(' + id + ')">← Volver</button>' +
+                           '<button class="panel-footer-btn panel-btn-primary" id="panel-btn-guardar" onclick="guardarPanelEditarSolicitud(' + id + ')">💾 Guardar</button>';
+    }
+}
+
+function abrirEditarEnPanel(id) {
+    var datos = datosFilas[id];
+    if (!datos) return;
+
+    crearEstructuraPanel();
+    _panelSolicitudId = id;
+    actualizarPanelHeader(datos);
+
+    var body = document.getElementById('panel-solicitud-body');
+    var footer = document.getElementById('panel-solicitud-footer');
+    if (body) body.innerHTML = '<div class="panel-loading">⏳ Cargando formulario...</div>';
+    if (footer) footer.innerHTML = '';
+
+    fetch('/api/excel/solicitudes/' + id + '/completa', { credentials: 'include' })
+    .then(function(res) { return res.ok ? res.json() : null; })
+    .then(function(data) {
+        renderPanelEditar(id, datos, data || {});
+    })
+    .catch(function() {
+        renderPanelEditar(id, datos, {});
+    });
+}
+
+async function guardarPanelEditarSolicitud(id) {
+    var estado = document.getElementById('panel-editar-estado').value;
+    var segmento = document.getElementById('panel-editar-segmento').value;
+
+    var codigo_plus = document.getElementById('panel-codigo-plus').value.trim();
+    var correo_electronico = document.getElementById('panel-correo').value.trim();
+    var direccion = document.getElementById('panel-direccion').value.trim();
+    var direccion_trabajo = document.getElementById('panel-direccion-trabajo').value.trim();
+    var ocupacion = document.getElementById('panel-ocupacion').value.trim();
+    var ingresoInput = document.getElementById('panel-ingreso').value.trim();
+    var ingreso_mensual = ingresoInput ? (parseFloat(ingresoInput) || null) : null;
+    var observaciones = document.getElementById('panel-observaciones').value.trim();
+
+    var referencias = [];
+    for (var i = 1; i <= 3; i++) {
+        referencias.push({
+            nombre: document.getElementById('panel-ref-' + i + '-nombre').value.trim(),
+            telefono: document.getElementById('panel-ref-' + i + '-telefono').value.trim(),
+            relacion: document.getElementById('panel-ref-' + i + '-relacion').value
+        });
+    }
+
+    var btn = document.getElementById('panel-btn-guardar');
+    if (btn) { btn.textContent = '⏳ Guardando...'; btn.disabled = true; }
+
+    try {
+        if (estado || segmento) {
+            var res1 = await fetch('/api/excel/solicitudes/' + id + '/editar', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ estado: estado, segmento: segmento })
+            });
+            if (!res1.ok) {
+                var err1 = await res1.json().catch(function() { return {}; });
+                throw new Error(err1.error || 'Error al actualizar estado/segmento');
+            }
+        }
+
+        var res2 = await fetch('/api/excel/solicitudes/' + id + '/completar-info', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                codigo_plus: codigo_plus,
+                correo_electronico: correo_electronico,
+                direccion: direccion,
+                direccion_trabajo: direccion_trabajo,
+                ocupacion: ocupacion,
+                ingreso_mensual: ingreso_mensual,
+                observaciones: observaciones,
+                referencias: referencias
+            })
+        });
+        var resultado = await res2.json();
+        if (resultado.error) throw new Error(resultado.error);
+
+        alert('Solicitud actualizada correctamente');
+        cerrarPanelSolicitud();
+        init();
+    } catch (err) {
+        console.error('Error:', err);
+        alert('Error: ' + err.message);
+    } finally {
+        if (btn) { btn.textContent = '💾 Guardar'; btn.disabled = false; }
+    }
 }
 
 // ============================================================================
