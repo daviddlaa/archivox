@@ -664,18 +664,25 @@ function renderizarSolicitudes(lista) {
         var gestionada = estado !== 'Pendiente';
         
         var destacada = sol.destacado == 1;
-        html += '<div class="sol-card ' + (gestionada ? 'gestionada' : 'pendiente') + ' sol-semaforo-' + semaforo + (destacada ? ' destacada' : '') + '">';
+        html += '<div class="sol-card ' + (gestionada ? 'gestionada' : 'pendiente') + ' sol-semaforo-' + semaforo + (destacada ? ' destacada' : '') + '" data-id="' + sol.id_solicitud + '">';
         
-        // Header
+        // Header — badges left, semáforo pills right
         html += '<div class="sol-header">';
-        html += '<span class="sol-id">#' + sol.id_solicitud + '</span>';
-        html += '<div class="sol-header-badges">';
+        html += '<div class="sol-header-left">';
         if (destacada) {
             html += '<span class="sol-destacado-badge sol-destacado-badge-on" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 0, event)" title="Quitar destacado">🔥 Destacada</span>';
         } else {
             html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1, event)" title="Destacar tarjeta">🔥 Destacar</span>';
         }
         html += '<span class="sol-estado" style="background:' + colorFondo + ';">' + estado + '</span>';
+        html += '</div>';
+        // Semáforo pills in header
+        html += '<div class="sol-semaforo-pills" role="group" aria-label="Semáforo">';
+        for (var s = 0; s < SEMAFORO_ORDEN.length; s++) {
+            var keyS = SEMAFORO_ORDEN[s];
+            var activeCls = semaforo === keyS ? ' active' : '';
+            html += '<button type="button" class="sol-semaforo-pill' + activeCls + '" data-val="' + keyS + '" onclick="event.stopPropagation(); cambiarSemaforoSolicitud(\'' + sol.id_solicitud + '\', \'' + keyS + '\', event)" title="' + SEMAFORO_LABELS[keyS] + '"><span class="sol-semaforo-pill-dot"></span>' + SEMAFORO_LABELS[keyS] + '</button>';
+        }
         html += '</div>';
         html += '</div>';
         
@@ -696,15 +703,6 @@ function renderizarSolicitudes(lista) {
         } else {
             html += '<div class="sol-observacion-vacia">Sin observación registrada</div>';
         }
-
-        // Semáforo — Integrated chips (V3)
-        html += '<div class="sol-semaforo-pills" role="group" aria-label="Semáforo">';
-        for (var s = 0; s < SEMAFORO_ORDEN.length; s++) {
-            var keyS = SEMAFORO_ORDEN[s];
-            var activeCls = semaforo === keyS ? ' active' : '';
-            html += '<button type="button" class="sol-semaforo-pill' + activeCls + '" data-val="' + keyS + '" onclick="event.stopPropagation(); cambiarSemaforoSolicitud(\'' + sol.id_solicitud + '\', \'' + keyS + '\', event)" title="' + SEMAFORO_LABELS[keyS] + '"><span class="sol-semaforo-pill-dot"></span>' + SEMAFORO_LABELS[keyS] + '</button>';
-        }
-        html += '</div>';
         
         // Acciones (desktop: sin botón Llamar)
         html += '<div class="sol-acciones">';
@@ -874,17 +872,14 @@ async function toggleDestacado(solicitudId, nuevoEstado, eventRef) {
 
         // Animación del badge recién pintado
         setTimeout(function() {
-            var cards = document.querySelectorAll('.sol-card');
-            for (var c = 0; c < cards.length; c++) {
-                var idEl = cards[c].querySelector('.sol-id');
-                if (!idEl || idEl.textContent !== '#' + solicitudId) continue;
-                var badge = cards[c].querySelector('.sol-destacado-badge');
+            var cards = document.querySelectorAll('.sol-card[data-id="' + solicitudId + '"]');
+            if (cards.length > 0) {
+                var badge = cards[0].querySelector('.sol-destacado-badge');
                 if (badge) {
                     badge.classList.remove('pop');
                     void badge.offsetWidth;
                     badge.classList.add('pop');
                 }
-                break;
             }
         }, 30);
     } catch (error) {

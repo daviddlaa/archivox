@@ -353,9 +353,9 @@ body {
 /* ===== STATUS PILLS — Integrated with Observation (V3) ===== */
 .sol-semaforo-pills {
     display: flex;
-    gap: 5px;
-    margin-top: 8px;
+    gap: 4px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .sol-semaforo-pills-label {
@@ -459,12 +459,15 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
-.sol-id {
-    font-weight: 700;
-    font-size: 15px;
-    color: var(--text-dark);
+.sol-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .sol-estado {
