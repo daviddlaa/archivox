@@ -1628,6 +1628,7 @@ async function abrirCompletarInfoMovil(id) {
     var direccionTrabajo = datos.direccion_trabajo || '';
     var ocupacion = datos.ocupacion || '';
     var ingresoMensual = datos.ingreso_mensual || '';
+    var observaciones = datos.observaciones || '';
     var referencias = [];
     
     try {
@@ -1640,6 +1641,7 @@ async function abrirCompletarInfoMovil(id) {
             direccionTrabajo = data.direccion_trabajo || direccionTrabajo;
             ocupacion = data.ocupacion || ocupacion;
             ingresoMensual = data.ingreso_mensual || ingresoMensual;
+            observaciones = data.observaciones || observaciones;
             referencias = data.referencias || [];
         }
     } catch (e) {
@@ -1708,7 +1710,10 @@ async function abrirCompletarInfoMovil(id) {
     contenido += '<input type="email" id="correo-completar" value="' + escaparParaAtributo(correoElectronico) + '" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:10px;box-sizing:border-box;" placeholder="cliente@ejemplo.com">';
     
     contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">💰 Ingreso Mensual:</label>';
-    contenido += '<input type="number" step="0.01" min="0" id="ingreso-mensual-completar" value="' + (ingresoMensual || '') + '" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:0;box-sizing:border-box;" placeholder="0.00">';
+    contenido += '<input type="number" step="0.01" min="0" id="ingreso-mensual-completar" value="' + (ingresoMensual || '') + '" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:10px;box-sizing:border-box;" placeholder="0.00">';
+    
+    contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">📝 Observaciones:</label>';
+    contenido += '<textarea id="observaciones-completar" rows="3" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:0;box-sizing:border-box;resize:vertical;" placeholder="Escriba aquí cualquier observación o nota adicional...">' + escaparParaAtributo(observaciones) + '</textarea>';
     
     contenido += '</div>';
     
@@ -1738,6 +1743,7 @@ function guardarCompletarInfoMovil(id) {
     var ocupacion = document.getElementById('ocupacion-completar').value.trim();
     var ingresoInput = document.getElementById('ingreso-mensual-completar').value.trim();
     var ingreso_mensual = ingresoInput ? (parseFloat(ingresoInput) || null) : null;
+    var observaciones = document.getElementById('observaciones-completar').value.trim();
     
     // Recoger referencias (solo las que tienen nombre)
     var referencias = [];
@@ -1770,6 +1776,7 @@ function guardarCompletarInfoMovil(id) {
             direccion_trabajo: direccion_trabajo,
             ocupacion: ocupacion,
             ingreso_mensual: ingreso_mensual,
+            observaciones: observaciones,
             referencias: referencias
         })
     })
@@ -1815,6 +1822,7 @@ function exportarExcel() {
                 'Nombre': datos.nombre,
                 'Celular': datos.celular,
                 'Código Plus': datos.codigo_plus,
+                'Observaciones': datos.observaciones,
                 'Segmento': datos.segmento,
                 'Producto': datos.producto,
                 'Fecha Solicitud': datos.fecha_solicitud
@@ -1834,7 +1842,7 @@ function exportarExcel() {
     // Agregar columna con ancho automático
     var wscols = [
         {wch: 10}, {wch: 15}, {wch: 12}, {wch: 30}, {wch: 12}, 
-        {wch: 15}, {wch: 15}, {wch: 20}, {wch: 15}
+        {wch: 15}, {wch: 30}, {wch: 15}, {wch: 20}, {wch: 15}
     ];
     ws['!cols'] = wscols;
     

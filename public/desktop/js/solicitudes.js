@@ -1199,6 +1199,7 @@ function exportarExcel() {
                 'Nombre': datos.nombre,
                 'Celular': datos.celular,
                 'Código Plus': datos.codigo_plus,
+                'Observaciones': datos.observaciones,
                 'Segmento': datos.segmento,
                 'Producto': datos.producto,
                 'Fecha Solicitud': datos.fecha_solicitud
@@ -1216,7 +1217,7 @@ function exportarExcel() {
         var ws = XLSX.utils.json_to_sheet(datosAExportar);
         var wscols = [
             {wch: 10}, {wch: 15}, {wch: 12}, {wch: 30}, {wch: 12},
-            {wch: 15}, {wch: 15}, {wch: 20}, {wch: 15}
+            {wch: 15}, {wch: 30}, {wch: 15}, {wch: 20}, {wch: 15}
         ];
         ws['!cols'] = wscols;
         XLSX.utils.book_append_sheet(wb, ws, 'Solicitudes');
@@ -1673,6 +1674,7 @@ function abrirCompletarInfoCard(id) {
         var direccionTrabajo = (data && data.direccion_trabajo) || datos.direccion_trabajo || '';
         var ocupacion = (data && data.ocupacion) || datos.ocupacion || '';
         var ingreso = (data && data.ingreso_mensual) || datos.ingreso_mensual || '';
+        var observaciones = (data && data.observaciones) || datos.observaciones || '';
         var referencias = (data && data.referencias) || [];
 
         while (referencias.length < 3) {
@@ -1729,7 +1731,9 @@ function abrirCompletarInfoCard(id) {
         contenido += '  <label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">📧 Correo Electrónico:</label>';
         contenido += '  <input type="email" id="correo-completar-desktop" value="' + escaparParaAtributoDesktop(correo) + '" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:10px;box-sizing:border-box;" placeholder="cliente@ejemplo.com">';
         contenido += '  <label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">💰 Ingreso Mensual:</label>';
-        contenido += '  <input type="number" step="0.01" min="0" id="ingreso-mensual-completar-desktop" value="' + (ingreso || '') + '" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:0;box-sizing:border-box;" placeholder="0.00">';
+        contenido += '  <input type="number" step="0.01" min="0" id="ingreso-mensual-completar-desktop" value="' + (ingreso || '') + '" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:10px;box-sizing:border-box;" placeholder="0.00">';
+        contenido += '  <label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">📝 Observaciones:</label>';
+        contenido += '  <textarea id="observaciones-completar-desktop" rows="3" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:0;box-sizing:border-box;resize:vertical;" placeholder="Escriba aquí cualquier observación o nota adicional...">' + escaparParaAtributoDesktop(observaciones) + '</textarea>';
         contenido += '</div>';
 
         // Referencias
@@ -1761,6 +1765,7 @@ function guardarCompletarInfoDesktop(id) {
     var ocupacion = document.getElementById('ocupacion-completar-desktop').value.trim();
     var ingresoInput = document.getElementById('ingreso-mensual-completar-desktop').value.trim();
     var ingreso_mensual = ingresoInput ? (parseFloat(ingresoInput) || null) : null;
+    var observaciones = document.getElementById('observaciones-completar-desktop').value.trim();
 
     var referencias = [];
     for (var i = 1; i <= 3; i++) {
@@ -1784,6 +1789,7 @@ function guardarCompletarInfoDesktop(id) {
             direccion_trabajo: direccion_trabajo,
             ocupacion: ocupacion,
             ingreso_mensual: ingreso_mensual,
+            observaciones: observaciones,
             referencias: referencias
         })
     })

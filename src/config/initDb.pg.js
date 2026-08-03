@@ -44,6 +44,7 @@ const initTables = async () => {
                 direccion_trabajo TEXT,
                 ocupacion TEXT,
                 ingreso_mensual DECIMAL(12,2),
+                observaciones TEXT,
                 fecha_solicitud TEXT,
                 usuario_id INTEGER,
                 vendedor TEXT,
@@ -54,6 +55,18 @@ const initTables = async () => {
                 FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
             )
         `);
+        
+        // Migración: agregar columna observaciones a solicitudes si no existe
+        try {
+            await client.query(`ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS observaciones TEXT`);
+        } catch (e) {
+            // Fallback para PostgreSQL < 9.6
+            try {
+                await client.query(`ALTER TABLE solicitudes ADD COLUMN observaciones TEXT`);
+            } catch (e2) {
+                // Columna ya existe, ignorar
+            }
+        }
         
         // Tabla de ventas de vendedores (control de equipo)
         await client.query(`

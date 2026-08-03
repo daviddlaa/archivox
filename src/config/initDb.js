@@ -96,6 +96,7 @@ db.exec(`
         direccion_trabajo TEXT,
         ocupacion TEXT,
         ingreso_mensual REAL,
+        observaciones TEXT,
         fecha_solicitud TEXT,
         usuario_id INTEGER,
         vendedor TEXT,
@@ -106,6 +107,14 @@ db.exec(`
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     )
 `);
+
+// Migración: agregar columna observaciones a solicitudes si no existe
+try {
+    db.exec(`ALTER TABLE solicitudes ADD COLUMN observaciones TEXT`);
+    console.log('[DB] Columna solicitudes.observaciones agregada');
+} catch (err) {
+    // Columna ya existe, ignorar
+}
 
 db.exec(`
     CREATE TABLE IF NOT EXISTS ventas_vendedores (

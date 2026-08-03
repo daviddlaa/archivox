@@ -890,7 +890,15 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - Búsqueda en servidor con filtros (estado, segmento, cédula, nombre)
 - Vista de tarjetas con información detallada
 - Edición de estado y segmento (con auditoría)
-- Completar información (código plus, referencias, dirección)
+- Completar información: formulario completo en escritorio y móvil
+  (código plus, dirección, dirección de trabajo, ocupación, correo,
+  ingreso mensual, observaciones de texto libre y 3 referencias
+  personales). En escritorio se abre con el sistema de modales compartido
+  (`/js/modal.js`), por lo que el cierre funciona con ✕, Cancelar, clic
+  fuera o tecla Escape; el guardado va a
+  `PUT /api/excel/solicitudes/:id/completar-info`. La columna
+  `solicitudes.observaciones` se crea automáticamente al iniciar el
+  servidor (idempotente) en SQLite y PostgreSQL.
 - Destacar solicitudes
 - Gestión directa (crear gestión)
 - Exportación de seleccionadas

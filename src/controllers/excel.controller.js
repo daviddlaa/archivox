@@ -827,7 +827,7 @@ exports.getSolicitudCompleta = async (req, res) => {
     try {
         // Obtener datos de la solicitud
         const solicitudResult = await pool.query(
-            `SELECT id_solicitud, codigo_plus, correo_electronico, direccion, direccion_trabajo, ocupacion, ingreso_mensual
+            `SELECT id_solicitud, codigo_plus, correo_electronico, direccion, direccion_trabajo, ocupacion, ingreso_mensual, observaciones
              FROM solicitudes WHERE id_solicitud = $1 AND usuario_id = $2`,
             [id, usuarioId]
         );
@@ -863,7 +863,7 @@ exports.actualizarCompletarInfo = async (req, res) => {
     }
     
     const { id } = req.params;
-    const { codigo_plus, correo_electronico, direccion, direccion_trabajo, ocupacion, ingreso_mensual, referencias } = req.body;
+    const { codigo_plus, correo_electronico, direccion, direccion_trabajo, ocupacion, ingreso_mensual, observaciones, referencias } = req.body;
     
     if (!id) {
         return res.status(400).json({ error: 'ID de solicitud requerido' });
@@ -883,10 +883,11 @@ exports.actualizarCompletarInfo = async (req, res) => {
                  direccion_trabajo = $4, 
                  ocupacion = $5, 
                  ingreso_mensual = $6,
+                 observaciones = $7,
                  fecha_actualizacion = CURRENT_TIMESTAMP
-             WHERE id_solicitud = $7 AND usuario_id = $8
+             WHERE id_solicitud = $8 AND usuario_id = $9
              RETURNING *`,
-            [codigo_plus || null, correo_electronico || null, direccion || null, direccion_trabajo || null, ocupacion || null, ingreso_mensual || null, id, usuarioId]
+            [codigo_plus || null, correo_electronico || null, direccion || null, direccion_trabajo || null, ocupacion || null, ingreso_mensual || null, observaciones || null, id, usuarioId]
         );
         
         if (updateResult.rows.length === 0) {
