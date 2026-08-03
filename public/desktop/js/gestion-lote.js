@@ -203,8 +203,6 @@ async function cargarListaCampanas() {
             
             html += '<div class="campaña-acciones-grid">';
             
-            html += '<button type="button" class="campaña-btn-accion campaña-btn-ver" onclick="event.stopPropagation(); seleccionarCampaña(' + g.id + ')" title="Ver campaña">👁️ Ver</button>';
-            
             if (_esLider && _agentesEquipo.length > 0) {
                 html += '<button type="button" class="campaña-btn-accion campaña-btn-asignar" onclick="event.stopPropagation(); CampanasPopover.close(); abrirModalAsignarAgente(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.asignado_a || 'null') + ')" title="Asignar a agente">👤 Asignar</button>';
             } else {

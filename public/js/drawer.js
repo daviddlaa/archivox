@@ -225,7 +225,7 @@
     };
 
     /* ======================================================================
-       DRAWER DE ESCRITORIO (inalterado)
+       DRAWER DE ESCRITORIO (nav scrolleable + footer fijo)
     ====================================================================== */
     function getNavHTML() {
         var admin = esPaginaAdmin();
@@ -236,23 +236,27 @@
             // Solo opciones administrativas - Sin opciones operativas
             // ============================================================
             return '' +
-                '<div class="drawer-section">' +
-                    '<h3>Administración</h3>' +
-                    '<ul class="drawer-menu">' +
-                        '<li><a href="/admin" class="drawer-link"><span class="drawer-menu-icon">📊</span>Dashboard</a></li>' +
-                        '<li><a href="#" class="drawer-link" onclick="cambiarTab(\'usuarios\'); Drawer.close(); return false;"><span class="drawer-menu-icon">👥</span>Usuarios</a></li>' +
-                        '<li><a href="#" class="drawer-link" onclick="cambiarTab(\'estadisticas\'); Drawer.close(); return false;"><span class="drawer-menu-icon">📊</span>Estadísticas</a></li>' +
-                        '<li><a href="#" class="drawer-link" onclick="cambiarTab(\'auditoria\'); Drawer.close(); return false;"><span class="drawer-menu-icon">📋</span>Auditoría</a></li>' +
-                        '<li><a href="#" class="drawer-link" onclick="cambiarTab(\'notificaciones\'); Drawer.close(); return false;"><span class="drawer-menu-icon">🔔</span>Notificaciones</a></li>' +
-                        '<li><a href="#" class="drawer-link" onclick="cambiarTab(\'equipos\'); Drawer.close(); return false;"><span class="drawer-menu-icon">🏢</span>Equipos</a></li>' +
-                    '</ul>' +
+                '<div class="drawer-nav">' +
+                    '<div class="drawer-section">' +
+                        '<h3>Administración</h3>' +
+                        '<ul class="drawer-menu">' +
+                            '<li><a href="/admin" class="drawer-link"><span class="drawer-menu-icon">📊</span>Dashboard</a></li>' +
+                            '<li><a href="#" class="drawer-link" onclick="cambiarTab(\'usuarios\'); Drawer.close(); return false;"><span class="drawer-menu-icon">👥</span>Usuarios</a></li>' +
+                            '<li><a href="#" class="drawer-link" onclick="cambiarTab(\'estadisticas\'); Drawer.close(); return false;"><span class="drawer-menu-icon">📊</span>Estadísticas</a></li>' +
+                            '<li><a href="#" class="drawer-link" onclick="cambiarTab(\'auditoria\'); Drawer.close(); return false;"><span class="drawer-menu-icon">📋</span>Auditoría</a></li>' +
+                            '<li><a href="#" class="drawer-link" onclick="cambiarTab(\'notificaciones\'); Drawer.close(); return false;"><span class="drawer-menu-icon">🔔</span>Notificaciones</a></li>' +
+                            '<li><a href="#" class="drawer-link" onclick="cambiarTab(\'equipos\'); Drawer.close(); return false;"><span class="drawer-menu-icon">🏢</span>Equipos</a></li>' +
+                        '</ul>' +
+                    '</div>' +
                 '</div>' +
-                '<div class="drawer-section drawer-section-last">' +
-                    '<h3>Cuenta</h3>' +
-                    '<ul class="drawer-menu">' +
-                        '<li><a href="/perfil" class="drawer-link"><span class="drawer-menu-icon">👤</span>Mi Perfil</a></li>' +
-                        '<li class="drawer-menu-logout"><a href="#" onclick="cerrarSesion()" class="drawer-link"><span class="drawer-menu-icon">🚪</span>Cerrar Sesión</a></li>' +
-                    '</ul>' +
+                '<div class="drawer-footer">' +
+                    '<div class="drawer-section drawer-section-last">' +
+                        '<h3>Cuenta</h3>' +
+                        '<ul class="drawer-menu">' +
+                            '<li><a href="/perfil" class="drawer-link"><span class="drawer-menu-icon">👤</span>Mi Perfil</a></li>' +
+                            '<li class="drawer-menu-logout"><a href="#" onclick="cerrarSesion()" class="drawer-link"><span class="drawer-menu-icon">🚪</span>Cerrar Sesión</a></li>' +
+                        '</ul>' +
+                    '</div>' +
                 '</div>';
         }
 
@@ -261,32 +265,36 @@
         // Líderes, Agentes y Usuarios ven este menú
         // ============================================================
         return '' +
-            '<div class="drawer-section">' +
-                '<h3>Inicio</h3>' +
-                '<ul class="drawer-menu">' +
-                    '<li><a href="/" class="drawer-link"><span class="drawer-menu-icon">📊</span>Dashboard</a></li>' +
-                    '<li><a href="/perfil" class="drawer-link"><span class="drawer-menu-icon">👤</span>Mi Perfil</a></li>' +
-                    '<li><a href="/equipo-ventas" class="drawer-link"><span class="drawer-menu-icon">💰</span>Control de Ventas</a></li>' +
-                    '<li><a href="/equipo" class="drawer-link" id="liderEquipoLink" style="display:none"><span class="drawer-menu-icon">🏢</span>Gestión de Equipo</a></li>' +
-                '</ul>' +
+            '<div class="drawer-nav">' +
+                '<div class="drawer-section">' +
+                    '<h3>Inicio</h3>' +
+                    '<ul class="drawer-menu">' +
+                        '<li><a href="/" class="drawer-link"><span class="drawer-menu-icon">📊</span>Dashboard</a></li>' +
+                        '<li><a href="/perfil" class="drawer-link"><span class="drawer-menu-icon">👤</span>Mi Perfil</a></li>' +
+                        '<li><a href="/equipo-ventas" class="drawer-link"><span class="drawer-menu-icon">💰</span>Control de Ventas</a></li>' +
+                        '<li><a href="/equipo" class="drawer-link" id="liderEquipoLink" style="display:none"><span class="drawer-menu-icon">🏢</span>Gestión de Equipo</a></li>' +
+                    '</ul>' +
+                '</div>' +
+                '<div class="drawer-section">' +
+                    '<h3>Operaciones</h3>' +
+                    '<ul class="drawer-menu">' +
+                        '<li><a href="/importar" class="drawer-link"><span class="drawer-menu-icon">📤</span>Importar Excel</a></li>' +
+                        '<li><a href="/solicitudes" class="drawer-link"><span class="drawer-menu-icon">📋</span>Solicitudes</a></li>' +
+                        '<li><a href="/gestiones" class="drawer-link"><span class="drawer-menu-icon">📝</span>Gestiones</a></li>' +
+                        '<li><a href="/gestion-lote" class="drawer-link"><span class="drawer-menu-icon">🚀</span>Campañas</a></li>' +
+                        '<li><a href="/relaciones" class="drawer-link"><span class="drawer-menu-icon">📋</span>Relaciones</a></li>' +
+                        '<li><a href="/historial" class="drawer-link"><span class="drawer-menu-icon">🔄</span>Historial</a></li>' +
+                    '</ul>' +
+                '</div>' +
             '</div>' +
-            '<div class="drawer-section">' +
-                '<h3>Operaciones</h3>' +
-                '<ul class="drawer-menu">' +
-                    '<li><a href="/importar" class="drawer-link"><span class="drawer-menu-icon">📤</span>Importar Excel</a></li>' +
-                    '<li><a href="/solicitudes" class="drawer-link"><span class="drawer-menu-icon">📋</span>Solicitudes</a></li>' +
-                    '<li><a href="/gestiones" class="drawer-link"><span class="drawer-menu-icon">📝</span>Gestiones</a></li>' +
-                    '<li><a href="/gestion-lote" class="drawer-link"><span class="drawer-menu-icon">🚀</span>Campañas</a></li>' +
-                    '<li><a href="/relaciones" class="drawer-link"><span class="drawer-menu-icon">📋</span>Relaciones</a></li>' +
-                    '<li><a href="/historial" class="drawer-link"><span class="drawer-menu-icon">🔄</span>Historial</a></li>' +
-                '</ul>' +
-            '</div>' +
-            '<div class="drawer-section drawer-section-last">' +
-                '<h3>Cuenta</h3>' +
-                '<ul class="drawer-menu">' +
-                    '<li><a href="/admin" class="drawer-link" id="adminLink" style="display:none"><span class="drawer-menu-icon">🛡️</span>Admin</a></li>' +
-                    '<li class="drawer-menu-logout"><a href="#" onclick="cerrarSesion()" class="drawer-link"><span class="drawer-menu-icon">🚪</span>Cerrar Sesión</a></li>' +
-                '</ul>' +
+            '<div class="drawer-footer">' +
+                '<div class="drawer-section drawer-section-last">' +
+                    '<h3>Cuenta</h3>' +
+                    '<ul class="drawer-menu">' +
+                        '<li><a href="/admin" class="drawer-link" id="adminLink" style="display:none"><span class="drawer-menu-icon">🛡️</span>Admin</a></li>' +
+                        '<li class="drawer-menu-logout"><a href="#" onclick="cerrarSesion()" class="drawer-link"><span class="drawer-menu-icon">🚪</span>Cerrar Sesión</a></li>' +
+                    '</ul>' +
+                '</div>' +
             '</div>';
     }
 
