@@ -905,14 +905,6 @@ function renderizarCards(datos) {
         html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesCard(' + id + ')">📋 Gestiones</button>';
         html += '    <button class="card-btn btn-llamar" onclick="event.stopPropagation(); llamarClienteDesktop(\'' + (item.celular || '') + '\')">📞 Llamar</button>';
         html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); whatsAppClienteDesktop(\'' + (item.celular || '') + '\', \'' + escaparParaAtributoDesktop(item.nombre || '') + '\')">💬 WhatsApp</button>';
-        html += '    <div class="card-actions-more" onclick="event.stopPropagation()">';
-        html += '      <button class="card-btn btn-more" onclick="toggleCardMenuDesktop(event, \'' + id + '\')" title="Más acciones">⋮</button>';
-        html += '      <div class="card-dropdown-menu" id="card-menu-desktop-' + id + '">';
-        html += '        <button class="dropdown-item" onclick="event.stopPropagation(); abrirEditarEnPanel(\'' + id + '\'); cerrarTodosLosMenusDesktop()">✏️ Editar</button>';
-        html += '        <div class="dropdown-divider"></div>';
-        html += '        <button class="dropdown-item dropdown-item-danger" onclick="event.stopPropagation(); confirmarEliminarSolicitudDesktop(\'' + id + '\'); cerrarTodosLosMenusDesktop()">🗑️ Eliminar</button>';
-        html += '      </div>';
-        html += '    </div>';
         html += '  </div>';
 
         // FILA 4: Seguimiento (última gestión)
