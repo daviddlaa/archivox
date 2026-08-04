@@ -5,6 +5,8 @@ var datosGestion = null;
 var solicitudes = [];
 var todasLasSolicitudes = [];
 var campañas = [];
+var filtroSemaforoMovil = null;
+var SEMAFORO_MOVIL = ['sin_clasificar', 'verde', 'amarillo', 'rojo'];
 
 // Estado de líder/agentes (como en desktop)
 var _esLider = false;
@@ -173,6 +175,8 @@ async function cargarDatosGestionMovil() {
         if (panel) panel.style.display = 'block';
         var filtros = document.getElementById('filtros-row');
         if (filtros) filtros.style.display = 'block';
+        var semaforoPanel = document.getElementById('semaforo-mobile');
+        if (semaforoPanel) semaforoPanel.style.display = 'block';
         
         // Mostrar botón de exportar Excel
         var containerExportar = document.getElementById('exportar-excel-container');
@@ -211,15 +215,154 @@ function actualizarProgreso() {
         if (sol.gestion_id && sol.tipo_gestion && sol.tipo_gestion !== 'Pendiente') gestionadas++;
     });
 
-    var pendientes = total - gestionadas;
+    var pendientes = Math.max(total - gestionadas, 0);
     var porcentaje = total > 0 ? Math.round((gestionadas / total) * 100) : 0;
 
-    var elTotal = document.getElementById('total-solicitudes'); if (elTotal) elTotal.textContent = total;
-    var elGes = document.getElementById('gestionadas'); if (elGes) elGes.textContent = gestionadas;
-    var elPen = document.getElementById('pendientes'); if (elPen) elPen.textContent = pendientes;
     var elPct = document.getElementById('progreso-porcentaje'); if (elPct) elPct.textContent = porcentaje + '%';
-    var barra = document.getElementById('barra-progreso'); if (barra) barra.style.width = porcentaje + '%';
-    var barraContainer = document.getElementById('progreso-barra-container'); if (barraContainer) barraContainer.style.display = 'block';
+    var resumen = document.getElementById('avance-mobile-resumen'); if (resumen) resumen.textContent = gestionadas + ' de ' + total + ' solicitudes gestionadas';
+    var restante = document.getElementById('avance-mobile-restante');
+    if (restante) restante.textContent = pendientes > 0 ? 'Faltan solamente ' + pendientes + ' solicitud' + (pendientes === 1 ? '' : 'es') : (total > 0 ? 'Campaña completada' : 'Aún no hay solicitudes en esta campaña');
+    var barra = document.getElementById('barra-progreso');
+    if (barra) {
+        barra.style.width = porcentaje + '%';
+        var track = barra.parentElement;
+        if (track) track.setAttribute('aria-valuenow', porcentaje);
+    }
+    actualizarActividadMovil();
+    actualizarSemaforoMovil();
+    actualizarSiguienteAccionMovilTexto(total);
+}
+
+function normalizarSemaforoMovil(valor) {
+    return SEMAFORO_MOVIL.indexOf(valor) !== -1 ? valor : 'sin_clasificar';
+}
+
+function obtenerConteoSemaforoMovil() {
+    var conteo = { sin_clasificar: 0, verde: 0, amarillo: 0, rojo: 0 };
+    var lista = todasLasSolicitudes || [];
+    lista.forEach(function(sol) { conteo[normalizarSemaforoMovil(sol.semaforo)]++; });
+    return conteo;
+}
+
+function formatearTiempoRelativoMovil(fecha) {
+    if (!fecha) return null;
+    var timestamp = new Date(fecha).getTime();
+    if (isNaN(timestamp)) return null;
+    var minutos = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+    if (minutos < 1) return 'Hace un momento';
+    if (minutos < 60) return 'Hace ' + minutos + ' minuto' + (minutos === 1 ? '' : 's');
+    var horas = Math.floor(minutos / 60);
+    if (horas < 24) return 'Hace ' + horas + ' hora' + (horas === 1 ? '' : 's');
+    var dias = Math.floor(horas / 24);
+    return 'Hace ' + dias + ' día' + (dias === 1 ? '' : 's');
+}
+
+function actualizarActividadMovil() {
+    var ultima = null;
+    (todasLasSolicitudes || []).forEach(function(sol) {
+        if (!sol.fecha_gestion) return;
+        var timestamp = new Date(sol.fecha_gestion).getTime();
+        if (!isNaN(timestamp) && (!ultima || timestamp > ultima.timestamp)) ultima = { timestamp: timestamp, tipo: sol.tipo_gestion || 'Gestión' };
+    });
+    var texto = document.getElementById('ultima-actividad-mobile');
+    var detalle = document.getElementById('actividad-mobile-detalle');
+    var bloque = document.getElementById('actividad-mobile');
+    if (texto) texto.textContent = ultima ? formatearTiempoRelativoMovil(ultima.timestamp) : 'Sin actividad registrada';
+    if (detalle) detalle.textContent = ultima ? ultima.tipo + ' registrada en la campaña' : 'Cuando registres una gestión, aparecerá aquí.';
+    if (bloque) bloque.classList.toggle('actividad-mobile-antigua', !!ultima && (Date.now() - ultima.timestamp) > 8 * 60 * 60 * 1000);
+}
+
+function actualizarSemaforoMovil(conteo) {
+    conteo = conteo || obtenerConteoSemaforoMovil();
+    SEMAFORO_MOVIL.forEach(function(key) {
+        var count = document.getElementById('count-mobile-' + key);
+        var card = document.querySelector('.semaforo-mobile-card[data-semaforo="' + key + '"]');
+        if (count) count.textContent = conteo[key] || 0;
+        if (card) {
+            card.classList.toggle('active', filtroSemaforoMovil === key);
+            card.classList.toggle('is-empty', !(conteo[key] || 0));
+        }
+    });
+    var clear = document.getElementById('btn-semaforo-mobile-todos');
+    if (clear) clear.style.display = filtroSemaforoMovil ? 'inline-flex' : 'none';
+}
+
+function setFiltroSemaforoMovil(valor) {
+    filtroSemaforoMovil = valor && filtroSemaforoMovil === valor ? null : (valor || null);
+    actualizarSemaforoMovil();
+    renderizarSolicitudes(todasLasSolicitudes);
+}
+
+function actualizarSiguienteAccionMovilTexto(total) {
+    var bloque = document.getElementById('siguiente-accion-mobile');
+    var texto = document.getElementById('siguiente-accion-mobile-texto');
+    var boton = document.getElementById('siguiente-accion-mobile-btn');
+    if (!bloque || !texto || !boton) return;
+    var conteo = obtenerConteoSemaforoMovil();
+    var prioridad = null;
+    if (conteo.amarillo > 0) prioridad = { filtro: 'amarillo', texto: 'Gestiona primero las ' + conteo.amarillo + ' solicitudes amarillas.' };
+    else if (conteo.sin_clasificar > 0) prioridad = { filtro: 'sin_clasificar', texto: 'Clasifica las ' + conteo.sin_clasificar + ' solicitudes pendientes de revisión.' };
+    else if (conteo.rojo > 0) prioridad = { filtro: 'rojo', texto: 'Tienes ' + conteo.rojo + ' solicitud' + (conteo.rojo === 1 ? '' : 'es') + ' en espera. Respeta el tiempo antes de volver a contactar.' };
+    else if (total > 0 && (solicitudes || []).some(function(sol) { return !sol.gestion_id || !sol.tipo_gestion || sol.tipo_gestion === 'Pendiente'; })) prioridad = { filtro: null, texto: 'Elige una solicitud pendiente y registra la siguiente gestión.' };
+    texto.textContent = prioridad ? prioridad.texto : (total > 0 ? 'La campaña está al día.' : 'Esta campaña aún no tiene solicitudes.');
+    boton.dataset.semaforo = prioridad && prioridad.filtro ? prioridad.filtro : '';
+    boton.style.display = prioridad && prioridad.filtro ? 'inline-flex' : 'none';
+    bloque.style.display = 'flex';
+}
+
+function ejecutarSiguienteAccionMovil() {
+    var boton = document.getElementById('siguiente-accion-mobile-btn');
+    var filtro = boton && boton.dataset.semaforo;
+    if (filtro) {
+        setFiltroSemaforoMovil(filtro);
+        var lista = document.getElementById('lista-solicitudes');
+        if (lista) lista.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function mostrarConfirmacionGestionMovil(mensaje) {
+    var anterior = document.querySelector('.campana-toast-mobile');
+    if (anterior) anterior.remove();
+    var toast = document.createElement('div');
+    toast.className = 'campana-toast-mobile';
+    toast.textContent = '✓ ' + mensaje;
+    document.body.appendChild(toast);
+    requestAnimationFrame(function() { toast.classList.add('visible'); });
+    setTimeout(function() { toast.classList.remove('visible'); setTimeout(function() { if (toast.parentNode) toast.remove(); }, 180); }, 2200);
+}
+
+function abrirSelectorSemaforoMovil(solicitudId, actual) {
+    var opciones = [
+        { key: 'sin_clasificar', label: 'Por revisar', help: 'Todavía necesita clasificación.' },
+        { key: 'verde', label: 'Ya encaminada', help: 'La gestión avanza correctamente.' },
+        { key: 'amarillo', label: 'Necesita seguimiento', help: 'Conviene retomarla pronto.' },
+        { key: 'rojo', label: 'En espera', help: 'No contactar ahora.' }
+    ];
+    var contenido = '<div class="modal-gestion modal-semaforo-movil"><h2>Estado de espera</h2><p class="semaforo-modal-help">Elige el próximo momento adecuado para contactar.</p><div class="semaforo-modal-opciones">';
+    opciones.forEach(function(opcion) {
+        contenido += '<button type="button" class="semaforo-modal-opcion ' + opcion.key + (actual === opcion.key ? ' actual' : '') + '" onclick="cambiarSemaforoMovil(\'' + solicitudId + '\', \'' + opcion.key + '\')"><span class="sol-semaforo-dot"></span><span><strong>' + opcion.label + '</strong><small>' + opcion.help + '</small></span></button>';
+    });
+    contenido += '</div><button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button></div>';
+    crearModal(contenido);
+}
+
+async function cambiarSemaforoMovil(solicitudId, semaforo) {
+    if (!gestionId) return;
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + gestionId + '/solicitudes/' + encodeURIComponent(solicitudId) + '/semaforo', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ semaforo: semaforo })
+        });
+        var resultado = await response.json().catch(function() { return {}; });
+        if (!response.ok) throw new Error(resultado.error || 'No se pudo actualizar el estado');
+        cerrarModal();
+        mostrarConfirmacionGestionMovil('Estado actualizado');
+        await cargarDatosGestionMovil();
+    } catch (error) {
+        console.error('[movil] Error actualizando semáforo:', error);
+        alert(error.message || 'Error al actualizar el estado');
+    }
 }
 
 function renderizarSolicitudes(lista) {
@@ -244,6 +387,7 @@ function renderizarSolicitudes(lista) {
             var estadoActual = sol.tipo_gestion || 'Pendiente';
             if (estadoActual !== filtroEstado) return false;
         }
+        if (filtroSemaforoMovil && normalizarSemaforoMovil(sol.semaforo) !== filtroSemaforoMovil) return false;
         return true;
     });    if (filtradas.length === 0) {
         container.innerHTML = '<div class="sin-campana"><p>No hay solicitudes que coincidan con los filtros</p></div>';
@@ -264,8 +408,9 @@ function renderizarSolicitudes(lista) {
         var observacion = sol.gestion_obs || '';
         var gestionada = estado !== 'Pendiente';
         var destacada = sol.destacado == 1;
+        var semaforo = normalizarSemaforoMovil(sol.semaforo);
 
-        html += '<div class="sol-card ' + (gestionada ? 'gestionada' : '') + (destacada ? ' destacada' : '') + '" data-gestion-id="' + (sol.gestion_id || '') + '">';
+        html += '<div class="sol-card sol-semaforo-' + semaforo + ' ' + (gestionada ? 'gestionada' : '') + (destacada ? ' destacada' : '') + '" data-gestion-id="' + (sol.gestion_id || '') + '">';
         html += '<div class="sol-header">';
         html += '<div class="sol-id">#' + sol.id_solicitud + '</div>';
         html += '<div class="sol-header-badges">';
@@ -279,6 +424,7 @@ function renderizarSolicitudes(lista) {
         html += '</div>';
 
         html += '<div class="sol-nombre sol-nombre-copy" onclick="copiarNombreCedula(\'' + escaparParaAtributo(sol.nombre || '') + '\', \'' + escaparParaAtributo(sol.cedula || '') + '\')" title="Copiar nombre completo y cédula">' + (sol.nombre || 'Sin nombre') + '</div>';
+        html += '<button type="button" class="sol-semaforo-status" onclick="abrirSelectorSemaforoMovil(\'' + sol.id_solicitud + '\', \'' + semaforo + '\')"><span class="sol-semaforo-dot"></span>' + (semaforo === 'rojo' ? 'En espera · no contactar ahora' : semaforo === 'amarillo' ? 'Necesita seguimiento' : semaforo === 'verde' ? 'Ya encaminada' : 'Por revisar') + '<span class="sol-semaforo-edit">Cambiar</span></button>';
         html += '<div class="sol-datos">';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.cedula || '') + '\', \'cédula\')" title="Copiar cédula">🆔 ' + (sol.cedula || '—') + '</span>';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.celular || '') + '\', \'teléfono\')" title="Copiar teléfono">📱 ' + (sol.celular || '—') + '</span>';
@@ -295,6 +441,8 @@ html += '<div class="sol-botones">';
         html += '<button class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')" title="Llamar">📞</button>';
         html += '<button class="btn-sol btn-sol-primary" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
         html += '<button class="btn-sol btn-sol-whatsapp" onclick="abrirGestionWhatsApp(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.celular || '') + '\')">💬 WhatsApp</button>';
+        html += '<button class="btn-sol btn-sol-more" onclick="toggleAccionesMovil(this)">Más opciones</button>';
+        html += '<div class="sol-acciones-secundarias">';
         
         // Botón ver gestión (si tiene gestión registrada)
         if (gestionada) {
@@ -306,6 +454,7 @@ html += '<div class="sol-botones">';
         
         // Botón quitar de campaña
         html += '<button class="btn-sol btn-sol-quitar" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar</button>';
+        html += '</div>';
         
         html += '</div>';
 
@@ -313,6 +462,14 @@ html += '<div class="sol-botones">';
     }
 
     container.innerHTML = html;
+}
+
+function toggleAccionesMovil(button) {
+    var card = button && button.closest('.sol-card');
+    var extra = card && card.querySelector('.sol-acciones-secundarias');
+    if (!extra) return;
+    var visible = extra.classList.toggle('visible');
+    button.textContent = visible ? 'Ocultar opciones' : 'Más opciones';
 }
 
 function escaparParaHTML(texto) {
@@ -478,7 +635,7 @@ async function guardarGestionIndividual(solicitudId) {
                     });
                 }
             }
-            alert('Gestión guardada correctamente');
+            mostrarConfirmacionGestionMovil('Una gestión más completada');
             cerrarModal();
             cargarDatosGestionMovil();
         } else {

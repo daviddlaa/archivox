@@ -27,33 +27,40 @@
     <!-- Bottom Sheet de Acciones de Campaña -->
     <div id="campaña-bs-overlay" class="campaña-bs-overlay"></div>
 
-<!-- Progreso Panel -->
+<!-- Progreso y prioridad de la campaña -->
     <div class="progreso-mobile" id="panel-progreso" style="display: none;">
-        <div class="progreso-mobile-item">
-            <div class="progreso-mobile-value" id="total-solicitudes">0</div>
-            <div class="progreso-mobile-label">Total</div>
+        <div class="avance-mobile-copy" aria-live="polite">
+            <span class="avance-mobile-eyebrow">Avance de la campaña</span>
+            <div class="avance-mobile-principal"><strong id="progreso-porcentaje">0%</strong><span id="avance-mobile-resumen">0 de 0 solicitudes gestionadas</span></div>
+            <div class="avance-mobile-track" role="progressbar" aria-label="Progreso de la campaña" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="barra-progreso"></span></div>
+            <span class="avance-mobile-restante" id="avance-mobile-restante">Aún no hay solicitudes gestionadas</span>
         </div>
-        <div class="progreso-mobile-item">
-            <div class="progreso-mobile-value" id="gestionadas">0</div>
-            <div class="progreso-mobile-label">Gestionados</div>
-        </div>
-        <div class="progreso-mobile-item">
-            <div class="progreso-mobile-value" id="pendientes">0</div>
-            <div class="progreso-mobile-label">Pendientes</div>
-        </div>
-        <div class="progreso-mobile-item">
-            <div class="progreso-mobile-value" id="progreso-porcentaje">0%</div>
-            <div class="progreso-mobile-label">Progreso</div>
+        <div class="actividad-mobile" id="actividad-mobile">
+            <span>Última actividad</span>
+            <strong id="ultima-actividad-mobile">Sin actividad registrada</strong>
+            <small id="actividad-mobile-detalle">Cuando registres una gestión, aparecerá aquí.</small>
         </div>
     </div>
-    <div class="progreso-mobile-barra" id="progreso-barra-container" style="display: none; background: white; padding: 0 15px 12px;">
-        <div class="progreso-mobile-barra">
-            <div class="progreso-mobile-relleno" id="barra-progreso" style="width: 0%;"></div>
+
+    <div class="siguiente-mobile" id="siguiente-accion-mobile" style="display:none;" aria-live="polite">
+        <span class="siguiente-mobile-icon" aria-hidden="true">🎯</span>
+        <div><span class="siguiente-mobile-label">Tu siguiente mejor acción</span><strong id="siguiente-accion-mobile-texto"></strong></div>
+        <button type="button" id="siguiente-accion-mobile-btn" onclick="ejecutarSiguienteAccionMovil()">Ver prioridad</button>
+    </div>
+
+    <div class="semaforo-mobile" id="semaforo-mobile" style="display:none;">
+        <div class="semaforo-mobile-heading"><span>Estado de la campaña</span><button type="button" id="btn-semaforo-mobile-todos" onclick="setFiltroSemaforoMovil(null)" style="display:none;">Ver todas</button></div>
+        <div class="semaforo-mobile-grid" role="group" aria-label="Filtrar por estado de espera">
+            <button type="button" class="semaforo-mobile-card semaforo-mobile-sin" data-semaforo="sin_clasificar" onclick="setFiltroSemaforoMovil('sin_clasificar')"><strong id="count-mobile-sin_clasificar">0</strong><span>Sin clasificar</span><small>Por revisar</small></button>
+            <button type="button" class="semaforo-mobile-card semaforo-mobile-verde" data-semaforo="verde" onclick="setFiltroSemaforoMovil('verde')"><strong id="count-mobile-verde">0</strong><span>Ya encaminadas</span><small>En buen curso</small></button>
+            <button type="button" class="semaforo-mobile-card semaforo-mobile-amarillo" data-semaforo="amarillo" onclick="setFiltroSemaforoMovil('amarillo')"><strong id="count-mobile-amarillo">0</strong><span>Necesitan seguimiento</span><small>Prioridad media</small></button>
+            <button type="button" class="semaforo-mobile-card semaforo-mobile-rojo" data-semaforo="rojo" onclick="setFiltroSemaforoMovil('rojo')"><strong id="count-mobile-rojo">0</strong><span>En espera</span><small>No contactar ahora</small></button>
         </div>
     </div>
 
 <!-- Filtros -->
     <div class="filtros-mobile" id="filtros-row" style="display: none;">
+        <div class="filtros-mobile-label">Buscar en la campaña</div>
         <input type="text" id="busqueda" placeholder="🔍 Buscar por id, cédula, nombre o teléfono...">
         <select id="filtro-estado">
             <option value="">Todos los estados</option>

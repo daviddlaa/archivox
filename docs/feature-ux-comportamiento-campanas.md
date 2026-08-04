@@ -167,3 +167,32 @@ Antes de incorporar “Hoy”, metas o rachas se debe definir:
 3. Cómo se comporta con cambios de zona horaria.
 4. Qué ocurre con gestiones editadas o eliminadas.
 5. Qué objetivo se muestra cuando no existe una meta configurada.
+
+## Implementación móvil
+
+La versión móvil mantiene una experiencia específica para touch y no reutiliza el layout de escritorio.
+
+Se conservan:
+
+- Selector horizontal de campañas.
+- Bottom sheets para acciones de campaña.
+- Navegación inferior.
+- Targets táctiles de al menos 44 px.
+- Tarjetas de solicitud en una sola columna.
+
+Se incorporan en `public/movil/gestion-lote.html` y `public/movil/js/gestion-lote.js`:
+
+- Resumen vertical de progreso con porcentaje y solicitudes restantes.
+- Última actividad relativa dentro del resumen.
+- Recomendación móvil de siguiente acción.
+- Semáforo en cuadrícula 2x2 con filtros táctiles.
+- Selector de semáforo desde cada tarjeta.
+- Estado rojo expresado como `En espera / No contactar ahora`.
+- Acciones secundarias agrupadas bajo `Más opciones` para reducir la carga visual.
+- Toast de confirmación después de completar una gestión.
+
+La búsqueda y el filtro por tipo de gestión permanecen disponibles debajo del semáforo como controles secundarios. El cambio de semáforo móvil usa el mismo endpoint que escritorio:
+
+```text
+PUT /api/gestiones-maestro/:id/solicitudes/:solicitudId/semaforo
+```
