@@ -191,6 +191,8 @@ Se incorporan en `public/movil/gestion-lote.html` y `public/movil/js/gestion-lot
 - Acciones secundarias agrupadas bajo `Más opciones` para reducir la carga visual.
 - Toast de confirmación después de completar una gestión.
 
+Además, las solicitudes `Completada` se excluyen del semáforo móvil y se muestran en el acordeón `Solicitudes completadas`. Esta sección se abre automáticamente cuando no quedan solicitudes activas y no incluye un botón `Gestionar de nuevo`.
+
 La búsqueda y el filtro por tipo de gestión permanecen disponibles debajo del semáforo como controles secundarios. El cambio de semáforo móvil usa el mismo endpoint que escritorio:
 
 ```text
@@ -235,3 +237,13 @@ Una solicitud cuyo último `tipo_gestion` es `Completada` deja de formar parte d
 - No muestra selector de semáforo.
 
 La campaña solo se considera completada cuando todas sus solicitudes tienen estado `Completada`. Si posteriormente se registra una gestión distinta, la solicitud vuelve al trabajo activo.
+
+## Centro de Recomendaciones Inteligentes
+
+Desktop y móvil incluyen una sección discreta de `Recomendaciones` que combina:
+
+- Una recomendación contextual basada en el semáforo, antigüedad de actividad y cierre de campaña.
+- Buenas prácticas rotativas sobre llamadas, registro de gestiones y comunicación por WhatsApp.
+- Control para contraer o expandir el contenido.
+
+La sección no bloquea acciones ni presenta las sugerencias como reglas absolutas. Cuando existen solicitudes rojas, respeta la semántica operativa vigente: están en espera y la recomendación evita sugerir contacto inmediato.

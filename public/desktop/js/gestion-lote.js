@@ -17,6 +17,9 @@ var SEMAFORO_LABELS = {
     amarillo: 'Amarillo',
     rojo: 'Rojo'
 };
+var _recomendacionDesktopIndex = 0;
+var _recomendacionDesktopTimer = null;
+var _recomendacionDesktopContexto = null;
 
 // Popover de campañas en el header
 var CampanasPopover = {
@@ -426,6 +429,65 @@ function actualizarBarraSemaforo(conteoExterno) {
     }
 
     actualizarSiguienteAccion(conteo, total);
+    actualizarRecomendacionesDesktop(conteo, total);
+}
+
+var BUENAS_PRACTICAS_DESKTOP = [
+    { icon: '📞', title: 'Prioriza la llamada cuando sea posible.', text: 'La conversación ayuda a resolver dudas y detectar el interés real del cliente.' },
+    { icon: '📋', title: 'Registra la gestión durante la conversación.', text: 'Mantener el historial actualizado evita olvidos y facilita el trabajo del equipo.' },
+    { icon: '⏰', title: 'No dejes seguimientos pendientes para después.', text: 'Registrar la gestión en el momento mejora la calidad de la información.' },
+    { icon: '💬', title: 'Personaliza cada conversación de WhatsApp.', text: 'Usa el nombre del cliente y adapta el mensaje en lugar de repetir textos idénticos.' },
+    { icon: '👤', title: 'Cuida la identidad de tu cuenta.', text: 'Un nombre comercial y una fotografía profesional transmiten mayor confianza.' },
+    { icon: '📅', title: 'Respeta los horarios de contacto.', text: 'Evita enviar mensajes muy temprano o muy tarde para cuidar la experiencia del cliente.' },
+    { icon: '🚫', title: 'Alterna llamadas y mensajes.', text: 'Mantener conversaciones naturales ayuda a evitar restricciones en WhatsApp.' },
+    { icon: '↔️', title: 'Espera una respuesta antes de insistir.', text: 'Una buena tasa de respuesta es más valiosa que enviar muchos mensajes seguidos.' }
+];
+
+function actualizarRecomendacionesDesktop(conteo, total) {
+    var panel = document.getElementById('recomendaciones-panel');
+    if (!panel) return;
+    var activas = (solicitudes || []).filter(function(sol) { return sol.tipo_gestion !== 'Completada'; });
+    var antiguas = activas.filter(function(sol) {
+        if (!sol.fecha_gestion) return false;
+        var fecha = new Date(sol.fecha_gestion).getTime();
+        return !isNaN(fecha) && Date.now() - fecha > 48 * 60 * 60 * 1000;
+    }).length;
+    var contexto;
+    if (activas.length === 0 && total > 0) contexto = { icon: '✓', title: 'La campaña terminó su ciclo.', text: 'Revisa el historial para conservar las buenas prácticas del equipo.' };
+    else if (conteo.amarillo >= 3 || (total > 0 && conteo.amarillo / total >= .25)) contexto = { icon: '📌', title: 'Hay varios seguimientos por retomar.', text: 'Trabajar las solicitudes amarillas puede ayudarte a mantener el avance.' };
+    else if (conteo.sin_clasificar >= 3 || (total > 0 && conteo.sin_clasificar / total >= .25)) contexto = { icon: '🧭', title: 'Clasifica antes de continuar.', text: 'Ordenar las solicitudes pendientes permitirá priorizar mejor el trabajo.' };
+    else if (antiguas >= 3) contexto = { icon: '⏰', title: 'Hay seguimientos sin actividad reciente.', text: 'Retomarlos puede mejorar el avance de la campaña.' };
+    else if (conteo.rojo >= 3) contexto = { icon: '⏳', title: 'Hay solicitudes en espera.', text: 'Respeta el tiempo antes de volver a contactar y trabaja primero las amarillas.' };
+    else contexto = { icon: '💡', title: 'Registra cada gestión mientras conversas.', text: 'Un historial actualizado evita olvidos y facilita el seguimiento.' };
+    _recomendacionDesktopContexto = contexto;
+    var icon = document.getElementById('recomendacion-icon');
+    var title = document.getElementById('recomendacion-titulo');
+    var text = document.getElementById('recomendacion-texto');
+    if (icon) icon.textContent = contexto.icon;
+    if (title) title.textContent = contexto.title;
+    if (text) text.textContent = contexto.text;
+    mostrarBuenaPracticaDesktop();
+    if (!_recomendacionDesktopTimer) {
+        _recomendacionDesktopTimer = setInterval(mostrarBuenaPracticaDesktop, 9000);
+    }
+}
+
+function mostrarBuenaPracticaDesktop() {
+    var container = document.getElementById('buenas-practicas');
+    if (!container) return;
+    var practica = BUENAS_PRACTICAS_DESKTOP[_recomendacionDesktopIndex % BUENAS_PRACTICAS_DESKTOP.length];
+    _recomendacionDesktopIndex++;
+    container.innerHTML = '<span class="buena-practica-item"><b>' + practica.icon + '</b><span><strong>' + practica.title + '</strong><small>' + practica.text + '</small></span></span>';
+}
+
+function toggleRecomendaciones(modo) {
+    var contenido = document.getElementById(modo === 'mobile' ? 'recomendaciones-mobile-contenido' : 'recomendaciones-contenido');
+    var boton = document.querySelector(modo === 'mobile' ? '.recomendaciones-mobile-header button' : '.recomendaciones-header button');
+    if (!contenido || !boton) return;
+    var oculto = contenido.hidden;
+    contenido.hidden = !oculto;
+    boton.textContent = oculto ? 'Ocultar' : 'Mostrar';
+    boton.setAttribute('aria-expanded', String(oculto));
 }
 
 function formatearTiempoRelativo(fecha) {

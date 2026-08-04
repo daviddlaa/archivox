@@ -7,6 +7,8 @@ var todasLasSolicitudes = [];
 var campañas = [];
 var filtroSemaforoMovil = null;
 var SEMAFORO_MOVIL = ['sin_clasificar', 'verde', 'amarillo', 'rojo'];
+var _recomendacionMovilIndex = 0;
+var _recomendacionMovilTimer = null;
 
 // Estado de líder/agentes (como en desktop)
 var _esLider = false;
@@ -100,7 +102,8 @@ async function cargarListaCampanas() {
         var html = '';
         for (var i = 0; i < campañas.length; i++) {
             var g = campañas[i];
-            var pct = g.total_solicitudes > 0 ? Math.round((g.gestionadas / g.total_solicitudes) * 100) : 0;
+            var completadas = parseInt(g.completadas || 0, 10);
+            var pct = g.total_solicitudes > 0 ? Math.round((completadas / g.total_solicitudes) * 100) : 0;
             var isActive = gestionId && String(g.id) === String(gestionId) ? 'active' : '';
 
             html += '<div class="campaña-chip ' + isActive + '" onclick="seleccionarCampaña(' + g.id + ')">';
@@ -111,7 +114,7 @@ async function cargarListaCampanas() {
             html += '    </div>';
             html += '    <div class="campaña-chip-stats">';
             html += '      <span>📄 ' + (g.total_solicitudes || 0) + '</span>';
-            html += '      <span>✓ ' + (g.gestionadas || 0) + '</span>';
+            html += '      <span>✓ ' + completadas + ' completadas</span>';
             html += '      <span>' + pct + '%</span>';
             html += '    </div>';
             html += '  </div>';
@@ -210,16 +213,18 @@ function actualizarProgreso() {
     if (!datosGestion) return;
     var total = datosGestion.total_solicitudes || 0;
     var gestionadas = 0;
+    var completadas = 0;
 
     solicitudes.forEach(function(sol) {
         if (sol.gestion_id && sol.tipo_gestion && sol.tipo_gestion !== 'Pendiente') gestionadas++;
+        if (sol.tipo_gestion === 'Completada') completadas++;
     });
 
-    var pendientes = Math.max(total - gestionadas, 0);
-    var porcentaje = total > 0 ? Math.round((gestionadas / total) * 100) : 0;
+    var pendientes = Math.max(total - completadas, 0);
+    var porcentaje = total > 0 ? Math.round((completadas / total) * 100) : 0;
 
     var elPct = document.getElementById('progreso-porcentaje'); if (elPct) elPct.textContent = porcentaje + '%';
-    var resumen = document.getElementById('avance-mobile-resumen'); if (resumen) resumen.textContent = gestionadas + ' de ' + total + ' solicitudes gestionadas';
+    var resumen = document.getElementById('avance-mobile-resumen'); if (resumen) resumen.textContent = completadas + ' de ' + total + ' solicitudes completadas';
     var restante = document.getElementById('avance-mobile-restante');
     if (restante) restante.textContent = pendientes > 0 ? 'Faltan solamente ' + pendientes + ' solicitud' + (pendientes === 1 ? '' : 'es') : (total > 0 ? 'Campaña completada' : 'Aún no hay solicitudes en esta campaña');
     var barra = document.getElementById('barra-progreso');
@@ -240,7 +245,10 @@ function normalizarSemaforoMovil(valor) {
 function obtenerConteoSemaforoMovil() {
     var conteo = { sin_clasificar: 0, verde: 0, amarillo: 0, rojo: 0 };
     var lista = todasLasSolicitudes || [];
-    lista.forEach(function(sol) { conteo[normalizarSemaforoMovil(sol.semaforo)]++; });
+    lista.forEach(function(sol) {
+        if (sol.tipo_gestion === 'Completada') return;
+        conteo[normalizarSemaforoMovil(sol.semaforo)]++;
+    });
     return conteo;
 }
 
@@ -285,6 +293,57 @@ function actualizarSemaforoMovil(conteo) {
     });
     var clear = document.getElementById('btn-semaforo-mobile-todos');
     if (clear) clear.style.display = filtroSemaforoMovil ? 'inline-flex' : 'none';
+    actualizarRecomendacionesMovil(conteo);
+}
+
+var BUENAS_PRACTICAS_MOVIL = [
+    { icon: '📞', title: 'Prioriza la llamada cuando sea posible.', text: 'Ayuda a resolver dudas y detectar interés real.' },
+    { icon: '📋', title: 'Registra la gestión durante la conversación.', text: 'Evita olvidos y mantiene el historial actualizado.' },
+    { icon: '💬', title: 'Personaliza cada conversación de WhatsApp.', text: 'Usa el nombre y evita repetir mensajes idénticos.' },
+    { icon: '📅', title: 'Respeta los horarios de contacto.', text: 'Cuida la experiencia del cliente y la respuesta.' },
+    { icon: '↔️', title: 'Espera una respuesta antes de insistir.', text: 'Las conversaciones naturales ayudan a evitar restricciones.' }
+];
+
+function actualizarRecomendacionesMovil(conteo) {
+    var activas = (solicitudes || []).filter(function(sol) { return sol.tipo_gestion !== 'Completada'; });
+    var antiguas = activas.filter(function(sol) {
+        if (!sol.fecha_gestion) return false;
+        var fecha = new Date(sol.fecha_gestion).getTime();
+        return !isNaN(fecha) && Date.now() - fecha > 48 * 60 * 60 * 1000;
+    }).length;
+    var contexto;
+    if (activas.length === 0 && solicitudes.length) contexto = { icon: '✓', title: 'La campaña terminó su ciclo.', text: 'Revisa el historial para conservar buenas prácticas.' };
+    else if (conteo.amarillo >= 3) contexto = { icon: '📌', title: 'Hay varios seguimientos por retomar.', text: 'Trabaja primero las solicitudes amarillas.' };
+    else if (conteo.sin_clasificar >= 3) contexto = { icon: '🧭', title: 'Clasifica antes de continuar.', text: 'Ordenar las solicitudes ayuda a priorizar mejor.' };
+    else if (antiguas >= 3) contexto = { icon: '⏰', title: 'Hay seguimientos sin actividad reciente.', text: 'Retomarlos puede mejorar el avance.' };
+    else if (conteo.rojo >= 3) contexto = { icon: '⏳', title: 'Hay solicitudes en espera.', text: 'Respeta el tiempo y trabaja primero las amarillas.' };
+    else contexto = { icon: '💡', title: 'Registra cada gestión mientras conversas.', text: 'Un historial actualizado evita olvidos.' };
+    var icon = document.getElementById('recomendacion-mobile-icon');
+    var title = document.getElementById('recomendacion-mobile-titulo');
+    var text = document.getElementById('recomendacion-mobile-texto');
+    if (icon) icon.textContent = contexto.icon;
+    if (title) title.textContent = contexto.title;
+    if (text) text.textContent = contexto.text;
+    mostrarBuenaPracticaMovil();
+    if (!_recomendacionMovilTimer) _recomendacionMovilTimer = setInterval(mostrarBuenaPracticaMovil, 10000);
+}
+
+function mostrarBuenaPracticaMovil() {
+    var container = document.getElementById('buenas-practicas-mobile');
+    if (!container) return;
+    var practica = BUENAS_PRACTICAS_MOVIL[_recomendacionMovilIndex % BUENAS_PRACTICAS_MOVIL.length];
+    _recomendacionMovilIndex++;
+    container.innerHTML = '<span><b>' + practica.icon + '</b><strong>' + practica.title + '</strong></span><small>' + practica.text + '</small>';
+}
+
+function toggleRecomendaciones(modo) {
+    var contenido = document.getElementById(modo === 'mobile' ? 'recomendaciones-mobile-contenido' : 'recomendaciones-contenido');
+    var boton = contenido && contenido.parentElement.querySelector('button');
+    if (!contenido || !boton) return;
+    var oculto = contenido.hidden;
+    contenido.hidden = !oculto;
+    boton.textContent = oculto ? 'Ocultar' : 'Mostrar';
+    boton.setAttribute('aria-expanded', String(oculto));
 }
 
 function setFiltroSemaforoMovil(valor) {
@@ -303,8 +362,9 @@ function actualizarSiguienteAccionMovilTexto(total) {
     if (conteo.amarillo > 0) prioridad = { filtro: 'amarillo', texto: 'Gestiona primero las ' + conteo.amarillo + ' solicitudes amarillas.' };
     else if (conteo.sin_clasificar > 0) prioridad = { filtro: 'sin_clasificar', texto: 'Clasifica las ' + conteo.sin_clasificar + ' solicitudes pendientes de revisión.' };
     else if (conteo.rojo > 0) prioridad = { filtro: 'rojo', texto: 'Tienes ' + conteo.rojo + ' solicitud' + (conteo.rojo === 1 ? '' : 'es') + ' en espera. Respeta el tiempo antes de volver a contactar.' };
-    else if (total > 0 && (solicitudes || []).some(function(sol) { return !sol.gestion_id || !sol.tipo_gestion || sol.tipo_gestion === 'Pendiente'; })) prioridad = { filtro: null, texto: 'Elige una solicitud pendiente y registra la siguiente gestión.' };
-    texto.textContent = prioridad ? prioridad.texto : (total > 0 ? 'La campaña está al día.' : 'Esta campaña aún no tiene solicitudes.');
+    else if (total > 0 && (solicitudes || []).some(function(sol) { return sol.tipo_gestion !== 'Completada' && (!sol.gestion_id || !sol.tipo_gestion || sol.tipo_gestion === 'Pendiente'); })) prioridad = { filtro: null, texto: 'Elige una solicitud pendiente y registra la siguiente gestión.' };
+    var activas = (solicitudes || []).filter(function(sol) { return sol.tipo_gestion !== 'Completada'; });
+    texto.textContent = prioridad ? prioridad.texto : (total > 0 && activas.length === 0 ? 'La campaña está completada. Todas las solicitudes terminaron su ciclo.' : (total > 0 ? 'La campaña está al día.' : 'Esta campaña aún no tiene solicitudes.'));
     boton.dataset.semaforo = prioridad && prioridad.filtro ? prioridad.filtro : '';
     boton.style.display = prioridad && prioridad.filtro ? 'inline-flex' : 'none';
     bloque.style.display = 'flex';
@@ -387,23 +447,31 @@ function renderizarSolicitudes(lista) {
             var estadoActual = sol.tipo_gestion || 'Pendiente';
             if (estadoActual !== filtroEstado) return false;
         }
-        if (filtroSemaforoMovil && normalizarSemaforoMovil(sol.semaforo) !== filtroSemaforoMovil) return false;
+        if (filtroSemaforoMovil) {
+            if (sol.tipo_gestion === 'Completada') return false;
+            if (normalizarSemaforoMovil(sol.semaforo) !== filtroSemaforoMovil) return false;
+        }
         return true;
-    });    if (filtradas.length === 0) {
+    });
+    if (filtradas.length === 0) {
         container.innerHTML = '<div class="sin-campana"><p>No hay solicitudes que coincidan con los filtros</p></div>';
         return;
     }
     
+    var completadas = filtradas.filter(function(sol) { return sol.tipo_gestion === 'Completada'; });
+    var activasFiltradas = filtradas.filter(function(sol) { return sol.tipo_gestion !== 'Completada'; });
+
     // Ordenar: destacadas primero (🔥 al inicio)
-    filtradas.sort(function(a, b) {
+    activasFiltradas.sort(function(a, b) {
         if (a.destacado == 1 && b.destacado != 1) return -1;
         if (a.destacado != 1 && b.destacado == 1) return 1;
         return 0;
     });
+    completadas.sort(function(a, b) { return new Date(b.fecha_gestion || 0).getTime() - new Date(a.fecha_gestion || 0).getTime(); });
     
-    var html = '';
-    for (var i = 0; i < filtradas.length; i++) {
-        var sol = filtradas[i];
+    var html = activasFiltradas.length ? '<section class="solicitudes-activas-mobile"><div class="mobile-seccion-heading"><span><small>Trabajo activo</small><strong>Solicitudes por gestionar</strong></span><b>' + activasFiltradas.length + '</b></div>' : '';
+    for (var i = 0; i < activasFiltradas.length; i++) {
+        var sol = activasFiltradas[i];
         var estado = sol.tipo_gestion || 'Pendiente';
         var observacion = sol.gestion_obs || '';
         var gestionada = estado !== 'Pendiente';
@@ -461,7 +529,36 @@ html += '<div class="sol-botones">';
         html += '</div>'; // sol-card
     }
 
+    if (activasFiltradas.length) html += '</section>';
+    if (completadas.length) {
+        var completadasAbiertas = activasFiltradas.length === 0;
+        html += '<section class="solicitudes-completadas-mobile"><button type="button" class="completadas-mobile-heading' + (completadasAbiertas ? ' open' : '') + '" onclick="toggleCompletadasMovil(this)" aria-expanded="' + completadasAbiertas + '"><span><strong>✓ Solicitudes completadas</strong><small>El ciclo de estas solicitudes terminó</small></span><span><b>' + completadas.length + '</b><i>⌄</i></span></button><div class="completadas-mobile-lista"' + (completadasAbiertas ? '' : ' hidden') + '>';
+        completadas.forEach(function(solCompletada) { html += renderizarTarjetaCompletadaMovil(solCompletada); });
+        html += '</div></section>';
+    }
     container.innerHTML = html;
+}
+
+function renderizarTarjetaCompletadaMovil(sol) {
+    var nombre = escaparParaHTML(sol.nombre || 'Sin nombre');
+    var observacion = escaparParaHTML(sol.gestion_obs || 'Sin observación registrada');
+    var fecha = formatearTiempoRelativoMovil(sol.fecha_gestion) || 'Fecha no disponible';
+    return '<article class="sol-card sol-card-completada-mobile">' +
+        '<div class="completada-mobile-top"><span>✓ Completada</span><small>' + fecha + '</small></div>' +
+        '<div class="sol-nombre-row-mobile"><strong>' + nombre + '</strong><b>' + (sol.segmento || 'Sin segmento') + '</b></div>' +
+        '<div class="sol-datos"><span>🆔 ' + (sol.cedula || '—') + '</span><span>📱 ' + (sol.celular || '—') + '</span></div>' +
+        '<div class="completada-mobile-gestion"><strong>' + (sol.tipo_gestion || 'Completada') + '</strong><span>' + observacion + '</span></div>' +
+        '<div class="sol-botones"><button class="btn-sol btn-sol-ver" onclick="verGestion(\'' + sol.id_solicitud + '\')">📋 Ver gestión</button><button class="btn-sol btn-sol-historial" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button><button class="btn-sol btn-sol-quitar" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar</button></div>' +
+        '</article>';
+}
+
+function toggleCompletadasMovil(button) {
+    var lista = button && button.nextElementSibling;
+    if (!lista) return;
+    var abierta = !lista.hidden;
+    lista.hidden = abierta;
+    button.setAttribute('aria-expanded', String(!abierta));
+    button.classList.toggle('open', !abierta);
 }
 
 function toggleAccionesMovil(button) {
@@ -694,7 +791,7 @@ async function verHistorial(solicitudId) {
     try {
         crearModal('<div class="modal-gestion" style="text-align:center;padding:20px;"><h2>📋 Historial</h2><p>⏳ Cargando...</p></div>');
         
-        var response = await fetch('/api/excel/gestiones/' + solicitudId);
+        var response = await fetch('/api/gestiones-maestro/' + gestionId + '/solicitudes/' + encodeURIComponent(solicitudId) + '/historial');
         if (!response.ok) throw new Error('Error al cargar historial');
         
         var gestiones = await response.json();

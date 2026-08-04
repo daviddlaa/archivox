@@ -65,6 +65,16 @@
                         <div><span class="siguiente-label">Tu siguiente mejor acción</span><strong id="siguiente-accion-texto">Revisa el estado de la campaña para continuar.</strong></div>
                         <button type="button" id="siguiente-accion-btn" class="siguiente-accion-btn" style="display:none;" onclick="ejecutarSiguienteAccion()">Ver prioridad</button>
                     </div>
+                    <section class="recomendaciones-panel" id="recomendaciones-panel" aria-live="polite">
+                        <div class="recomendaciones-header">
+                            <div><span class="recomendaciones-kicker">Asistente de productividad</span><strong>Recomendaciones</strong></div>
+                            <button type="button" class="recomendaciones-toggle" onclick="toggleRecomendaciones('desktop')" aria-expanded="true" aria-controls="recomendaciones-contenido">Ocultar</button>
+                        </div>
+                        <div id="recomendaciones-contenido" class="recomendaciones-contenido">
+                            <div class="recomendacion-principal"><span class="recomendacion-icon" id="recomendacion-icon">💡</span><div><strong id="recomendacion-titulo">Registra cada gestión mientras conversas.</strong><span id="recomendacion-texto">Mantener el historial actualizado evita olvidos y facilita el seguimiento del equipo.</span></div></div>
+                            <div class="buenas-practicas" id="buenas-practicas"></div>
+                        </div>
+                    </section>
                     <!-- Semáforo operativo: además de filtrar, resume la prioridad -->
                     <div class="semaforo-barra" id="semaforo-barra" role="group" aria-label="Filtro por semáforo">
                         <button type="button" class="semaforo-seg semaforo-panel-card semaforo-panel-sin" data-semaforo="sin_clasificar" onclick="setFiltroSemaforo('sin_clasificar')" title="Sin clasificar">
