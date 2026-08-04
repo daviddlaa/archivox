@@ -1620,3 +1620,195 @@ body {
         font-size: 9px;
     }
 }
+
+/* ===== RESUMEN DE AVANCE Y SIGUIENTE ACCIÓN ===== */
+.progreso-panel {
+    padding: 22px;
+    background: linear-gradient(135deg, #ffffff 0%, #fbfcff 100%);
+    border-color: #e7e9f4;
+}
+
+.avance-campana {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 230px;
+    gap: 28px;
+    align-items: center;
+}
+
+.avance-eyebrow,
+.actividad-label,
+.siguiente-label {
+    display: block;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.avance-principal {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 8px 0 12px;
+}
+
+.avance-principal strong {
+    color: #312e81;
+    font-size: 32px;
+    letter-spacing: -.04em;
+    line-height: 1;
+}
+
+.avance-principal span {
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.avance-track {
+    height: 9px;
+    overflow: hidden;
+    background: #e7e9f4;
+    border-radius: 999px;
+}
+
+.avance-track span {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #8b83f6);
+    border-radius: inherit;
+    box-shadow: 0 0 12px rgba(99, 102, 241, .25);
+    transition: width .45s cubic-bezier(.22, 1, .36, 1);
+}
+
+.avance-restante {
+    display: block;
+    margin-top: 9px;
+    color: #4338ca;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.actividad-campana {
+    display: flex;
+    min-height: 76px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    padding-left: 20px;
+    border-left: 1px solid #e2e8f0;
+}
+
+.actividad-campana strong {
+    color: #334155;
+    font-size: 14px;
+}
+
+.actividad-campana span:last-child {
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.actividad-campana.actividad-antigua strong::after {
+    content: ' · Campaña en pausa';
+    color: #a16207;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.siguiente-accion {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0 16px;
+    padding: 14px 16px;
+    background: #f5f3ff;
+    border: 1px solid #e5e1ff;
+    border-radius: 12px;
+}
+
+.siguiente-icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    place-items: center;
+    background: #e9e5ff;
+    border-radius: 10px;
+    font-size: 17px;
+}
+
+.siguiente-accion strong {
+    display: block;
+    margin-top: 4px;
+    color: #3730a3;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.siguiente-accion-btn {
+    margin-left: auto;
+    padding: 8px 12px;
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #4338ca;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background .2s ease, transform .2s ease;
+}
+
+.siguiente-accion-btn:hover { background: #eef2ff; transform: translateY(-1px); }
+
+.semaforo-panel-card small {
+    display: block;
+    color: currentColor;
+    font-size: 10px;
+    font-weight: 500;
+    opacity: .72;
+}
+
+.semaforo-panel-label {
+    white-space: normal;
+    line-height: 1.25;
+}
+
+.semaforo-fly { transition-duration: .42s; }
+.sol-card.sol-semaforo-flash { animation-duration: .5s; }
+
+.campana-toast {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 12000;
+    padding: 12px 16px;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    background: #f0fdf4;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, .12);
+    color: #166534;
+    font-size: 13px;
+    font-weight: 700;
+    opacity: 0;
+    transform: translateY(8px) scale(.98);
+    transition: opacity .18s ease, transform .18s ease;
+}
+
+.campana-toast.visible { opacity: 1; transform: translateY(0) scale(1); }
+
+@media (max-width: 768px) {
+    .progreso-panel { padding: 16px; }
+    .avance-campana { grid-template-columns: 1fr; gap: 16px; }
+    .actividad-campana { min-height: auto; padding: 14px 0 0; border-top: 1px solid #e2e8f0; border-left: 0; }
+    .siguiente-accion { align-items: flex-start; flex-wrap: wrap; }
+    .siguiente-accion-btn { margin-left: 46px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .avance-track span, .semaforo-fly, .campana-toast, .sol-card.sol-semaforo-flash { transition: none; animation: none; }
+}

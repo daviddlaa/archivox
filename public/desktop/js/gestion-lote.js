@@ -430,6 +430,102 @@ function actualizarBarraSemaforo(conteoExterno) {
     if (clearBtn) {
         clearBtn.style.display = filtroSemaforo ? 'inline-flex' : 'none';
     }
+
+    actualizarSiguienteAccion(conteo, total);
+}
+
+function formatearTiempoRelativo(fecha) {
+    if (!fecha) return null;
+    var timestamp = new Date(fecha).getTime();
+    if (isNaN(timestamp)) return null;
+    var minutos = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+    if (minutos < 1) return 'Hace un momento';
+    if (minutos < 60) return 'Hace ' + minutos + ' minuto' + (minutos === 1 ? '' : 's');
+    var horas = Math.floor(minutos / 60);
+    if (horas < 24) return 'Hace ' + horas + ' hora' + (horas === 1 ? '' : 's');
+    var dias = Math.floor(horas / 24);
+    return 'Hace ' + dias + ' día' + (dias === 1 ? '' : 's');
+}
+
+function actualizarResumenCampana(total, gestionadas, porcentaje) {
+    var porcentajeEl = document.getElementById('avance-porcentaje');
+    var resumenEl = document.getElementById('avance-resumen');
+    var restanteEl = document.getElementById('avance-restante');
+    var fillEl = document.getElementById('avance-fill');
+    var trackEl = document.querySelector('.avance-track');
+    var pendiente = Math.max(total - gestionadas, 0);
+
+    if (porcentajeEl) porcentajeEl.textContent = porcentaje + '%';
+    if (resumenEl) resumenEl.textContent = gestionadas + ' de ' + total + ' solicitudes gestionadas';
+    if (restanteEl) {
+        restanteEl.textContent = pendiente > 0
+            ? 'Faltan solamente ' + pendiente + ' solicitud' + (pendiente === 1 ? '' : 'es')
+            : (total > 0 ? 'Campaña completada' : 'Aún no hay solicitudes en esta campaña');
+    }
+    if (fillEl) fillEl.style.width = porcentaje + '%';
+    if (trackEl) trackEl.setAttribute('aria-valuenow', porcentaje);
+
+    var actividad = null;
+    (todasLasSolicitudes || []).forEach(function(sol) {
+        if (sol.fecha_gestion) {
+            var fecha = new Date(sol.fecha_gestion).getTime();
+            if (!isNaN(fecha) && (!actividad || fecha > actividad.timestamp)) {
+                actividad = { timestamp: fecha, texto: formatearTiempoRelativo(sol.fecha_gestion), tipo: sol.tipo_gestion || 'Gestión' };
+            }
+        }
+    });
+    var ultimaEl = document.getElementById('ultima-actividad');
+    var detalleEl = document.getElementById('actividad-detalle');
+    var actividadEl = document.getElementById('actividad-campana');
+    if (ultimaEl) ultimaEl.textContent = actividad ? actividad.texto : 'Sin actividad registrada';
+    if (detalleEl) detalleEl.textContent = actividad ? actividad.tipo + ' registrada en la campaña' : 'Cuando registres una gestión, aparecerá aquí.';
+    if (actividadEl) actividadEl.classList.toggle('actividad-antigua', !!actividad && (Date.now() - actividad.timestamp) > 8 * 60 * 60 * 1000);
+}
+
+function actualizarSiguienteAccion(conteo, total) {
+    var textoEl = document.getElementById('siguiente-accion-texto');
+    var btn = document.getElementById('siguiente-accion-btn');
+    if (!textoEl || !btn) return;
+    var prioridad = null;
+    if (conteo.rojo > 0) {
+        prioridad = { semaforo: 'rojo', texto: 'Tienes ' + conteo.rojo + ' solicitud' + (conteo.rojo === 1 ? '' : 'es') + ' en rojo. Atiéndelas primero.' };
+    } else if (conteo.amarillo > 0) {
+        prioridad = { semaforo: 'amarillo', texto: 'Gestiona primero las ' + conteo.amarillo + ' solicitudes amarillas para seguir avanzando.' };
+    } else if (conteo.sin_clasificar > 0) {
+        prioridad = { semaforo: 'sin_clasificar', texto: 'Clasifica las ' + conteo.sin_clasificar + ' solicitudes pendientes de revisión.' };
+    } else if (total > 0 && (solicitudes || []).some(function(sol) {
+        return !sol.gestion_id || !sol.tipo_gestion || sol.tipo_gestion === 'Pendiente';
+    })) {
+        prioridad = { semaforo: null, texto: 'Elige una solicitud pendiente y registra la siguiente gestión.' };
+    }
+    textoEl.textContent = prioridad ? prioridad.texto : (total > 0 ? 'La campaña está al día. No quedan prioridades pendientes.' : 'Esta campaña aún no tiene solicitudes.');
+    btn.style.display = prioridad && prioridad.semaforo ? 'inline-flex' : 'none';
+    btn.textContent = prioridad && prioridad.semaforo ? 'Ver prioridad' : 'Ver prioridad';
+    btn.dataset.semaforo = prioridad && prioridad.semaforo ? prioridad.semaforo : '';
+}
+
+function ejecutarSiguienteAccion() {
+    var btn = document.getElementById('siguiente-accion-btn');
+    var valor = btn && btn.dataset.semaforo;
+    if (valor) {
+        setFiltroSemaforo(valor);
+        var lista = document.getElementById('lista-solicitudes');
+        if (lista) lista.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function mostrarConfirmacionGestion(mensaje) {
+    var anterior = document.querySelector('.campana-toast');
+    if (anterior) anterior.remove();
+    var toast = document.createElement('div');
+    toast.className = 'campana-toast';
+    toast.textContent = '✓ ' + mensaje;
+    document.body.appendChild(toast);
+    requestAnimationFrame(function() { toast.classList.add('visible'); });
+    setTimeout(function() {
+        toast.classList.remove('visible');
+        setTimeout(function() { if (toast.parentNode) toast.remove(); }, 180);
+    }, 2200);
 }
 
 function setFiltroSemaforo(valor) {
@@ -587,6 +683,7 @@ function actualizarProgreso() {
     if (elPct) elPct.textContent = porcentaje + '%';
     if (elBar) elBar.style.width = porcentaje + '%';
 
+    actualizarResumenCampana(total, gestionadas, porcentaje);
     actualizarBarraSemaforo();
     actualizarEstadoCampanaTexto();
 }
@@ -932,7 +1029,7 @@ async function guardarGestionIndividual(solicitudId) {
                     });
                 }
             }
-            alert('Gestión guardada correctamente');
+            mostrarConfirmacionGestion('Una gestión más completada');
             cerrarModal();
             cargarDatosGestion();
         } else {
