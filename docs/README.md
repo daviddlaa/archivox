@@ -887,11 +887,11 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - Ventas mensuales (últimos 12 meses, solo ACTIVADAS)
 - Caché en servidor (30s) y en cliente (localStorage)
 - **Dashboard móvil en carrusel (Agosto 2026):** el contenido principal se desliza
-  horizontalmente en 4 slides con *scroll-snap* y "peek" del siguiente (`.dash-carousel`,
-  `.dash-slide`): (1) herramientas de acceso rápido sin el título "Panel de Control",
-  (2) 4 KPIs en tarjeta 2×2 alineada con la altura del slide de herramientas, (3) gráfico
-  de Estados, (4) gráfico de Segmentos. Indicadores de punto `.dash-dots` sincronizados
-  con el scroll (`initDashCarousel`).
+  horizontalmente en 4 slides full-width con *scroll-snap* (`.dash-carousel`, `.dash-slide`,
+  sin "peek" del siguiente): (1) herramientas de acceso rápido con subtítulo
+  "Herramientas rápidas", (2) 4 KPIs en tarjeta 2×2 alineada con la altura del slide de
+  herramientas, (3) gráfico de Estados, (4) gráfico de Segmentos. Indicadores de punto
+  `.dash-dots` sincronizados con el scroll (`initDashCarousel`).
 - **Widget de Campañas activas (móvil):** debajo del carrusel, muestra las 3 campañas
   activas más recientes (`.campanas-widget`) con nombre, barra de progreso `completadas/total · %`
   y enlace "Ver todas" → `/m/gestiones`. Cada tarjeta navega a `/m/gestion-lote?id=ID`.

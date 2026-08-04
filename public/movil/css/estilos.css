@@ -430,8 +430,7 @@ body {
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
-    gap: 12px;
-    padding: 12px 15px 0;
+    padding: 12px 0 0;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
 }
@@ -441,11 +440,13 @@ body {
 }
 
 .dash-slide {
-    flex: 0 0 calc(100% - 60px);
+    flex: 0 0 100%;
     scroll-snap-align: start;
     scroll-snap-stop: always;
     height: 176px;
     min-height: 176px;
+    padding: 0 15px;
+    box-sizing: border-box;
     display: flex;
 }
 
@@ -464,6 +465,14 @@ body {
     border-radius: 16px;
     padding: 12px;
     color: white;
+}
+
+.dash-slide .hero-subtitle {
+    margin: 0 0 8px;
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.85;
+    letter-spacing: 0.3px;
 }
 
 .dash-slide .hero-actions {
