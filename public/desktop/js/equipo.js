@@ -225,44 +225,116 @@ async function cargarCampanas() {
 // ============================================================================
 // CARGAR GESTIONES RECIENTES DEL EQUIPO
 // ============================================================================
+let _gestionesLimite = 20;
+let _gestionesEquipo = [];
+
 async function cargarGestiones() {
-    const tbody = document.getElementById('gestionesEquipoBody');
+    const feed = document.getElementById('gestionesFeed');
 
     try {
         const equipoId = window._equipoId;
         if (!equipoId) {
-            tbody.innerHTML = '<tr><td colspan="6" class="equipo-loading">Sin equipo asignado</td></tr>';
+            feed.innerHTML = '<div class="equipo-loading">Sin equipo asignado</div>';
             return;
         }
 
-        const res = await fetch(`/api/equipos/${equipoId}/gestiones?limite=20`);
+        const res = await fetch(`/api/equipos/${equipoId}/gestiones?limite=${_gestionesLimite}`);
         if (!res.ok) throw new Error('Error ' + res.status);
         const data = await res.json();
 
-        const gestiones = data.data || [];
+        _gestionesEquipo = data.data || [];
 
-        if (gestiones.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="equipo-loading">No hay gestiones recientes del equipo</td></tr>';
+        if (_gestionesEquipo.length === 0) {
+            feed.innerHTML = '<div class="equipo-loading">No hay gestiones recientes del equipo</div>';
+            ocultarCargarMas(true);
             return;
         }
 
-        tbody.innerHTML = gestiones.map(g => `
-            <tr>
-                <td style="color:#6b7280;font-size:12px;">${formatearFecha(g.fecha_gestion)}</td>
-                <td><strong>${escapeHtml(g.agente_username || g.agente_nombre || '-')}</strong></td>
-                <td><a href="/solicitudes?buscar=${g.solicitud_id}" style="color:#6366f1;font-weight:600;text-decoration:none;">#${g.solicitud_id}</a></td>
-                <td>${escapeHtml(g.cliente_nombre || '—')}</td>
-                <td><span class="equipo-role-badge agente">${escapeHtml(g.tipo_gestion)}</span></td>
-                <td style="color:#6b7280;font-size:12px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                    ${escapeHtml((g.observacion || '').substring(0, 80))}${(g.observacion || '').length > 80 ? '...' : ''}
-                </td>
-            </tr>
-        `).join('');
+        poblarFiltrosGestiones();
+        renderizarFeedGestiones();
+        ocultarCargarMas(_gestionesEquipo.length < _gestionesLimite);
 
     } catch (err) {
         console.error('[Equipo] Error cargar gestiones:', err);
-        tbody.innerHTML = '<tr><td colspan="6" class="equipo-loading" style="color:#dc2626">Error al cargar gestiones</td></tr>';
+        feed.innerHTML = '<div class="equipo-loading" style="color:#dc2626">Error al cargar gestiones</div>';
     }
+}
+
+function filtrarGestiones() {
+    const agente = document.getElementById('filtroAgenteGestiones').value;
+    const tipo = document.getElementById('filtroTipoGestiones').value;
+    return _gestionesEquipo.filter(g =>
+        (!agente || (g.agente_username || g.agente_nombre || '-') === agente) &&
+        (!tipo || g.tipo_gestion === tipo)
+    );
+}
+
+function renderizarFeedGestiones() {
+    const feed = document.getElementById('gestionesFeed');
+    const lista = filtrarGestiones();
+
+    if (lista.length === 0) {
+        feed.innerHTML = '<div class="equipo-loading">No hay gestiones que coincidan con el filtro</div>';
+        return;
+    }
+
+    feed.innerHTML = lista.map(g => {
+        const agente = g.agente_username || g.agente_nombre || '-';
+        const obs = (g.observacion || '').trim();
+        return `
+            <a class="equipo-feed-item" href="/solicitudes?buscar=${encodeURIComponent(g.solicitud_id)}">
+                <div class="equipo-feed-avatar">${escapeHtml((agente[0] || '?').toUpperCase())}</div>
+                <div class="equipo-feed-main">
+                    <div class="equipo-feed-top">
+                        <strong class="equipo-feed-agente">${escapeHtml(agente)}</strong>
+                        <span class="equipo-feed-tipo tipo-${claseTipoGestion(g.tipo_gestion)}">${escapeHtml(g.tipo_gestion)}</span>
+                        <span class="equipo-feed-fecha">${formatearFecha(g.fecha_gestion)}</span>
+                    </div>
+                    <div class="equipo-feed-cliente">#${g.solicitud_id} · ${escapeHtml(g.cliente_nombre || '—')}</div>
+                    ${obs ? `<div class="equipo-feed-obs">${escapeHtml(obs.substring(0, 120))}${obs.length > 120 ? '...' : ''}</div>` : ''}
+                </div>
+                <span class="equipo-feed-chevron">›</span>
+            </a>
+        `;
+    }).join('');
+}
+
+function poblarFiltrosGestiones() {
+    const selAgente = document.getElementById('filtroAgenteGestiones');
+    const selTipo = document.getElementById('filtroTipoGestiones');
+
+    const agentes = [...new Set(_gestionesEquipo.map(g => g.agente_username || g.agente_nombre || '-'))].filter(Boolean);
+    const tipos = [...new Set(_gestionesEquipo.map(g => g.tipo_gestion).filter(Boolean))];
+
+    const actAgente = selAgente.value;
+    const actTipo = selTipo.value;
+
+    selAgente.innerHTML = '<option value="">Todos los agentes</option>' +
+        agentes.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+    selTipo.innerHTML = '<option value="">Todos los tipos</option>' +
+        tipos.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+
+    selAgente.value = agentes.includes(actAgente) ? actAgente : '';
+    selTipo.value = tipos.includes(actTipo) ? actTipo : '';
+}
+
+function claseTipoGestion(tipo) {
+    const t = String(tipo || '').toLowerCase();
+    if (t.includes('complet')) return 'completada';
+    if (t.includes('llamada')) return 'llamada';
+    if (t.includes('seguimient')) return 'seguimiento';
+    if (t.includes('visita')) return 'visita';
+    return 'otro';
+}
+
+function ocultarCargarMas(ocultar) {
+    const btn = document.getElementById('btnCargarMasGestiones');
+    if (btn) btn.style.display = ocultar ? 'none' : '';
+}
+
+async function cargarMasGestiones() {
+    _gestionesLimite += 20;
+    await cargarGestiones();
 }
 
 // ============================================================================

@@ -33,6 +33,25 @@
                     </div>
                 </div>
 
+                <!-- ==================== GESTIONES RECIENTES DEL EQUIPO ==================== -->
+                <div class="equipo-section" id="gestionesSeccion">
+                    <div class="equipo-section-header">
+                        <h2>📝 Gestiones Recientes del Equipo</h2>
+                        <div class="equipo-filtros">
+                            <select id="filtroAgenteGestiones" title="Filtrar por agente" onchange="renderizarFeedGestiones()">
+                                <option value="">Todos los agentes</option>
+                            </select>
+                            <select id="filtroTipoGestiones" title="Filtrar por tipo de gestión" onchange="renderizarFeedGestiones()">
+                                <option value="">Todos los tipos</option>
+                            </select>
+                            <button class="equipo-section-btn" id="btnCargarMasGestiones" style="display:none;" onclick="cargarMasGestiones()">Cargar más</button>
+                        </div>
+                    </div>
+                    <div id="gestionesFeed" class="equipo-feed">
+                        <div class="equipo-loading">Cargando gestiones...</div>
+                    </div>
+                </div>
+
                 <!-- ==================== STATS CARDS ==================== -->
                 <div class="equipo-stats">
                     <div class="equipo-stat-card" id="statAgentes">
@@ -63,22 +82,6 @@
                             <span id="totalGestiones">—</span>
                         </div>
                     </div>
-                </div>
-
-                <!-- ==================== ACCIONES RÁPIDAS ==================== -->
-                <div class="equipo-actions">
-                    <button class="btn-action" onclick="abrirModalCrearAgente()">
-                        <span class="btn-action-icon">➕</span>
-                        <span class="btn-action-label">Nuevo Agente</span>
-                    </button>
-                    <a href="/importar" class="btn-action">
-                        <span class="btn-action-icon">📤</span>
-                        <span class="btn-action-label">Importar Excel</span>
-                    </a>
-                    <a href="/solicitudes" class="btn-action btn-action-secondary">
-                        <span class="btn-action-icon">📋</span>
-                        <span class="btn-action-label">Ver Solicitudes</span>
-                    </a>
                 </div>
 
                 <!-- ==================== AGENTES ==================== -->
@@ -129,30 +132,6 @@
                             </thead>
                             <tbody id="campanasEquipoBody">
                                 <tr><td colspan="9" class="equipo-loading">Cargando campañas...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- ==================== GESTIONES RECIENTES ==================== -->
-                <div class="equipo-section">
-                    <div class="equipo-section-header">
-                        <h2>📝 Gestiones Recientes del Equipo</h2>
-                    </div>
-                    <div class="equipo-table-wrapper">
-                        <table class="equipo-table">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Agente</th>
-                                    <th>Solicitud</th>
-                                    <th>Cliente</th>
-                                    <th>Tipo</th>
-                                    <th>Observación</th>
-                                </tr>
-                            </thead>
-                            <tbody id="gestionesEquipoBody">
-                                <tr><td colspan="6" class="equipo-loading">Cargando gestiones...</td></tr>
                             </tbody>
                         </table>
                     </div>

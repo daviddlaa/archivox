@@ -1059,6 +1059,14 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - Campañas del equipo
 - Gestiones del equipo
 
+**Jerarquía del panel (desktop, `public/desktop/equipo.html`):** el feed de **Gestiones Recientes del Equipo** es la primera sección de contenido (destacado para el líder, sin scroll), seguida de los 4 KPIs (Agentes, Asignaciones, Campañas, Gestiones 7d), la tabla de Agentes y la de Campañas.
+
+**Feed de gestiones (desktop):**
+- Tarjetas tipo timeline: avatar del agente, nombre, **badge de tipo coloreado** (Completada=verde, Llamada=ámbar, Seguimiento=azul, Visita=púrpura, otros=gris), fecha/hora, `#solicitud · cliente` (enlaza a `/solicitudes?buscar=ID`) y observación recortada a 120 chars.
+- Filtros rápidos por **agente** y por **tipo de gestión** (del lado del cliente, sobre las registros cargados).
+- Botón **"Cargar más"** que incrementa el `limite` del endpoint `/api/equipos/:id/gestiones` en 20 (oculto cuando no quedan registros).
+- La fila de botones grandes (Nuevo Agente / Importar / Ver Solicitudes) se eliminó: "Nuevo Agente" queda en la cabecera de la sección Agentes; Importar/Solicitudes siguen en el menú lateral.
+
 ### 11.9 Panel de Administración
 
 **Ruta:** `/admin` (solo SuperAdmin)
