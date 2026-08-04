@@ -1,0 +1,38 @@
+[
+  {
+    "titulo": "💬 Nuevo: Plantillas de mensajes de WhatsApp",
+    "mensaje": "¡Ya puedes crear plantillas personalizadas para tus mensajes de WhatsApp! 🎉\n\n💡 Crea hasta 5 plantillas con la variable {nombre} que se reemplaza automáticamente con el nombre de cada cliente.\n\n📲 Disponible en el botón '💬 Directo' de tus campañas y en cada tarjeta desde el móvil.\n\n¡Mensajes más rápidos y profesionales!",
+    "tipo": "success",
+    "prioridad": "alta",
+    "accion_modulo": "plantillas",
+    "accion_texto": "✨ Crear mis plantillas",
+    "es_novedad": 1
+  },
+  {
+    "titulo": "🚦 Nuevo: Semáforo de estado en campañas",
+    "mensaje": "Las campañas ahora tienen un semáforo de estado rediseñado que te muestra de un vistazo el progreso y la prioridad. 🟢🟡🔴\n\n✅ Prioridad destacada en amarillo\n✅ Orden inteligente de la lista\n✅ Progreso visual en tiempo real\n\n¡Organiza tu trabajo más rápido!",
+    "tipo": "info",
+    "prioridad": "normal",
+    "accion_modulo": "gestion-lote",
+    "accion_texto": "🚀 Ir a mis campañas",
+    "es_novedad": 1
+  },
+  {
+    "titulo": "📋 Nuevo: Panel lateral de solicitudes",
+    "mensaje": "Ahora en escritorio, al hacer clic en una solicitud se abre un panel lateral con toda la información y la edición unificada, sin cambiar de página. 🖥️✨\n\n✅ Ver detalles completos\n✅ Editar sin perder el contexto\n✅ Navegación mucho más fluida",
+    "tipo": "info",
+    "prioridad": "normal",
+    "accion_modulo": "solicitudes",
+    "accion_texto": "📋 Ver mis solicitudes",
+    "es_novedad": 1
+  },
+  {
+    "titulo": "⚡ Nuevo: Widgets en el Dashboard",
+    "mensaje": "Tu dashboard ahora te muestra lo más importante apenas entras: las últimas campañas activas y tus solicitudes más recientes. 🏠✨\n\n✅ Campañas con barra de progreso\n✅ Últimas solicitudes con estado\n✅ Acceso directo con un clic",
+    "tipo": "success",
+    "prioridad": "normal",
+    "accion_modulo": "dashboard",
+    "accion_texto": "🏠 Ir al Dashboard",
+    "es_novedad": 1
+  }
+]
