@@ -44,6 +44,7 @@
 | **Relaciones** | Gestión de relaciones ALTA/BAJA con clientes |
 | **Equipos** | Sistema multi-equipo con líderes y agentes (v3.0) |
 | **Campañas** | Gestión por lotes de solicitudes para acción masiva |
+| **Plantillas** | Mensajes de WhatsApp reutilizables con variable `{nombre}` (máx. 5 por usuario) |
 | **Ventas** | Control de ventas por vendedor con configuración de bonos |
 | **Administración** | Panel de superadmin con auditoría, usuarios y estadísticas |
 | **Notificaciones** | Centro de notificaciones con SSE en tiempo real |
@@ -198,6 +199,7 @@ ARCHIVOX/
 │   ├── README.md                   # Este archivo
 │   ├── feature-rediseño-semaforo-campañas.md  # Rediseño del indicador de estado v6.1 (Agosto 2026)
 │   ├── feature-ux-comportamiento-campanas.md  # UX de progreso y prioridad v2.0 (Agosto 2026)
+│   ├── feature-plantillas-mensajes.md         # Plantillas de mensajes personalizadas (Agosto 2026)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
 │       ├── informe-auditoria-flujo-multi-equipo.md
@@ -241,7 +243,8 @@ ARCHIVOX/
 │   │   ├── relaciones.controller.js        # Relaciones ALTA/BAJA
 │   │   ├── relacionesGestion.controller.js # Gestiones de relaciones
 │   │   ├── notificaciones.controller.js    # Centro de notificaciones + SSE
-│   │   └── estadisticas.controller.js      # Métricas por usuario (escalable)
+│   │   ├── estadisticas.controller.js      # Métricas por usuario (escalable)
+│   │   └── plantillas.controller.js        # Plantillas de mensajes por usuario
 │   │
 │   ├── routes/                     # Definición de rutas Express
 │   │   ├── auth.routes.js          # /api/auth/*
@@ -249,9 +252,9 @@ ARCHIVOX/
 │   │   ├── admin.routes.js         # /api/admin/*
 │   │   ├── equipos.routes.js       # /api/equipos/*
 │   │   ├── relaciones.routes.js    # /api/relaciones/*
-│   │   ├── relacionesGestion.routes.js  # /api/relaciones/gestiones/*
-│   │   ├── gestionesMaestro.routes.js   # /api/gestiones-maestro/*
-│   │   └── debug.routes.js         # /api/debug/* (diagnóstico)
+│   │   ├── relacionesGestion.routes.js  # /api/relaciones/gestiones/*│   │   ├── gestionesMaestro.routes.js   # /api/gestiones-maestro/*
+│   │   ├── debug.routes.js              # /api/debug/* (diagnóstico)
+│   │   └── plantillas.routes.js         # /api/plantillas/*
 │   │
 │   └── services/                   # Servicios (lógica reutilizable)
 │       ├── excel.service.js        # Procesamiento de archivos Excel (solicitudes)
@@ -293,6 +296,7 @@ ARCHIVOX/
 │   │   ├── ventas.html             # Control de ventas (escritorio)
 │   │   ├── historial.html          # Historial de actualizaciones (escritorio)
 │   │   ├── equipo.html             # Panel del líder (escritorio)
+│   │   ├── plantillas.html         # Plantillas de mensajes (escritorio)
 │   │   │
 │   │   ├── css/                    # Estilos específicos escritorio
 │   │   │   ├── base.css            # Base layout
@@ -303,7 +307,8 @@ ARCHIVOX/
 │   │   │   ├── ventas.css          # Ventas
 │   │   │   ├── equipo.css          # Panel líder
 │   │   │   ├── historial.css       # Historial
-│   │   │   └── relaciones.css      # Relaciones
+│   │   │   ├── relaciones.css      # Relaciones
+│   │   │   └── plantillas.css      # Plantillas
 │   │   │
 │   │   └── js/                     # JavaScript específico escritorio
 │   │       ├── dashboard.js        # Dashboard
@@ -314,7 +319,8 @@ ARCHIVOX/
 │   │       ├── relaciones.js       # Relaciones
 │   │       ├── ventas.js           # Ventas
 │   │       ├── historial.js        # Historial
-│   │       └── equipo.js           # Panel líder
+│   │       ├── equipo.js           # Panel líder
+│   │       └── plantillas.js       # Plantillas
 │   │
 │   └── movil/                      # VERSIÓN MÓVIL
 │       ├── login.html              # Login (móvil)
@@ -327,13 +333,15 @@ ARCHIVOX/
 │       ├── ventas.html             # Ventas (móvil)
 │       ├── historial.html          # Historial (móvil)
 │       ├── equipo.html             # Panel líder (móvil)
+│       ├── plantillas.html         # Plantillas de mensajes (móvil)
 │       │
 │       ├── css/                    # Estilos específicos móvil
 │       │   ├── estilos.css         # Estilos base móvil
 │       │   ├── solicitudes-mobile.css  # Solicitudes móvil
 │       │   ├── gestiones.css       # Gestiones móvil
 │       │   ├── gestion-lote.css    # Gestión por lotes móvil
-│       │   └── importar.css        # Importar móvil
+│       │   ├── importar.css        # Importar móvil
+│       │   └── plantillas.css      # Plantillas móvil
 │       │
 │       └── js/                     # JavaScript específico móvil
 │           ├── dashboard.js        # Dashboard
@@ -344,7 +352,8 @@ ARCHIVOX/
 │           ├── relaciones.js       # Relaciones
 │           ├── ventas.js           # Ventas
 │           ├── historial.js        # Historial
-│           └── equipo.js           # Panel líder
+│           ├── equipo.js           # Panel líder
+│           └── plantillas.js       # Plantillas
 │
 │   └── admin/                      # PANEL DE ADMINISTRACIÓN
 │       ├── index.html              # Panel admin (HTML)
@@ -365,7 +374,14 @@ ARCHIVOX/
 │   ├── 003_seed_team_data.js             # Seed datos multi-equipo (script)
 │   ├── 003_seed_team_data.sql            # Seed datos multi-equipo (SQL)
 │   ├── 003_seed_team_data.sqlite.sql     # Seed datos multi-equipo SQLite
-│   └── 004_add_asignado_a_columna.js     # Columna asignado_a (script)
+│   ├── 004_add_asignado_a_columna.js     # Columna asignado_a (script)
+│   ├── 005_add_vendedor_to_gestiones.js  # Columna vendedor en gestiones (script)
+│   ├── 006_add_vendedor_to_gestiones_relaciones.js # Columna vendedor en gestiones_relaciones (script)
+│   ├── 007_add_vendedor_to_solicitudes.js # Columna vendedor en solicitudes (script)
+│   ├── 008_remove_vendedor_from_gestiones.js # Elimina columna vendedor de gestiones (script)
+│   ├── 009_add_campana_id_to_solicitudes.js   # Columna campana_id en solicitudes (script)
+│   ├── 010_create_gestiones_maestro_solicitudes.js # Tabla puente gestiones_maestro_solicitudes (script)
+│   └── 011_create_plantillas.pg.sql       # Tabla plantillas PostgreSQL (SQL)
 │
 ├── scripts/                        # Scripts de utilidad
 │   ├── audit-funciones.js          # Auditoría de funciones JS llamadas desde HTML
@@ -514,6 +530,16 @@ El wrapper en `db.js` se encarga automáticamente de:
 | fecha_salida | TIMESTAMP/TEXT | Fecha de salida (NULL = activo) |
 | motivo_salida | TEXT | Motivo de salida |
 
+#### `plantillas`
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | SERIAL/INTEGER PK | ID único |
+| usuario_id | INTEGER NOT NULL FK | Usuario propietario |
+| nombre | TEXT NOT NULL | Nombre de la plantilla (≤ 100 caracteres) |
+| contenido | TEXT NOT NULL | Mensaje (≤ 2000 caracteres, soporta variable `{nombre}`) |
+| creada_en | TIMESTAMP/TEXT | Fecha de creación |
+| actualizada_en | TIMESTAMP/TEXT | Fecha de actualización |
+
 #### Otras tablas
 - `ventas_vendedores` - Ventas por vendedor por mes
 - `config_bonos` - Configuración de bonos por mes
@@ -526,6 +552,7 @@ El wrapper en `db.js` se encarga automáticamente de:
 - `permisos_equipo` - Permisos adicionales por equipo (v3.0)
 - `asignaciones_solicitudes` - Asignaciones de solicitudes a equipos/agentes (v3.0)
 - `campañas_equipo` - Asociación campañas ↔ equipos (v3.0)
+- `plantillas` - Plantillas de mensajes por usuario (máx. 5, con variable `{nombre}`)
 
 ### 5.3 Índices Compuestos
 
@@ -544,6 +571,7 @@ El sistema cuenta con índices compuestos optimizados para las consultas más fr
 | `idx_notificaciones_destinatario_leida` | notificaciones | (destinatario_id, leida, created_at DESC) | Listado de notificaciones |
 | `idx_historial_usuario_fecha` | historial_actualizaciones | (usuario_id, fecha_actualizacion DESC) | Historial por usuario |
 | `idx_audit_log_accion_fecha` | audit_log | (accion, created_at DESC) | Consulta de auditoría |
+| `idx_plantillas_usuario` | plantillas | (usuario_id) | Plantillas por usuario |
 
 ---
 
@@ -633,7 +661,7 @@ El frontend está construido con **HTML + CSS + Vanilla JavaScript** (sin framew
 
 #### Versión Desktop
 - Dashboard, Solicitudes, Importar, Gestiones, Gestión por Lotes
-- Relaciones, Ventas, Historial, Panel del Líder
+- Plantillas, Relaciones, Ventas, Historial, Panel del Líder
 
 #### Versión Móvil
 - Mismas funcionalidades que desktop pero con UI adaptada
@@ -865,6 +893,7 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 | `gestiones` | `/gestiones` o `/m/gestiones` |
 | `gestion-lote` | `/gestion-lote` o `/m/gestion-lote` |
 | `relaciones` | `/relaciones` o `/m/relaciones` |
+| `plantillas` | `/plantillas` o `/m/plantillas` |
 | `ventas` | `/equipo-ventas` o `/m/ventas` |
 | `perfil` | `/perfil` |
 | `perfil-config` | `/perfil?tab=config` |
@@ -1062,11 +1091,11 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 **Jerarquía del panel (desktop, `public/desktop/equipo.html`):** pasarela única (KPIs / Agentes / Campañas) → feed de **Gestiones Recientes del Equipo** (destacado para el líder, sin scroll).
 
 **Pasarela (desktop):** carrusel de **3 slides** con dots clicables + flechas ‹ › con loop, sin autoplay, colocado encima del feed de gestiones para que ningún bloque quede perdido al final:
-- **Slide 1 — KPIs del Equipo:** los 4 stats (👥 Agentes, 📋 Asignaciones Activas, 📢 Campañas, 📝 Gestiones 7 días) en grilla 2×2, tarjetas horizontales compactas (~84px). IDs conservados (`totalAgentes`, `totalAsignaciones`, `totalCampanas`, `totalGestiones`) actualizados por `cargarDashboard()`.
+- **Slide 1 — KPIs del Equipo:** los 4 stats (👥 Agentes, 📋 Asignaciones Activas, 📢 Campañas, 📝 Gestiones 7 días) en **una fila de 4 tarjetas verticales** (icono arriba, texto abajo, centrados) en pantallas anchas; vuelven a grilla 2×2 en pantallas angostas. IDs conservados (`totalAgentes`, `totalAsignaciones`, `totalCampanas`, `totalGestiones`) actualizados por `cargarDashboard()`.
 - **Slide 2 — Agentes del Equipo:** tabla completa (Usuario, Nombre, Estado, Asignadas, Gestionadas 7d, Ingreso, Acciones) con botón "+ Nuevo" en el encabezado.
 - **Slide 3 — Campañas del Equipo:** tabla completa con progreso.
 
-La altura de la pasarela se iguala entre slides vía `igualarAlturaEquipoSlides()`; las tablas conservan su scroll horizontal.
+La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tablas, botones, flechas y dots reducidos únicamente dentro de los slides (`.equipo-slide`); el feed de gestiones no se ve afectado. La altura se iguala entre slides vía `igualarAlturaEquipoSlides()`; las tablas conservan su scroll horizontal.
 
 **Feed de gestiones (desktop):**
 - Tarjetas tipo timeline: avatar del agente, nombre, **badge de tipo coloreado** (Completada=verde, Llamada=ámbar, Seguimiento=azul, Visita=púrpura, otros=gris), fecha/hora, `#solicitud · cliente` (enlaza a `/solicitudes?buscar=ID`) y observación recortada a 120 chars.
@@ -1105,6 +1134,18 @@ La altura de la pasarela se iguala entre slides vía `igualarAlturaEquipoSlides(
 - Visualización de cambios en solicitudes
 - Filtros por usuario y fecha
 - Detalle: campo, valor anterior, valor nuevo
+
+### 11.12 Plantillas de Mensajes
+
+**Ruta:** `/plantillas` (desktop), `/m/plantillas` (móvil)
+**Archivos:** `plantillas.controller.js`, `plantillas.routes.js`, `public/desktop/js/plantillas.js`, `public/movil/js/plantillas.js`
+
+- CRUD de plantillas de WhatsApp por usuario (máx. **5**, límite leído dinámicamente del campo `max` que devuelve la API; los textos se escapan con `escaparParaHTML()` en el modal de WhatsApp Directo), con la variable `{nombre}` que se reemplaza con el nombre del cliente
+- Pantallas desktop (grid de tarjetas) y móvil (lista), modal crear/editar con contador de caracteres (2000) e inserción rápida de `{nombre}`
+- Contador de uso con barra de progreso y empty state
+- **Integración con WhatsApp Directo** de Gestión por Lotes: las plantillas del usuario reemplazan los mensajes fijos (fallback al mensaje predeterminado si no hay plantillas); la variable `{nombre}` se reemplaza al abrir el modal
+- Navegación por drawer y deep link (`plantillas`)
+- Ver `docs/feature-plantillas-mensajes.md` para documentación completa (Agosto 2026)
 
 ---
 
@@ -1279,6 +1320,15 @@ La altura de la pasarela se iguala entre slides vía `igualarAlturaEquipoSlides(
 | GET | `/api/debug/usuarios` | ✅ | Listar usuarios |
 | GET | `/api/debug/foreign-keys/:tabla` | ✅ | Foreign keys de tabla |
 
+### 12.13 Plantillas (`/api/plantillas`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/api/plantillas` | ✅ | Listar plantillas del usuario autenticado (`{data, total, max}`) |
+| POST | `/api/plantillas` | ✅ | Crear plantilla (valida nombre ≤100, contenido ≤2000 y máx. 5 por usuario) |
+| PUT | `/api/plantillas/:id` | ✅ | Actualizar plantilla propia |
+| DELETE | `/api/plantillas/:id` | ✅ | Eliminar plantilla propia |
+
 ---
 
 ## 13. 📱 Renderizado Responsivo
@@ -1307,6 +1357,7 @@ function isMobileDevice(userAgent) {
 | `/equipo-ventas` | `/m/equipo-ventas` | Ventas |
 | `/historial` | `/m/historial` | Historial |
 | `/equipo` | `/m/equipo` | Panel líder |
+| `/plantillas` | `/m/plantillas` | Plantillas |
 | `/admin` | `/m/admin` | Admin |
 | `/perfil` | (única) | Perfil |
 
@@ -1338,12 +1389,20 @@ function redirectSuperAdmin(req, res) {
 | **003a** | Sistema Multi-Equipo: 6 tablas nuevas (equipos, equipo_usuarios, permisos_roles, permisos_equipo, asignaciones_solicitudes, campañas_equipo) | ✅ Completa |
 | **003b** | Seed de datos multi-equipo: equipo "Sistema", permisos de líder/agente/user | ✅ Completa |
 | **004** | Columna asignado_a en gestiones_maestro para asignación a agentes | ✅ Completa |
+| **005** | Columna vendedor en gestiones | ✅ Completa |
+| **006** | Columna vendedor en gestiones_relaciones | ✅ Completa |
+| **007** | Columna vendedor en solicitudes | ✅ Completa |
+| **008** | Elimina columna vendedor de gestiones | ✅ Completa |
+| **009** | Columna campana_id en solicitudes + índice | ✅ Completa |
+| **010** | Tabla puente gestiones_maestro_solicitudes (semáforo) | ✅ Completa |
+| **011** | Tabla plantillas de mensajes por usuario (SQL PostgreSQL) | ✅ Completa |
 
 ### 14.2 Migraciones Automáticas
 
 Además de las migraciones explícitas, `initDb.js` y `initDb.pg.js` ejecutan migraciones automáticas al iniciar el servidor:
 
 - Creación de tablas con `CREATE TABLE IF NOT EXISTS`
+- Tabla `plantillas` (mensajes) creada automáticamente en SQLite y PostgreSQL
 - Agregado de columnas faltantes con `ALTER TABLE ADD COLUMN IF NOT EXISTS`
 - Migración `ultimo_login` → `last_login`
 - Migración `accion_url` → `accion_modulo` en notificaciones legacy
@@ -1403,6 +1462,9 @@ node migrations/002_add_compound_indexes.js
 node migrations/003_create_team_tables.js "$DATABASE_URL"
 node migrations/003_seed_team_data.js "$DATABASE_URL"
 node migrations/004_add_asignado_a_columna.js "$DATABASE_URL"
+
+# Migración 011 (PostgreSQL, SQL puro)
+psql -d tu_db -f migrations/011_create_plantillas.pg.sql
 
 # Deploy (Windows)
 commit_push.bat
@@ -1480,6 +1542,7 @@ El sistema utiliza **node-cache** con estrategia **cache-aside**:
 | **SuperAdmin** | Usuario con control total del sistema (panel de administración) |
 | **Drawer** | Panel lateral deslizante: menú de navegación (móvil) o panel de detalle/edición de solicitudes (escritorio) |
 | **Rate Limiting** | Límite de peticiones para prevenir abuso |
+| **Plantilla** | Mensaje de WhatsApp reutilizable con variable `{nombre}`, máximo 5 por usuario |
 | **Cache-Aside** | Estrategia de caché: consultar caché → si no hay, consultar BD → guardar en caché |
 
 ---

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plantillas de Mensajes - Archivox</title>
+    <link rel="stylesheet" href="/desktop/css/base.css">
+    <link rel="stylesheet" href="/css/modal.css">
+    <link rel="stylesheet" href="/css/drawer.css">
+    <link rel="stylesheet" href="/css/notificaciones.css">
+    <link rel="stylesheet" href="/desktop/css/plantillas.css">
+</head>
+<body>
+    <div id="drawer-wrapper"></div>
+
+    <div class="layout">
+        <main class="contenido">
+            <div class="plantillas-container">
+
+                <!-- Header -->
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>💬 Plantillas de Mensajes</h1>
+                        <p class="subtitulo">Reutiliza mensajes de WhatsApp con el nombre del cliente</p>
+                    </div>
+                    <div class="page-header-right">
+                        <button class="notif-bell-usuario" onclick="abrirPanelNotificaciones()" title="Notificaciones">
+                            🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Límite info -->
+                <div class="plantillas-limite" id="plantillasLimite">
+                    <div class="plantillas-limite-left">
+                        <span class="plantillas-limite-icon">📊</span>
+                        <span>
+                            <strong id="contadorPlantillas">0</strong> de <strong id="maxPlantillas">5</strong> plantillas utilizadas
+                        </span>
+                    </div>
+                    <div class="plantillas-limite-bar">
+                        <div class="plantillas-limite-fill" id="limiteFill" style="width:0%"></div>
+                    </div>
+                    <button class="btn-nueva-plantilla" id="btnNuevaPlantilla" onclick="abrirModalPlantilla()">
+                        ✨ Nueva plantilla
+                    </button>
+                </div>
+
+                <!-- Ayuda variable -->
+                <div class="plantillas-ayuda">
+                    <span class="plantillas-ayuda-icon">💡</span>
+                    <div>
+                        <strong>Usa <code>{nombre}</code> en tu mensaje</strong> para insertar automáticamente el nombre del cliente de cada solicitud.
+                        <span class="plantillas-ayuda-ejemplo">Ejemplo: <em>"Hola {nombre}, tu crédito está aprobado..."</em></span>
+                    </div>
+                </div>
+
+                <!-- Grid de plantillas -->
+                <div class="plantillas-grid" id="plantillasGrid">
+                    <div class="plantillas-loading">⏳ Cargando plantillas...</div>
+                </div>
+
+                <!-- Empty state -->
+                <div class="plantillas-empty" id="plantillasEmpty" style="display:none;">
+                    <div class="plantillas-empty-icon">💬</div>
+                    <h3>No tienes plantillas creadas</h3>
+                    <p>Crea tu primera plantilla para enviar mensajes personalizados más rápido</p>
+                    <button class="btn-nueva-plantilla" onclick="abrirModalPlantilla()">✨ Crear mi primera plantilla</button>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/deep-link-router.js"></script>
+    <script src="/js/notificaciones-dashboard.js"></script>
+    <script src="/js/modal.js"></script>
+    <script src="/js/drawer.js"></script>
+    <script src="/desktop/js/plantillas.js"></script>
+</body>
+</html>

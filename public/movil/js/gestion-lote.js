@@ -1854,8 +1854,14 @@ function generarMensajeWhatsApp(nombreCompleto) {
     return saludo + '\nCrédito Resuelve a las órdenes 💳✨\n\nTu crédito esta aprobado 🙌\nQué necesitas para tu hogar?, te ayudamos a hacerlo posible 📲';
 }
 
+// Reemplazar la variable {nombre} con el nombre del cliente
+function aplicarVariableNombre(contenido, nombreCliente) {
+    var nombre = obtenerNombreParaMensaje(nombreCliente) || '';
+    return String(contenido || '').replace(/\{nombre\}/g, nombre);
+}
+
 // Abrir modal de WhatsApp para una solicitud (solo texto, sin imagen)
-function abrirGestionWhatsApp(solicitudId, celular) {
+async function abrirGestionWhatsApp(solicitudId, celular) {
     var sol = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
     
     if (!sol) {
@@ -1868,29 +1874,46 @@ function abrirGestionWhatsApp(solicitudId, celular) {
         return;
     }
     
+    // Cargar plantillas del usuario (reemplazan los mensajes fijos)
+    var plantillasUsuario = [];
+    try {
+        var resPlantillas = await fetch('/api/plantillas', { credentials: 'include' });
+        var dataPlantillas = await resPlantillas.json();
+        plantillasUsuario = (dataPlantillas && dataPlantillas.data) || [];
+    } catch (e) {
+        plantillasUsuario = [];
+    }
+    
     var contenido = '';
     
     contenido += '<div class="modal-gestion">';
     contenido += '<h2>💬 WhatsApp Directo - Solicitud #' + solicitudId + '</h2>';
     contenido += '<div class="modal-info">';
-    contenido += '<p><strong>Nombre:</strong> ' + (sol.nombre || '—') + '</p>';
-    contenido += '<p><strong>Celular:</strong> ' + celular + '</p>';
+    contenido += '<p><strong>Nombre:</strong> ' + escaparParaHTML(sol.nombre || '—') + '</p>';
+    contenido += '<p><strong>Celular:</strong> ' + escaparParaHTML(celular) + '</p>';
     contenido += '</div>';
     contenido += '<div class="modal-form">';
     contenido += '<label>📝 Mensaje:</label>';
     var mensajeDefecto = generarMensajeWhatsApp(sol.nombre);
-    var opcionesMensajes = [
-        { texto: mensajeDefecto, etiqueta: 'Mensaje predeterminado' },
-        { texto: 'Hola ' + (sol.nombre || '') + ' 👋\nCrédito Resuelve a las órdenes 💳✨\n\nTu crédito está aprobado 🙌\n¿Deseas que te ayudemos con tu hogar? 📲', etiqueta: 'Aprobación rápida' },
-        { texto: 'Hola ' + (sol.nombre || '') + ' 👋\nTe contactamos de Crédito Resuelve 💳\n\nEstamos listos para ayudarte con tu crédito. ¿Cuándo te parece conversar? 📲', etiqueta: 'Seguimiento simple' },
-        { texto: 'Hola ' + (sol.nombre || '') + ' 👋\nQuedamos atentos a tus necesidades.\n\nSi gustas, te compartimos más información sobre tu crédito. 📲', etiqueta: 'Consulta general' }
-    ];
-    contenido += '<div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;">';
-    for (var i = 0; i < opcionesMensajes.length; i++) {
-        contenido += '<button type="button" class="btn-plantilla-whatsapp" data-index="' + i + '" data-opciones="' + encodeURIComponent(JSON.stringify(opcionesMensajes)) + '" onclick="cambiarMensajeWhatsAppDesdeBoton(this)">' + opcionesMensajes[i].etiqueta + '</button>';
+
+    // Plantillas del usuario con {nombre} reemplazado
+    var opcionesMensajes = [];
+    for (var p = 0; p < plantillasUsuario.length; p++) {
+        opcionesMensajes.push({
+            texto: aplicarVariableNombre(plantillasUsuario[p].contenido, sol.nombre),
+            etiqueta: plantillasUsuario[p].nombre || ('Plantilla ' + (p + 1))
+        });
     }
-    contenido += '</div>';
-    contenido += '<textarea id="whatsapp-img-mensaje" rows="5" placeholder="Escriba su mensaje..." style="margin-bottom: 12px;">' + mensajeDefecto + '</textarea>';
+    var mensajeInicial = opcionesMensajes.length ? opcionesMensajes[0].texto : mensajeDefecto;
+
+    if (opcionesMensajes.length > 0) {
+        contenido += '<div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;">';
+        for (var i = 0; i < opcionesMensajes.length; i++) {
+            contenido += '<button type="button" class="btn-plantilla-whatsapp" data-index="' + i + '" data-opciones="' + encodeURIComponent(JSON.stringify(opcionesMensajes)) + '" onclick="cambiarMensajeWhatsAppDesdeBoton(this)">' + escaparParaHTML(opcionesMensajes[i].etiqueta) + '</button>';
+        }
+        contenido += '</div>';
+    }
+    contenido += '<textarea id="whatsapp-img-mensaje" rows="5" placeholder="Escriba su mensaje..." style="margin-bottom: 12px;">' + escaparParaHTML(mensajeInicial) + '</textarea>';
     contenido += '<div style="padding: 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #86efac; margin-bottom: 12px;">';
     contenido += '<div style="display: flex; align-items: center; gap: 8px;">';
     contenido += '<span style="font-size: 18px;">📱</span>';
@@ -1907,7 +1930,7 @@ function abrirGestionWhatsApp(solicitudId, celular) {
     contenido += '</div>';
     contenido += '<div class="modal-botones">';
     contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>';
-    contenido += '<button class="btn-guardar" id="btn-whatsapp-img" onclick="enviarWhatsApp(\'' + solicitudId + '\', \'' + celular + '\')">📤 Enviar</button>';
+    contenido += '<button class="btn-guardar" id="btn-whatsapp-img" onclick="enviarWhatsApp(\'' + escaparParaAtributo(solicitudId) + '\', \'' + escaparParaAtributo(celular) + '\')">📤 Enviar</button>';
     contenido += '</div>';
     contenido += '</div>';
     contenido += '</div>';

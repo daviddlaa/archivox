@@ -267,6 +267,26 @@ db.exec(`
 `);
 
 // ================================================================
+// TABLA: plantillas (plantillas de mensajes por usuario)
+// Máximo 5 plantillas por usuario (validado en el controlador)
+// ================================================================
+db.exec(`
+    CREATE TABLE IF NOT EXISTS plantillas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        usuario_id INTEGER NOT NULL,
+        nombre TEXT NOT NULL,
+        contenido TEXT NOT NULL,
+        creada_en TEXT DEFAULT (datetime('now')),
+        actualizada_en TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+    )
+`);
+
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_plantillas_usuario ON plantillas(usuario_id)`);
+} catch (e) { /* ignorar */ }
+
+// ================================================================
 // TABLA: audit_log (auditoría de acciones del sistema)
 // ================================================================
 db.exec(`

@@ -287,6 +287,23 @@ app.get('/m/equipo', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/equipo.html'));
 });
 
+// 🆕 Rutas de Plantillas de Mensajes
+app.get('/plantillas', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
+    const isMobile = isMobileDevice(req.headers['user-agent']);
+    if (isMobile || req.query.movil === '1') {
+        res.sendFile(path.join(__dirname, 'public/movil/plantillas.html'));
+    } else {
+        res.sendFile(path.join(__dirname, 'public/desktop/plantillas.html'));
+    }
+});
+app.get('/m/plantillas', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
+    res.sendFile(path.join(__dirname, 'public/movil/plantillas.html'));
+});
+
 // Rutas de login (públicas)
 app.get('/login', (req, res) => {
     const isMobile = isMobileDevice(req.headers['user-agent']);
@@ -317,6 +334,9 @@ app.use('/api/admin', require('./src/routes/admin.routes'));
 
 // 🆕 Rutas multi-equipo
 app.use('/api/equipos', require('./src/routes/equipos.routes'));
+
+// 🆕 Plantillas de mensajes
+app.use('/api/plantillas', require('./src/routes/plantillas.routes'));
 
 // Catálogos dinámicos (estados, segmentos, etc.)
 app.use('/api/catalogos', require('./src/routes/catalog.routes'));

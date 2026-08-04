@@ -565,6 +565,26 @@ const initTables = async () => {
         await client.query(`CREATE INDEX IF NOT EXISTS idx_asignaciones_equipo_activas ON asignaciones_solicitudes(equipo_id, fecha_desasignacion)`);
         await client.query(`CREATE INDEX IF NOT EXISTS idx_asignaciones_fecha ON asignaciones_solicitudes(fecha_asignacion DESC)`);
         await client.query(`CREATE INDEX IF NOT EXISTS idx_gestiones_maestro_equipo ON gestiones_maestro(equipo_id)`);
+        // ================================================================
+        // 🆕 TABLA: plantillas (plantillas de mensajes por usuario)
+        // Máximo 5 plantillas por usuario (validado en el controlador)
+        // ================================================================
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS plantillas (
+                id              SERIAL PRIMARY KEY,
+                usuario_id      INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+                nombre          TEXT NOT NULL,
+                contenido       TEXT NOT NULL,
+                creada_en       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                actualizada_en  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_plantillas_usuario
+            ON plantillas(usuario_id)
+        `);
+        console.log('   ✅ plantillas');
+
         console.log('   ✅ Tablas multi-equipo creadas/verificadas');
 
         // ================================================================

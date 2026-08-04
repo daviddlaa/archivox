@@ -67,6 +67,7 @@
                 { icon: '📝', label: 'Gestiones', href: '/m/gestiones' },
                 { icon: '🚀', label: 'Campañas', href: '/m/gestion-lote' },
                 { icon: '📋', label: 'Relaciones', href: '/m/relaciones' },
+                { icon: '💬', label: 'Plantillas', href: '/m/plantillas' },
                 { icon: '🔄', label: 'Historial', href: '/m/historial' },
                 null, // separator
                 { icon: '🛡️', label: 'Admin', href: '/admin', adminOnly: true },
@@ -283,6 +284,7 @@
                         '<li><a href="/gestiones" class="drawer-link"><span class="drawer-menu-icon">📝</span>Gestiones</a></li>' +
                         '<li><a href="/gestion-lote" class="drawer-link"><span class="drawer-menu-icon">🚀</span>Campañas</a></li>' +
                         '<li><a href="/relaciones" class="drawer-link"><span class="drawer-menu-icon">📋</span>Relaciones</a></li>' +
+                        '<li><a href="/plantillas" class="drawer-link"><span class="drawer-menu-icon">💬</span>Plantillas</a></li>' +
                         '<li><a href="/historial" class="drawer-link"><span class="drawer-menu-icon">🔄</span>Historial</a></li>' +
                     '</ul>' +
                 '</div>' +

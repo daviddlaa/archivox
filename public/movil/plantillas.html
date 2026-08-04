@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Plantillas de Mensajes - Archivox</title>
+    <link rel="stylesheet" href="/movil/css/estilos.css">
+    <link rel="stylesheet" href="/css/drawer.css">
+    <link rel="stylesheet" href="/movil/css/plantillas.css">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-title">
+            <h1>💬 Plantillas</h1>
+            <p>Mensajes con el nombre del cliente</p>
+        </div>
+    </div>
+
+    <div class="plantillas-container">
+
+        <!-- Límite -->
+        <div class="plantillas-limite">
+            <div class="plantillas-limite-top">
+                <span class="plantillas-limite-icon">📊</span>
+                <span class="plantillas-limite-texto"><strong id="contadorPlantillas">0</strong> de <strong id="maxPlantillas">5</strong> plantillas</span>
+                <button class="btn-nueva-plantilla" id="btnNuevaPlantilla" onclick="abrirModalPlantilla()">✨ Nueva</button>
+            </div>
+            <div class="plantillas-limite-bar">
+                <div class="plantillas-limite-fill" id="limiteFill" style="width:0%"></div>
+            </div>
+        </div>
+
+        <!-- Ayuda -->
+        <div class="plantillas-ayuda">
+            <span class="plantillas-ayuda-icon">💡</span>
+            <div>
+                <strong>Usa <span class="var-chip">{nombre}</span> en tu mensaje</strong> para insertar el nombre del cliente automáticamente.
+                <span class="plantillas-ayuda-ejemplo">Ej: "Hola {nombre}, tu crédito está aprobado..."</span>
+            </div>
+        </div>
+
+        <!-- Lista -->
+        <div class="plantillas-list" id="plantillasList">
+            <div class="plantillas-loading">⏳ Cargando...</div>
+        </div>
+
+        <!-- Empty -->
+        <div class="plantillas-empty" id="plantillasEmpty" style="display:none;">
+            <div class="plantillas-empty-icon">💬</div>
+            <h3>Sin plantillas</h3>
+            <p>Crea tu primera plantilla para enviar mensajes más rápido</p>
+            <button class="btn-nueva-plantilla" onclick="abrirModalPlantilla()">✨ Crear plantilla</button>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <nav class="nav-bottom">
+        <a href="/m" class="nav-item">
+            <span class="nav-bottom-icon">📊</span>
+            <span class="nav-bottom-label">Inicio</span>
+        </a>
+        <a href="/m/plantillas" class="nav-item active">
+            <span class="nav-bottom-icon">💬</span>
+            <span class="nav-bottom-label">Plantillas</span>
+        </a>
+        <a href="#" onclick="Drawer.toggle(); return false;" class="nav-item">
+            <span class="nav-bottom-icon">☰</span>
+            <span class="nav-bottom-label">Menú</span>
+        </a>
+    </nav>
+
+    <script src="/js/modal.js"></script>
+    <script src="/js/drawer.js"></script>
+    <script src="/movil/js/plantillas.js"></script>
+</body>
+</html>

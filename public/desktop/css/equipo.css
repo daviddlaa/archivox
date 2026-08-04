@@ -95,18 +95,18 @@
         "prev track next"
         "dots dots dots";
     align-items: center;
-    gap: 10px;
-    margin-bottom: 16px;
+    gap: 8px;
+    margin-bottom: 13px;
 }
 
 .equipo-arrow {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border: none;
     border-radius: 50%;
     background: white;
     color: #4f46e5;
-    font-size: 24px;
+    font-size: 22px;
     line-height: 1;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -155,11 +155,34 @@
     flex-shrink: 0;
 }
 
+.equipo-slide .equipo-section-header {
+    padding: 10px 16px;
+}
+
+.equipo-slide .equipo-section-header h2 {
+    font-size: 14px;
+}
+
+.equipo-slide .equipo-section-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+}
+
+.equipo-slide .equipo-table th {
+    padding: 8px 12px;
+    font-size: 10px;
+}
+
+.equipo-slide .equipo-table td {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
 .equipo-kpi-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    padding: 16px 20px 20px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 10px 16px 14px;
 }
 
 .equipo-kpi-card {
@@ -169,10 +192,12 @@
     border-radius: 14px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.06);
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 12px;
-    min-height: 84px;
-    padding: 14px 16px;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 12px;
+    text-align: center;
     transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
@@ -182,13 +207,13 @@
 }
 
 .equipo-kpi-icon {
-    font-size: 20px;
-    width: 44px;
-    height: 44px;
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
+    border-radius: 10px;
     flex-shrink: 0;
 }
 
@@ -198,13 +223,12 @@
 .kpi-gestiones .equipo-kpi-icon { background: linear-gradient(135deg, #ede9fe, #ddd6fe); }
 
 .equipo-kpi-info {
-    flex: 1;
-    text-align: left;
+    text-align: center;
 }
 
 .equipo-kpi-info h3 {
     margin: 0;
-    font-size: 11px;
+    font-size: 10px;
     color: #9ca3af;
     text-transform: uppercase;
     font-weight: 600;
@@ -212,7 +236,7 @@
 }
 
 .equipo-kpi-info span {
-    font-size: 24px;
+    font-size: 18px;
     font-weight: 700;
     color: #1f2937;
     display: block;
@@ -224,12 +248,12 @@
     display: flex;
     justify-content: center;
     gap: 6px;
-    padding: 4px 0 0;
+    padding: 2px 0 0;
 }
 
 .equipo-dot {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     padding: 0;
     border: none;
     border-radius: 50%;
@@ -239,7 +263,7 @@
 }
 
 .equipo-dot.active {
-    width: 22px;
+    width: 18px;
     border-radius: 5px;
     background: #4f46e5;
 }
@@ -794,8 +818,12 @@
         font-size: 20px;
     }
 
+    .equipo-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
     .equipo-kpi-info span {
-        font-size: 20px;
+        font-size: 16px;
     }
 
     .equipo-table {

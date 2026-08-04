@@ -46,6 +46,7 @@
         { id: 'gestiones',      label: 'Gestiones',          icon: '📝', rutas: { desktop: '/gestiones',    mobile: '/m/gestiones' } },
         { id: 'gestion-lote',   label: 'Gestión por Lotes',  icon: '🚀', rutas: { desktop: '/gestion-lote', mobile: '/m/gestion-lote' } },
         { id: 'relaciones',     label: 'Relaciones',         icon: '📋', rutas: { desktop: '/relaciones',   mobile: '/m/relaciones' } },
+        { id: 'plantillas',     label: 'Plantillas',         icon: '💬', rutas: { desktop: '/plantillas',   mobile: '/m/plantillas' } },
         { id: 'ventas',         label: 'Control de Ventas',  icon: '💰', rutas: { desktop: '/equipo-ventas', mobile: '/m/ventas' } },
         { id: 'perfil',         label: 'Perfil',             icon: '👤', rutas: { desktop: '/perfil',        mobile: '/perfil' } },
         { id: 'perfil-config',  label: 'Perfil (Config)',    icon: '⚙️', rutas: { desktop: '/perfil?tab=config', mobile: '/perfil?tab=config' } },
