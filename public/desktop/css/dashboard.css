@@ -300,16 +300,16 @@
     flex-direction: column;
     box-sizing: border-box;
     background: white;
-    padding: 16px;
+    padding: 14px;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .dashd-slide .panel h3 {
-    margin: 0 0 12px 0;
+    margin: 0 0 10px 0;
     color: #1f2937;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -318,7 +318,7 @@
 .dashd-slide .chart-container {
     flex: 1;
     height: auto;
-    min-height: 200px;
+    min-height: 140px;
     min-width: 0;
 }
 
@@ -360,19 +360,19 @@
     background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
     border: 1px solid #e0e7ff;
     border-radius: 14px;
-    padding: 30px;
+    padding: 24px;
     box-sizing: border-box;
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .dashd-welcome h2 {
     margin: 0;
-    font-size: 22px;
+    font-size: 16px;
     font-weight: 700;
     color: #1f2937;
 }
@@ -385,31 +385,42 @@
     max-width: 640px;
 }
 
+.dashd-chips {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.dashd-chip {
+    background: white;
+    border: 1px solid #e0e7ff;
+    color: #4f46e5;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
 /* Slide 2: KPIs (equipo o stats) */
 .dashd-slide#dashdSlideKpis .mi-equipo-card,
 .dashd-slide#dashdSlideKpis .dashboard-stats {
-    flex: 1;
     width: 100%;
     margin-bottom: 0;
     box-sizing: border-box;
 }
 
-.dashd-slide#dashdSlideKpis .mi-equipo-card {
-    display: flex;
-    flex-direction: column;
-}
-
-.dashd-slide#dashdSlideKpis .mi-equipo-stats {
-    flex: 1;
-    align-content: stretch;
-}
-
-.dashd-slide#dashdSlideKpis .mi-equipo-stat {
-    justify-content: center;
+.dashd-slide#dashdSlideKpis .dashboard-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
 }
 
 .dashd-slide#dashdSlideKpis .dashboard-stat-card {
-    min-height: 120px;
+    min-height: 84px;
+    padding: 12px;
     box-sizing: border-box;
 }
 
@@ -802,10 +813,6 @@
 
     .dashd-welcome {
         padding: 20px;
-    }
-
-    .dashd-welcome h2 {
-        font-size: 18px;
     }
 
     .dashd-widgets-grid {

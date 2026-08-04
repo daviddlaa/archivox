@@ -278,6 +278,7 @@ async function iniciarDashboard() {
     await actualizarDashboard();
     ajustarSlideEquipo();
     initDashdCarousel();
+    personalizarBienvenida();
     cargarCampañasActivas();
     cargarUltimasSolicitudes();
 }
@@ -357,13 +358,26 @@ function ajustarSlideEquipo() {
     var stats = document.getElementById('dashboardStats');
     if (!team || !stats) return;
     var conEquipo = team.style.display !== 'none' && team.style.display !== '';
-    if (conEquipo) {
-        team.style.display = 'flex';
-        stats.style.display = 'none';
-    } else {
-        stats.style.display = '';
-    }
+    stats.style.display = conEquipo ? 'none' : '';
     igualarAlturaDashdSlides();
+}
+
+// Slide 1: saludo personalizado con el nombre del usuario logueado
+async function personalizarBienvenida() {
+    var titulo = document.getElementById('welcomeTitulo');
+    if (!titulo) return;
+    try {
+        var res = await fetch('/api/auth/sesion');
+        var ses = await res.json();
+        if (ses.autenticado && ses.usuario && ses.usuario.nombre) {
+            var nombre = String(ses.usuario.nombre).trim().split(/\s+/)[0] || '';
+            if (nombre) {
+                titulo.textContent = '¡Bienvenido, ' + escapeHtml(nombre) + '!';
+                return;
+            }
+        }
+    } catch (e) { /* saludo genérico */ }
+    titulo.textContent = '¡Bienvenido!';
 }
 
 // ============================================================================

@@ -913,13 +913,17 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - **Dashboard escritorio en carrusel (Agosto 2026):** mismo patrón que el móvil. El bloque de
   bienvenida con los botones ⚙️ Gestiones / 🔄 Historial se eliminó (las rutas siguen
   accesibles desde el menú lateral). El contenido se organiza en un carrusel de 4 slides
-  (`.dashd-carousel`, grid `40px 1fr 40px` para las flechas, `.dashd-track` con *scroll-snap*,
-  `.dashd-slide` full-width) navegado con dots `.dashd-dot` + flechas ‹ › con **loop**
-  (`initDashdCarousel`): (1) Bienvenida, (2) KPIs — tarjeta Mi Equipo si eres líder o las 4
-  stats (Total/Activadas/Rechazadas/Aprobadas) si no (`ajustarSlideEquipo`), (3) Estados,
-  (4) Segmentos. Altura uniforme y contenido centrado (`igualarAlturaDashdSlides`). Los
-  accesos rápidos (Importar/Solicitudes/Ventas/Campañas/Relaciones/Nueva Solicitud/Gestión
-  Equipo) siguen como fila fija encima del carrusel.
+  compacto (~200px de alto, `.dashd-carousel`, grid `40px 1fr 40px` para las flechas,
+  `.dashd-track` con *scroll-snap*, `.dashd-slide` full-width) navegado con dots `.dashd-dot`
+  + flechas ‹ › con **loop** (`initDashdCarousel`): (1) Bienvenida — título con saludo
+  personalizado "¡Bienvenido, {nombre}!" vía `/api/auth/sesion` (`personalizarBienvenida`),
+  subtítulo y 3 chips de acceso rápido (📤 Importar Excel · 📋 Consultar solicitudes ·
+  📊 Monitorear estados), (2) KPIs — tarjeta Mi Equipo si eres líder (tamaño natural,
+  centrada) o las 4 stats (Total/Activadas/Rechazadas/Aprobadas) en grid 2×2 si no
+  (`ajustarSlideEquipo`), (3) Estados, (4) Segmentos (gráficos más pequeños, min-height 140px).
+  Altura uniforme y contenido centrado (`igualarAlturaDashdSlides`). Los accesos rápidos
+  (Importar/Solicitudes/Ventas/Campañas/Relaciones/Nueva Solicitud/Gestión Equipo) siguen
+  como fila fija encima del carrusel.
 - **Widgets lado a lado (escritorio):** debajo del carrusel, grid de 2 columnas
   (`.dashd-widgets-grid`, 1 columna bajo 768px):
   - **Últimas Campañas:** 3 campañas activas más recientes (`cargarCampañasActivas()` →
