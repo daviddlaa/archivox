@@ -134,16 +134,37 @@
         <button type="button" class="dash-dot" data-dot="3" role="tab" aria-label="Segmentos"></button>
     </div>
 
-    <!-- Campañas activas -->
-    <section class="panel campanas-widget" id="campanasActivasWidget">
-        <div class="panel-title campanas-widget-head">
-            <h3>🚀 Campañas activas</h3>
-            <a href="/m/gestiones" class="campanas-widget-link">Ver todas</a>
-        </div>
-        <div class="campanas-widget-list" id="campanas-activas-lista">
-            <div class="campanas-widget-empty">Cargando...</div>
-        </div>
-    </section>
+    <!-- Widgets: Campañas activas / Últimas solicitudes -->
+    <div class="dash-widget-carousel" id="dashWidgetCarousel">
+        <section class="dash-widget-slide" data-wslide="0" aria-label="Campañas activas">
+            <div class="panel campanas-widget" id="campanasActivasWidget">
+                <div class="panel-title campanas-widget-head">
+                    <h3>🚀 Campañas activas</h3>
+                    <a href="/m/gestion-lote" class="campanas-widget-link">Ver todas</a>
+                </div>
+                <div class="campanas-widget-list" id="campanas-activas-lista">
+                    <div class="campanas-widget-empty">Cargando...</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="dash-widget-slide" data-wslide="1" aria-label="Últimas solicitudes">
+            <div class="panel campanas-widget">
+                <div class="panel-title campanas-widget-head">
+                    <h3>📋 Últimas solicitudes</h3>
+                    <a href="/m/solicitudes" class="campanas-widget-link">Ver todas</a>
+                </div>
+                <div class="campanas-widget-list" id="ultimas-solicitudes-lista">
+                    <div class="campanas-widget-empty">Cargando...</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="dash-widget-dots" id="dashWidgetDots" role="tablist" aria-label="Widgets del dashboard">
+        <button type="button" class="dash-widget-dot active" data-wdot="0" role="tab" aria-label="Campañas activas"></button>
+        <button type="button" class="dash-widget-dot" data-wdot="1" role="tab" aria-label="Últimas solicitudes"></button>
+    </div>
 
     <nav class="nav-bottom">
         <a href="/m" class="nav-item active">

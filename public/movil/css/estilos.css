@@ -671,6 +671,80 @@ body {
     text-decoration: none;
 }
 
+/* ===== CARRUSEL DE WIDGETS (campañas activas / últimas solicitudes) ===== */
+.dash-widget-carousel {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.dash-widget-carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.dash-widget-slide {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    padding: 0 15px;
+    box-sizing: border-box;
+}
+
+.dash-widget-slide .campanas-widget {
+    margin: 14px 0 0;
+}
+
+.dash-widget-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 0 4px;
+}
+
+.dash-widget-dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: #cbd5e1;
+    cursor: pointer;
+    transition: width .25s ease, background .25s ease;
+}
+
+.dash-widget-dot.active {
+    width: 22px;
+    border-radius: 5px;
+    background: #4f46e5;
+}
+
+.sol-widget-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-top: 3px;
+    min-width: 0;
+}
+
+.sol-widget-badge {
+    flex: 0 0 auto;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 700;
+    color: #1e293b;
+    white-space: nowrap;
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* ===== ESTADOS VACÍOS ===== */
 .no-data, .empty-state {
     text-align: center;

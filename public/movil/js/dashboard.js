@@ -114,7 +114,9 @@ document.getElementById('btnLogout')?.addEventListener('click', async (e) => {
 window.addEventListener('DOMContentLoaded', function() {
     ajustarAccesoRapido();
     initDashCarousel();
+    initDashWidgetCarousel();
     cargarCampañasActivas();
+    cargarUltimasSolicitudes();
 });
 
 // ============================================================================
@@ -125,6 +127,36 @@ function initDashCarousel() {
     if (!carousel) return;
     var slides = carousel.querySelectorAll('.dash-slide');
     var dots = Array.prototype.slice.call(document.querySelectorAll('.dash-dot'));
+    if (slides.length < 2 || !dots.length) return;
+    var step = slides[1].offsetLeft - slides[0].offsetLeft;
+
+    function actualizarDotActivo() {
+        var index = Math.max(0, Math.min(dots.length - 1, Math.round(carousel.scrollLeft / step)));
+        dots.forEach(function(dot, i) {
+            dot.classList.toggle('active', i === index);
+        });
+    }
+
+    carousel.addEventListener('scroll', actualizarDotActivo, { passive: true });
+    dots.forEach(function(dot, i) {
+        dot.addEventListener('click', function() {
+            carousel.scrollTo({ left: i * step, behavior: 'smooth' });
+        });
+    });
+    window.addEventListener('resize', function() {
+        step = slides[1].offsetLeft - slides[0].offsetLeft;
+        actualizarDotActivo();
+    });
+}
+
+// ============================================================================
+// CARRUSEL DE WIDGETS (campañas activas / últimas solicitudes)
+// ============================================================================
+function initDashWidgetCarousel() {
+    var carousel = document.getElementById('dashWidgetCarousel');
+    if (!carousel) return;
+    var slides = carousel.querySelectorAll('.dash-widget-slide');
+    var dots = Array.prototype.slice.call(document.querySelectorAll('.dash-widget-dot'));
     if (slides.length < 2 || !dots.length) return;
     var step = slides[1].offsetLeft - slides[0].offsetLeft;
 
@@ -170,7 +202,7 @@ async function cargarCampañasActivas() {
         }).slice(0, 3);
 
         if (!activas.length) {
-            container.innerHTML = '<div class="campanas-widget-empty">No hay campañas activas.<br><a href="/m/gestiones">Crear o ver campañas</a></div>';
+            container.innerHTML = '<div class="campanas-widget-empty">No hay campañas activas.<br><a href="/m/gestion-lote">Crear o ver campañas</a></div>';
             return;
         }
 
@@ -194,5 +226,53 @@ async function cargarCampañasActivas() {
     } catch (e) {
         console.error('Error cargando campañas activas:', e);
         container.innerHTML = '<div class="campanas-widget-empty">No se pudieron cargar las campañas.</div>';
+    }
+}
+
+// ============================================================================
+// WIDGET ÚLTIMAS SOLICITUDES
+// ============================================================================
+var coloresEstadoSolWidget = {
+    'ACTIVADA': '#dcfce7',
+    'RECHAZADA': '#fee2e2',
+    'DEVUELTA': '#fef3c7',
+    'APROBADA PARA LIBERACIÓN': '#d1fae5'
+};
+
+async function cargarUltimasSolicitudes() {
+    var container = document.getElementById('ultimas-solicitudes-lista');
+    if (!container) return;
+    try {
+        var res = await fetch('/api/excel/solicitudes?limite=3');
+        if (!res.ok) throw new Error('status ' + res.status);
+        var result = await res.json();
+        var lista = Array.isArray(result) ? result : (result.data || []);
+
+        if (!lista.length) {
+            container.innerHTML = '<div class="campanas-widget-empty">No hay solicitudes.<br><a href="/m/solicitudes">Ver solicitudes</a></div>';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < lista.length; i++) {
+            var s = lista[i];
+            var estado = s.estado || 'Sin estado';
+            var color = coloresEstadoSolWidget[estado] || '#f3f4f6';
+            html += '<a class="campana-widget-item" href="/m/solicitudes">' +
+                '<span class="campana-widget-icon">📋</span>' +
+                '<span class="campana-widget-info">' +
+                '<span class="campana-widget-name">' + escapeHtmlMovil(s.nombre || 'Sin nombre') + '</span>' +
+                '<span class="sol-widget-meta">' +
+                '<span class="sol-widget-badge" style="background:' + color + ';">' + escapeHtmlMovil(estado) + '</span>' +
+                (s.cedula ? ' · ' + escapeHtmlMovil(s.cedula) : '') +
+                '</span>' +
+                '</span>' +
+                '<span class="campana-widget-chevron">›</span>' +
+                '</a>';
+        }
+        container.innerHTML = html;
+    } catch (e) {
+        console.error('Error cargando últimas solicitudes:', e);
+        container.innerHTML = '<div class="campanas-widget-empty">No se pudieron cargar las solicitudes.</div>';
     }
 }

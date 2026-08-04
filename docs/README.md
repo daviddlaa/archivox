@@ -892,10 +892,17 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
   "Herramientas rápidas", (2) 4 KPIs en tarjeta 2×2 alineada con la altura del slide de
   herramientas, (3) gráfico de Estados, (4) gráfico de Segmentos. Indicadores de punto
   `.dash-dots` sincronizados con el scroll (`initDashCarousel`).
-- **Widget de Campañas activas (móvil):** debajo del carrusel, muestra las 3 campañas
-  activas más recientes (`.campanas-widget`) con nombre, barra de progreso `completadas/total · %`
-  y enlace "Ver todas" → `/m/gestiones`. Cada tarjeta navega a `/m/gestion-lote?id=ID`.
-  Carga vía `GET /api/gestiones-maestro` en `cargarCampañasActivas()`.
+- **Widgets en mini-carrusel (móvil):** debajo del carrusel principal, un segundo carrusel
+  (`.dash-widget-carousel`, `.dash-widget-slide`, full-width sin "peek") con 2 slides y dots
+  `.dash-widget-dots` sincronizados (`initDashWidgetCarousel`):
+  - **Campañas activas:** las 3 campañas activas más recientes (`.campanas-widget`) con nombre,
+    barra de progreso `completadas/total · %` y enlace "Ver todas" → `/m/gestion-lote`. Cada
+    tarjeta navega a `/m/gestion-lote?id=ID`. Carga vía `GET /api/gestiones-maestro` en
+    `cargarCampañasActivas()`.
+  - **Últimas solicitudes:** las 3 solicitudes más recientes del usuario logueado
+    (`cargarUltimasSolicitudes()` → `GET /api/excel/solicitudes?limite=3`), cada fila con nombre,
+    badge de estado coloreado (`.sol-widget-badge`, colores del mapa de `solicitudes.js`) y cédula;
+    enlace "Ver todas" y tarjetas → `/m/solicitudes`. Vacío: "No hay solicitudes".
 
 ### 11.2 Solicitudes
 
