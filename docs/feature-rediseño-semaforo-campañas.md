@@ -1,6 +1,6 @@
 # 🎨 Feature: Rediseño del Indicador de Estado (Semáforo) de Campañas
 
-**Versión:** 6.0
+**Versión:** 6.1
 **Fecha:** Agosto 2026
 **Estado:** Implementado ✅
 
@@ -11,6 +11,8 @@
 Rediseño completo del panel de estado visual (semáforo) utilizado en las campañas de gestión por lotes (**desktop**). El componente evolucionó desde bloques industriales hasta un conjunto de **tarjetas estadísticas premium compactas** completamente pintadas con tonos suaves, inspirado en Apple Wallet, Apple Reminders, Notion, Linear y Arc Browser.
 
 **V6 (Actual):** Tarjetas compactas por estado (~30% más pequeñas que V5), colores mejor diferenciados y **paletas CSS totalmente desacopladas** del componente de solicitudes (modificable sin efectos colaterales).
+
+**V6.1:** El **móvil** incorpora el mismo selector segmentado de semáforo dentro de cada tarjeta de solicitud (switch inline con dot + texto), reemplazando el modal de selección anterior. La lista móvil se reordena por prioridad (amarillo → sin clasificar → verde → rojo) y el carrusel del semáforo reordena sus tarjetas automáticamente con el mismo criterio.
 
 ---
 
@@ -160,12 +162,14 @@ Se eliminó toda decoración que ya no aportaba valor:
 
 ---
 
-## 📁 Archivos Modificados (V6)
+## 📁 Archivos Modificados (V6 / V6.1)
 
 | Archivo | Cambios |
 |---------|---------|
 | `public/css/gestion-lote.css` | Dos paletas desacopladas (`--sem-panel-*` / `--sem-sol-*`), tarjetas compactas `.semaforo-panel-*`, colores diferenciados, `user-select: none` |
 | `public/desktop/gestion-lote.html` | Clases exclusivas del panel (`semaforo-panel-card`, `semaforo-panel-{sin,verde,amarillo,rojo}`, `semaforo-panel-label`) manteniendo los hooks del JS |
+| `public/movil/js/gestion-lote.js` | **V6.1:** switch segmentado `.sol-semaforo-switch` en cada tarjeta y `cambiarSemaforoSolicitudMovil` (cambio in-place) |
+| `public/movil/css/gestion-lote.css` | **V6.1:** estilos del switch móvil, flash de tarjeta, responsive ≥500px |
 
 > **Nota:** En la implementación original de V6 el JS (`public/desktop/js/gestion-lote.js`) no fue modificado. En la versión actual los mismos ids y clases se conservan intactos (`#count-*`, `.semaforo-seg[data-semaforo]`, `#btn-semaforo-todos`, `#total-solicitudes`, `.semaforo-seg-count`, animaciones `bump`/`bump-num`, `.semaforo-fly.{estado}`), y el JS añade la recomendación de prioridad, el progreso visible y la actividad contextual. `.semaforo-seg` queda como **hook exclusivo del JS** (sin reglas CSS propias).
 
@@ -241,4 +245,10 @@ Se eliminó toda decoración que ya no aportaba valor:
 5. **Selección:** `.semaforo-panel-card.active` (border del color) e `.is-empty` (opacidad) los gestiona el JS existente
 6. **Animaciones:** `.semaforo-panel-card.bump` (escala de tarjeta) y `.semaforo-seg-count.bump-num` (pop del número) las dispara el JS
 7. **Responsive:** En pantallas <768px, las tarjetas pasan a 2 columnas (padding 14px 10px 12px, min-height 76px, número 26px, etiqueta 10px)
-8. **Mobile:** El móvil (`public/movil/gestion-lote.html`) no tiene este panel; el semáforo es exclusivo de desktop
+8. **Mobile (V6.1):** El móvil no usa el panel de tarjetas del desktop, pero cada `.sol-card` incluye un **switch segmentado** `.sol-semaforo-switch` (mismo markup y paleta que desktop, adaptado a touch):
+
+   - CSS en `public/movil/css/gestion-lote.css` (`.sol-semaforo-switch`, `.sol-semaforo-switch-segment`, `.sol-semaforo-switch-dot`, `.sol-semaforo-switch-text`).
+   - Grid de 4 columnas (`repeat(4, minmax(0,1fr))`), segmentos `min-height: 30px`, texto a `8px`; en pantallas ≥500px sube a `32px` / `9px`.
+   - Orden `SEMAFORO_MOVIL`: `['sin_clasificar', 'verde', 'amarillo', 'rojo']` (misma que desktop).
+   - Cambio en el lugar vía `cambiarSemaforoSolicitudMovil(id, semaforo, event)` con `stopPropagation()`, actualización in-place y flash `.sol-semaforo-flash-movil`.
+   - El modal legacy `abrirSelectorSemaforoMovil` queda como código muerto por compatibilidad.

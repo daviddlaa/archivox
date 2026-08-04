@@ -113,4 +113,86 @@ document.getElementById('btnLogout')?.addEventListener('click', async (e) => {
 // Ajustar accesos rápidos al cargar
 window.addEventListener('DOMContentLoaded', function() {
     ajustarAccesoRapido();
+    initDashCarousel();
+    cargarCampañasActivas();
 });
+
+// ============================================================================
+// CARRUSEL DESLIZABLE (herramientas / KPIs / estados / segmentos)
+// ============================================================================
+function initDashCarousel() {
+    var carousel = document.getElementById('dashCarousel');
+    if (!carousel) return;
+    var slides = carousel.querySelectorAll('.dash-slide');
+    var dots = Array.prototype.slice.call(document.querySelectorAll('.dash-dot'));
+    if (slides.length < 2 || !dots.length) return;
+    var step = slides[1].offsetLeft - slides[0].offsetLeft;
+
+    function actualizarDotActivo() {
+        var index = Math.max(0, Math.min(dots.length - 1, Math.round(carousel.scrollLeft / step)));
+        dots.forEach(function(dot, i) {
+            dot.classList.toggle('active', i === index);
+        });
+    }
+
+    carousel.addEventListener('scroll', actualizarDotActivo, { passive: true });
+    dots.forEach(function(dot, i) {
+        dot.addEventListener('click', function() {
+            carousel.scrollTo({ left: i * step, behavior: 'smooth' });
+        });
+    });
+    window.addEventListener('resize', function() {
+        step = slides[1].offsetLeft - slides[0].offsetLeft;
+        actualizarDotActivo();
+    });
+}
+
+// ============================================================================
+// WIDGET CAMPAÑAS ACTIVAS
+// ============================================================================
+function escapeHtmlMovil(texto) {
+    return String(texto == null ? '' : texto)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+async function cargarCampañasActivas() {
+    var container = document.getElementById('campanas-activas-lista');
+    if (!container) return;
+    try {
+        var res = await fetch('/api/gestiones-maestro');
+        if (!res.ok) throw new Error('status ' + res.status);
+        var lista = await res.json();
+        var activas = (lista || []).filter(function(c) {
+            return String(c.estado || 'activa').toLowerCase() === 'activa';
+        }).slice(0, 3);
+
+        if (!activas.length) {
+            container.innerHTML = '<div class="campanas-widget-empty">No hay campañas activas.<br><a href="/m/gestiones">Crear o ver campañas</a></div>';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < activas.length; i++) {
+            var g = activas[i];
+            var total = parseInt(g.total_solicitudes || 0, 10);
+            var comp = parseInt(g.completadas || 0, 10);
+            var pct = total > 0 ? Math.round((comp / total) * 100) : 0;
+            html += '<a class="campana-widget-item" href="/m/gestion-lote?id=' + encodeURIComponent(g.id) + '">' +
+                '<span class="campana-widget-icon">📋</span>' +
+                '<span class="campana-widget-info">' +
+                '<span class="campana-widget-name">' + escapeHtmlMovil(g.nombre || 'Campaña #' + g.id) + '</span>' +
+                '<span class="campana-widget-bar"><span style="width:' + pct + '%"></span></span>' +
+                '<span class="campana-widget-stats">' + comp + ' de ' + total + ' · ' + pct + '%</span>' +
+                '</span>' +
+                '<span class="campana-widget-chevron">›</span>' +
+                '</a>';
+        }
+        container.innerHTML = html;
+    } catch (e) {
+        console.error('Error cargando campañas activas:', e);
+        container.innerHTML = '<div class="campanas-widget-empty">No se pudieron cargar las campañas.</div>';
+    }
+}

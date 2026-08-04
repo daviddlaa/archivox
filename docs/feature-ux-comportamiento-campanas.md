@@ -1,8 +1,15 @@
 # Feature: Rediseño UX de Campañas con Progreso y Prioridad
 
-**Versión:** 1.0  
-**Fecha:** Agosto 2026  
+**Versión:** 2.0
+
+**Fecha:** Agosto 2026
+
 **Estado:** Implementado
+
+> **v2.0:** Incorpora los ajustes D2/D3 (desktop) y M3/M4 (mobile): orden de lista por
+> prioridad, atajos de teclado, rail colapsable, focus ring, selector de campaña por bottom
+> sheet, filtros en una línea, compactación de tarjetas móviles, switch segmentado de
+> semáforo inline y scroll restoration en ambas vistas.
 
 ## Objetivo
 
@@ -145,18 +152,22 @@ Para implementar esas funciones será necesario agregar una fuente de datos expl
 
 | Archivo | Responsabilidad |
 |---------|-----------------|
-| `public/desktop/gestion-lote.html` | Estructura de avance, recomendación, actividad y copy del semáforo |
-| `public/desktop/js/gestion-lote.js` | Cálculo de progreso, recomendación, actividad relativa y toast |
-| `public/css/gestion-lote.css` | Jerarquía visual, responsive, transiciones y accesibilidad de movimiento |
+| `public/desktop/gestion-lote.html` | Estructura de avance, recomendación, actividad y copy del semáforo; `#gestion-estado` |
+| `public/desktop/js/gestion-lote.js` | Cálculo de progreso, recomendación, actividad relativa, toast, atajos de teclado, orden por prioridad, rail, scroll restoration |
+| `public/css/gestion-lote.css` | Jerarquía visual, responsive, transiciones, accesibilidad de movimiento, switch segmentado, `.card-focused`, animación del rail |
+| `public/movil/gestion-lote.html` | Selector de campaña (bottom sheet), filtros, carrusel de semáforo, recomendación móvil |
+| `public/movil/js/gestion-lote.js` | Bottom sheet de campañas, `cambiarSemaforoSolicitudMovil`, orden por prioridad, scroll restoration, conteos móviles |
+| `public/movil/css/gestion-lote.css` | Header compacto, filtros en fila, carrusel sin scroll, switch segmentado móvil, gradientes de tarjeta, destacado sutil |
 
 ## Verificación
 
 ```bash
 node --check public/desktop/js/gestion-lote.js
+node --check public/movil/js/gestion-lote.js
 git diff --check
 ```
 
-Ambos comandos finalizaron correctamente.
+Los tres comandos finalizaron correctamente.
 
 ## Evolución futura
 
@@ -174,22 +185,84 @@ La versión móvil mantiene una experiencia específica para touch y no reutiliz
 
 Se conservan:
 
-- Selector horizontal de campañas.
+- Selector de campañas en el header (botón con nombre de la campaña + chevron).
 - Bottom sheets para acciones de campaña.
 - Navegación inferior.
 - Targets táctiles de al menos 44 px.
 - Tarjetas de solicitud en una sola columna.
 
-Se incorporan en `public/movil/gestion-lote.html` y `public/movil/js/gestion-lote.js`:
+Se incorporan en `public/movil/gestion-lote.html`, `public/movil/css/gestion-lote.css` y `public/movil/js/gestion-lote.js`:
 
-- Resumen vertical de progreso con porcentaje y solicitudes restantes.
+- Resumen de progreso con porcentaje y solicitudes restantes.
 - Última actividad relativa dentro del resumen.
-- Recomendación móvil de siguiente acción.
-- Semáforo en cuadrícula 2x2 con filtros táctiles.
-- Selector de semáforo desde cada tarjeta.
+- Recomendación móvil de siguiente acción (`#siguiente-accion-mobile`).
+- Semáforo en carrusel horizontal de 4 tarjetas con filtros táctiles.
+- Selector de semáforo **inline segmentado** desde cada tarjeta.
 - Estado rojo expresado como `En espera / No contactar ahora`.
 - Acciones secundarias agrupadas bajo `Más opciones` para reducir la carga visual.
 - Toast de confirmación después de completar una gestión.
+
+### Selector de campañas (M4)
+
+En lugar del selector horizontal de chips, el header móvil muestra un botón compacto
+(`#btn-campana-selector` + `#campana-btn-label`) que abre un **bottom sheet**
+(`#campanas-sheet`, `#campanas-sheet-overlay`, `#campanas-sheet-list`) con la lista de
+campañas disponibles. El sheet se cierra con la X, con `Esc` o tocando el overlay.
+Funciones: `cargarListaCampanas`, `toggleCampanasSheet`, `closeCampanasSheet`,
+`actualizarBotonCampana`, `seleccionarCampaña`, `marcarCampañaActiva`.
+
+### Filtros en una sola línea
+
+La búsqueda (input `#busqueda`) y el filtro por tipo de gestión (select `#filtro-estado`)
+viven en la misma fila flexible (`.filtros-mobile` con `display: flex`). El JS los muestra
+con `style.display = 'flex'` para no romper la alineación horizontal.
+
+### Semáforo móvil
+
+El semáforo móvil es un **carrusel horizontal** (`#semaforo-mobile-scroll`) de cuatro
+tarjetas `.semaforo-mobile-card` (una por estado, `data-semaforo`). Cada tarjeta muestra
+su conteo (`#count-mobile-{amarillo,sin_clasificar,verde,rojo}`) y actúa como filtro
+(`setFiltroSemaforoMovil`). El carrusel se **reordena automáticamente por prioridad**
+(`reordenarCarruselSemaforoMovil`): amarillo → sin clasificar → verde → rojo, marca la
+tarjeta prioritaria (`.is-priority`) y hace scroll hasta ella.
+
+### Selector de semáforo inline por tarjeta
+
+Cada tarjeta de solicitud muestra un **switch segmentado** (`.sol-semaforo-switch`) con los
+cuatro estados (dot + texto completo: Sin clasificar · Verde · Amarillo · Rojo). El estado
+activo se pinta con el tono correspondiente. El cambio se hace **en el lugar** mediante
+`cambiarSemaforoSolicitudMovil(id, semaforo, event)`:
+
+- `event.stopPropagation()` evita abrir el detalle.
+- PUT al endpoint `PUT /api/gestiones-maestro/:id/solicitudes/:solicitudId/semaforo`.
+- Actualiza `solicitudes` y `todasLasSolicitudes` **in-place** y re-renderiza sin recargar
+  la página (se conserva el scroll).
+- Actualiza los conteos del carrusel (`actualizarSemaforoMovil`) y muestra toast + flash en
+  la tarjeta (`.sol-semaforo-flash`).
+
+La lista se **reordena por prioridad** tras el cambio (`PRIORIDAD_SEMAFORO_MOVIL`:
+amarillo → sin clasificar → verde → rojo), con destacadas primero, igual que desktop.
+
+### Compactación móvil (M4)
+
+Rediseño táctil de la pantalla móvil para maximizar el área de trabajo:
+
+- **Header compacto**: `12px 16px`, tipografías reducidas (título 16px, subtítulo 12px),
+  con el botón de campaña y el chevron alineados en una sola fila.
+- **Filtros en una línea**: `#busqueda` y `#filtro-estado` comparten fila (`display: flex`).
+- **Semáforo sin scroll interno**: las 4 tarjetas `.semaforo-mobile-card` se reparten el
+  ancho (`flex: 1 1 0; min-width: 0`) con conteo a 17px y etiqueta a 9px.
+- **Sin encabezado de sección**: se eliminó el bloque "Trabajo activo / Solicitudes por
+  gestionar".
+- **Colores de tarjeta alineados con desktop**: gradientes `linear-gradient(180deg, ...)`
+  con los tonos de la paleta `--sem-sol-*` (sin borde lateral); `.gestionada` conserva un
+  `border-top: 2px solid #22c55e`.
+- **Sin ID de solicitud** en la tarjeta (el identificador es el nombre + cédula copiables).
+- **Sin botón WhatsApp redundante**: el chat se abre desde el icono 💬 de la fila de datos.
+- **Destacado sutil**: la tarjeta destacada usa un borde dorado + sombra (`.sol-card.destacada`),
+  sin pintar el fondo.
+- **Botones más pequeños**: `.btn-sol` a `min-height: 42px` y `font-size: 12px`;
+  `.btn-sol-call` a `44px`.
 
 Además, las solicitudes `Completada` se excluyen del semáforo móvil y se muestran en el acordeón `Solicitudes completadas`. Esta sección se abre automáticamente cuando no quedan solicitudes activas y no incluye un botón `Gestionar de nuevo`.
 
@@ -208,6 +281,50 @@ La tarjeta desktop de Gestión por Lotes fue refinada para mejorar la jerarquía
 - La última gestión tiene un bloque separado, con fecha relativa y clic sobre todo el bloque para abrir el detalle.
 - Se eliminó el botón redundante `Ver`.
 - `Historial` conserva su acción independiente.
+
+### Orden de lista por prioridad (D3)
+
+La lista de solicitudes se ordena con `PRIORIDAD_SEMAFORO` (amarillo → sin clasificar →
+verde → rojo), colocando primero las destacadas. El mismo criterio aplica al móvil
+(`PRIORIDAD_SEMAFORO_MOVIL`).
+
+### Atajos de teclado desktop (D3)
+
+El handler global `keydown` (líneas 184-215 de `public/desktop/js/gestion-lote.js`) habilita:
+
+| Tecla | Acción |
+|-------|--------|
+| `Esc` | Cierra menús abiertos o quita el foco de la tarjeta seleccionada |
+| `/` o `Ctrl/Cmd+K` | Foco en el campo de búsqueda `#busqueda` |
+| `j` / `k` | Navegar por las tarjetas (índice `_cardNavIndex`) |
+| `Enter` | Abre la última gestión de la tarjeta enfocada |
+| `1`/`2`/`3`/`4` | Filtro sin clasificar / amarillo / verde / rojo |
+| `0` | Limpiar filtro de semáforo |
+
+Los atajos se ignoran mientras el foco está en un input/textarea.
+
+La tarjeta enfocada se resalta con `.card-focused` (outline `#6366f1` + sombra) y
+`_cardSelect()` hace `scrollIntoView` para mantenerla visible.
+
+### Rail/workspace colapsable (D2)
+
+El panel izquierdo de campañas (`#campana-rail`) es colapsable con el botón
+`#btn-rail-toggle` (`CampanaRail`). El workspace usa `grid-template-columns` con transición
+de `0.28s` y las tarjetas hacen fade-in (`railFadeIn`). El estado colapsado persiste en
+`localStorage` (`campana_rail_collapsed`) y se refleja con `.rail-collapsed` /
+`.workspace-active`.
+
+### Scroll restoration
+
+Tras re-renderizar la lista (cambio de semáforo, filtro, etc.) se conserva la posición de
+scroll tanto en desktop (guardado en línea 925, restaurado en 1073-1075) como en móvil.
+
+### Estado textual de la campaña (fix)
+
+El header desktop muestra debajo del título un estado textual `#gestion-estado` con
+`data-estado` (`sin-iniciar`, `en-curso`, `casi-lista`, `completada`, `vacia`) calculado en
+`actualizarEstadoCampanaTexto()`. El elemento faltaba en el HTML y se restituyó; en errores
+o sin campaña cargada permanece oculto (`hidden`).
 
 ### Historial contextual de campaña
 

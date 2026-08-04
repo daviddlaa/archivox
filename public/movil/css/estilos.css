@@ -424,6 +424,244 @@ body {
     padding: 0 15px 8px;
 }
 
+/* ===== CARRUSEL DESLIZABLE DEL DASHBOARD ===== */
+.dash-carousel {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    gap: 12px;
+    padding: 12px 15px 0;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.dash-carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.dash-slide {
+    flex: 0 0 calc(100% - 60px);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    height: 176px;
+    min-height: 176px;
+    display: flex;
+}
+
+.dash-slide .dashboard-hero,
+.dash-slide .panel {
+    flex: 1;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.dash-slide .dashboard-hero {
+    background: linear-gradient(135deg, #1e40af 0%, #4f46e5 50%, #7c3aed 100%);
+    border-radius: 16px;
+    padding: 12px;
+    color: white;
+}
+
+.dash-slide .hero-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.dash-slide .hero-action {
+    min-height: 58px;
+    padding: 8px 2px;
+    gap: 3px;
+}
+
+.dash-slide .ha-icon {
+    font-size: 20px;
+}
+
+.dash-slide .ha-label {
+    font-size: 8.5px;
+}
+
+.dash-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
+}
+
+.dash-kpi-grid .card {
+    min-height: 60px;
+    padding: 10px;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.dash-kpi-grid .card .card-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+}
+
+.dash-kpi-grid .card .card-info h3 {
+    font-size: 9px;
+}
+
+.dash-kpi-grid .card .card-info span {
+    font-size: 16px;
+}
+
+.dash-slide .panel-chart {
+    justify-content: flex-start;
+}
+
+.dash-slide .panel-chart .chart-shell {
+    position: relative;
+    flex: 1;
+    height: auto;
+    min-height: 0;
+}
+
+/* Indicadores de punto */
+.dash-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 0 4px;
+}
+
+.dash-dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: #cbd5e1;
+    cursor: pointer;
+    transition: width .25s ease, background .25s ease;
+}
+
+.dash-dot.active {
+    width: 22px;
+    border-radius: 5px;
+    background: #4f46e5;
+}
+
+/* ===== WIDGET CAMPAÑAS ACTIVAS ===== */
+.campanas-widget {
+    margin: 14px 15px 0;
+}
+
+.campanas-widget-head {
+    margin-bottom: 8px;
+}
+
+.campanas-widget-link {
+    font-size: 12px;
+    color: #4f46e5;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.campanas-widget-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.campana-widget-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+    text-decoration: none;
+    transition: background .15s ease;
+}
+
+.campana-widget-item:active {
+    background: #eef2ff;
+}
+
+.campana-widget-icon {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef2ff;
+    border-radius: 10px;
+    font-size: 17px;
+}
+
+.campana-widget-info {
+    flex: 1;
+    min-width: 0;
+    display: block;
+}
+
+.campana-widget-name {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.campana-widget-bar {
+    display: block;
+    height: 5px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    margin: 5px 0 4px;
+    overflow: hidden;
+}
+
+.campana-widget-bar span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    border-radius: 999px;
+}
+
+.campana-widget-stats {
+    display: block;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.campana-widget-chevron {
+    font-size: 20px;
+    color: #94a3b8;
+    flex: 0 0 auto;
+}
+
+.campanas-widget-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 18px 12px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    background: #f8fafc;
+    line-height: 1.5;
+}
+
+.campanas-widget-empty a {
+    color: #4f46e5;
+    font-weight: 700;
+    text-decoration: none;
+}
+
 /* ===== ESTADOS VACÍOS ===== */
 .no-data, .empty-state {
     text-align: center;

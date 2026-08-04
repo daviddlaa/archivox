@@ -22,101 +22,127 @@
     </div>
 
     <!-- Contenido -->
-    <section class="dashboard-hero">
-        <div class="hero-head">
-            <h2>🔥 Panel de Control</h2>
-            <p>Acceso rápido a tus herramientas</p>
+    <div class="dash-carousel" id="dashCarousel">
+        <section class="dash-slide" data-slide="0" aria-label="Herramientas">
+            <div class="dashboard-hero">
+                <div class="hero-actions">
+                    <a href="/m/importar" class="hero-action">
+                        <span class="ha-icon">📤</span>
+                        <span class="ha-label">Importar</span>
+                    </a>
+                    <a href="/m/gestiones" class="hero-action">
+                        <span class="ha-icon">📝</span>
+                        <span class="ha-label">Gestiones</span>
+                    </a>
+                    <a href="/m/gestion-lote" class="hero-action">
+                        <span class="ha-icon">🚀</span>
+                        <span class="ha-label">Campañas</span>
+                    </a>
+                    <a href="/m/relaciones" class="hero-action" id="heroRelaciones">
+                        <span class="ha-icon">📋</span>
+                        <span class="ha-label">Relaciones</span>
+                    </a>
+                    <a href="/m/equipo" class="hero-action" id="heroGestionEquipo" style="display:none">
+                        <span class="ha-icon">🏢</span>
+                        <span class="ha-label">Gestión de Equipo</span>
+                    </a>
+                    <a href="/m/ventas" class="hero-action">
+                        <span class="ha-icon">💰</span>
+                        <span class="ha-label">Ventas</span>
+                    </a>
+                    <a href="/m/historial" class="hero-action">
+                        <span class="ha-icon">🔄</span>
+                        <span class="ha-label">Historial</span>
+                    </a>
+                    <a href="/m/solicitudes" class="hero-action">
+                        <span class="ha-icon">📋</span>
+                        <span class="ha-label">Solicitudes</span>
+                    </a>
+                    <a href="/m/solicitudes" class="hero-action hero-action-nueva-sol" onclick="return abrirNuevaSolicitudDesdeDash()">
+                        <span class="ha-icon">➕</span>
+                        <span class="ha-label">Nueva Solicitud</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section class="dash-slide" data-slide="1" aria-label="Indicadores">
+            <div class="panel dash-kpi-panel">
+                <div class="dash-kpi-grid">
+                    <div class="card card-total">
+                        <div class="card-icon">📄</div>
+                        <div class="card-info">
+                            <h3>Total</h3>
+                            <span id="totalSolicitudes">0</span>
+                        </div>
+                    </div>
+                    <div class="card card-verde">
+                        <div class="card-icon">✅</div>
+                        <div class="card-info">
+                            <h3>Activadas</h3>
+                            <span id="totalActivadas">0</span>
+                        </div>
+                    </div>
+                    <div class="card card-rojo">
+                        <div class="card-icon">❌</div>
+                        <div class="card-info">
+                            <h3>Rechazadas</h3>
+                            <span id="totalRechazadas">0</span>
+                        </div>
+                    </div>
+                    <div class="card card-aprobadas">
+                        <div class="card-icon">🟢</div>
+                        <div class="card-info">
+                            <h3>Aprobadas</h3>
+                            <span id="totalAprobadas">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="dash-slide" data-slide="2" aria-label="Gráfico de estados">
+            <div class="panel panel-chart">
+                <div class="panel-title">
+                    <h3>📊 Estados</h3>
+                    <span>Resumen general</span>
+                </div>
+                <div class="chart-shell">
+                    <canvas id="chartEstados"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section class="dash-slide" data-slide="3" aria-label="Gráfico de segmentos">
+            <div class="panel panel-chart">
+                <div class="panel-title">
+                    <h3>🎯 Segmentos</h3>
+                    <span>Distribución</span>
+                </div>
+                <div class="chart-shell">
+                    <canvas id="chartSegmentos"></canvas>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="dash-dots" id="dashDots" role="tablist" aria-label="Vistas del dashboard">
+        <button type="button" class="dash-dot active" data-dot="0" role="tab" aria-label="Herramientas"></button>
+        <button type="button" class="dash-dot" data-dot="1" role="tab" aria-label="Indicadores"></button>
+        <button type="button" class="dash-dot" data-dot="2" role="tab" aria-label="Estados"></button>
+        <button type="button" class="dash-dot" data-dot="3" role="tab" aria-label="Segmentos"></button>
+    </div>
+
+    <!-- Campañas activas -->
+    <section class="panel campanas-widget" id="campanasActivasWidget">
+        <div class="panel-title campanas-widget-head">
+            <h3>🚀 Campañas activas</h3>
+            <a href="/m/gestiones" class="campanas-widget-link">Ver todas</a>
         </div>
-        <div class="hero-actions">
-            <a href="/m/importar" class="hero-action">
-                <span class="ha-icon">📤</span>
-                <span class="ha-label">Importar</span>
-            </a>
-            <a href="/m/gestiones" class="hero-action">
-                <span class="ha-icon">📝</span>
-                <span class="ha-label">Gestiones</span>
-            </a>
-            <a href="/m/gestion-lote" class="hero-action">
-                <span class="ha-icon">🚀</span>
-                <span class="ha-label">Campañas</span>
-            </a>
-            <a href="/m/relaciones" class="hero-action" id="heroRelaciones">
-                <span class="ha-icon">📋</span>
-                <span class="ha-label">Relaciones</span>
-            </a>
-            <a href="/m/equipo" class="hero-action" id="heroGestionEquipo" style="display:none">
-                <span class="ha-icon">🏢</span>
-                <span class="ha-label">Gestión de Equipo</span>
-            </a>
-            <a href="/m/ventas" class="hero-action">
-                <span class="ha-icon">💰</span>
-                <span class="ha-label">Ventas</span>
-            </a>
-            <a href="/m/historial" class="hero-action">
-                <span class="ha-icon">🔄</span>
-                <span class="ha-label">Historial</span>
-            </a>
-            <a href="/m/solicitudes" class="hero-action">
-                <span class="ha-icon">📋</span>
-                <span class="ha-label">Solicitudes</span>
-            </a>
-            <a href="/m/solicitudes" class="hero-action hero-action-nueva-sol" onclick="return abrirNuevaSolicitudDesdeDash()">
-                <span class="ha-icon">➕</span>
-                <span class="ha-label">Nueva Solicitud</span>
-            </a>
+        <div class="campanas-widget-list" id="campanas-activas-lista">
+            <div class="campanas-widget-empty">Cargando...</div>
         </div>
     </section>
-
-    <div class="cards-container">
-        <div class="card card-total">
-            <div class="card-icon">📄</div>
-            <div class="card-info">
-                <h3>Total</h3>
-                <span id="totalSolicitudes">0</span>
-            </div>
-        </div>
-        <div class="card card-verde">
-            <div class="card-icon">✅</div>
-            <div class="card-info">
-                <h3>Activadas</h3>
-                <span id="totalActivadas">0</span>
-            </div>
-        </div>
-        <div class="card card-rojo">
-            <div class="card-icon">❌</div>
-            <div class="card-info">
-                <h3>Rechazadas</h3>
-                <span id="totalRechazadas">0</span>
-            </div>
-        </div>
-        <div class="card card-aprobadas">
-            <div class="card-icon">🟢</div>
-            <div class="card-info">
-                <h3>Aprobadas</h3>
-                <span id="totalAprobadas">0</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="panel panel-chart">
-        <div class="panel-title">
-            <h3>📊 Estados</h3>
-            <span>Resumen general</span>
-        </div>
-        <div class="chart-shell">
-            <canvas id="chartEstados"></canvas>
-        </div>
-    </div>
-
-    <div class="panel panel-chart">
-        <div class="panel-title">
-            <h3>🎯 Segmentos</h3>
-            <span>Distribución</span>
-        </div>
-        <div class="chart-shell">
-            <canvas id="chartSegmentos"></canvas>
-        </div>
-    </div>
 
     <nav class="nav-bottom">
         <a href="/m" class="nav-item active">

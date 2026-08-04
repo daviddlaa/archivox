@@ -466,6 +466,7 @@ function actualizarTituloCampana(nombre, esError) {
     if (esError) {
         tituloEl.classList.remove('is-active');
         if (estadoEl) {
+            estadoEl.hidden = true;
             estadoEl.textContent = '';
             estadoEl.removeAttribute('data-estado');
         }
@@ -480,7 +481,12 @@ function actualizarTituloCampana(nombre, esError) {
 
 function actualizarEstadoCampanaTexto() {
     var estadoEl = document.getElementById('gestion-estado');
-    if (!estadoEl || !datosGestion) return;
+    if (!estadoEl) return;
+    if (!datosGestion) {
+        estadoEl.hidden = true;
+        return;
+    }
+    estadoEl.hidden = false;
 
     var total = datosGestion.total_solicitudes || 0;
     var completadas = (solicitudes || []).filter(function(sol) { return sol.tipo_gestion === 'Completada'; }).length;

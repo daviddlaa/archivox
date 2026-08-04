@@ -196,8 +196,8 @@ ARCHIVOX/
 │
 ├── docs/                           # Documentación del sistema
 │   ├── README.md                   # Este archivo
-│   ├── feature-rediseño-semaforo-campañas.md  # Rediseño del indicador de estado v6 (Agosto 2026)
-│   ├── feature-ux-comportamiento-campanas.md  # UX de progreso y prioridad (Agosto 2026)
+│   ├── feature-rediseño-semaforo-campañas.md  # Rediseño del indicador de estado v6.1 (Agosto 2026)
+│   ├── feature-ux-comportamiento-campanas.md  # UX de progreso y prioridad v2.0 (Agosto 2026)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
 │       ├── informe-auditoria-flujo-multi-equipo.md
@@ -886,6 +886,16 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - Promedio semanal (últimas 9 semanas)
 - Ventas mensuales (últimos 12 meses, solo ACTIVADAS)
 - Caché en servidor (30s) y en cliente (localStorage)
+- **Dashboard móvil en carrusel (Agosto 2026):** el contenido principal se desliza
+  horizontalmente en 4 slides con *scroll-snap* y "peek" del siguiente (`.dash-carousel`,
+  `.dash-slide`): (1) herramientas de acceso rápido sin el título "Panel de Control",
+  (2) 4 KPIs en tarjeta 2×2 alineada con la altura del slide de herramientas, (3) gráfico
+  de Estados, (4) gráfico de Segmentos. Indicadores de punto `.dash-dots` sincronizados
+  con el scroll (`initDashCarousel`).
+- **Widget de Campañas activas (móvil):** debajo del carrusel, muestra las 3 campañas
+  activas más recientes (`.campanas-widget`) con nombre, barra de progreso `completadas/total · %`
+  y enlace "Ver todas" → `/m/gestiones`. Cada tarjeta navega a `/m/gestion-lote?id=ID`.
+  Carga vía `GET /api/gestiones-maestro` en `cargarCampañasActivas()`.
 
 ### 11.2 Solicitudes
 
@@ -966,15 +976,18 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 ### 11.5 Gestión por Lotes
 
 **Ruta:** `/gestion-lote` (desktop/móvil)
-**Archivos:** `gestionesMaestro.controller.js`, `public/desktop/js/gestion-lote.js`
+**Archivos:** `gestionesMaestro.controller.js`, `public/desktop/js/gestion-lote.js`, `public/desktop/gestion-lote.html`, `public/movil/js/gestion-lote.js`, `public/movil/gestion-lote.html`
 
 - Asignar agentes a campañas
 - Visualizar solicitudes de una campaña
 - Gestionar solicitudes en lote dentro de una campaña
 - **Indicador de Estado (Semáforo) v6:** Panel de tarjetas premium compactas por estado (desktop) con tonos suaves diferenciados (gris neutro, sage, ámbar dorado, coral), número protagonista centrado y etiqueta debajo; sin encabezado ni decoraciones. Paletas CSS totalmente desacopladas: `--sem-panel-*` para el panel y `--sem-sol-*` para las tarjetas de solicitud. Ver `docs/feature-rediseño-semaforo-campañas.md` para documentación completa (Agosto 2026).
-- **Rediseño UX de comportamiento v1:** El panel de campaña muestra avance visible, solicitudes restantes, siguiente mejor acción, última actividad relativa y feedback de gestión. La recomendación prioriza seguimiento amarillo, clasificación pendiente y respeta la espera del estado rojo usando únicamente datos reales de la campaña. Ver `docs/feature-ux-comportamiento-campanas.md`.
-- **Experiencia móvil de Campañas:** La versión móvil incorpora el mismo modelo de progreso y prioridad en un layout táctil propio, con semáforo 2x2, selector de estado por solicitud, bottom sheets y acciones secundarias agrupadas.
+- **Rediseño UX de comportamiento v2:** El panel de campaña muestra avance visible, solicitudes restantes, siguiente mejor acción, última actividad relativa y feedback de gestión. La recomendación prioriza seguimiento amarillo, clasificación pendiente y respeta la espera del estado rojo usando únicamente datos reales de la campaña. Ver `docs/feature-ux-comportamiento-campanas.md`.
+- **Experiencia móvil de Campañas:** La versión móvil incorpora el mismo modelo de progreso y prioridad en un layout táctil propio, con selector de campaña por bottom sheet, filtros en una sola línea, carrusel de semáforo (1×4) que se reordena por prioridad, switch segmentado de semáforo inline en cada tarjeta, acciones secundarias agrupadas y tarjetas compactadas (gradientes alineados con desktop, sin ID ni botón WhatsApp redundante, destacado con borde dorado sutil).
 - **Jerarquía de tarjetas desktop:** El selector semafórico segmentado, el segmento junto al nombre y la última gestión clicable hacen más visible el contexto operativo; el historial se consulta con control de acceso contextual por campaña.
+- **Orden de lista por prioridad (D3/M3):** La lista se ordena amarillo → sin clasificar → verde → rojo, con destacadas primero, en desktop y móvil; el carrusel móvil reordena sus tarjetas con el mismo criterio.
+- **Atajos de teclado desktop (D3):** `/` busca, `j`/`k` navegan tarjetas, `Enter` abre la última gestión, `1-4` filtran semáforo, `0` limpia, `Esc` cierra; foco visual `.card-focused`.
+- **Rail/workspace (D2):** Panel lateral de campañas colapsable con transición de `grid-template-columns` (0.28s) y fade-in de tarjetas (`railFadeIn`); el estado persiste en `localStorage`.
 
 ### 11.6 Relaciones
 
