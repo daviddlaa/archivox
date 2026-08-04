@@ -90,7 +90,7 @@ async function cargarListaCampanas() {
         campañas = await response.json();
 
         if (!campañas || campañas.length === 0) {
-            container.innerHTML = '<div class="sin-campana"><div class="sin-campana-icon">📋</div><p>No hay campañas. Ve a Solicitudes para crear una.</p></div>';
+            container.innerHTML = '<div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px;">No hay campañas. Ve a Solicitudes para crear una.</div>';
             return;
         }
 
@@ -106,52 +106,75 @@ async function cargarListaCampanas() {
             var pct = g.total_solicitudes > 0 ? Math.round((completadas / g.total_solicitudes) * 100) : 0;
             var isActive = gestionId && String(g.id) === String(gestionId) ? 'active' : '';
 
-            html += '<div class="campaña-chip ' + isActive + '" onclick="seleccionarCampaña(' + g.id + ')">';
-            html += '  <div class="campaña-chip-content">';
-            html += '    <div class="campaña-chip-top">';
-            html += '      <span class="campaña-chip-nombre">' + (g.nombre || 'Sin nombre') + '</span>';
-            html += '      <button class="campaña-chip-menu-btn" onclick="event.stopPropagation(); abrirBottomSheetCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Acciones de campaña">⋮</button>';
-            html += '    </div>';
-            html += '    <div class="campaña-chip-stats">';
-            html += '      <span>📄 ' + (g.total_solicitudes || 0) + '</span>';
-            html += '      <span>✓ ' + completadas + ' completadas</span>';
-            html += '      <span>' + pct + '%</span>';
-            html += '    </div>';
+            html += '<div class="campana-sheet-item ' + isActive + '" onclick="seleccionarCampaña(' + g.id + ')">';
+            html += '  <div class="campana-sheet-item-icon">📋</div>';
+            html += '  <div class="campana-sheet-item-info">';
+            html += '    <div class="campana-sheet-item-name">' + (g.nombre || 'Sin nombre') + '</div>';
+            html += '    <div class="campana-sheet-item-stats">' + (g.total_solicitudes || 0) + ' solicitudes · ' + completadas + ' completadas · ' + pct + '%</div>';
             html += '  </div>';
+            html += '  <button class="campana-sheet-item-more" onclick="event.stopPropagation(); closeCampanasSheet(); abrirBottomSheetCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Acciones">⋯</button>';
             html += '</div>';
         }
 
         container.innerHTML = html;
+        actualizarBotonCampana();
     } catch (error) {
         console.error('Error cargando campañas:', error);
         var container = document.getElementById('lista-campañas');
-        if (container) container.innerHTML = '<div class="sin-campana"><p>Error al cargar campañas</p></div>';
+        if (container) container.innerHTML = '<div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px;">Error al cargar campañas</div>';
+    }
+}
+
+function toggleCampanasSheet() {
+    var overlay = document.getElementById('campanas-sheet-overlay');
+    var sheet = document.getElementById('campanas-sheet');
+    if (!overlay || !sheet) return;
+    if (sheet.classList.contains('visible')) {
+        closeCampanasSheet();
+    } else {
+        overlay.classList.add('visible');
+        sheet.classList.add('visible');
+    }
+}
+
+function closeCampanasSheet() {
+    var overlay = document.getElementById('campanas-sheet-overlay');
+    var sheet = document.getElementById('campanas-sheet');
+    if (overlay) overlay.classList.remove('visible');
+    if (sheet) sheet.classList.remove('visible');
+}
+
+function actualizarBotonCampana() {
+    var label = document.getElementById('campana-btn-label');
+    if (!label) return;
+    if (gestionId) {
+        var cam = (campañas || []).find(function(c) { return String(c.id) === String(gestionId); });
+        label.textContent = cam ? (cam.nombre || 'Campaña') : 'Campaña';
+    } else {
+        label.textContent = 'Campañas';
     }
 }
 
 function seleccionarCampaña(id) {
+    closeCampanasSheet();
     gestionId = id;
     marcarCampañaActiva(id);
     window.location.href = '/m/gestion-lote?id=' + id;
 }
 
 function marcarCampañaActiva(id) {
-    var chips = document.querySelectorAll('.campaña-chip');
-    chips.forEach(function(c) { c.classList.remove('active'); });
-    var chip = document.querySelector('.campaña-chip[onclick="seleccionarCampaña(' + id + ')"]');
-    if (chip) {
-        chip.classList.add('active');
-        // Desplazar el chip al centro del scroll horizontal (si aplica)
-        try {
-            var container = document.getElementById('lista-campañas');
-            if (container && typeof chip.scrollIntoView === 'function') {
-                chip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    var items = document.querySelectorAll('.campana-sheet-item');
+    items.forEach(function(el) { el.classList.remove('active'); });
+    // Buscar por índice en la lista
+    if (campañas) {
+        for (var i = 0; i < campañas.length; i++) {
+            if (String(campañas[i].id) === String(id)) {
+                if (items[i]) items[i].classList.add('active');
+                break;
             }
-        } catch (e) {
-            // no bloquear si scroll falla
-            console.warn('No se pudo desplazar el chip:', e);
         }
     }
+    actualizarBotonCampana();
 }
 
 // Unifica cargarGestion + cargarSolicitudes en móvil
@@ -531,7 +554,7 @@ function renderizarSolicitudes(lista) {
     });
     completadas.sort(function(a, b) { return new Date(b.fecha_gestion || 0).getTime() - new Date(a.fecha_gestion || 0).getTime(); });
     
-    var html = activasFiltradas.length ? '<section class="solicitudes-activas-mobile"><div class="mobile-seccion-heading"><span><small>Trabajo activo</small><strong>Solicitudes por gestionar</strong></span><b>' + activasFiltradas.length + '</b></div>' : '';
+    var html = activasFiltradas.length ? '<section class="solicitudes-activas-mobile">' : '';
     for (var i = 0; i < activasFiltradas.length; i++) {
         var sol = activasFiltradas[i];
         var estado = sol.tipo_gestion || 'Pendiente';
@@ -542,7 +565,6 @@ function renderizarSolicitudes(lista) {
 
         html += '<div class="sol-card sol-semaforo-' + semaforo + ' ' + (gestionada ? 'gestionada' : '') + (destacada ? ' destacada' : '') + '" data-gestion-id="' + (sol.gestion_id || '') + '">';
         html += '<div class="sol-header">';
-        html += '<div class="sol-id">#' + sol.id_solicitud + '</div>';
         html += '<div class="sol-header-badges">';
         if (destacada) {
             html += '<span class="sol-destacado-badge sol-destacado-badge-on" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 0)" title="Quitar destacado">🔥 Destacada</span>';
@@ -570,7 +592,6 @@ html += '<div class="sol-botones">';
         // Acciones táctiles — diseño touch-optimizado (min 48px altura)
         html += '<button class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')" title="Llamar">📞</button>';
         html += '<button class="btn-sol btn-sol-primary" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
-        html += '<button class="btn-sol btn-sol-whatsapp" onclick="abrirGestionWhatsApp(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.celular || '') + '\')">💬 WhatsApp</button>';
         html += '<button class="btn-sol btn-sol-more" onclick="toggleAccionesMovil(this)">Más opciones</button>';
         html += '<div class="sol-acciones-secundarias">';
         

@@ -26,11 +26,24 @@
                 <span class="header-pausa-mobile" id="header-pausa-mobile" hidden>Campaña en pausa</span>
             </div>
         </div>
+        <div class="header-campana-selector" id="header-campana-selector">
+            <button type="button" class="header-campana-btn" id="btn-campana-selector" onclick="toggleCampanasSheet()" aria-haspopup="dialog">
+                📋 <span id="campana-btn-label">Campañas</span> <span class="header-campana-chevron" aria-hidden="true">▾</span>
+            </button>
+        </div>
     </div>
 
-    <!-- Campañas Scroll -->
-    <div class="campañas-scroll" id="lista-campañas">
-        <div style="color: white; font-size: 12px; padding: 8px;">Cargando...</div>
+    <!-- Bottom Sheet de Campañas -->
+    <div id="campanas-sheet-overlay" class="campanas-sheet-overlay" onclick="closeCampanasSheet()"></div>
+    <div id="campanas-sheet" class="campanas-sheet" role="dialog" aria-label="Seleccionar campaña">
+        <div class="campanas-sheet-handle"></div>
+        <div class="campanas-sheet-header">
+            <span>Seleccionar campaña</span>
+            <button type="button" class="campanas-sheet-close" onclick="closeCampanasSheet()" aria-label="Cerrar">✕</button>
+        </div>
+        <div class="campanas-sheet-list" id="lista-campañas">
+            <div style="color: #94a3b8; font-size: 13px; padding: 24px; text-align: center;">Cargando...</div>
+        </div>
     </div>
 
     <!-- Bottom Sheet de Acciones de Campaña -->
