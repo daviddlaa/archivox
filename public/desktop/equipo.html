@@ -33,53 +33,109 @@
                     </div>
                 </div>
 
-                <!-- ==================== PASARELA DE KPIs (patrón carrusel) ==================== -->
+                <!-- ==================== PASARELA (KPIs / Agentes / Campañas) ==================== -->
                 <div class="equipo-carousel" id="equipoCarousel">
-                    <button type="button" class="equipo-arrow equipo-arrow-prev" id="equipoPrev" aria-label="KPI anterior">‹</button>
+                    <button type="button" class="equipo-arrow equipo-arrow-prev" id="equipoPrev" aria-label="Slide anterior">‹</button>
                     <div class="equipo-track" id="equipoTrack">
+                        <!-- Slide 1: KPIs del equipo -->
                         <div class="equipo-slide">
-                            <div class="equipo-kpi-card kpi-agentes">
-                                <div class="equipo-kpi-icon">👥</div>
-                                <div class="equipo-kpi-info">
-                                    <h3>Agentes</h3>
-                                    <span id="totalAgentes">—</span>
+                            <div class="equipo-section">
+                                <div class="equipo-section-header">
+                                    <h2>📊 KPIs del Equipo</h2>
+                                </div>
+                                <div class="equipo-kpi-grid">
+                                    <div class="equipo-kpi-card kpi-agentes">
+                                        <div class="equipo-kpi-icon">👥</div>
+                                        <div class="equipo-kpi-info">
+                                            <h3>Agentes</h3>
+                                            <span id="totalAgentes">—</span>
+                                        </div>
+                                    </div>
+                                    <div class="equipo-kpi-card kpi-asignaciones">
+                                        <div class="equipo-kpi-icon">📋</div>
+                                        <div class="equipo-kpi-info">
+                                            <h3>Asignaciones Activas</h3>
+                                            <span id="totalAsignaciones">—</span>
+                                        </div>
+                                    </div>
+                                    <div class="equipo-kpi-card kpi-campanas">
+                                        <div class="equipo-kpi-icon">📢</div>
+                                        <div class="equipo-kpi-info">
+                                            <h3>Campañas</h3>
+                                            <span id="totalCampanas">—</span>
+                                        </div>
+                                    </div>
+                                    <div class="equipo-kpi-card kpi-gestiones">
+                                        <div class="equipo-kpi-icon">📝</div>
+                                        <div class="equipo-kpi-info">
+                                            <h3>Gestiones (7 días)</h3>
+                                            <span id="totalGestiones">—</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <!-- Slide 2: Agentes del Equipo -->
                         <div class="equipo-slide">
-                            <div class="equipo-kpi-card kpi-asignaciones">
-                                <div class="equipo-kpi-icon">📋</div>
-                                <div class="equipo-kpi-info">
-                                    <h3>Asignaciones Activas</h3>
-                                    <span id="totalAsignaciones">—</span>
+                            <div class="equipo-section">
+                                <div class="equipo-section-header">
+                                    <h2>👥 Agentes del Equipo</h2>
+                                    <button class="equipo-section-btn" onclick="abrirModalCrearAgente()">+ Nuevo</button>
+                                </div>
+                                <div class="equipo-table-wrapper">
+                                    <table class="equipo-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Usuario</th>
+                                                <th>Nombre</th>
+                                                <th>Estado</th>
+                                                <th>Asignadas</th>
+                                                <th>Gestionadas (7d)</th>
+                                                <th>Ingreso</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="agentesTableBody">
+                                            <tr><td colspan="7" class="equipo-loading">Cargando agentes...</td></tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
+                        <!-- Slide 3: Campañas del Equipo -->
                         <div class="equipo-slide">
-                            <div class="equipo-kpi-card kpi-campanas">
-                                <div class="equipo-kpi-icon">📢</div>
-                                <div class="equipo-kpi-info">
-                                    <h3>Campañas</h3>
-                                    <span id="totalCampanas">—</span>
+                            <div class="equipo-section">
+                                <div class="equipo-section-header">
+                                    <h2>📢 Campañas del Equipo</h2>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="equipo-slide">
-                            <div class="equipo-kpi-card kpi-gestiones">
-                                <div class="equipo-kpi-icon">📝</div>
-                                <div class="equipo-kpi-info">
-                                    <h3>Gestiones (7 días)</h3>
-                                    <span id="totalGestiones">—</span>
+                                <div class="equipo-table-wrapper">
+                                    <table class="equipo-table">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Nombre</th>
+                                                <th>Creador</th>
+                                                <th>Asignado a</th>
+                                                <th>Solicitudes</th>
+                                                <th>Gestionadas</th>
+                                                <th>Progreso</th>
+                                                <th>Estado</th>
+                                                <th>Creado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="campanasEquipoBody">
+                                            <tr><td colspan="9" class="equipo-loading">Cargando campañas...</td></tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <button type="button" class="equipo-arrow equipo-arrow-next" id="equipoNext" aria-label="KPI siguiente">›</button>
+                    <button type="button" class="equipo-arrow equipo-arrow-next" id="equipoNext" aria-label="Slide siguiente">›</button>
                     <div class="equipo-dots" id="equipoDots">
-                        <button type="button" class="equipo-dot active" data-slide="0" aria-label="Ir al KPI 1"></button>
-                        <button type="button" class="equipo-dot" data-slide="1" aria-label="Ir al KPI 2"></button>
-                        <button type="button" class="equipo-dot" data-slide="2" aria-label="Ir al KPI 3"></button>
-                        <button type="button" class="equipo-dot" data-slide="3" aria-label="Ir al KPI 4"></button>
+                        <button type="button" class="equipo-dot active" data-slide="0" aria-label="Ir al slide 1"></button>
+                        <button type="button" class="equipo-dot" data-slide="1" aria-label="Ir al slide 2"></button>
+                        <button type="button" class="equipo-dot" data-slide="2" aria-label="Ir al slide 3"></button>
                     </div>
                 </div>
 
@@ -99,59 +155,6 @@
                     </div>
                     <div id="gestionesFeed" class="equipo-feed">
                         <div class="equipo-loading">Cargando gestiones...</div>
-                    </div>
-                </div>
-
-                <!-- ==================== AGENTES ==================== -->
-                <div class="equipo-section">
-                    <div class="equipo-section-header">
-                        <h2>👥 Agentes del Equipo</h2>
-                        <button class="equipo-section-btn" onclick="abrirModalCrearAgente()">+ Nuevo</button>
-                    </div>
-                    <div class="equipo-table-wrapper">
-                        <table class="equipo-table">
-                            <thead>
-                                <tr>
-                                    <th>Usuario</th>
-                                    <th>Nombre</th>
-                                    <th>Estado</th>
-                                    <th>Asignadas</th>
-                                    <th>Gestionadas (7d)</th>
-                                    <th>Ingreso</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="agentesTableBody">
-                                <tr><td colspan="7" class="equipo-loading">Cargando agentes...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- ==================== CAMPAÑAS ==================== -->
-                <div class="equipo-section">
-                    <div class="equipo-section-header">
-                        <h2>📢 Campañas del Equipo</h2>
-                    </div>
-                    <div class="equipo-table-wrapper">
-                        <table class="equipo-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre</th>
-                                    <th>Creador</th>
-                                    <th>Asignado a</th>
-                                    <th>Solicitudes</th>
-                                    <th>Gestionadas</th>
-                                    <th>Progreso</th>
-                                    <th>Estado</th>
-                                    <th>Creado</th>
-                                </tr>
-                            </thead>
-                            <tbody id="campanasEquipoBody">
-                                <tr><td colspan="9" class="equipo-loading">Cargando campañas...</td></tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>

@@ -146,20 +146,33 @@
     justify-content: center;
 }
 
-.equipo-kpi-card {
+.equipo-slide .equipo-section {
     width: 100%;
-    min-height: 150px;
+    margin-bottom: 0;
+}
+
+.equipo-slide .equipo-section-header {
+    flex-shrink: 0;
+}
+
+.equipo-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 16px 20px 20px;
+}
+
+.equipo-kpi-card {
     box-sizing: border-box;
     background: white;
     border: 1px solid #f0f0f0;
     border-radius: 14px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.06);
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 20px;
+    gap: 12px;
+    min-height: 84px;
+    padding: 14px 16px;
     transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
@@ -169,13 +182,14 @@
 }
 
 .equipo-kpi-icon {
-    font-size: 26px;
-    width: 60px;
-    height: 60px;
+    font-size: 20px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 16px;
+    border-radius: 12px;
+    flex-shrink: 0;
 }
 
 .kpi-agentes .equipo-kpi-icon { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); }
@@ -184,7 +198,8 @@
 .kpi-gestiones .equipo-kpi-icon { background: linear-gradient(135deg, #ede9fe, #ddd6fe); }
 
 .equipo-kpi-info {
-    text-align: center;
+    flex: 1;
+    text-align: left;
 }
 
 .equipo-kpi-info h3 {
@@ -197,7 +212,7 @@
 }
 
 .equipo-kpi-info span {
-    font-size: 34px;
+    font-size: 24px;
     font-weight: 700;
     color: #1f2937;
     display: block;
@@ -780,7 +795,7 @@
     }
 
     .equipo-kpi-info span {
-        font-size: 28px;
+        font-size: 20px;
     }
 
     .equipo-table {

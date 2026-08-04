@@ -1059,9 +1059,14 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - Campañas del equipo
 - Gestiones del equipo
 
-**Jerarquía del panel (desktop, `public/desktop/equipo.html`):** pasarela de KPIs → feed de **Gestiones Recientes del Equipo** (destacado para el líder, sin scroll) → tabla de Agentes → tabla de Campañas.
+**Jerarquía del panel (desktop, `public/desktop/equipo.html`):** pasarela única (KPIs / Agentes / Campañas) → feed de **Gestiones Recientes del Equipo** (destacado para el líder, sin scroll).
 
-**Pasarela de KPIs (desktop):** los 4 KPI del equipo (👥 Agentes, 📋 Asignaciones Activas, 📢 Campañas, 📝 Gestiones 7 días) se muestran como **carrusel de 4 slides** (1 KPI por slide), con el mismo patrón del dashboard: dots clicables + flechas ‹ › con loop, altura compacta (~150px), navegación manual sin autoplay. Cada slide conserva su ID (`totalAgentes`, `totalAsignaciones`, `totalCampanas`, `totalGestiones`), actualizado por `cargarDashboard()`.
+**Pasarela (desktop):** carrusel de **3 slides** con dots clicables + flechas ‹ › con loop, sin autoplay, colocado encima del feed de gestiones para que ningún bloque quede perdido al final:
+- **Slide 1 — KPIs del Equipo:** los 4 stats (👥 Agentes, 📋 Asignaciones Activas, 📢 Campañas, 📝 Gestiones 7 días) en grilla 2×2, tarjetas horizontales compactas (~84px). IDs conservados (`totalAgentes`, `totalAsignaciones`, `totalCampanas`, `totalGestiones`) actualizados por `cargarDashboard()`.
+- **Slide 2 — Agentes del Equipo:** tabla completa (Usuario, Nombre, Estado, Asignadas, Gestionadas 7d, Ingreso, Acciones) con botón "+ Nuevo" en el encabezado.
+- **Slide 3 — Campañas del Equipo:** tabla completa con progreso.
+
+La altura de la pasarela se iguala entre slides vía `igualarAlturaEquipoSlides()`; las tablas conservan su scroll horizontal.
 
 **Feed de gestiones (desktop):**
 - Tarjetas tipo timeline: avatar del agente, nombre, **badge de tipo coloreado** (Completada=verde, Llamada=ámbar, Seguimiento=azul, Visita=púrpura, otros=gris), fecha/hora, `#solicitud · cliente` (enlaza a `/solicitudes?buscar=ID`) y observación recortada a 120 chars.
