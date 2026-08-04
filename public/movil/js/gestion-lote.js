@@ -302,7 +302,40 @@ function actualizarSemaforoMovil(conteo) {
     });
     var clear = document.getElementById('btn-semaforo-mobile-todos');
     if (clear) clear.style.display = filtroSemaforoMovil ? 'inline-flex' : 'none';
+    reordenarCarruselSemaforoMovil(conteo);
     actualizarRecomendacionesMovil(conteo);
+}
+
+function prioridadSemaforoMovil(conteo) {
+    if ((conteo.amarillo || 0) > 0) return 'amarillo';
+    if ((conteo.sin_clasificar || 0) > 0) return 'sin_clasificar';
+    if ((conteo.verde || 0) > 0) return 'verde';
+    if ((conteo.rojo || 0) > 0) return 'rojo';
+    return null;
+}
+
+function reordenarCarruselSemaforoMovil(conteo) {
+    var scroll = document.getElementById('semaforo-mobile-scroll');
+    if (!scroll) return;
+    var ordenBase = ['amarillo', 'sin_clasificar', 'verde', 'rojo'];
+    var prioridad = prioridadSemaforoMovil(conteo);
+    var orden = ordenBase.slice();
+    if (prioridad) {
+        orden = [prioridad].concat(ordenBase.filter(function(k) { return k !== prioridad; }));
+    }
+    var cards = {};
+    Array.prototype.slice.call(scroll.querySelectorAll('.semaforo-mobile-card')).forEach(function(card) {
+        cards[card.getAttribute('data-semaforo')] = card;
+        card.classList.toggle('is-priority', card.getAttribute('data-semaforo') === prioridad);
+    });
+    orden.forEach(function(key) {
+        if (cards[key]) scroll.appendChild(cards[key]);
+    });
+    if (prioridad && cards[prioridad] && typeof cards[prioridad].scrollIntoView === 'function') {
+        try {
+            cards[prioridad].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+        } catch (e) {}
+    }
 }
 
 var BUENAS_PRACTICAS_MOVIL = [

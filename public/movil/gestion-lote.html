@@ -45,10 +45,25 @@
         </div>
     </div>
 
+    <!-- Prioridad compacta -->
     <div class="siguiente-mobile siguiente-mobile-compact" id="siguiente-accion-mobile" style="display:none;" aria-live="polite">
         <span class="siguiente-mobile-label">Prioridad</span>
         <strong id="siguiente-accion-mobile-texto"></strong>
         <button type="button" id="siguiente-accion-mobile-btn" onclick="ejecutarSiguienteAccionMovil()">Ver</button>
+    </div>
+
+    <!-- Semáforo horizontal (carrusel) -->
+    <div class="semaforo-mobile semaforo-mobile-carousel" id="semaforo-mobile" style="display:none;">
+        <div class="semaforo-mobile-heading">
+            <span>Estado</span>
+            <button type="button" id="btn-semaforo-mobile-todos" onclick="setFiltroSemaforoMovil(null)" style="display:none;">Ver todas</button>
+        </div>
+        <div class="semaforo-mobile-scroll" id="semaforo-mobile-scroll" role="group" aria-label="Filtrar por estado">
+            <button type="button" class="semaforo-mobile-card semaforo-mobile-amarillo" data-semaforo="amarillo" data-prio="1" onclick="setFiltroSemaforoMovil('amarillo')"><strong id="count-mobile-amarillo">0</strong><span>Seguimiento</span></button>
+            <button type="button" class="semaforo-mobile-card semaforo-mobile-sin" data-semaforo="sin_clasificar" data-prio="2" onclick="setFiltroSemaforoMovil('sin_clasificar')"><strong id="count-mobile-sin_clasificar">0</strong><span>Sin clasificar</span></button>
+            <button type="button" class="semaforo-mobile-card semaforo-mobile-verde" data-semaforo="verde" data-prio="3" onclick="setFiltroSemaforoMovil('verde')"><strong id="count-mobile-verde">0</strong><span>Encaminadas</span></button>
+            <button type="button" class="semaforo-mobile-card semaforo-mobile-rojo" data-semaforo="rojo" data-prio="4" onclick="setFiltroSemaforoMovil('rojo')"><strong id="count-mobile-rojo">0</strong><span>En espera</span></button>
+        </div>
     </div>
 
     <div class="reco-chip-row" id="reco-chip-row" style="display:none;">
@@ -76,19 +91,6 @@
             </details>
         </div>
     </section>
-
-    <div class="semaforo-mobile semaforo-mobile-dense" id="semaforo-mobile" style="display:none;">
-        <div class="semaforo-mobile-heading">
-            <span>Estado</span>
-            <button type="button" id="btn-semaforo-mobile-todos" onclick="setFiltroSemaforoMovil(null)" style="display:none;">Ver todas</button>
-        </div>
-        <div class="semaforo-mobile-grid" role="group" aria-label="Filtrar por estado de espera">
-            <button type="button" class="semaforo-mobile-card semaforo-mobile-sin" data-semaforo="sin_clasificar" onclick="setFiltroSemaforoMovil('sin_clasificar')"><strong id="count-mobile-sin_clasificar">0</strong><span>Sin clasificar</span></button>
-            <button type="button" class="semaforo-mobile-card semaforo-mobile-verde" data-semaforo="verde" onclick="setFiltroSemaforoMovil('verde')"><strong id="count-mobile-verde">0</strong><span>Encaminadas</span></button>
-            <button type="button" class="semaforo-mobile-card semaforo-mobile-amarillo" data-semaforo="amarillo" onclick="setFiltroSemaforoMovil('amarillo')"><strong id="count-mobile-amarillo">0</strong><span>Seguimiento</span></button>
-            <button type="button" class="semaforo-mobile-card semaforo-mobile-rojo" data-semaforo="rojo" onclick="setFiltroSemaforoMovil('rojo')"><strong id="count-mobile-rojo">0</strong><span>En espera</span></button>
-        </div>
-    </div>
 
     <!-- Filtros -->
     <div class="filtros-mobile" id="filtros-row" style="display: none;">

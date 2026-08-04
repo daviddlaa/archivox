@@ -1277,3 +1277,58 @@
 .filtros-mobile select {
     margin-bottom: 0;
 }
+
+/* ===== M2 — Semáforo carrusel horizontal ===== */
+.semaforo-mobile-carousel {
+    margin: 8px 0 0;
+}
+
+.semaforo-mobile-carousel .semaforo-mobile-heading {
+    padding: 0 12px;
+    margin-bottom: 6px;
+    font-size: 11px;
+}
+
+.semaforo-mobile-scroll {
+    display: flex;
+    gap: 8px;
+    padding: 0 12px 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+}
+
+.semaforo-mobile-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.semaforo-mobile-carousel .semaforo-mobile-card {
+    flex: 0 0 auto;
+    width: 128px;
+    min-height: 56px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    scroll-snap-align: start;
+    align-items: flex-start;
+}
+
+.semaforo-mobile-carousel .semaforo-mobile-card strong {
+    font-size: 20px;
+}
+
+.semaforo-mobile-carousel .semaforo-mobile-card span {
+    margin-top: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.semaforo-mobile-carousel .semaforo-mobile-card.is-priority {
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+}
+
+.semaforo-mobile-carousel .semaforo-mobile-card.active {
+    box-shadow: 0 0 0 2px currentColor;
+}

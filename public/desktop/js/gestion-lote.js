@@ -101,6 +101,53 @@ var CampanaMoreMenu = {
     }
 };
 
+var CampanaRail = {
+    storageKey: 'campanas_rail_open_desktop',
+
+    isOpen: function() {
+        try {
+            var v = localStorage.getItem(this.storageKey);
+            if (v === null) return true;
+            return v !== '0';
+        } catch (e) {
+            return true;
+        }
+    },
+
+    apply: function() {
+        var workspace = document.getElementById('campana-workspace');
+        var rail = document.getElementById('campana-rail');
+        var btn = document.getElementById('btn-rail-toggle');
+        if (!workspace || !rail) return;
+        var open = this.isOpen();
+        workspace.classList.toggle('rail-collapsed', !open);
+        if (btn) {
+            btn.setAttribute('aria-expanded', String(open));
+            btn.classList.toggle('is-collapsed', !open);
+            btn.textContent = open ? 'Estado' : 'Estado ▸';
+            btn.title = open ? 'Ocultar panel de estado' : 'Mostrar panel de estado';
+        }
+    },
+
+    show: function() {
+        var workspace = document.getElementById('campana-workspace');
+        var rail = document.getElementById('campana-rail');
+        var btn = document.getElementById('btn-rail-toggle');
+        var panel = document.getElementById('panel-progreso');
+        if (workspace) workspace.classList.add('workspace-active');
+        if (rail) rail.hidden = false;
+        if (btn) btn.hidden = false;
+        if (panel) panel.style.display = 'block';
+        this.apply();
+    },
+
+    toggle: function() {
+        var open = !this.isOpen();
+        try { localStorage.setItem(this.storageKey, open ? '1' : '0'); } catch (e) {}
+        this.apply();
+    }
+};
+
 document.addEventListener('click', function(e) {
     if (CampanasPopover.isOpen) {
         var selector = document.getElementById('campañas-selector');
@@ -329,10 +376,8 @@ async function cargarDatosGestion() {
         
         actualizarTituloCampana(datosGestion.nombre || 'Gestión #' + gestionId);
         
-        // Mostrar panel de progreso y filtros
-        var panelProgreso = document.getElementById('panel-progreso');
+        // Mostrar workspace: lista + rail + filtros
         var filtrosRow = document.getElementById('filtros-row');
-        if (panelProgreso) panelProgreso.style.display = 'block';
         if (filtrosRow) filtrosRow.style.display = 'flex';
 
         var kpiStrip = document.getElementById('header-kpi-strip');
@@ -341,6 +386,7 @@ async function cargarDatosGestion() {
         var campanaMore = document.getElementById('campana-more');
         if (campanaMore) campanaMore.hidden = false;
 
+        CampanaRail.show();
         initRecomendacionesCollapsed('desktop');
         
         solicitudes = datosGestion.solicitudes || [];
@@ -471,9 +517,28 @@ function actualizarBarraSemaforo(conteoExterno) {
     if (clearBtn) {
         clearBtn.style.display = filtroSemaforo ? 'inline-flex' : 'none';
     }
+    actualizarChipFiltroSemaforo();
 
     actualizarSiguienteAccion(conteo, total);
     actualizarRecomendacionesDesktop(conteo, total);
+}
+
+function actualizarChipFiltroSemaforo() {
+    var chip = document.getElementById('btn-filtro-semaforo-chip');
+    if (!chip) return;
+    if (!filtroSemaforo) {
+        chip.style.display = 'none';
+        chip.textContent = '';
+        return;
+    }
+    var labels = {
+        sin_clasificar: 'Sin clasificar',
+        amarillo: 'Seguimiento',
+        verde: 'Encaminadas',
+        rojo: 'En espera'
+    };
+    chip.textContent = 'Filtro: ' + (labels[filtroSemaforo] || filtroSemaforo) + ' ✕';
+    chip.style.display = 'inline-flex';
 }
 
 var BUENAS_PRACTICAS_DESKTOP = [
