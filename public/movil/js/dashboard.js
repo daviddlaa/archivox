@@ -119,6 +119,20 @@ window.addEventListener('DOMContentLoaded', function() {
     cargarUltimasSolicitudes();
 });
 
+// Iguala la altura de los slides del carrusel de widgets (campañas / solicitudes)
+function igualarAlturaWidgetSlides() {
+    var carousel = document.getElementById('dashWidgetCarousel');
+    if (!carousel) return;
+    var slides = carousel.querySelectorAll('.dash-widget-slide');
+    if (slides.length < 2) return;
+    carousel.style.height = 'auto';
+    var max = 0;
+    slides.forEach(function(s) { max = Math.max(max, s.offsetHeight); });
+    if (max > 0) carousel.style.height = max + 'px';
+}
+
+window.addEventListener('resize', igualarAlturaWidgetSlides);
+
 // ============================================================================
 // CARRUSEL DESLIZABLE (herramientas / KPIs / estados / segmentos)
 // ============================================================================
@@ -129,6 +143,10 @@ function initDashCarousel() {
     var dots = Array.prototype.slice.call(document.querySelectorAll('.dash-dot'));
     if (slides.length < 2 || !dots.length) return;
     var step = slides[1].offsetLeft - slides[0].offsetLeft;
+    var ultimoIndex = slides.length - 1;
+    var envolviendo = false;
+    var scrollProgramado = false;
+    var timerProgramado = null;
 
     function actualizarDotActivo() {
         var index = Math.max(0, Math.min(dots.length - 1, Math.round(carousel.scrollLeft / step)));
@@ -140,9 +158,20 @@ function initDashCarousel() {
     carousel.addEventListener('scroll', actualizarDotActivo, { passive: true });
     dots.forEach(function(dot, i) {
         dot.addEventListener('click', function() {
+            scrollProgramado = true;
+            clearTimeout(timerProgramado);
+            timerProgramado = setTimeout(function() { scrollProgramado = false; }, 700);
             carousel.scrollTo({ left: i * step, behavior: 'smooth' });
         });
     });
+    carousel.addEventListener('scroll', function() {
+        if (scrollProgramado) return;
+        if (!envolviendo && carousel.scrollLeft >= ultimoIndex * step) {
+            envolviendo = true;
+            carousel.scrollTo({ left: 0, behavior: 'smooth' });
+            setTimeout(function() { envolviendo = false; }, 600);
+        }
+    }, { passive: true });
     window.addEventListener('resize', function() {
         step = slides[1].offsetLeft - slides[0].offsetLeft;
         actualizarDotActivo();
@@ -159,6 +188,10 @@ function initDashWidgetCarousel() {
     var dots = Array.prototype.slice.call(document.querySelectorAll('.dash-widget-dot'));
     if (slides.length < 2 || !dots.length) return;
     var step = slides[1].offsetLeft - slides[0].offsetLeft;
+    var ultimoIndex = slides.length - 1;
+    var envolviendo = false;
+    var scrollProgramado = false;
+    var timerProgramado = null;
 
     function actualizarDotActivo() {
         var index = Math.max(0, Math.min(dots.length - 1, Math.round(carousel.scrollLeft / step)));
@@ -170,9 +203,20 @@ function initDashWidgetCarousel() {
     carousel.addEventListener('scroll', actualizarDotActivo, { passive: true });
     dots.forEach(function(dot, i) {
         dot.addEventListener('click', function() {
+            scrollProgramado = true;
+            clearTimeout(timerProgramado);
+            timerProgramado = setTimeout(function() { scrollProgramado = false; }, 700);
             carousel.scrollTo({ left: i * step, behavior: 'smooth' });
         });
     });
+    carousel.addEventListener('scroll', function() {
+        if (scrollProgramado) return;
+        if (!envolviendo && carousel.scrollLeft >= ultimoIndex * step) {
+            envolviendo = true;
+            carousel.scrollTo({ left: 0, behavior: 'smooth' });
+            setTimeout(function() { envolviendo = false; }, 600);
+        }
+    }, { passive: true });
     window.addEventListener('resize', function() {
         step = slides[1].offsetLeft - slides[0].offsetLeft;
         actualizarDotActivo();
@@ -203,6 +247,7 @@ async function cargarCampañasActivas() {
 
         if (!activas.length) {
             container.innerHTML = '<div class="campanas-widget-empty">No hay campañas activas.<br><a href="/m/gestion-lote">Crear o ver campañas</a></div>';
+            igualarAlturaWidgetSlides();
             return;
         }
 
@@ -223,9 +268,11 @@ async function cargarCampañasActivas() {
                 '</a>';
         }
         container.innerHTML = html;
+        igualarAlturaWidgetSlides();
     } catch (e) {
         console.error('Error cargando campañas activas:', e);
         container.innerHTML = '<div class="campanas-widget-empty">No se pudieron cargar las campañas.</div>';
+        igualarAlturaWidgetSlides();
     }
 }
 
@@ -250,6 +297,7 @@ async function cargarUltimasSolicitudes() {
 
         if (!lista.length) {
             container.innerHTML = '<div class="campanas-widget-empty">No hay solicitudes.<br><a href="/m/solicitudes">Ver solicitudes</a></div>';
+            igualarAlturaWidgetSlides();
             return;
         }
 
@@ -271,8 +319,10 @@ async function cargarUltimasSolicitudes() {
                 '</a>';
         }
         container.innerHTML = html;
+        igualarAlturaWidgetSlides();
     } catch (e) {
         console.error('Error cargando últimas solicitudes:', e);
         container.innerHTML = '<div class="campanas-widget-empty">No se pudieron cargar las solicitudes.</div>';
+        igualarAlturaWidgetSlides();
     }
 }

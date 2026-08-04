@@ -891,10 +891,15 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
   sin "peek" del siguiente): (1) herramientas de acceso rápido con subtítulo
   "Herramientas rápidas", (2) 4 KPIs en tarjeta 2×2 alineada con la altura del slide de
   herramientas, (3) gráfico de Estados, (4) gráfico de Segmentos. Indicadores de punto
-  `.dash-dots` sincronizados con el scroll (`initDashCarousel`).
+  `.dash-dots` sincronizados con el scroll (`initDashCarousel`). Ambos carruseles
+  **vuelven suavemente al primer slide** al llegar al final (loop de avance; al tocar un dot
+  no se fuerza el loop hasta el siguiente swipe).
 - **Widgets en mini-carrusel (móvil):** debajo del carrusel principal, un segundo carrusel
   (`.dash-widget-carousel`, `.dash-widget-slide`, full-width sin "peek") con 2 slides y dots
-  `.dash-widget-dots` sincronizados (`initDashWidgetCarousel`):
+  `.dash-widget-dots` sincronizados (`initDashWidgetCarousel`). Ambos slides comparten la misma
+  altura (igualador `igualarAlturaWidgetSlides()`, toma la del slide más alto tras renderizar y
+  en `resize`) y su contenido queda centrado verticalmente (`.dash-widget-slide .campanas-widget`
+  usa `flex:1; justify-content:center`), replicando el comportamiento del carrusel principal:
   - **Campañas activas:** las 3 campañas activas más recientes (`.campanas-widget`) con nombre,
     barra de progreso `completadas/total · %` y enlace "Ver todas" → `/m/gestion-lote`. Cada
     tarjeta navega a `/m/gestion-lote?id=ID`. Carga vía `GET /api/gestiones-maestro` en
