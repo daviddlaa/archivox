@@ -197,6 +197,7 @@ ARCHIVOX/
 ├── docs/                           # Documentación del sistema
 │   ├── README.md                   # Este archivo
 │   ├── feature-rediseño-semaforo-campañas.md  # Rediseño del indicador de estado v6 (Agosto 2026)
+│   ├── feature-ux-comportamiento-campanas.md  # UX de progreso y prioridad (Agosto 2026)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
 │       ├── informe-auditoria-flujo-multi-equipo.md
@@ -971,6 +972,7 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - Visualizar solicitudes de una campaña
 - Gestionar solicitudes en lote dentro de una campaña
 - **Indicador de Estado (Semáforo) v6:** Panel de tarjetas premium compactas por estado (desktop) con tonos suaves diferenciados (gris neutro, sage, ámbar dorado, coral), número protagonista centrado y etiqueta debajo; sin encabezado ni decoraciones. Paletas CSS totalmente desacopladas: `--sem-panel-*` para el panel y `--sem-sol-*` para las tarjetas de solicitud. Ver `docs/feature-rediseño-semaforo-campañas.md` para documentación completa (Agosto 2026).
+- **Rediseño UX de comportamiento v1:** El panel de campaña muestra avance visible, solicitudes restantes, siguiente mejor acción, última actividad relativa y feedback de gestión. La recomendación prioriza seguimiento amarillo, clasificación pendiente y respeta la espera del estado rojo usando únicamente datos reales de la campaña. Ver `docs/feature-ux-comportamiento-campanas.md`.
 
 ### 11.6 Relaciones
 

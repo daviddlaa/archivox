@@ -487,12 +487,12 @@ function actualizarSiguienteAccion(conteo, total) {
     var btn = document.getElementById('siguiente-accion-btn');
     if (!textoEl || !btn) return;
     var prioridad = null;
-    if (conteo.rojo > 0) {
-        prioridad = { semaforo: 'rojo', texto: 'Tienes ' + conteo.rojo + ' solicitud' + (conteo.rojo === 1 ? '' : 'es') + ' en rojo. Atiéndelas primero.' };
-    } else if (conteo.amarillo > 0) {
+    if (conteo.amarillo > 0) {
         prioridad = { semaforo: 'amarillo', texto: 'Gestiona primero las ' + conteo.amarillo + ' solicitudes amarillas para seguir avanzando.' };
     } else if (conteo.sin_clasificar > 0) {
         prioridad = { semaforo: 'sin_clasificar', texto: 'Clasifica las ' + conteo.sin_clasificar + ' solicitudes pendientes de revisión.' };
+    } else if (conteo.rojo > 0) {
+        prioridad = { semaforo: 'rojo', texto: 'Tienes ' + conteo.rojo + ' solicitud' + (conteo.rojo === 1 ? '' : 'es') + ' en espera. Respeta el tiempo antes de volver a contactar.' };
     } else if (total > 0 && (solicitudes || []).some(function(sol) {
         return !sol.gestion_id || !sol.tipo_gestion || sol.tipo_gestion === 'Pendiente';
     })) {

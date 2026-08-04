@@ -167,7 +167,7 @@ Se eliminó toda decoración que ya no aportaba valor:
 | `public/css/gestion-lote.css` | Dos paletas desacopladas (`--sem-panel-*` / `--sem-sol-*`), tarjetas compactas `.semaforo-panel-*`, colores diferenciados, `user-select: none` |
 | `public/desktop/gestion-lote.html` | Clases exclusivas del panel (`semaforo-panel-card`, `semaforo-panel-{sin,verde,amarillo,rojo}`, `semaforo-panel-label`) manteniendo los hooks del JS |
 
-> **Nota:** El JS (`public/desktop/js/gestion-lote.js`) **no fue modificado**. Los ids y clases que usa se conservan intactos: `#count-*`, `.semaforo-seg[data-semaforo]`, `#btn-semaforo-todos`, `#total-solicitudes`, `.semaforo-seg-count`, animaciones `bump`/`bump-num`, `.semaforo-fly.{estado}`. `.semaforo-seg` queda como **hook exclusivo del JS** (sin reglas CSS propias).
+> **Nota:** En la implementación original de V6 el JS (`public/desktop/js/gestion-lote.js`) no fue modificado. En la versión actual los mismos ids y clases se conservan intactos (`#count-*`, `.semaforo-seg[data-semaforo]`, `#btn-semaforo-todos`, `#total-solicitudes`, `.semaforo-seg-count`, animaciones `bump`/`bump-num`, `.semaforo-fly.{estado}`), y el JS añade la recomendación de prioridad, el progreso visible y la actividad contextual. `.semaforo-seg` queda como **hook exclusivo del JS** (sin reglas CSS propias).
 
 ---
 
