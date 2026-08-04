@@ -1059,7 +1059,9 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - Campañas del equipo
 - Gestiones del equipo
 
-**Jerarquía del panel (desktop, `public/desktop/equipo.html`):** el feed de **Gestiones Recientes del Equipo** es la primera sección de contenido (destacado para el líder, sin scroll), seguida de los 4 KPIs (Agentes, Asignaciones, Campañas, Gestiones 7d), la tabla de Agentes y la de Campañas.
+**Jerarquía del panel (desktop, `public/desktop/equipo.html`):** pasarela de KPIs → feed de **Gestiones Recientes del Equipo** (destacado para el líder, sin scroll) → tabla de Agentes → tabla de Campañas.
+
+**Pasarela de KPIs (desktop):** los 4 KPI del equipo (👥 Agentes, 📋 Asignaciones Activas, 📢 Campañas, 📝 Gestiones 7 días) se muestran como **carrusel de 4 slides** (1 KPI por slide), con el mismo patrón del dashboard: dots clicables + flechas ‹ › con loop, altura compacta (~150px), navegación manual sin autoplay. Cada slide conserva su ID (`totalAgentes`, `totalAsignaciones`, `totalCampanas`, `totalGestiones`), actualizado por `cargarDashboard()`.
 
 **Feed de gestiones (desktop):**
 - Tarjetas tipo timeline: avatar del agente, nombre, **badge de tipo coloreado** (Completada=verde, Llamada=ámbar, Seguimiento=azul, Visita=púrpura, otros=gris), fecha/hora, `#solicitud · cliente` (enlaza a `/solicitudes?buscar=ID`) y observación recortada a 120 chars.

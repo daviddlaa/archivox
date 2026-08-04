@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         await cargarAgentes();
         await cargarCampanas();
         await cargarGestiones();
+        initEquipoCarousel();
 
     } catch (err) {
         console.error('[Equipo] Error en inicialización:', err);
@@ -108,7 +109,7 @@ async function cargarDashboard() {
 
     } catch (err) {
         console.error('[Equipo] Error cargar dashboard:', err);
-        document.querySelectorAll('.equipo-stat-info span').forEach(s => s.textContent = '—');
+        document.querySelectorAll('.equipo-kpi-info span').forEach(s => s.textContent = '—');
     }
 }
 
@@ -335,6 +336,74 @@ function ocultarCargarMas(ocultar) {
 async function cargarMasGestiones() {
     _gestionesLimite += 20;
     await cargarGestiones();
+}
+
+// ============================================================================
+// PASARELA DE KPIs (patrón carrusel del dashboard)
+// Navegación: dots + flechas ‹ › con loop, sin autoplay.
+// ============================================================================
+function igualarAlturaEquipoSlides() {
+    const track = document.getElementById('equipoTrack');
+    if (!track) return;
+    const slides = track.querySelectorAll('.equipo-slide');
+    if (slides.length < 2) return;
+    track.style.height = 'auto';
+    let max = 0;
+    slides.forEach(s => { max = Math.max(max, s.offsetHeight); });
+    if (max > 0) track.style.height = max + 'px';
+}
+
+function initEquipoCarousel() {
+    const track = document.getElementById('equipoTrack');
+    if (!track) return;
+    const slides = track.querySelectorAll('.equipo-slide');
+    const dots = Array.prototype.slice.call(document.querySelectorAll('.equipo-dot'));
+    const prev = document.getElementById('equipoPrev');
+    const next = document.getElementById('equipoNext');
+    if (slides.length < 2 || !dots.length) return;
+    let step = slides[1].offsetLeft - slides[0].offsetLeft;
+
+    function indiceActual() {
+        return Math.max(0, Math.min(dots.length - 1, Math.round(track.scrollLeft / step)));
+    }
+
+    function irA(index) {
+        track.scrollTo({ left: index * step, behavior: 'smooth' });
+    }
+
+    function actualizarDotActivo() {
+        const index = indiceActual();
+        dots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === index);
+        });
+    }
+
+    track.addEventListener('scroll', actualizarDotActivo, { passive: true });
+
+    dots.forEach((dot, i) => {
+        dot.addEventListener('click', () => irA(i));
+    });
+
+    if (prev) {
+        prev.addEventListener('click', () => {
+            const i = indiceActual() - 1;
+            irA(i < 0 ? slides.length - 1 : i);
+        });
+    }
+    if (next) {
+        next.addEventListener('click', () => {
+            const i = indiceActual() + 1;
+            irA(i >= slides.length ? 0 : i);
+        });
+    }
+
+    window.addEventListener('resize', () => {
+        step = slides[1].offsetLeft - slides[0].offsetLeft;
+        actualizarDotActivo();
+        igualarAlturaEquipoSlides();
+    });
+
+    igualarAlturaEquipoSlides();
 }
 
 // ============================================================================

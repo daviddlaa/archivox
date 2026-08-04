@@ -33,6 +33,56 @@
                     </div>
                 </div>
 
+                <!-- ==================== PASARELA DE KPIs (patrón carrusel) ==================== -->
+                <div class="equipo-carousel" id="equipoCarousel">
+                    <button type="button" class="equipo-arrow equipo-arrow-prev" id="equipoPrev" aria-label="KPI anterior">‹</button>
+                    <div class="equipo-track" id="equipoTrack">
+                        <div class="equipo-slide">
+                            <div class="equipo-kpi-card kpi-agentes">
+                                <div class="equipo-kpi-icon">👥</div>
+                                <div class="equipo-kpi-info">
+                                    <h3>Agentes</h3>
+                                    <span id="totalAgentes">—</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="equipo-slide">
+                            <div class="equipo-kpi-card kpi-asignaciones">
+                                <div class="equipo-kpi-icon">📋</div>
+                                <div class="equipo-kpi-info">
+                                    <h3>Asignaciones Activas</h3>
+                                    <span id="totalAsignaciones">—</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="equipo-slide">
+                            <div class="equipo-kpi-card kpi-campanas">
+                                <div class="equipo-kpi-icon">📢</div>
+                                <div class="equipo-kpi-info">
+                                    <h3>Campañas</h3>
+                                    <span id="totalCampanas">—</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="equipo-slide">
+                            <div class="equipo-kpi-card kpi-gestiones">
+                                <div class="equipo-kpi-icon">📝</div>
+                                <div class="equipo-kpi-info">
+                                    <h3>Gestiones (7 días)</h3>
+                                    <span id="totalGestiones">—</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="equipo-arrow equipo-arrow-next" id="equipoNext" aria-label="KPI siguiente">›</button>
+                    <div class="equipo-dots" id="equipoDots">
+                        <button type="button" class="equipo-dot active" data-slide="0" aria-label="Ir al KPI 1"></button>
+                        <button type="button" class="equipo-dot" data-slide="1" aria-label="Ir al KPI 2"></button>
+                        <button type="button" class="equipo-dot" data-slide="2" aria-label="Ir al KPI 3"></button>
+                        <button type="button" class="equipo-dot" data-slide="3" aria-label="Ir al KPI 4"></button>
+                    </div>
+                </div>
+
                 <!-- ==================== GESTIONES RECIENTES DEL EQUIPO ==================== -->
                 <div class="equipo-section" id="gestionesSeccion">
                     <div class="equipo-section-header">
@@ -49,38 +99,6 @@
                     </div>
                     <div id="gestionesFeed" class="equipo-feed">
                         <div class="equipo-loading">Cargando gestiones...</div>
-                    </div>
-                </div>
-
-                <!-- ==================== STATS CARDS ==================== -->
-                <div class="equipo-stats">
-                    <div class="equipo-stat-card" id="statAgentes">
-                        <div class="equipo-stat-icon">👥</div>
-                        <div class="equipo-stat-info">
-                            <h3>Agentes</h3>
-                            <span id="totalAgentes">—</span>
-                        </div>
-                    </div>
-                    <div class="equipo-stat-card" id="statAsignaciones">
-                        <div class="equipo-stat-icon">📋</div>
-                        <div class="equipo-stat-info">
-                            <h3>Asignaciones Activas</h3>
-                            <span id="totalAsignaciones">—</span>
-                        </div>
-                    </div>
-                    <div class="equipo-stat-card" id="statCampanas">
-                        <div class="equipo-stat-icon">📢</div>
-                        <div class="equipo-stat-info">
-                            <h3>Campañas</h3>
-                            <span id="totalCampanas">—</span>
-                        </div>
-                    </div>
-                    <div class="equipo-stat-card" id="statGestiones">
-                        <div class="equipo-stat-icon">📝</div>
-                        <div class="equipo-stat-info">
-                            <h3>Gestiones (7 días)</h3>
-                            <span id="totalGestiones">—</span>
-                        </div>
                     </div>
                 </div>
 
