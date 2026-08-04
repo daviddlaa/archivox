@@ -196,3 +196,23 @@ La búsqueda y el filtro por tipo de gestión permanecen disponibles debajo del 
 ```text
 PUT /api/gestiones-maestro/:id/solicitudes/:solicitudId/semaforo
 ```
+
+## Ajuste posterior de tarjetas desktop
+
+La tarjeta desktop de Gestión por Lotes fue refinada para mejorar la jerarquía operativa:
+
+- El semáforo pasó de pills discretos a un selector segmentado de cuatro partes con color y estado activo visible.
+- El segmento se muestra junto al nombre del cliente.
+- La última gestión tiene un bloque separado, con fecha relativa y clic sobre todo el bloque para abrir el detalle.
+- Se eliminó el botón redundante `Ver`.
+- `Historial` conserva su acción independiente.
+
+### Historial contextual de campaña
+
+El historial de una solicitud dentro de una campaña usa ahora:
+
+```text
+GET /api/gestiones-maestro/:gestionId/solicitudes/:solicitudId/historial
+```
+
+El endpoint valida que el usuario tenga acceso a la campaña y que la solicitud pertenezca a ella. Después obtiene las gestiones asociadas a esa campaña o las gestiones generales de la solicitud (`gestion_maestro_id IS NULL`). Esto evita que un usuario normal vea una última gestión en la tarjeta pero reciba un historial vacío por un filtro exclusivo de `usuario_id`.

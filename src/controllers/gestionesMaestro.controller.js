@@ -290,6 +290,43 @@ async function getGestionMaestroById(req, res) {
     }
 }
 
+// GET /api/gestiones-maestro/:id/solicitudes/:solicitudId/historial
+// Historial contextual de una solicitud dentro de una campaña accesible.
+async function getHistorialSolicitudCampana(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) return res.status(401).json({ error: 'No autenticado' });
+
+        const { id, solicitudId } = req.params;
+        const access = buildGestionAccessWhere(req, id);
+        const gestionResult = await pool.query(
+            'SELECT gm.id, gm.solicitudes_ids FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access),
+            access.params
+        );
+        const gestion = getFirstRow(gestionResult);
+        if (!gestion) return res.status(404).json({ error: 'Campaña no encontrada' });
+
+        let solicitudIds = [];
+        try { solicitudIds = JSON.parse(gestion.solicitudes_ids || '[]'); } catch (e) { solicitudIds = []; }
+        if (solicitudIds.map(String).indexOf(String(solicitudId)) === -1) {
+            return res.status(404).json({ error: 'La solicitud no pertenece a esta campaña' });
+        }
+
+        const result = await pool.query(
+            `SELECT id, solicitud_id, tipo_gestion, observacion, fecha_gestion, usuario_id, gestion_maestro_id
+             FROM gestiones
+             WHERE solicitud_id = ?
+               AND (gestion_maestro_id = ? OR gestion_maestro_id IS NULL)
+             ORDER BY fecha_gestion DESC`,
+            [solicitudId, id]
+        );
+        res.json(getRows(result));
+    } catch (error) {
+        console.error('Error getHistorialSolicitudCampana:', error);
+        res.status(500).json({ error: 'Error al cargar historial de la campaña' });
+    }
+}
+
 // POST /api/gestiones-maestro - Crear nueva gestión por lotes
 async function createGestionMaestro(req, res) {
     try {
@@ -1012,6 +1049,7 @@ module.exports = {
     asignarAgenteACampana: asignarAgenteACampana,
     quitarAsignacionAgente: quitarAsignacionAgente,
     actualizarSemaforoSolicitud: actualizarSemaforoSolicitud,
+    historialSolicitudCampana: getHistorialSolicitudCampana,
     // Aliases en inglés para excel.routes.js
     getGestionesMaestro: getGestionesMaestro,
     getGestionMaestroById: getGestionMaestroById,

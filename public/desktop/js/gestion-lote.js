@@ -763,7 +763,7 @@ function renderizarSolicitudes(lista) {
         var destacada = sol.destacado == 1;
         html += '<div class="sol-card ' + (gestionada ? 'gestionada' : 'pendiente') + ' sol-semaforo-' + semaforo + (destacada ? ' destacada' : '') + '" data-id="' + sol.id_solicitud + '">';
         
-        // Header — badges left, semáforo pills right
+        // Header — nombre y estado de gestión; el semáforo ocupa una fila propia
         html += '<div class="sol-header">';
         html += '<div class="sol-header-left">';
         if (destacada) {
@@ -773,32 +773,35 @@ function renderizarSolicitudes(lista) {
         }
         html += '<span class="sol-estado" style="background:' + colorFondo + ';">' + estado + '</span>';
         html += '</div>';
-        // Semáforo pills in header
-        html += '<div class="sol-semaforo-pills" role="group" aria-label="Semáforo">';
+        // Selector segmentado: el estado operativo debe ser visible y accionable
+        html += '<div class="sol-semaforo-switch" role="group" aria-label="Estado de espera">';
         for (var s = 0; s < SEMAFORO_ORDEN.length; s++) {
             var keyS = SEMAFORO_ORDEN[s];
             var activeCls = semaforo === keyS ? ' active' : '';
-            html += '<button type="button" class="sol-semaforo-pill' + activeCls + '" data-val="' + keyS + '" onclick="event.stopPropagation(); cambiarSemaforoSolicitud(\'' + sol.id_solicitud + '\', \'' + keyS + '\', event)" title="' + SEMAFORO_LABELS[keyS] + '"><span class="sol-semaforo-pill-dot"></span>' + SEMAFORO_LABELS[keyS] + '</button>';
+            html += '<button type="button" class="sol-semaforo-switch-segment ' + keyS + activeCls + '" data-val="' + keyS + '" onclick="event.stopPropagation(); cambiarSemaforoSolicitud(\'' + sol.id_solicitud + '\', \'' + keyS + '\', event)" title="' + SEMAFORO_LABELS[keyS] + '" aria-label="' + SEMAFORO_LABELS[keyS] + '"><span class="sol-semaforo-switch-dot"></span><span class="sol-semaforo-switch-text">' + SEMAFORO_LABELS[keyS] + '</span></button>';
         }
         html += '</div>';
         html += '</div>';
         
         // Info
         html += '<div class="sol-info">';
-        html += '<div class="sol-nombre sol-nombre-copy" onclick="copiarNombreCedula(\'' + escaparParaAtributo(sol.nombre || '') + '\', \'' + escaparParaAtributo(sol.cedula || '') + '\')" title="Copiar nombre completo y cédula">' + (sol.nombre || 'Sin nombre') + '</div>';
+        html += '<div class="sol-nombre-row"><div class="sol-nombre sol-nombre-copy" onclick="copiarNombreCedula(\'' + escaparParaAtributo(sol.nombre || '') + '\', \'' + escaparParaAtributo(sol.cedula || '') + '\')" title="Copiar nombre completo y cédula">' + (sol.nombre || 'Sin nombre') + '</div><span class="sol-segmento">' + (sol.segmento || 'Sin segmento') + '</span></div>';
         html += '<div class="sol-datos">';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.cedula || '') + '\', \'cédula\')" title="Copiar cédula">🆔 ' + (sol.cedula || '—') + '</span>';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.celular || '') + '\', \'teléfono\')" title="Copiar teléfono">📱 ' + (sol.celular || '—') + '</span>';
         html += '<span class="sol-chat-icon" onclick="abrirWhatsAppDesktop(\'' + escaparParaAtributo(sol.celular || '') + '\', \'\')" title="Abrir chat WhatsApp">💬</span>';
-        html += '<span>🏷️ ' + (sol.segmento || '—') + '</span>';
         html += '</div>';
         html += '</div>';
         
-        // Observación
-        if (observacion) {
-            html += '<div class="sol-observacion">' + observacion + '</div>';
+        // Última gestión: el bloque completo abre el mismo detalle que antes abría "Ver".
+        if (gestionada) {
+            html += '<button type="button" class="sol-ultima-gestion" onclick="verGestion(\'' + sol.id_solicitud + '\')" title="Abrir última gestión">';
+            html += '<span class="sol-ultima-gestion-top"><strong>Última gestión</strong><span>' + (formatearTiempoRelativo(sol.fecha_gestion) || 'Fecha no disponible') + '</span></span>';
+            html += '<span class="sol-ultima-gestion-tipo">' + (estado || 'Gestión') + '</span>';
+            html += '<span class="sol-ultima-gestion-obs">' + (observacion || 'Sin observación registrada') + '</span>';
+            html += '</button>';
         } else {
-            html += '<div class="sol-observacion-vacia">Sin observación registrada</div>';
+            html += '<div class="sol-ultima-gestion vacia"><strong>Sin gestión registrada</strong><span>Esta solicitud aún no tiene una gestión.</span></div>';
         }
         
         // Acciones (desktop: sin botón Llamar)
@@ -806,10 +809,6 @@ function renderizarSolicitudes(lista) {
         
         html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
         html += "<button class=\"btn-accion btn-whatsapp-img\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
-        
-        if (gestionada) {
-            html += '<button class="btn-accion tertiary" onclick="verGestion(\'' + sol.id_solicitud + '\')">👁️ Ver</button>';
-        }
         
         html += '<button class="btn-accion tertiary" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button>';
         
@@ -1074,7 +1073,7 @@ async function verHistorial(solicitudId) {
     try {
         crearModal('<div class="modal-gestion" style="text-align:center;padding:30px;"><h2>📋 Historial</h2><p>⏳ Cargando...</p></div>');
         
-        var response = await fetch('/api/excel/gestiones/' + solicitudId);
+        var response = await fetch('/api/gestiones-maestro/' + gestionId + '/solicitudes/' + encodeURIComponent(solicitudId) + '/historial');
         if (!response.ok) throw new Error('Error al cargar historial');
         
         var gestiones = await response.json();

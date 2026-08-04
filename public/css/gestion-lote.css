@@ -1812,3 +1812,153 @@ body {
 @media (prefers-reduced-motion: reduce) {
     .avance-track span, .semaforo-fly, .campana-toast, .sol-card.sol-semaforo-flash { transition: none; animation: none; }
 }
+
+/* ===== TARJETA DESKTOP: JERARQUÍA OPERATIVA ===== */
+.sol-card {
+    padding: 18px;
+}
+
+.sol-header {
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.sol-header-left {
+    min-width: 0;
+}
+
+.sol-info {
+    margin-bottom: 14px;
+}
+
+.sol-nombre-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    margin-bottom: 6px;
+}
+
+.sol-nombre-row .sol-nombre {
+    min-width: 0;
+    margin-bottom: 0;
+}
+
+.sol-segmento {
+    flex: 0 0 auto;
+    max-width: 42%;
+    overflow: hidden;
+    padding: 4px 9px;
+    border: 1px solid #c7d2fe;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: 10px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sol-semaforo-switch {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    gap: 3px;
+    margin: 0 0 14px;
+    padding: 3px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.sol-semaforo-switch-segment {
+    display: flex;
+    min-height: 32px;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 5px 4px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.1;
+    transition: background .2s ease, color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+.sol-semaforo-switch-segment:hover { transform: translateY(-1px); }
+.sol-semaforo-switch-segment.active { color: #334155; box-shadow: 0 2px 6px rgba(15, 23, 42, .1); }
+.sol-semaforo-switch-segment.sin_clasificar.active { background: #e8ecf1; color: #475569; border-color: #cbd5e1; }
+.sol-semaforo-switch-segment.verde.active { background: #d8e9de; color: #2f6b45; border-color: #a9cfb3; }
+.sol-semaforo-switch-segment.amarillo.active { background: #f6e7c4; color: #7c5a22; border-color: #e5c77f; }
+.sol-semaforo-switch-segment.rojo.active { background: #f2d2cc; color: #a03d35; border-color: #e1aaa0; }
+
+.sol-semaforo-switch-dot {
+    width: 7px;
+    height: 7px;
+    flex: 0 0 7px;
+    border-radius: 50%;
+    background: #94a3b8;
+}
+
+.sol-semaforo-switch-segment.verde .sol-semaforo-switch-dot { background: #6b9e78; }
+.sol-semaforo-switch-segment.amarillo .sol-semaforo-switch-dot { background: #d3a437; }
+.sol-semaforo-switch-segment.rojo .sol-semaforo-switch-dot { background: #cf6657; }
+
+.sol-semaforo-switch-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sol-ultima-gestion {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 6px;
+    margin: 2px 0 14px;
+    padding: 12px 13px;
+    border: 1px solid #e5e7eb;
+    border-left: 3px solid #94a3b8;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #334155;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color .2s ease, background .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+.sol-ultima-gestion:hover {
+    border-color: #c7d2fe;
+    background: #f8faff;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, .07);
+    transform: translateY(-1px);
+}
+
+.sol-ultima-gestion-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sol-ultima-gestion-top strong { color: #475569; font-size: 11px; }
+.sol-ultima-gestion-top span { color: #94a3b8; font-size: 10px; }
+.sol-ultima-gestion-tipo { color: #4338ca; font-size: 12px; font-weight: 800; }
+.sol-ultima-gestion-obs { color: #64748b; font-size: 12px; line-height: 1.4; }
+.sol-ultima-gestion.vacia { cursor: default; border-left-color: #cbd5e1; }
+.sol-ultima-gestion.vacia:hover { transform: none; box-shadow: none; }
+.sol-ultima-gestion.vacia strong { color: #64748b; font-size: 12px; }
+.sol-ultima-gestion.vacia span { color: #94a3b8; font-size: 11px; }
+
+.sol-acciones {
+    gap: 7px;
+    padding-top: 2px;
+}
+
+@media (max-width: 900px) and (min-width: 769px) {
+    .sol-semaforo-switch-text { display: none; }
+}
