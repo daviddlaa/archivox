@@ -2116,3 +2116,251 @@ body {
 @media (max-width: 900px) {
     .completadas-lista { grid-template-columns: 1fr; }
 }
+
+/* ===== D1 COMPACT — Header KPI + panel operativo denso ===== */
+.page-header-campana {
+    margin-bottom: 14px;
+    padding: 14px 18px;
+    align-items: flex-start;
+}
+
+.page-header-campana .page-header-left #gestion-nombre {
+    font-size: 22px;
+}
+
+.header-kpi-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    margin-top: 8px;
+    max-width: 560px;
+}
+
+.header-kpi-strip[hidden] {
+    display: none !important;
+}
+
+.header-kpi-strip #avance-porcentaje {
+    color: #312e81;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+
+.header-kpi-strip #avance-resumen,
+.header-kpi-strip #avance-restante {
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.header-kpi-strip .kpi-dot {
+    color: #cbd5e1;
+    font-weight: 700;
+}
+
+.header-avance-track {
+    flex: 1 1 100%;
+    height: 5px;
+    margin-top: 2px;
+    overflow: hidden;
+    background: #e7e9f4;
+    border-radius: 999px;
+}
+
+.header-avance-track span {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #8b83f6);
+    border-radius: inherit;
+    transition: width .45s cubic-bezier(.22, 1, .36, 1);
+}
+
+.header-pausa-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.header-pausa-badge[hidden] {
+    display: none !important;
+}
+
+.campana-more {
+    position: relative;
+}
+
+.campana-more[hidden] {
+    display: none !important;
+}
+
+.campana-more-btn {
+    min-width: 40px;
+    justify-content: center;
+    font-size: 18px;
+    line-height: 1;
+    letter-spacing: 1px;
+}
+
+.campana-more-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 40;
+    min-width: 220px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+}
+
+.campana-more-menu[hidden] {
+    display: none !important;
+}
+
+.campana-more-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #334155;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.campana-more-item:hover {
+    background: #f1f5f9;
+}
+
+.progreso-panel-compact {
+    padding: 10px 12px;
+    margin-bottom: 12px;
+}
+
+.siguiente-accion-compact {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 10px;
+    padding: 8px 12px;
+    min-height: 0;
+    background: #f5f3ff;
+    border: 1px solid #e5e1ff;
+    border-radius: 10px;
+}
+
+.siguiente-accion-compact .siguiente-label {
+    flex: 0 0 auto;
+    margin: 0;
+    color: #6366f1;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.siguiente-accion-compact strong {
+    flex: 1 1 auto;
+    margin: 0;
+    color: #3730a3;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.siguiente-accion-compact .siguiente-accion-btn {
+    margin-left: 0;
+    padding: 6px 10px;
+    font-size: 11px;
+}
+
+.recomendaciones-panel-compact {
+    margin: 0 0 10px;
+    padding: 8px 12px;
+}
+
+.recomendaciones-panel-compact .recomendaciones-contenido {
+    margin-top: 8px;
+}
+
+.recomendaciones-panel-compact .recomendacion-principal strong {
+    font-size: 12px;
+}
+
+.recomendaciones-panel-compact .recomendacion-principal span {
+    font-size: 11px;
+}
+
+.buenas-practicas-details {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #eef0f4;
+}
+
+.buenas-practicas-details summary {
+    cursor: pointer;
+    color: #6366f1;
+    font-size: 11px;
+    font-weight: 700;
+    list-style: none;
+}
+
+.buenas-practicas-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.buenas-practicas-details .buenas-practicas {
+    margin-top: 8px;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.semaforo-barra-dense {
+    gap: 8px;
+}
+
+.semaforo-barra-dense .semaforo-panel-card {
+    gap: 4px;
+    min-height: 64px;
+    padding: 10px 8px 9px;
+    border-radius: 10px;
+}
+
+.semaforo-barra-dense .semaforo-seg-count {
+    font-size: 24px;
+}
+
+.semaforo-barra-dense .semaforo-panel-label {
+    font-size: 10px;
+    line-height: 1.2;
+}
+
+.semaforo-barra-dense + .semaforo-meta .semaforo-clear {
+    margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+    .siguiente-accion-compact {
+        flex-wrap: wrap;
+    }
+    .siguiente-accion-compact .siguiente-accion-btn {
+        margin-left: auto;
+    }
+}

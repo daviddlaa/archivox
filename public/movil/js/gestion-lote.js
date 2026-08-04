@@ -175,19 +175,25 @@ async function cargarDatosGestionMovil() {
         if (titulo) titulo.textContent = datosGestion.nombre || 'Gestión #' + gestionId;
 
         var panel = document.getElementById('panel-progreso');
-        if (panel) panel.style.display = 'block';
+        if (panel) panel.style.display = 'none';
         var filtros = document.getElementById('filtros-row');
         if (filtros) filtros.style.display = 'block';
         var semaforoPanel = document.getElementById('semaforo-mobile');
         if (semaforoPanel) semaforoPanel.style.display = 'block';
-        
-        // Mostrar botón de exportar Excel
+
+        var kpiMobile = document.getElementById('header-kpi-mobile');
+        if (kpiMobile) kpiMobile.hidden = false;
+
+        var recoChipRow = document.getElementById('reco-chip-row');
+        if (recoChipRow) recoChipRow.style.display = 'flex';
+
+        var recoPanel = document.getElementById('recomendaciones-mobile');
+        if (recoPanel) recoPanel.hidden = true;
+
         var containerExportar = document.getElementById('exportar-excel-container');
-        if (containerExportar) containerExportar.style.display = 'block';
-        
-        // Mostrar botón de agregar solicitudes
+        if (containerExportar) containerExportar.style.display = 'none';
         var containerAgregar = document.getElementById('agregar-solicitudes-container');
-        if (containerAgregar) containerAgregar.style.display = 'block';
+        if (containerAgregar) containerAgregar.style.display = 'none';
 
         solicitudes = datosGestion.solicitudes || [];
         console.log('[movil-cargarDatos] Solicitudes:', solicitudes.length);
@@ -224,9 +230,9 @@ function actualizarProgreso() {
     var porcentaje = total > 0 ? Math.round((completadas / total) * 100) : 0;
 
     var elPct = document.getElementById('progreso-porcentaje'); if (elPct) elPct.textContent = porcentaje + '%';
-    var resumen = document.getElementById('avance-mobile-resumen'); if (resumen) resumen.textContent = completadas + ' de ' + total + ' solicitudes completadas';
+    var resumen = document.getElementById('avance-mobile-resumen'); if (resumen) resumen.textContent = completadas + '/' + total;
     var restante = document.getElementById('avance-mobile-restante');
-    if (restante) restante.textContent = pendientes > 0 ? 'Faltan solamente ' + pendientes + ' solicitud' + (pendientes === 1 ? '' : 'es') : (total > 0 ? 'Campaña completada' : 'Aún no hay solicitudes en esta campaña');
+    if (restante) restante.textContent = pendientes > 0 ? pendientes + ' pend.' : (total > 0 ? 'Completada' : 'Sin sol.');
     var barra = document.getElementById('barra-progreso');
     if (barra) {
         barra.style.width = porcentaje + '%';
@@ -275,9 +281,12 @@ function actualizarActividadMovil() {
     var texto = document.getElementById('ultima-actividad-mobile');
     var detalle = document.getElementById('actividad-mobile-detalle');
     var bloque = document.getElementById('actividad-mobile');
+    var pausa = document.getElementById('header-pausa-mobile');
+    var enPausa = !!ultima && (Date.now() - ultima.timestamp) > 8 * 60 * 60 * 1000;
     if (texto) texto.textContent = ultima ? formatearTiempoRelativoMovil(ultima.timestamp) : 'Sin actividad registrada';
     if (detalle) detalle.textContent = ultima ? ultima.tipo + ' registrada en la campaña' : 'Cuando registres una gestión, aparecerá aquí.';
-    if (bloque) bloque.classList.toggle('actividad-mobile-antigua', !!ultima && (Date.now() - ultima.timestamp) > 8 * 60 * 60 * 1000);
+    if (bloque) bloque.classList.toggle('actividad-mobile-antigua', enPausa);
+    if (pausa) pausa.hidden = !enPausa;
 }
 
 function actualizarSemaforoMovil(conteo) {
@@ -337,13 +346,27 @@ function mostrarBuenaPracticaMovil() {
 }
 
 function toggleRecomendaciones(modo) {
-    var contenido = document.getElementById(modo === 'mobile' ? 'recomendaciones-mobile-contenido' : 'recomendaciones-contenido');
+    if (modo === 'mobile') {
+        toggleRecoChipMovil();
+        return;
+    }
+    var contenido = document.getElementById('recomendaciones-contenido');
     var boton = contenido && contenido.parentElement.querySelector('button');
     if (!contenido || !boton) return;
     var oculto = contenido.hidden;
     contenido.hidden = !oculto;
     boton.textContent = oculto ? 'Ocultar' : 'Mostrar';
     boton.setAttribute('aria-expanded', String(oculto));
+}
+
+function toggleRecoChipMovil() {
+    var panel = document.getElementById('recomendaciones-mobile');
+    var chip = document.getElementById('reco-chip-btn');
+    if (!panel) return;
+    var abrir = panel.hidden;
+    panel.hidden = !abrir;
+    if (chip) chip.setAttribute('aria-expanded', String(abrir));
+    try { localStorage.setItem('campanas_reco_open_mobile', abrir ? '1' : '0'); } catch (e) {}
 }
 
 function setFiltroSemaforoMovil(valor) {
@@ -359,14 +382,15 @@ function actualizarSiguienteAccionMovilTexto(total) {
     if (!bloque || !texto || !boton) return;
     var conteo = obtenerConteoSemaforoMovil();
     var prioridad = null;
-    if (conteo.amarillo > 0) prioridad = { filtro: 'amarillo', texto: 'Gestiona primero las ' + conteo.amarillo + ' solicitudes amarillas.' };
-    else if (conteo.sin_clasificar > 0) prioridad = { filtro: 'sin_clasificar', texto: 'Clasifica las ' + conteo.sin_clasificar + ' solicitudes pendientes de revisión.' };
-    else if (conteo.rojo > 0) prioridad = { filtro: 'rojo', texto: 'Tienes ' + conteo.rojo + ' solicitud' + (conteo.rojo === 1 ? '' : 'es') + ' en espera. Respeta el tiempo antes de volver a contactar.' };
-    else if (total > 0 && (solicitudes || []).some(function(sol) { return sol.tipo_gestion !== 'Completada' && (!sol.gestion_id || !sol.tipo_gestion || sol.tipo_gestion === 'Pendiente'); })) prioridad = { filtro: null, texto: 'Elige una solicitud pendiente y registra la siguiente gestión.' };
+    if (conteo.amarillo > 0) prioridad = { filtro: 'amarillo', texto: 'Seguimiento (' + conteo.amarillo + ')' };
+    else if (conteo.sin_clasificar > 0) prioridad = { filtro: 'sin_clasificar', texto: 'Clasificar (' + conteo.sin_clasificar + ')' };
+    else if (conteo.rojo > 0) prioridad = { filtro: 'rojo', texto: 'En espera (' + conteo.rojo + ')' };
+    else if (total > 0 && (solicitudes || []).some(function(sol) { return sol.tipo_gestion !== 'Completada' && (!sol.gestion_id || !sol.tipo_gestion || sol.tipo_gestion === 'Pendiente'); })) prioridad = { filtro: null, texto: 'Registrar gestión' };
     var activas = (solicitudes || []).filter(function(sol) { return sol.tipo_gestion !== 'Completada'; });
-    texto.textContent = prioridad ? prioridad.texto : (total > 0 && activas.length === 0 ? 'La campaña está completada. Todas las solicitudes terminaron su ciclo.' : (total > 0 ? 'La campaña está al día.' : 'Esta campaña aún no tiene solicitudes.'));
+    texto.textContent = prioridad ? prioridad.texto : (total > 0 && activas.length === 0 ? 'Completada' : (total > 0 ? 'Al día' : 'Sin solicitudes'));
     boton.dataset.semaforo = prioridad && prioridad.filtro ? prioridad.filtro : '';
     boton.style.display = prioridad && prioridad.filtro ? 'inline-flex' : 'none';
+    boton.textContent = 'Ver';
     bloque.style.display = 'flex';
 }
 
@@ -1468,6 +1492,14 @@ function abrirBottomSheetCampana(id, nombre, total, gestionadas, descripcion, fe
         itemsHTML += '</button>';
     }
     
+    // Agregar solicitudes (si la campaña activa es esta)
+    if (gestionId && String(gestionId) === String(id) && typeof abrirModalAgregarSolicitudesMovil === 'function') {
+        itemsHTML += '<button class="campaña-bs-item" onclick="cerrarBottomSheetCampana(); abrirModalAgregarSolicitudesMovil()">';
+        itemsHTML += '  <span class="campaña-bs-item-icon">➕</span>';
+        itemsHTML += '  <span class="campaña-bs-item-label">Agregar solicitudes</span>';
+        itemsHTML += '</button>';
+    }
+
     // Exportar Excel (siempre visible) — sin setTimeout
     itemsHTML += '<button class="campaña-bs-item" onclick="cerrarBottomSheetCampana(); if(typeof exportarExcelGestionLote === \'function\') exportarExcelGestionLote()">';
     itemsHTML += '  <span class="campaña-bs-item-icon">📥</span>';

@@ -43,6 +43,7 @@ var CampanasPopover = {
         var btn = document.getElementById('btn-campañas');
         if (!popover || !selector) return;
 
+        CampanaMoreMenu.close();
         popover.hidden = false;
         selector.classList.add('open');
         if (btn) btn.setAttribute('aria-expanded', 'true');
@@ -67,15 +68,58 @@ var CampanasPopover = {
     }
 };
 
-document.addEventListener('click', function(e) {
-    if (!CampanasPopover.isOpen) return;
-    var selector = document.getElementById('campañas-selector');
-    if (selector && !selector.contains(e.target)) {
+var CampanaMoreMenu = {
+    isOpen: false,
+
+    toggle: function(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        if (this.isOpen) this.close();
+        else this.open();
+    },
+
+    open: function() {
+        var menu = document.getElementById('campana-more-menu');
+        var btn = document.getElementById('btn-campana-more');
+        var wrap = document.getElementById('campana-more');
+        if (!menu || !wrap || wrap.hidden) return;
         CampanasPopover.close();
+        menu.hidden = false;
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+        this.isOpen = true;
+    },
+
+    close: function() {
+        var menu = document.getElementById('campana-more-menu');
+        var btn = document.getElementById('btn-campana-more');
+        if (!menu) return;
+        menu.hidden = true;
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+        this.isOpen = false;
+    }
+};
+
+document.addEventListener('click', function(e) {
+    if (CampanasPopover.isOpen) {
+        var selector = document.getElementById('campañas-selector');
+        if (selector && !selector.contains(e.target)) {
+            CampanasPopover.close();
+        }
+    }
+    if (CampanaMoreMenu.isOpen) {
+        var more = document.getElementById('campana-more');
+        if (more && !more.contains(e.target)) {
+            CampanaMoreMenu.close();
+        }
     }
 });
 
 document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && CampanaMoreMenu.isOpen) {
+        CampanaMoreMenu.close();
+    }
     if (e.key === 'Escape' && CampanasPopover.isOpen) {
         CampanasPopover.close();
     }
@@ -290,14 +334,14 @@ async function cargarDatosGestion() {
         var filtrosRow = document.getElementById('filtros-row');
         if (panelProgreso) panelProgreso.style.display = 'block';
         if (filtrosRow) filtrosRow.style.display = 'flex';
-        
-        // Mostrar botón de exportar Excel
-        var btnExportar = document.getElementById('btn-exportar-excel');
-        if (btnExportar) btnExportar.style.display = 'inline-block';
-        
-        // Mostrar botón de agregar solicitudes
-        var btnAgregarContainer = document.getElementById('agregar-solicitudes-container');
-        if (btnAgregarContainer) btnAgregarContainer.style.display = 'block';
+
+        var kpiStrip = document.getElementById('header-kpi-strip');
+        if (kpiStrip) kpiStrip.hidden = false;
+
+        var campanaMore = document.getElementById('campana-more');
+        if (campanaMore) campanaMore.hidden = false;
+
+        initRecomendacionesCollapsed('desktop');
         
         solicitudes = datosGestion.solicitudes || [];
         console.log('[cargarDatosGestion] Solicitudes recibidas:', solicitudes.length);
@@ -480,6 +524,21 @@ function mostrarBuenaPracticaDesktop() {
     container.innerHTML = '<span class="buena-practica-item"><b>' + practica.icon + '</b><span><strong>' + practica.title + '</strong><small>' + practica.text + '</small></span></span>';
 }
 
+function recoStorageKey(modo) {
+    return modo === 'mobile' ? 'campanas_reco_open_mobile' : 'campanas_reco_open_desktop';
+}
+
+function initRecomendacionesCollapsed(modo) {
+    var contenido = document.getElementById(modo === 'mobile' ? 'recomendaciones-mobile-contenido' : 'recomendaciones-contenido');
+    var boton = document.querySelector(modo === 'mobile' ? '.recomendaciones-mobile-header button' : '.recomendaciones-header button');
+    if (!contenido || !boton) return;
+    var open = false;
+    try { open = localStorage.getItem(recoStorageKey(modo)) === '1'; } catch (e) {}
+    contenido.hidden = !open;
+    boton.textContent = open ? 'Ocultar' : 'Mostrar';
+    boton.setAttribute('aria-expanded', String(open));
+}
+
 function toggleRecomendaciones(modo) {
     var contenido = document.getElementById(modo === 'mobile' ? 'recomendaciones-mobile-contenido' : 'recomendaciones-contenido');
     var boton = document.querySelector(modo === 'mobile' ? '.recomendaciones-mobile-header button' : '.recomendaciones-header button');
@@ -488,6 +547,7 @@ function toggleRecomendaciones(modo) {
     contenido.hidden = !oculto;
     boton.textContent = oculto ? 'Ocultar' : 'Mostrar';
     boton.setAttribute('aria-expanded', String(oculto));
+    try { localStorage.setItem(recoStorageKey(modo), oculto ? '1' : '0'); } catch (e) {}
 }
 
 function formatearTiempoRelativo(fecha) {
@@ -513,11 +573,11 @@ function actualizarResumenCampana(total, gestionadas, porcentaje) {
     var pendiente = Math.max(total - completadas, 0);
 
     if (porcentajeEl) porcentajeEl.textContent = porcentaje + '%';
-    if (resumenEl) resumenEl.textContent = completadas + ' de ' + total + ' solicitudes completadas';
+    if (resumenEl) resumenEl.textContent = completadas + '/' + total;
     if (restanteEl) {
         restanteEl.textContent = pendiente > 0
-            ? 'Faltan solamente ' + pendiente + ' solicitud' + (pendiente === 1 ? '' : 'es')
-            : (total > 0 ? 'Campaña completada' : 'Aún no hay solicitudes en esta campaña');
+            ? pendiente + ' pendiente' + (pendiente === 1 ? '' : 's')
+            : (total > 0 ? 'Completada' : 'Sin solicitudes');
     }
     if (fillEl) fillEl.style.width = porcentaje + '%';
     if (trackEl) trackEl.setAttribute('aria-valuenow', porcentaje);
@@ -534,9 +594,12 @@ function actualizarResumenCampana(total, gestionadas, porcentaje) {
     var ultimaEl = document.getElementById('ultima-actividad');
     var detalleEl = document.getElementById('actividad-detalle');
     var actividadEl = document.getElementById('actividad-campana');
+    var pausaBadge = document.getElementById('header-pausa-badge');
+    var enPausa = !!actividad && (Date.now() - actividad.timestamp) > 8 * 60 * 60 * 1000;
     if (ultimaEl) ultimaEl.textContent = actividad ? actividad.texto : 'Sin actividad registrada';
     if (detalleEl) detalleEl.textContent = actividad ? actividad.tipo + ' registrada en la campaña' : 'Cuando registres una gestión, aparecerá aquí.';
-    if (actividadEl) actividadEl.classList.toggle('actividad-antigua', !!actividad && (Date.now() - actividad.timestamp) > 8 * 60 * 60 * 1000);
+    if (actividadEl) actividadEl.classList.toggle('actividad-antigua', enPausa);
+    if (pausaBadge) pausaBadge.hidden = !enPausa;
 }
 
 function actualizarSiguienteAccion(conteo, total) {
@@ -546,19 +609,19 @@ function actualizarSiguienteAccion(conteo, total) {
     var prioridad = null;
     var activas = (solicitudes || []).filter(function(sol) { return sol.tipo_gestion !== 'Completada'; });
     if (conteo.amarillo > 0) {
-        prioridad = { semaforo: 'amarillo', texto: 'Gestiona primero las ' + conteo.amarillo + ' solicitudes amarillas para seguir avanzando.' };
+        prioridad = { semaforo: 'amarillo', texto: 'Seguimiento (' + conteo.amarillo + ')' };
     } else if (conteo.sin_clasificar > 0) {
-        prioridad = { semaforo: 'sin_clasificar', texto: 'Clasifica las ' + conteo.sin_clasificar + ' solicitudes pendientes de revisión.' };
+        prioridad = { semaforo: 'sin_clasificar', texto: 'Clasificar (' + conteo.sin_clasificar + ')' };
     } else if (conteo.rojo > 0) {
-        prioridad = { semaforo: 'rojo', texto: 'Tienes ' + conteo.rojo + ' solicitud' + (conteo.rojo === 1 ? '' : 'es') + ' en espera. Respeta el tiempo antes de volver a contactar.' };
+        prioridad = { semaforo: 'rojo', texto: 'En espera (' + conteo.rojo + ') · no contactar' };
     } else if (total > 0 && activas.some(function(sol) {
         return !sol.gestion_id || !sol.tipo_gestion || sol.tipo_gestion === 'Pendiente';
     })) {
-        prioridad = { semaforo: null, texto: 'Elige una solicitud pendiente y registra la siguiente gestión.' };
+        prioridad = { semaforo: null, texto: 'Registrar siguiente gestión' };
     }
-    textoEl.textContent = prioridad ? prioridad.texto : (total > 0 && activas.length === 0 ? 'La campaña está completada. Todas las solicitudes terminaron su ciclo.' : (total > 0 ? 'La campaña está al día. No quedan prioridades pendientes.' : 'Esta campaña aún no tiene solicitudes.'));
+    textoEl.textContent = prioridad ? prioridad.texto : (total > 0 && activas.length === 0 ? 'Campaña completada' : (total > 0 ? 'Al día' : 'Sin solicitudes'));
     btn.style.display = prioridad && prioridad.semaforo ? 'inline-flex' : 'none';
-    btn.textContent = prioridad && prioridad.semaforo ? 'Ver prioridad' : 'Ver prioridad';
+    btn.textContent = 'Ver';
     btn.dataset.semaforo = prioridad && prioridad.semaforo ? prioridad.semaforo : '';
 }
 

@@ -16,10 +16,24 @@
 <div class="layout">
         <main class="contenido">
             <div class="container">
-                <div class="page-header">
+                <div class="page-header page-header-campana">
                     <div class="page-header-left">
                         <p class="page-kicker">🚀 Campañas</p>
                         <h1 id="gestion-nombre">Selecciona una campaña</h1>
+                        <div class="header-kpi-strip" id="header-kpi-strip" hidden aria-live="polite">
+                            <strong id="avance-porcentaje">0%</strong>
+                            <span class="kpi-dot" aria-hidden="true">·</span>
+                            <span id="avance-resumen">0 de 0</span>
+                            <span class="kpi-dot" aria-hidden="true">·</span>
+                            <span id="avance-restante">Sin solicitudes</span>
+                            <div class="avance-track header-avance-track" role="progressbar" aria-label="Progreso de la campaña" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="avance-fill"></span></div>
+                            <span class="header-pausa-badge" id="header-pausa-badge" hidden>Campaña en pausa</span>
+                        </div>
+                        <div class="actividad-campana" id="actividad-campana" hidden>
+                            <span class="actividad-label">Última actividad</span>
+                            <strong id="ultima-actividad">Sin actividad registrada</strong>
+                            <span id="actividad-detalle">Cuando registres una gestión, aparecerá aquí.</span>
+                        </div>
                     </div>
                     <div class="page-header-right">
                         <div class="campañas-selector" id="campañas-selector">
@@ -36,67 +50,61 @@
                                 </div>
                             </div>
                         </div>
-                        <button class="btn-header btn-header-success" id="btn-exportar-excel" onclick="exportarExcelGestionLote()" style="display:none">📥 Exportar Excel</button>
-                        <a href="/solicitudes" class="btn-header btn-header-secondary">← Volver a Solicitudes</a>
+                        <div class="campana-more" id="campana-more" hidden>
+                            <button type="button" class="btn-header btn-header-secondary campana-more-btn" id="btn-campana-more" onclick="CampanaMoreMenu.toggle(event)" aria-haspopup="true" aria-expanded="false" aria-controls="campana-more-menu" title="Más acciones">⋯</button>
+                            <div class="campana-more-menu" id="campana-more-menu" role="menu" hidden>
+                                <button type="button" class="campana-more-item" id="btn-exportar-excel" role="menuitem" onclick="CampanaMoreMenu.close(); exportarExcelGestionLote()">📥 Exportar Excel</button>
+                                <button type="button" class="campana-more-item" id="btn-agregar-solicitudes-menu" role="menuitem" onclick="CampanaMoreMenu.close(); abrirModalAgregarSolicitudes()">➕ Agregar solicitudes</button>
+                                <a href="/solicitudes" class="campana-more-item" role="menuitem">← Volver a Solicitudes</a>
+                            </div>
+                        </div>
+                        <div id="agregar-solicitudes-container" style="display:none" aria-hidden="true"></div>
                         <button class="notif-bell-usuario" onclick="abrirPanelNotificaciones()" title="Notificaciones">
                             🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
                         </button>
                     </div>
                 </div>
                 
-                <!-- Resumen de avance y prioridad de la campaña -->
-                <div class="progreso-panel" id="panel-progreso" style="display: none;">
-                    <div class="avance-campana" aria-live="polite">
-                        <div class="avance-campana-copy">
-                            <span class="avance-eyebrow">Avance de la campaña</span>
-                            <div class="avance-principal"><strong id="avance-porcentaje">0%</strong><span id="avance-resumen">0 de 0 solicitudes completadas</span></div>
-                            <div class="avance-track" role="progressbar" aria-label="Progreso de la campaña" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="avance-fill"></span></div>
-                            <span class="avance-restante" id="avance-restante">Aún no hay solicitudes gestionadas</span>
-                        </div>
-                        <div class="actividad-campana" id="actividad-campana">
-                            <span class="actividad-label">Última actividad</span>
-                            <strong id="ultima-actividad">Sin actividad registrada</strong>
-                            <span id="actividad-detalle">Cuando registres una gestión, aparecerá aquí.</span>
-                        </div>
+                <div class="progreso-panel progreso-panel-compact" id="panel-progreso" style="display: none;">
+                    <div class="siguiente-accion siguiente-accion-compact" id="siguiente-accion" aria-live="polite">
+                        <span class="siguiente-label">Prioridad</span>
+                        <strong id="siguiente-accion-texto">Revisa el estado de la campaña para continuar.</strong>
+                        <button type="button" id="siguiente-accion-btn" class="siguiente-accion-btn" style="display:none;" onclick="ejecutarSiguienteAccion()">Ver</button>
                     </div>
-                    <div class="siguiente-accion" id="siguiente-accion" aria-live="polite">
-                        <span class="siguiente-icon" aria-hidden="true">🎯</span>
-                        <div><span class="siguiente-label">Tu siguiente mejor acción</span><strong id="siguiente-accion-texto">Revisa el estado de la campaña para continuar.</strong></div>
-                        <button type="button" id="siguiente-accion-btn" class="siguiente-accion-btn" style="display:none;" onclick="ejecutarSiguienteAccion()">Ver prioridad</button>
-                    </div>
-                    <section class="recomendaciones-panel" id="recomendaciones-panel" aria-live="polite">
+                    <section class="recomendaciones-panel recomendaciones-panel-compact" id="recomendaciones-panel" aria-live="polite">
                         <div class="recomendaciones-header">
-                            <div><span class="recomendaciones-kicker">Asistente de productividad</span><strong>Recomendaciones</strong></div>
-                            <button type="button" class="recomendaciones-toggle" onclick="toggleRecomendaciones('desktop')" aria-expanded="true" aria-controls="recomendaciones-contenido">Ocultar</button>
+                            <div><span class="recomendaciones-kicker">Asistente</span><strong>Recomendaciones</strong></div>
+                            <button type="button" class="recomendaciones-toggle" onclick="toggleRecomendaciones('desktop')" aria-expanded="false" aria-controls="recomendaciones-contenido">Mostrar</button>
                         </div>
-                        <div id="recomendaciones-contenido" class="recomendaciones-contenido">
+                        <div id="recomendaciones-contenido" class="recomendaciones-contenido" hidden>
                             <div class="recomendacion-principal"><span class="recomendacion-icon" id="recomendacion-icon">💡</span><div><strong id="recomendacion-titulo">Registra cada gestión mientras conversas.</strong><span id="recomendacion-texto">Mantener el historial actualizado evita olvidos y facilita el seguimiento del equipo.</span></div></div>
-                            <div class="buenas-practicas" id="buenas-practicas"></div>
+                            <details class="buenas-practicas-details">
+                                <summary>Ver buenas prácticas</summary>
+                                <div class="buenas-practicas" id="buenas-practicas"></div>
+                            </details>
                         </div>
                     </section>
-                    <!-- Semáforo operativo: además de filtrar, resume la prioridad -->
-                    <div class="semaforo-barra" id="semaforo-barra" role="group" aria-label="Filtro por semáforo">
-                        <button type="button" class="semaforo-seg semaforo-panel-card semaforo-panel-sin" data-semaforo="sin_clasificar" onclick="setFiltroSemaforo('sin_clasificar')" title="Sin clasificar">
+                    <div class="semaforo-barra semaforo-barra-dense" id="semaforo-barra" role="group" aria-label="Filtro por semáforo">
+                        <button type="button" class="semaforo-seg semaforo-panel-card semaforo-panel-sin" data-semaforo="sin_clasificar" onclick="setFiltroSemaforo('sin_clasificar')" title="Sin clasificar — por revisar">
                             <span class="semaforo-seg-count" id="count-sin_clasificar">0</span>
-                            <span class="semaforo-panel-label">Sin clasificar</span><small>por revisar</small>
+                            <span class="semaforo-panel-label">Sin clasificar</span>
                         </button>
-                        <button type="button" class="semaforo-seg semaforo-panel-card semaforo-panel-verde" data-semaforo="verde" onclick="setFiltroSemaforo('verde')" title="Verde">
+                        <button type="button" class="semaforo-seg semaforo-panel-card semaforo-panel-verde" data-semaforo="verde" onclick="setFiltroSemaforo('verde')" title="Ya encaminadas — en buen curso">
                             <span class="semaforo-seg-count" id="count-verde">0</span>
-                            <span class="semaforo-panel-label">Ya encaminadas</span><small>en buen curso</small>
+                            <span class="semaforo-panel-label">Encaminadas</span>
                         </button>
-                        <button type="button" class="semaforo-seg semaforo-panel-card semaforo-panel-amarillo" data-semaforo="amarillo" onclick="setFiltroSemaforo('amarillo')" title="Amarillo">
+                        <button type="button" class="semaforo-seg semaforo-panel-card semaforo-panel-amarillo" data-semaforo="amarillo" onclick="setFiltroSemaforo('amarillo')" title="Necesitan seguimiento">
                             <span class="semaforo-seg-count" id="count-amarillo">0</span>
-                            <span class="semaforo-panel-label">Necesitan seguimiento</span><small>prioridad media</small>
+                            <span class="semaforo-panel-label">Seguimiento</span>
                         </button>
-                        <button type="button" class="semaforo-seg semaforo-panel-card semaforo-panel-rojo" data-semaforo="rojo" onclick="setFiltroSemaforo('rojo')" title="Rojo">
+                        <button type="button" class="semaforo-seg semaforo-panel-card semaforo-panel-rojo" data-semaforo="rojo" onclick="setFiltroSemaforo('rojo')" title="En espera — no contactar ahora">
                             <span class="semaforo-seg-count" id="count-rojo">0</span>
-                            <span class="semaforo-panel-label">En espera</span><small>no contactar ahora</small>
+                            <span class="semaforo-panel-label">En espera</span>
                         </button>
                     </div>
                     <div class="semaforo-meta">
                         <button type="button" class="semaforo-clear" id="btn-semaforo-todos" onclick="setFiltroSemaforo(null)" style="display:none;">Ver todas</button>
                     </div>
-                    <!-- Contadores legacy ocultos (actualizados por JS existente) -->
                     <span id="total-solicitudes" style="display:none">0</span>
                     <span id="gestionadas" style="display:none">0</span>
                     <span id="pendientes" style="display:none">0</span>
@@ -104,7 +112,6 @@
                     <div id="barra-progreso" style="display:none;width:0%"></div>
                 </div>
 
-                <!-- Filtros y Búsqueda -->
                 <div class="filtros-row" id="filtros-row" style="display: none;">
                     <input type="text" id="busqueda" placeholder="🔍 Buscar por id, cédula, nombre o teléfono...">
                     <select id="filtro-estado">
@@ -117,12 +124,8 @@
                         <option value="Cita">Cita</option>
                         <option value="Completada">Completada</option>
                     </select>
-                    <div id="agregar-solicitudes-container" style="display:none;">
-                        <button type="button" class="btn-agregar-solicitudes" onclick="abrirModalAgregarSolicitudes()">➕ Agregar Solicitudes</button>
-                    </div>
                 </div>
 
-                <!-- Lista de Solicitudes -->
                 <div class="lista-solicitudes" id="lista-solicitudes">
                     <div class="empty">
                         <p>Selecciona una campaña para ver las solicitudes.</p>
@@ -132,7 +135,6 @@
         </main>
     </div>
 
-    <!-- SheetJS para exportar Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/js/deep-link-router.js"></script>
     <script src="/js/notificaciones-dashboard.js"></script>
