@@ -224,3 +224,14 @@ PUT /api/gestiones-maestro/:gestionId/solicitudes/:solicitudId/destacar
 ```
 
 La ruta general `PUT /api/excel/solicitudes/:id/destacar` mantiene la restricción de propietario para la pantalla global de Solicitudes. La ruta contextual permite la acción a usuarios con acceso operativo a la campaña, después de validar que la solicitud pertenezca a ella.
+
+## Cierre del ciclo de campaña
+
+Una solicitud cuyo último `tipo_gestion` es `Completada` deja de formar parte del trabajo activo:
+
+- Se excluye de los conteos del semáforo.
+- Se muestra en la sección `Solicitudes completadas`.
+- Conserva su última gestión, fecha e historial.
+- No muestra selector de semáforo.
+
+La campaña solo se considera completada cuando todas sus solicitudes tienen estado `Completada`. Si posteriormente se registra una gestión distinta, la solicitud vuelve al trabajo activo.

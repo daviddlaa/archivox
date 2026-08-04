@@ -179,7 +179,8 @@ async function cargarListaCampanas() {
         
         for (var i = 0; i < campañas.length; i++) {
             var g = campañas[i];
-            var pct = g.total_solicitudes > 0 ? Math.round((g.gestionadas / g.total_solicitudes) * 100) : 0;
+            var completadas = parseInt(g.completadas || 0, 10);
+            var pct = g.total_solicitudes > 0 ? Math.round((completadas / g.total_solicitudes) * 100) : 0;
             var isActive = gestionId && String(g.id) === String(gestionId) ? 'active' : '';
             
             html += '<div class="campaña-card ' + isActive + '" data-campaña-id="' + g.id + '" onclick="seleccionarCampaña(' + g.id + ')">';
@@ -198,7 +199,7 @@ async function cargarListaCampanas() {
             
             html += '<div class="campaña-stats">';
             html += '<span>📄 ' + (g.total_solicitudes || 0) + '</span>';
-            html += '<span>✓ ' + (g.gestionadas || 0) + '</span>';
+            html += '<span>✓ ' + completadas + ' completadas</span>';
             html += '<span>📊 ' + pct + '%</span>';
             html += '</div>';
             
@@ -347,27 +348,20 @@ function actualizarEstadoCampanaTexto() {
     if (!estadoEl || !datosGestion) return;
 
     var total = datosGestion.total_solicitudes || 0;
-    var gestionadas = 0;
-
-    (solicitudes || []).forEach(function(sol) {
-        if (sol.gestion_id && sol.tipo_gestion && sol.tipo_gestion !== 'Pendiente') {
-            gestionadas++;
-        }
-    });
-
-    var pendientes = Math.max(total - gestionadas, 0);
-    var porcentaje = total > 0 ? Math.round((gestionadas / total) * 100) : 0;
+    var completadas = (solicitudes || []).filter(function(sol) { return sol.tipo_gestion === 'Completada'; }).length;
+    var pendientes = Math.max(total - completadas, 0);
+    var porcentaje = total > 0 ? Math.round((completadas / total) * 100) : 0;
     var texto = '';
     var clave = 'vacia';
 
     if (total === 0) {
         texto = 'Sin solicitudes';
         clave = 'vacia';
-    } else if (porcentaje >= 100) {
-        texto = 'Completada · ' + gestionadas + '/' + total + ' gestionadas';
+    } else if (completadas >= total) {
+        texto = 'Completada · ' + completadas + '/' + total + ' solicitudes';
         clave = 'completada';
-    } else if (porcentaje === 0) {
-        texto = 'Sin iniciar · ' + total + ' solicitud' + (total === 1 ? '' : 'es');
+    } else if (completadas === 0) {
+        texto = 'En curso · 0/' + total + ' completadas';
         clave = 'sin-iniciar';
     } else if (porcentaje >= 75) {
         texto = 'Casi lista · ' + porcentaje + '% · ' + pendientes + ' pendiente' + (pendientes === 1 ? '' : 's');
@@ -453,10 +447,11 @@ function actualizarResumenCampana(total, gestionadas, porcentaje) {
     var restanteEl = document.getElementById('avance-restante');
     var fillEl = document.getElementById('avance-fill');
     var trackEl = document.querySelector('.avance-track');
-    var pendiente = Math.max(total - gestionadas, 0);
+    var completadas = (todasLasSolicitudes || []).filter(function(sol) { return sol.tipo_gestion === 'Completada'; }).length;
+    var pendiente = Math.max(total - completadas, 0);
 
     if (porcentajeEl) porcentajeEl.textContent = porcentaje + '%';
-    if (resumenEl) resumenEl.textContent = gestionadas + ' de ' + total + ' solicitudes gestionadas';
+    if (resumenEl) resumenEl.textContent = completadas + ' de ' + total + ' solicitudes completadas';
     if (restanteEl) {
         restanteEl.textContent = pendiente > 0
             ? 'Faltan solamente ' + pendiente + ' solicitud' + (pendiente === 1 ? '' : 'es')
@@ -487,18 +482,19 @@ function actualizarSiguienteAccion(conteo, total) {
     var btn = document.getElementById('siguiente-accion-btn');
     if (!textoEl || !btn) return;
     var prioridad = null;
+    var activas = (solicitudes || []).filter(function(sol) { return sol.tipo_gestion !== 'Completada'; });
     if (conteo.amarillo > 0) {
         prioridad = { semaforo: 'amarillo', texto: 'Gestiona primero las ' + conteo.amarillo + ' solicitudes amarillas para seguir avanzando.' };
     } else if (conteo.sin_clasificar > 0) {
         prioridad = { semaforo: 'sin_clasificar', texto: 'Clasifica las ' + conteo.sin_clasificar + ' solicitudes pendientes de revisión.' };
     } else if (conteo.rojo > 0) {
         prioridad = { semaforo: 'rojo', texto: 'Tienes ' + conteo.rojo + ' solicitud' + (conteo.rojo === 1 ? '' : 'es') + ' en espera. Respeta el tiempo antes de volver a contactar.' };
-    } else if (total > 0 && (solicitudes || []).some(function(sol) {
+    } else if (total > 0 && activas.some(function(sol) {
         return !sol.gestion_id || !sol.tipo_gestion || sol.tipo_gestion === 'Pendiente';
     })) {
         prioridad = { semaforo: null, texto: 'Elige una solicitud pendiente y registra la siguiente gestión.' };
     }
-    textoEl.textContent = prioridad ? prioridad.texto : (total > 0 ? 'La campaña está al día. No quedan prioridades pendientes.' : 'Esta campaña aún no tiene solicitudes.');
+    textoEl.textContent = prioridad ? prioridad.texto : (total > 0 && activas.length === 0 ? 'La campaña está completada. Todas las solicitudes terminaron su ciclo.' : (total > 0 ? 'La campaña está al día. No quedan prioridades pendientes.' : 'Esta campaña aún no tiene solicitudes.'));
     btn.style.display = prioridad && prioridad.semaforo ? 'inline-flex' : 'none';
     btn.textContent = prioridad && prioridad.semaforo ? 'Ver prioridad' : 'Ver prioridad';
     btn.dataset.semaforo = prioridad && prioridad.semaforo ? prioridad.semaforo : '';
@@ -661,16 +657,18 @@ function actualizarProgreso() {
     
     var total = datosGestion.total_solicitudes || 0;
     var gestionadas = 0;
+    var completadas = 0;
     
     // Contar gestionadas (tipo_gestion — sin cambios)
     solicitudes.forEach(function(sol) {
         if (sol.gestion_id && sol.tipo_gestion && sol.tipo_gestion !== 'Pendiente') {
             gestionadas++;
         }
+        if (sol.tipo_gestion === 'Completada') completadas++;
     });
     
-    var pendientes = total - gestionadas;
-    var porcentaje = total > 0 ? Math.round((gestionadas / total) * 100) : 0;
+    var pendientes = Math.max(total - completadas, 0);
+    var porcentaje = total > 0 ? Math.round((completadas / total) * 100) : 0;
     
     var elTotal = document.getElementById('total-solicitudes');
     var elGest = document.getElementById('gestionadas');
@@ -721,28 +719,35 @@ function renderizarSolicitudes(lista) {
 
         // Filtro por semáforo operativo
         if (filtroSemaforo) {
+            if (sol.tipo_gestion === 'Completada') return false;
             if (normalizarSemaforo(sol.semaforo) !== filtroSemaforo) return false;
         }
         
         return true;
     });
     
+    var completadas = filtradas.filter(function(sol) { return sol.tipo_gestion === 'Completada'; });
+    var activas = filtradas.filter(function(sol) { return sol.tipo_gestion !== 'Completada'; });
+
     if (filtradas.length === 0) {
         container.innerHTML = '<div class="empty">No hay solicitudes que coincidan con los filtros</div>';
         return;
     }
     
     // Ordenar: destacadas primero (🔥 al inicio)
-    filtradas.sort(function(a, b) {
+    activas.sort(function(a, b) {
         if (a.destacado == 1 && b.destacado != 1) return -1;
         if (a.destacado != 1 && b.destacado == 1) return 1;
         return 0;
     });
+    completadas.sort(function(a, b) {
+        return new Date(b.fecha_gestion || 0).getTime() - new Date(a.fecha_gestion || 0).getTime();
+    });
     
-    var html = '';
+    var html = activas.length ? '<section class="solicitudes-activas"><div class="solicitudes-seccion-heading"><div><span class="solicitudes-seccion-kicker">Trabajo activo</span><strong>Solicitudes por gestionar</strong></div><span class="solicitudes-seccion-count">' + activas.length + '</span></div>' : '';
     
-    for (var i = 0; i < filtradas.length; i++) {
-        var sol = filtradas[i];
+    for (var i = 0; i < activas.length; i++) {
+        var sol = activas[i];
         var estado = sol.tipo_gestion || 'Pendiente';
         var observacion = sol.gestion_obs || '';
         var semaforo = normalizarSemaforo(sol.semaforo);
@@ -819,7 +824,36 @@ function renderizarSolicitudes(lista) {
         html += '</div>';
     }
     
+    if (activas.length) html += '</section>';
+    if (completadas.length) {
+        var completadasAbiertas = activas.length === 0;
+        html += '<section class="solicitudes-completadas"><button type="button" class="completadas-heading' + (completadasAbiertas ? ' open' : '') + '" onclick="toggleCompletadasDesktop(this)" aria-expanded="' + completadasAbiertas + '"><span><strong>✓ Solicitudes completadas</strong><small>El ciclo de estas solicitudes terminó</small></span><span class="completadas-heading-right"><b>' + completadas.length + '</b><span class="completadas-chevron">⌄</span></span></button><div class="completadas-lista"' + (completadasAbiertas ? '' : ' hidden') + '>';
+        completadas.forEach(function(solCompletada) { html += renderizarTarjetaCompletada(solCompletada); });
+        html += '</div></section>';
+    }
     container.innerHTML = html;
+}
+
+function renderizarTarjetaCompletada(sol) {
+    var observacion = escaparParaHTML(sol.gestion_obs || 'Sin observación registrada');
+    var fecha = formatearTiempoRelativo(sol.fecha_gestion) || 'Fecha no disponible';
+    var nombre = escaparParaHTML(sol.nombre || 'Sin nombre');
+    return '<article class="sol-card sol-card-completada" data-id="' + sol.id_solicitud + '">' +
+        '<div class="completada-card-top"><span class="completada-badge">✓ Completada</span><span>' + fecha + '</span></div>' +
+        '<div class="sol-nombre-row"><div class="sol-nombre">' + nombre + '</div><span class="sol-segmento">' + (sol.segmento || 'Sin segmento') + '</span></div>' +
+        '<div class="sol-datos"><span>🆔 ' + (sol.cedula || '—') + '</span><span>📱 ' + (sol.celular || '—') + '</span></div>' +
+        '<div class="completada-card-gestion"><strong>' + (sol.tipo_gestion || 'Completada') + '</strong><span>' + observacion + '</span></div>' +
+        '<div class="sol-acciones"><button class="btn-accion tertiary" onclick="verGestion(\'' + sol.id_solicitud + '\')">📋 Ver gestión</button><button class="btn-accion tertiary" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button><button class="btn-accion btn-quitar-solicitud" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar</button></div>' +
+        '</article>';
+}
+
+function toggleCompletadasDesktop(button) {
+    var lista = button && button.nextElementSibling;
+    if (!lista) return;
+    var abierta = !lista.hidden;
+    lista.hidden = abierta;
+    button.setAttribute('aria-expanded', String(!abierta));
+    button.classList.toggle('open', !abierta);
 }
 
 function escaparParaAtributo(texto) {

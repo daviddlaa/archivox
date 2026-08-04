@@ -162,11 +162,17 @@ async function obtenerConteoSemaforo(gestionMaestroId) {
     var conteo = conteoSemaforoVacio();
     try {
         var result = await pool.query(
-            `SELECT semaforo, COUNT(*) as count
-             FROM gestiones_maestro_solicitudes
-             WHERE gestion_maestro_id = ?
-             GROUP BY semaforo`,
-            [gestionMaestroId]
+            `SELECT gms.semaforo, COUNT(*) as count
+             FROM gestiones_maestro_solicitudes gms
+             LEFT JOIN gestiones g ON g.id = (
+                 SELECT MAX(g2.id) FROM gestiones g2
+                 WHERE g2.solicitud_id = gms.id_solicitud
+                   AND (g2.gestion_maestro_id = ? OR g2.gestion_maestro_id IS NULL)
+             )
+             WHERE gms.gestion_maestro_id = ?
+               AND COALESCE(g.tipo_gestion, 'Pendiente') <> 'Completada'
+             GROUP BY gms.semaforo`,
+            [gestionMaestroId, gestionMaestroId]
         );
         var rows = getRows(result);
         for (var i = 0; i < rows.length; i++) {
@@ -190,7 +196,16 @@ async function getGestionesMaestro(req, res) {
         }
         
         const access = buildGestionAccessWhere(req, null);
-        const sql = 'SELECT DISTINCT gm.* FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access) + ' ORDER BY gm.created_at DESC';
+        const sql = `SELECT DISTINCT gm.*,
+            (SELECT COUNT(*) FROM gestiones g
+             WHERE g.gestion_maestro_id = gm.id
+               AND g.tipo_gestion = 'Completada'
+               AND g.id = (
+                   SELECT MAX(g2.id) FROM gestiones g2
+                   WHERE g2.solicitud_id = g.solicitud_id
+                     AND (g2.gestion_maestro_id = gm.id OR g2.gestion_maestro_id IS NULL)
+               )) AS completadas
+            FROM gestiones_maestro gm WHERE ` + buildGestionSQL(access) + ` ORDER BY gm.created_at DESC`;
         const result = await pool.query(sql, access.params);
         
         res.json(getRows(result));
@@ -235,6 +250,7 @@ async function getGestionMaestroById(req, res) {
             return res.json({
                 ...gestion,
                 solicitudes: [],
+                completadas: 0,
                 semaforo_conteos: conteoSemaforoVacio()
             });
         }
@@ -282,6 +298,7 @@ async function getGestionMaestroById(req, res) {
         res.json({
             ...gestion,
             solicitudes: Solicitudes,
+            completadas: Solicitudes.filter(function(s) { return s.tipo_gestion === 'Completada'; }).length,
             semaforo_conteos: semaforo_conteos
         });
     } catch (error) {
