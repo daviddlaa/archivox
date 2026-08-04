@@ -134,6 +134,41 @@ function igualarAlturaWidgetSlides() {
 window.addEventListener('resize', igualarAlturaWidgetSlides);
 
 // ============================================================================
+// LOOP INFINITO POR GESTO TÁCTIL
+// Permite quedarse en cualquier slide; solo un swipe extra desde el último
+// regresa suave al primero (y viceversa desde el primero hacia el último).
+// ============================================================================
+function configurarLoopTouch(carousel, getUltimaPos) {
+    if (!carousel) return;
+    var umbral = 55;
+    var startX = null, startY = null, enUltima = false, enPrimera = false;
+
+    carousel.addEventListener('touchstart', function(e) {
+        if (e.touches.length !== 1) { startX = null; return; }
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        enUltima = carousel.scrollLeft >= getUltimaPos() - 1;
+        enPrimera = carousel.scrollLeft <= 1;
+    }, { passive: true });
+
+    carousel.addEventListener('touchcancel', function() { startX = null; }, { passive: true });
+
+    carousel.addEventListener('touchend', function(e) {
+        if (startX === null) return;
+        var t = e.changedTouches[0];
+        var dX = t.clientX - startX;
+        var dY = t.clientY - startY;
+        startX = null;
+        if (Math.abs(dX) < umbral || Math.abs(dX) < Math.abs(dY)) return;
+        if (enUltima && dX < 0) {
+            carousel.scrollTo({ left: 0, behavior: 'smooth' });
+        } else if (enPrimera && dX > 0) {
+            carousel.scrollTo({ left: getUltimaPos(), behavior: 'smooth' });
+        }
+    }, { passive: true });
+}
+
+// ============================================================================
 // CARRUSEL DESLIZABLE (herramientas / KPIs / estados / segmentos)
 // ============================================================================
 function initDashCarousel() {
@@ -143,10 +178,6 @@ function initDashCarousel() {
     var dots = Array.prototype.slice.call(document.querySelectorAll('.dash-dot'));
     if (slides.length < 2 || !dots.length) return;
     var step = slides[1].offsetLeft - slides[0].offsetLeft;
-    var ultimoIndex = slides.length - 1;
-    var envolviendo = false;
-    var scrollProgramado = false;
-    var timerProgramado = null;
 
     function actualizarDotActivo() {
         var index = Math.max(0, Math.min(dots.length - 1, Math.round(carousel.scrollLeft / step)));
@@ -158,20 +189,10 @@ function initDashCarousel() {
     carousel.addEventListener('scroll', actualizarDotActivo, { passive: true });
     dots.forEach(function(dot, i) {
         dot.addEventListener('click', function() {
-            scrollProgramado = true;
-            clearTimeout(timerProgramado);
-            timerProgramado = setTimeout(function() { scrollProgramado = false; }, 700);
             carousel.scrollTo({ left: i * step, behavior: 'smooth' });
         });
     });
-    carousel.addEventListener('scroll', function() {
-        if (scrollProgramado) return;
-        if (!envolviendo && carousel.scrollLeft >= ultimoIndex * step) {
-            envolviendo = true;
-            carousel.scrollTo({ left: 0, behavior: 'smooth' });
-            setTimeout(function() { envolviendo = false; }, 600);
-        }
-    }, { passive: true });
+    configurarLoopTouch(carousel, function() { return (slides.length - 1) * step; });
     window.addEventListener('resize', function() {
         step = slides[1].offsetLeft - slides[0].offsetLeft;
         actualizarDotActivo();
@@ -188,10 +209,6 @@ function initDashWidgetCarousel() {
     var dots = Array.prototype.slice.call(document.querySelectorAll('.dash-widget-dot'));
     if (slides.length < 2 || !dots.length) return;
     var step = slides[1].offsetLeft - slides[0].offsetLeft;
-    var ultimoIndex = slides.length - 1;
-    var envolviendo = false;
-    var scrollProgramado = false;
-    var timerProgramado = null;
 
     function actualizarDotActivo() {
         var index = Math.max(0, Math.min(dots.length - 1, Math.round(carousel.scrollLeft / step)));
@@ -203,20 +220,10 @@ function initDashWidgetCarousel() {
     carousel.addEventListener('scroll', actualizarDotActivo, { passive: true });
     dots.forEach(function(dot, i) {
         dot.addEventListener('click', function() {
-            scrollProgramado = true;
-            clearTimeout(timerProgramado);
-            timerProgramado = setTimeout(function() { scrollProgramado = false; }, 700);
             carousel.scrollTo({ left: i * step, behavior: 'smooth' });
         });
     });
-    carousel.addEventListener('scroll', function() {
-        if (scrollProgramado) return;
-        if (!envolviendo && carousel.scrollLeft >= ultimoIndex * step) {
-            envolviendo = true;
-            carousel.scrollTo({ left: 0, behavior: 'smooth' });
-            setTimeout(function() { envolviendo = false; }, 600);
-        }
-    }, { passive: true });
+    configurarLoopTouch(carousel, function() { return (slides.length - 1) * step; });
     window.addEventListener('resize', function() {
         step = slides[1].offsetLeft - slides[0].offsetLeft;
         actualizarDotActivo();

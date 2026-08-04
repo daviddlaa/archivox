@@ -891,9 +891,11 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
   sin "peek" del siguiente): (1) herramientas de acceso rápido con subtítulo
   "Herramientas rápidas", (2) 4 KPIs en tarjeta 2×2 alineada con la altura del slide de
   herramientas, (3) gráfico de Estados, (4) gráfico de Segmentos. Indicadores de punto
-  `.dash-dots` sincronizados con el scroll (`initDashCarousel`). Ambos carruseles
-  **vuelven suavemente al primer slide** al llegar al final (loop de avance; al tocar un dot
-  no se fuerza el loop hasta el siguiente swipe).
+  `.dash-dots` sincronizados con el scroll (`initDashCarousel`). Ambos carruseles usan
+  **loop infinito por gesto táctil** (`configurarLoopTouch`): puedes quedarte en cualquier slide
+  (incluido el último); solo un swipe extra hacia adelante desde el último regresa suave al
+  primero, y un swipe hacia atrás desde el primero va al último. El retorno no se dispara por
+  el simple hecho de llegar al final ni al tocar un dot.
 - **Widgets en mini-carrusel (móvil):** debajo del carrusel principal, un segundo carrusel
   (`.dash-widget-carousel`, `.dash-widget-slide`, full-width sin "peek") con 2 slides y dots
   `.dash-widget-dots` sincronizados (`initDashWidgetCarousel`). Ambos slides comparten la misma
