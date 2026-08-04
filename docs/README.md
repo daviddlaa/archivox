@@ -1143,7 +1143,7 @@ La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tabla
 - CRUD de plantillas de WhatsApp por usuario (máx. **5**, límite leído dinámicamente del campo `max` que devuelve la API; los textos se escapan con `escaparParaHTML()` en el modal de WhatsApp Directo), con la variable `{nombre}` que se reemplaza con el nombre del cliente
 - Pantallas desktop (grid de tarjetas) y móvil (lista), modal crear/editar con contador de caracteres (2000) e inserción rápida de `{nombre}`
 - Contador de uso con barra de progreso y empty state
-- **Integración con WhatsApp Directo** de Gestión por Lotes: las plantillas del usuario reemplazan los mensajes fijos (fallback al mensaje predeterminado si no hay plantillas); la variable `{nombre}` se reemplaza al abrir el modal
+- **Integración con WhatsApp Directo** de Gestión por Lotes: las plantillas del usuario reemplazan los mensajes fijos (fallback al mensaje predeterminado si no hay plantillas); la variable `{nombre}` se reemplaza al abrir el modal; en móvil el icono 💬 de cada tarjeta abre este modal (v1.3)
 - Navegación por drawer y deep link (`plantillas`)
 - Ver `docs/feature-plantillas-mensajes.md` para documentación completa (Agosto 2026)
 
@@ -1325,7 +1325,7 @@ La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tabla
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
 | GET | `/api/plantillas` | ✅ | Listar plantillas del usuario autenticado (`{data, total, max}`) |
-| POST | `/api/plantillas` | ✅ | Crear plantilla (valida nombre ≤100, contenido ≤2000 y máx. 5 por usuario) |
+| POST | `/api/plantillas` | ✅ | Crear plantilla (valida nombre ≤100, contenido ≤2000 y máx. 5 por usuario; límite validado de forma atómica) |
 | PUT | `/api/plantillas/:id` | ✅ | Actualizar plantilla propia |
 | DELETE | `/api/plantillas/:id` | ✅ | Eliminar plantilla propia |
 

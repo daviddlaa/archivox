@@ -1,11 +1,25 @@
 # Feature: Plantillas de Mensajes Personalizadas
 
-**Versión:** 1.1
+**Versión:** 1.3
 
 **Fecha:** Agosto 2026
 
 **Estado:** Implementado
 
+> **v1.3 (Agosto 2026):** acceso desde la versión móvil de Campañas y blindaje total de modales.
+> - En `/m/gestion-lote`, el icono **💬** de cada tarjeta ya no abre WhatsApp directo:
+>   ahora abre el modal de WhatsApp Directo con las plantillas del usuario
+>   (`abrirGestionWhatsApp`) para elegir qué plantilla enviar.
+> - El escapado de seguridad se extendió a los modales `abrirGestion`, `verGestion` y
+>   `verHistorial` (desktop y móvil): nombre, cédula, celular, tipo, fecha, observación y
+>   vendedor se escapan con `escaparParaHTML()`.
+>
+> **v1.2 (Agosto 2026):** validación **atómica** del límite de plantillas.
+> - `crearPlantilla()` ya no hace `COUNT(*)` + `INSERT` (con condición de carrera entre
+>   ambas sentencias): ahora usa un único `INSERT ... SELECT ... WHERE (SELECT COUNT(*) ...) < 5`
+>   que es atómico en SQLite y PostgreSQL (vía `db.js`). Si no se inserta ninguna fila
+>   (`rowCount === 0`), responde `400` con el mensaje de límite alcanzado.
+>
 > **v1.1 (Agosto 2026):** corrección de seguridad y límite dinámico.
 > - El modal de **WhatsApp Directo** (`gestion-lote.js`, desktop y móvil) ahora escapa
 >   **toda** su salida dinámica: etiqueta de los botones de plantilla y mensaje precargado
@@ -89,7 +103,7 @@ Todas las rutas requieren sesión (`requiresAuth`).
 |-------|-------|
 | `nombre` | Obligatorio, máx. 100 caracteres |
 | `contenido` | Obligatorio, máx. 2000 caracteres |
-| Límite por usuario | Máximo `MAX_PLANTILLAS = 5` (se valida con `COUNT(*)` antes del INSERT) |
+| Límite por usuario | Máximo `MAX_PLANTILLAS = 5`. Validado de forma **atómica** con un `INSERT ... SELECT ... WHERE (SELECT COUNT(*) ...) < 5` (una sola sentencia, sin condición de carrera) |
 
 ### Códigos de error
 
@@ -142,8 +156,14 @@ Misma funcionalidad en layout táctil:
 
 ## Integración con WhatsApp Directo (`/gestion-lote`)
 
-El modal de **WhatsApp Directo** de una solicitud (botón "💬 Directo" en las tarjetas de
-campaña) ahora carga las plantillas del usuario autenticado antes de abrirse:
+El modal de **WhatsApp Directo** de una solicitud ahora carga las plantillas del usuario
+autenticado antes de abrirse. Se accede a él desde:
+
+- **Desktop:** botón "💬 Directo" en las tarjetas de campaña.
+- **Móvil (`/m/gestion-lote`):** icono **💬** de cada tarjeta (antes abría WhatsApp directo
+  con `abrirWhatsAppMovil()`; desde v1.3 abre el modal de plantillas).
+
+El modal carga las plantillas de la siguiente forma:
 
 ```javascript
 // abrirGestionWhatsApp() es ahora async
@@ -172,6 +192,10 @@ Comportamiento:
 | `aplicarVariableNombre(contenido, nombreCliente)` | Reemplaza todas las ocurrencias de `{nombre}` con el nombre del cliente |
 | `cambiarMensajeWhatsAppDesdeBoton(boton)` | Lee `data-index`/`data-opciones` y rellena el textarea del modal |
 
+> **Nota (v1.3):** en móvil, `abrirWhatsAppMovil()` sigue existiendo pero solo se usa como
+> salida del botón "Enviar" del modal (opción "Abrir WhatsApp al enviar"), ya no desde el
+> icono 💬 de las tarjetas.
+
 > **Nota:** la variable `{nombre}` se reemplaza **al abrir el modal** (no al enviar), por lo
 > que el usuario puede editar el texto resultante antes de enviarlo.
 
@@ -198,6 +222,9 @@ Comportamiento:
 - El límite por usuario se aplica en el backend (autoritativo, `MAX_PLANTILLAS = 5`) y el
   frontend lo lee dinámicamente del campo `max` que devuelve `GET /api/plantillas`
   (ya no está hardcodeado en la UI) (v1.1).
+- La validación del límite es **atómica**: `crearPlantilla()` usa un `INSERT` condicional
+  en una sola sentencia, eliminando la condición de carrera entre `COUNT(*)` e `INSERT`
+  (v1.2).
 
 ## Archivos involucrados
 

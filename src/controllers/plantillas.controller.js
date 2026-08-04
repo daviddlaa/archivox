@@ -84,7 +84,7 @@ exports.crearPlantilla = async function(req, res) {
             return res.status(400).json({ error: validacion.errores.join('. ') });
         }
 
-        // Verificar límite máximo de plantillas por usuario con INSERT condicional ATOMICO:
+        // Verificar límite máximo de plantillas por usuario con INSERT condicional ATÓMICO:
         // una sola sentencia evita la condición de carrera entre COUNT(*) e INSERT
         // (funciona en SQLite y PostgreSQL vía db.js)
         const result = await pool.query(

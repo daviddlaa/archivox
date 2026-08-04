@@ -632,7 +632,7 @@ function renderizarSolicitudes(lista) {
         html += '<div class="sol-datos">';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.cedula || '') + '\', \'cédula\')" title="Copiar cédula">🆔 ' + (sol.cedula || '—') + '</span>';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.celular || '') + '\', \'teléfono\')" title="Copiar teléfono">📱 ' + (sol.celular || '—') + '</span>';
-        html += '<span class="sol-chat-icon" onclick="abrirWhatsAppMovil(\'' + escaparParaAtributo(sol.celular || '') + '\', \'\')" title="Abrir chat WhatsApp">💬</span>';
+        html += '<span class="sol-chat-icon" onclick="abrirGestionWhatsApp(\'' + escaparParaAtributo(sol.id_solicitud) + '\', \'' + escaparParaAtributo(sol.celular || '') + '\')" title="Enviar WhatsApp con plantilla">💬</span>';
         html += '<span>🏷️ ' + (sol.segmento || '—') + '</span>';
         html += '</div>';
 
@@ -805,11 +805,11 @@ function abrirGestion(solicitudId, tipo) {
 
     var contenido = '';
     contenido += '<div class="modal-gestion">';
-    contenido += '<h2>📋 Gestionar Solicitud #' + solicitudId + '</h2>';
+    contenido += '<h2>📋 Gestionar Solicitud #' + escaparParaHTML(solicitudId) + '</h2>';
     contenido += '<div class="modal-info">';
-    contenido += '<p><strong>Nombre:</strong> ' + (sol.nombre || '—') + '</p>';
-    contenido += '<p><strong>Cédula:</strong> ' + (sol.cedula || '—') + '</p>';
-    contenido += '<p><strong>Celular:</strong> ' + (sol.celular || '—') + '</p>';
+    contenido += '<p><strong>Nombre:</strong> ' + escaparParaHTML(sol.nombre || '—') + '</p>';
+    contenido += '<p><strong>Cédula:</strong> ' + escaparParaHTML(sol.cedula || '—') + '</p>';
+    contenido += '<p><strong>Celular:</strong> ' + escaparParaHTML(sol.celular || '—') + '</p>';
     contenido += '</div>';
     contenido += '<div class="modal-form">';
     contenido += '<label>📋 Tipo de Gestión:</label>';
@@ -825,8 +825,7 @@ function abrirGestion(solicitudId, tipo) {
     contenido += '</label>';
     
     contenido += '<div class="modal-botones">';
-    contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>';
-    contenido += '<button class="btn-guardar" onclick="guardarGestionIndividual(\'' + solicitudId + '\')">💾 Guardar</button>';
+    contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>';    contenido += '<button class="btn-guardar" onclick="guardarGestionIndividual(\'' + escaparParaAtributo(solicitudId) + '\')">💾 Guardar</button>'; 
     contenido += '</div>'; 
     contenido += '</div>';
     contenido += '</div>';
@@ -912,12 +911,12 @@ function verGestion(solicitudId) {
 
     var contenido = '';
     contenido += '<div class="modal-ver">';
-    contenido += '<h2>📋 Gestión - Solicitud #' + solicitudId + '</h2>';
+    contenido += '<h2>📋 Gestión - Solicitud #' + escaparParaHTML(solicitudId) + '</h2>';
     contenido += '<div class="modal-info">';
-    contenido += '<p><strong>Tipo:</strong> ' + (sol.tipo_gestion || '—') + '</p>';
-    contenido += '<p><strong>Fecha:</strong> ' + (sol.fecha_gestion || '—') + '</p>';
+    contenido += '<p><strong>Tipo:</strong> ' + escaparParaHTML(sol.tipo_gestion || '—') + '</p>';
+    contenido += '<p><strong>Fecha:</strong> ' + escaparParaHTML(sol.fecha_gestion || '—') + '</p>';
     contenido += '<p><strong>Observación:</strong></p>';
-    contenido += '<div class="modal-observacion">' + (sol.gestion_obs || 'Sin observación') + '</div>';
+    contenido += '<div class="modal-observacion">' + escaparParaHTML(sol.gestion_obs || 'Sin observación') + '</div>';
     contenido += '</div>';
     contenido += '<button class="btn-cerrar" onclick="cerrarModal()">Cerrar</button>';
     contenido += '</div>';
@@ -972,11 +971,11 @@ async function verHistorial(solicitudId) {
                 // Content
                 contenido += '<div style="flex:1;padding-bottom:' + (isLast ? '0' : '12px') + ';">';
                 contenido += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap;">';
-                contenido += '<span style="background:' + colorBadge + ';padding:1px 8px;border-radius:10px;font-size:10px;font-weight:600;color:#374151;">' + (g.tipo_gestion || '—') + '</span>';
-                if (g.vendedor) contenido += '<span style="font-size:10px;color:#2563eb;font-weight:600;">🏷️ ' + g.vendedor + '</span>';
+                contenido += '<span style="background:' + colorBadge + ';padding:1px 8px;border-radius:10px;font-size:10px;font-weight:600;color:#374151;">' + escaparParaHTML(g.tipo_gestion || '—') + '</span>';
+                if (g.vendedor) contenido += '<span style="font-size:10px;color:#2563eb;font-weight:600;">🏷️ ' + escaparParaHTML(g.vendedor) + '</span>';
                 contenido += '<span style="font-size:10px;color:#9ca3af;">' + fecha + '</span>';
                 contenido += '</div>';
-                contenido += '<div style="background:#f9fafb;padding:8px 10px;border-radius:6px;font-size:12px;color:#374151;line-height:1.4;">' + (g.observacion || 'Sin observación') + '</div>';
+                contenido += '<div style="background:#f9fafb;padding:8px 10px;border-radius:6px;font-size:12px;color:#374151;line-height:1.4;">' + escaparParaHTML(g.observacion || 'Sin observación') + '</div>';
                 contenido += '</div>';
                 contenido += '</div>';
             }
