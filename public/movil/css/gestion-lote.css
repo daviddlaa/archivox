@@ -1024,6 +1024,91 @@
 /* ===== ESTADO SEMÁFORO EN TARJETA ===== */
 /* colores unificados arriba con gradientes */
 
+/* Switch segmentado — igual al desktop, compacto para touch */
+.sol-semaforo-switch {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    gap: 3px;
+    margin: 0 0 8px;
+    padding: 3px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #f8fafc;
+}
+
+.sol-semaforo-switch-segment {
+    display: flex;
+    min-height: 30px;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 3px 2px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1.05;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: background .2s ease, color .2s ease, box-shadow .2s ease, transform .15s ease;
+}
+.sol-semaforo-switch-segment:active { transform: scale(0.95); }
+.sol-semaforo-switch-segment.active { color: #334155; box-shadow: 0 1px 4px rgba(15, 23, 42, .1); }
+.sol-semaforo-switch-segment.sin_clasificar.active { background: #e8ecf1; color: #475569; border-color: #cbd5e1; }
+.sol-semaforo-switch-segment.verde.active { background: #d8e9de; color: #2f6b45; border-color: #a9cfb3; }
+.sol-semaforo-switch-segment.amarillo.active { background: #f6e7c4; color: #7c5a22; border-color: #e5c77f; }
+.sol-semaforo-switch-segment.rojo.active { background: #f2d2cc; color: #a03d35; border-color: #e1aaa0; }
+
+.sol-semaforo-switch-dot {
+    width: 6px;
+    height: 6px;
+    flex: 0 0 6px;
+    border-radius: 50%;
+    background: #94a3b8;
+}
+.sol-semaforo-switch-segment.verde .sol-semaforo-switch-dot { background: #6b9e78; }
+.sol-semaforo-switch-segment.amarillo .sol-semaforo-switch-dot { background: #d3a437; }
+.sol-semaforo-switch-segment.rojo .sol-semaforo-switch-dot { background: #cf6657; }
+
+.sol-semaforo-switch-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (min-width: 500px) {
+    .sol-semaforo-switch-segment {
+        font-size: 9px;
+        min-height: 32px;
+        gap: 4px;
+    }
+    .sol-semaforo-switch-dot {
+        width: 7px;
+        height: 7px;
+        flex-basis: 7px;
+    }
+}
+
+/* Flash al cambiar estado */
+.sol-card.sol-semaforo-flash {
+    animation: sol-semaforo-flash-movil .7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes sol-semaforo-flash-movil {
+    0% { box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+    30% { box-shadow: 0 4px 18px rgba(99, 102, 241, 0.14), 0 0 0 2px rgba(99, 102, 241, 0.16); }
+    60% { box-shadow: 0 2px 10px rgba(99, 102, 241, 0.08), 0 0 0 1px rgba(99, 102, 241, 0.1); }
+    100% { box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sol-card.sol-semaforo-flash { animation: none; }
+}
+
 .sol-semaforo-status {
     display: flex;
     width: 100%;

@@ -200,7 +200,7 @@ async function cargarDatosGestionMovil() {
         var panel = document.getElementById('panel-progreso');
         if (panel) panel.style.display = 'none';
         var filtros = document.getElementById('filtros-row');
-        if (filtros) filtros.style.display = 'block';
+        if (filtros) filtros.style.display = 'flex';
         var semaforoPanel = document.getElementById('semaforo-mobile');
         if (semaforoPanel) semaforoPanel.style.display = 'block';
 
@@ -505,6 +505,51 @@ async function cambiarSemaforoMovil(solicitudId, semaforo) {
     }
 }
 
+async function cambiarSemaforoSolicitudMovil(solicitudId, semaforo, eventRef) {
+    if (!gestionId) return;
+    var valor = normalizarSemaforoMovil(semaforo);
+    var prev = null;
+    (todasLasSolicitudes || []).forEach(function(sol) {
+        if (String(sol.id_solicitud) === String(solicitudId)) prev = normalizarSemaforoMovil(sol.semaforo);
+    });
+    if (prev === valor) return;
+
+    var origin = eventRef && eventRef.currentTarget ? eventRef.currentTarget : null;
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + gestionId + '/solicitudes/' + encodeURIComponent(solicitudId) + '/semaforo', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ semaforo: valor })
+        });
+        var data = await response.json().catch(function() { return {}; });
+        if (!response.ok) {
+            alert(data.error || 'No se pudo actualizar el estado');
+            return;
+        }
+
+        (todasLasSolicitudes || []).forEach(function(sol) {
+            if (String(sol.id_solicitud) === String(solicitudId)) sol.semaforo = valor;
+        });
+        (solicitudes || []).forEach(function(sol) {
+            if (String(sol.id_solicitud) === String(solicitudId)) sol.semaforo = valor;
+        });
+
+        var card = origin && origin.closest ? origin.closest('.sol-card') : null;
+        if (card) {
+            card.classList.remove('sol-semaforo-flash');
+            void card.offsetWidth;
+            card.classList.add('sol-semaforo-flash');
+        }
+
+        renderizarSolicitudes(todasLasSolicitudes);
+        actualizarSemaforoMovil(data.semaforo_conteos);
+        mostrarConfirmacionGestionMovil('Estado actualizado');
+    } catch (error) {
+        console.error('[movil] Error actualizando semáforo:', error);
+        alert(error.message || 'Error al actualizar el estado');
+    }
+}
+
 function renderizarSolicitudes(lista) {
     var container = document.getElementById('lista-solicitudes');
     // Guardar posición de scroll antes de re-render
@@ -576,7 +621,14 @@ function renderizarSolicitudes(lista) {
         html += '</div>';
 
         html += '<div class="sol-nombre sol-nombre-copy" onclick="copiarNombreCedula(\'' + escaparParaAtributo(sol.nombre || '') + '\', \'' + escaparParaAtributo(sol.cedula || '') + '\')" title="Copiar nombre completo y cédula">' + (sol.nombre || 'Sin nombre') + '</div>';
-        html += '<button type="button" class="sol-semaforo-status" onclick="abrirSelectorSemaforoMovil(\'' + sol.id_solicitud + '\', \'' + semaforo + '\')"><span class="sol-semaforo-dot"></span>' + (semaforo === 'rojo' ? 'En espera · no contactar ahora' : semaforo === 'amarillo' ? 'Necesita seguimiento' : semaforo === 'verde' ? 'Ya encaminada' : 'Por revisar') + '<span class="sol-semaforo-edit">Cambiar</span></button>';
+        html += '<div class="sol-semaforo-switch" role="group" aria-label="Estado de espera">';
+        for (var s = 0; s < SEMAFORO_MOVIL.length; s++) {
+            var keyS = SEMAFORO_MOVIL[s];
+            var activeCls = semaforo === keyS ? ' active' : '';
+            var labelS = keyS === 'sin_clasificar' ? 'Sin clasificar' : keyS === 'verde' ? 'Verde' : keyS === 'amarillo' ? 'Amarillo' : 'Rojo';
+            html += '<button type="button" class="sol-semaforo-switch-segment ' + keyS + activeCls + '" data-val="' + keyS + '" onclick="event.stopPropagation(); cambiarSemaforoSolicitudMovil(\'' + sol.id_solicitud + '\', \'' + keyS + '\', event)" aria-label="' + labelS + '"><span class="sol-semaforo-switch-dot"></span><span class="sol-semaforo-switch-text">' + labelS + '</span></button>';
+        }
+        html += '</div>';
         html += '<div class="sol-datos">';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.cedula || '') + '\', \'cédula\')" title="Copiar cédula">🆔 ' + (sol.cedula || '—') + '</span>';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.celular || '') + '\', \'teléfono\')" title="Copiar teléfono">📱 ' + (sol.celular || '—') + '</span>';
