@@ -276,9 +276,185 @@ async function iniciarDashboard() {
     await cargarDashboard();
     await cargarMiEquipo();
     await actualizarDashboard();
+    ajustarSlideEquipo();
+    initDashdCarousel();
+    cargarCampañasActivas();
+    cargarUltimasSolicitudes();
 }
 
 iniciarDashboard();
+
+// ============================================================================
+// CARRUSEL PRINCIPAL DEL DASHBOARD DE ESCRITORIO
+// 4 slides: Bienvenida / KPIs (equipo o stats) / Estados / Segmentos
+// Navegación: dots + flechas ‹ › con loop, siguiendo el patrón del móvil.
+// ============================================================================
+function igualarAlturaDashdSlides() {
+    var track = document.getElementById('dashdTrack');
+    if (!track) return;
+    var slides = track.querySelectorAll('.dashd-slide');
+    if (slides.length < 2) return;
+    track.style.height = 'auto';
+    var max = 0;
+    slides.forEach(function(s) { max = Math.max(max, s.offsetHeight); });
+    if (max > 0) track.style.height = max + 'px';
+}
+
+function initDashdCarousel() {
+    var track = document.getElementById('dashdTrack');
+    if (!track) return;
+    var slides = track.querySelectorAll('.dashd-slide');
+    var dots = Array.prototype.slice.call(document.querySelectorAll('.dashd-dot'));
+    var prev = document.getElementById('dashdPrev');
+    var next = document.getElementById('dashdNext');
+    if (slides.length < 2 || !dots.length) return;
+    var step = slides[1].offsetLeft - slides[0].offsetLeft;
+
+    function indiceActual() {
+        return Math.max(0, Math.min(dots.length - 1, Math.round(track.scrollLeft / step)));
+    }
+
+    function irA(index) {
+        track.scrollTo({ left: index * step, behavior: 'smooth' });
+    }
+
+    function actualizarDotActivo() {
+        var index = indiceActual();
+        dots.forEach(function(dot, i) {
+            dot.classList.toggle('active', i === index);
+        });
+    }
+
+    track.addEventListener('scroll', actualizarDotActivo, { passive: true });
+
+    dots.forEach(function(dot, i) {
+        dot.addEventListener('click', function() { irA(i); });
+    });
+
+    if (prev) {
+        prev.addEventListener('click', function() {
+            var i = indiceActual() - 1;
+            irA(i < 0 ? slides.length - 1 : i);
+        });
+    }
+    if (next) {
+        next.addEventListener('click', function() {
+            var i = indiceActual() + 1;
+            irA(i >= slides.length ? 0 : i);
+        });
+    }
+
+    window.addEventListener('resize', function() {
+        step = slides[1].offsetLeft - slides[0].offsetLeft;
+        actualizarDotActivo();
+        igualarAlturaDashdSlides();
+    });
+}
+
+// Slide 2: mostrar el equipo si eres líder; si no, las 4 stats
+function ajustarSlideEquipo() {
+    var team = document.getElementById('miEquipoSection');
+    var stats = document.getElementById('dashboardStats');
+    if (!team || !stats) return;
+    var conEquipo = team.style.display !== 'none' && team.style.display !== '';
+    if (conEquipo) {
+        team.style.display = 'flex';
+        stats.style.display = 'none';
+    } else {
+        stats.style.display = '';
+    }
+    igualarAlturaDashdSlides();
+}
+
+// ============================================================================
+// WIDGET ÚLTIMAS CAMPAÑAS ACTIVAS
+// ============================================================================
+async function cargarCampañasActivas() {
+    var container = document.getElementById('campanas-activas-lista');
+    if (!container) return;
+    try {
+        var res = await fetch('/api/gestiones-maestro');
+        if (!res.ok) throw new Error('status ' + res.status);
+        var lista = await res.json();
+        var activas = (lista || []).filter(function(c) {
+            return String(c.estado || 'activa').toLowerCase() === 'activa';
+        }).slice(0, 3);
+
+        if (!activas.length) {
+            container.innerHTML = '<div class="campanas-widget-empty">No hay campañas activas.<br><a href="/gestion-lote">Crear o ver campañas</a></div>';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < activas.length; i++) {
+            var g = activas[i];
+            var total = parseInt(g.total_solicitudes || 0, 10);
+            var comp = parseInt(g.completadas || 0, 10);
+            var pct = total > 0 ? Math.round((comp / total) * 100) : 0;
+            html += '<a class="campana-widget-item" href="/gestion-lote?id=' + encodeURIComponent(g.id) + '">' +
+                '<span class="campana-widget-icon">📋</span>' +
+                '<span class="campana-widget-info">' +
+                '<span class="campana-widget-name">' + escapeHtml(g.nombre || 'Campaña #' + g.id) + '</span>' +
+                '<span class="campana-widget-bar"><span style="width:' + pct + '%"></span></span>' +
+                '<span class="campana-widget-stats">' + comp + ' de ' + total + ' · ' + pct + '%</span>' +
+                '</span>' +
+                '<span class="campana-widget-chevron">›</span>' +
+                '</a>';
+        }
+        container.innerHTML = html;
+    } catch (e) {
+        console.error('Error cargando campañas activas:', e);
+        container.innerHTML = '<div class="campanas-widget-empty">No se pudieron cargar las campañas.</div>';
+    }
+}
+
+// ============================================================================
+// WIDGET ÚLTIMAS SOLICITUDES
+// ============================================================================
+var coloresEstadoSolWidget = {
+    'ACTIVADA': '#dcfce7',
+    'RECHAZADA': '#fee2e2',
+    'DEVUELTA': '#fef3c7',
+    'APROBADA PARA LIBERACIÓN': '#d1fae5'
+};
+
+async function cargarUltimasSolicitudes() {
+    var container = document.getElementById('ultimas-solicitudes-lista');
+    if (!container) return;
+    try {
+        var res = await fetch('/api/excel/solicitudes?limite=3');
+        if (!res.ok) throw new Error('status ' + res.status);
+        var result = await res.json();
+        var lista = Array.isArray(result) ? result : (result.data || []);
+
+        if (!lista.length) {
+            container.innerHTML = '<div class="campanas-widget-empty">No hay solicitudes.<br><a href="/solicitudes">Ver solicitudes</a></div>';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < lista.length; i++) {
+            var s = lista[i];
+            var estado = s.estado || 'Sin estado';
+            var color = coloresEstadoSolWidget[estado] || '#f3f4f6';
+            html += '<a class="campana-widget-item" href="/solicitudes">' +
+                '<span class="campana-widget-icon">📋</span>' +
+                '<span class="campana-widget-info">' +
+                '<span class="campana-widget-name">' + escapeHtml(s.nombre || 'Sin nombre') + '</span>' +
+                '<span class="sol-widget-meta">' +
+                '<span class="sol-widget-badge" style="background:' + color + ';">' + escapeHtml(estado) + '</span>' +
+                (s.cedula ? ' · ' + escapeHtml(s.cedula) : '') +
+                '</span>' +
+                '</span>' +
+                '<span class="campana-widget-chevron">›</span>' +
+                '</a>';
+        }
+        container.innerHTML = html;
+    } catch (e) {
+        console.error('Error cargando últimas solicitudes:', e);
+        container.innerHTML = '<div class="campanas-widget-empty">No se pudieron cargar las solicitudes.</div>';
+    }
+}
 
 // Polling reducido: cada 60 segundos (antes era 5s)
 // Para 50 usuarios concurrentes, esto reduce el tráfico del dashboard

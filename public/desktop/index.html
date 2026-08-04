@@ -39,100 +39,129 @@
                 <a href="/equipo" class="btn-gestion-equipo-dash" id="btnGestionEquipo" style="display:none">🏢 Gestión de Equipo</a>
             </div>
             
-            <!-- Mi Equipo Card (visible para usuarios con equipo) -->
-            <div id="miEquipoSection" class="mi-equipo-card" style="display:none;">
-                <div class="mi-equipo-header">
-                    <div class="mi-equipo-icon">🏢</div>
-                    <div class="mi-equipo-info">
-                        <h3 id="miEquipoNombre">Cargando...</h3>
-                        <span id="miEquipoDesc" class="mi-equipo-desc"></span>
+            <!-- Carrusel Principal (patrón móvil): Bienvenida / KPIs / Estados / Segmentos -->
+            <div class="dashd-carousel" id="dashdCarousel">
+                <button type="button" class="dashd-arrow dashd-arrow-prev" id="dashdPrev" aria-label="Slide anterior">‹</button>
+                <div class="dashd-track" id="dashdTrack">
+                    <!-- Slide 1: Bienvenida -->
+                    <div class="dashd-slide">
+                        <div class="dashd-welcome">
+                            <h2>Bienvenido al sistema</h2>
+                            <p>Desde aquí podrás importar Excel, consultar solicitudes y monitorear el estado de los créditos.</p>
+                        </div>
                     </div>
-                    <div class="mi-equipo-badges">
-                        <span id="miEquipoRolBadge" class="mi-equipo-role-badge"></span>
+                    <!-- Slide 2: KPIs (equipo para líderes / stats para el resto) -->
+                    <div class="dashd-slide" id="dashdSlideKpis">
+                        <div id="miEquipoSection" class="mi-equipo-card" style="display:none;">
+                            <div class="mi-equipo-header">
+                                <div class="mi-equipo-icon">🏢</div>
+                                <div class="mi-equipo-info">
+                                    <h3 id="miEquipoNombre">Cargando...</h3>
+                                    <span id="miEquipoDesc" class="mi-equipo-desc"></span>
+                                </div>
+                                <div class="mi-equipo-badges">
+                                    <span id="miEquipoRolBadge" class="mi-equipo-role-badge"></span>
+                                </div>
+                            </div>
+                            <div class="mi-equipo-stats">
+                                <div class="mi-equipo-stat">
+                                    <span class="mi-equipo-stat-icon">👑</span>
+                                    <div>
+                                        <span class="mi-equipo-stat-label">Líder</span>
+                                        <span class="mi-equipo-stat-value" id="miEquipoLider">—</span>
+                                    </div>
+                                </div>
+                                <div class="mi-equipo-stat">
+                                    <span class="mi-equipo-stat-icon">👥</span>
+                                    <div>
+                                        <span class="mi-equipo-stat-label">Agentes</span>
+                                        <span class="mi-equipo-stat-value" id="miEquipoAgentes">—</span>
+                                    </div>
+                                </div>
+                                <div class="mi-equipo-stat">
+                                    <span class="mi-equipo-stat-icon">📋</span>
+                                    <div>
+                                        <span class="mi-equipo-stat-label">Asignaciones</span>
+                                        <span class="mi-equipo-stat-value" id="miEquipoAsignaciones">—</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Stats Row (visible para usuarios sin equipo) -->
+                        <div class="dashboard-stats" id="dashboardStats">
+                            <div class="dashboard-stat-card stat-total">
+                                <div class="dashboard-stat-icon">📄</div>
+                                <div class="dashboard-stat-info">
+                                    <h3>Total</h3>
+                                    <span id="totalSolicitudes">0</span>
+                                </div>
+                            </div>
+                            <div class="dashboard-stat-card stat-verde">
+                                <div class="dashboard-stat-icon">✅</div>
+                                <div class="dashboard-stat-info">
+                                    <h3>Activadas</h3>
+                                    <span id="totalActivadas">0</span>
+                                </div>
+                            </div>
+                            <div class="dashboard-stat-card stat-rojo">
+                                <div class="dashboard-stat-icon">❌</div>
+                                <div class="dashboard-stat-info">
+                                    <h3>Rechazadas</h3>
+                                    <span id="totalRechazadas">0</span>
+                                </div>
+                            </div>
+                            <div class="dashboard-stat-card stat-aprobadas">
+                                <div class="dashboard-stat-icon">🟢</div>
+                                <div class="dashboard-stat-info">
+                                    <h3>Aprobadas</h3>
+                                    <span id="totalAprobadas">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Slide 3: Estados -->
+                    <div class="dashd-slide">
+                        <div class="panel">
+                            <h3>📊 Estados</h3>
+                            <div class="chart-container">
+                                <canvas id="chartEstados"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Slide 4: Segmentos -->
+                    <div class="dashd-slide">
+                        <div class="panel">
+                            <h3>🎯 Segmentos</h3>
+                            <div class="chart-container">
+                                <canvas id="chartSegmentos"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="mi-equipo-stats">
-                    <div class="mi-equipo-stat">
-                        <span class="mi-equipo-stat-icon">👑</span>
-                        <div>
-                            <span class="mi-equipo-stat-label">Líder</span>
-                            <span class="mi-equipo-stat-value" id="miEquipoLider">—</span>
-                        </div>
-                    </div>
-                    <div class="mi-equipo-stat">
-                        <span class="mi-equipo-stat-icon">👥</span>
-                        <div>
-                            <span class="mi-equipo-stat-label">Agentes</span>
-                            <span class="mi-equipo-stat-value" id="miEquipoAgentes">—</span>
-                        </div>
-                    </div>
-                    <div class="mi-equipo-stat">
-                        <span class="mi-equipo-stat-icon">📋</span>
-                        <div>
-                            <span class="mi-equipo-stat-label">Asignaciones</span>
-                            <span class="mi-equipo-stat-value" id="miEquipoAsignaciones">—</span>
-                        </div>
-                    </div>
+                <button type="button" class="dashd-arrow dashd-arrow-next" id="dashdNext" aria-label="Slide siguiente">›</button>
+                <div class="dashd-dots" id="dashdDots">
+                    <button type="button" class="dashd-dot active" data-slide="0" aria-label="Ir al slide 1"></button>
+                    <button type="button" class="dashd-dot" data-slide="1" aria-label="Ir al slide 2"></button>
+                    <button type="button" class="dashd-dot" data-slide="2" aria-label="Ir al slide 3"></button>
+                    <button type="button" class="dashd-dot" data-slide="3" aria-label="Ir al slide 4"></button>
                 </div>
             </div>
 
-            <!-- Stats Row -->
-            <div class="dashboard-stats">
-                <div class="dashboard-stat-card stat-total">
-                    <div class="dashboard-stat-icon">📄</div>
-                    <div class="dashboard-stat-info">
-                        <h3>Total</h3>
-                        <span id="totalSolicitudes">0</span>
+            <!-- Widgets lado a lado: últimas campañas y últimas solicitudes -->
+            <div class="dashd-widgets-grid">
+                <div class="dashd-widget-card">
+                    <div class="dashd-widget-header">
+                        <h3>🚀 Últimas Campañas</h3>
+                        <a href="/gestion-lote" class="dashd-widget-ver-todas">Ver todas ›</a>
                     </div>
+                    <div class="dashd-widget-body" id="campanas-activas-lista"></div>
                 </div>
-                <div class="dashboard-stat-card stat-verde">
-                    <div class="dashboard-stat-icon">✅</div>
-                    <div class="dashboard-stat-info">
-                        <h3>Activadas</h3>
-                        <span id="totalActivadas">0</span>
+                <div class="dashd-widget-card">
+                    <div class="dashd-widget-header">
+                        <h3>📋 Últimas Solicitudes</h3>
+                        <a href="/solicitudes" class="dashd-widget-ver-todas">Ver todas ›</a>
                     </div>
-                </div>
-                <div class="dashboard-stat-card stat-rojo">
-                    <div class="dashboard-stat-icon">❌</div>
-                    <div class="dashboard-stat-info">
-                        <h3>Rechazadas</h3>
-                        <span id="totalRechazadas">0</span>
-                    </div>
-                </div>
-                <div class="dashboard-stat-card stat-aprobadas">
-                    <div class="dashboard-stat-icon">🟢</div>
-                    <div class="dashboard-stat-info">
-                        <h3>Aprobadas</h3>
-                        <span id="totalAprobadas">0</span>
-                    </div>
-                </div>
-            </div>
-            
-<!-- Acciones Principales -->
-            <div class="dashboard-actions">
-                <div class="dashboard-welcome-text">
-                    <h2>Bienvenido al sistema</h2>
-                    <p>Desde aquí podrás importar Excel, consultar solicitudes y monitorear el estado de los créditos.</p>
-                </div>
-                <div class="dashboard-actions-btns">
-                    <a href="/gestiones" class="btn-action">⚙️ Gestiones</a>
-                    <a href="/historial" class="btn-action btn-action-secondary">🔄 Historial</a>
-                </div>
-            </div>
-            
-<!-- Charts Grid -->
-            <div class="dashboard-panels">
-                <div class="panel">
-                    <h3>📊 Estados</h3>
-                    <div class="chart-container">
-                        <canvas id="chartEstados"></canvas>
-                    </div>
-                </div>
-                <div class="panel">
-                    <h3>🎯 Segmentos</h3>
-                    <div class="chart-container">
-                        <canvas id="chartSegmentos"></canvas>
-                    </div>
+                    <div class="dashd-widget-body" id="ultimas-solicitudes-lista"></div>
                 </div>
             </div>
             </div>

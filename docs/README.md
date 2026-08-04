@@ -910,6 +910,24 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
     (`cargarUltimasSolicitudes()` → `GET /api/excel/solicitudes?limite=3`), cada fila con nombre,
     badge de estado coloreado (`.sol-widget-badge`, colores del mapa de `solicitudes.js`) y cédula;
     enlace "Ver todas" y tarjetas → `/m/solicitudes`. Vacío: "No hay solicitudes".
+- **Dashboard escritorio en carrusel (Agosto 2026):** mismo patrón que el móvil. El bloque de
+  bienvenida con los botones ⚙️ Gestiones / 🔄 Historial se eliminó (las rutas siguen
+  accesibles desde el menú lateral). El contenido se organiza en un carrusel de 4 slides
+  (`.dashd-carousel`, grid `40px 1fr 40px` para las flechas, `.dashd-track` con *scroll-snap*,
+  `.dashd-slide` full-width) navegado con dots `.dashd-dot` + flechas ‹ › con **loop**
+  (`initDashdCarousel`): (1) Bienvenida, (2) KPIs — tarjeta Mi Equipo si eres líder o las 4
+  stats (Total/Activadas/Rechazadas/Aprobadas) si no (`ajustarSlideEquipo`), (3) Estados,
+  (4) Segmentos. Altura uniforme y contenido centrado (`igualarAlturaDashdSlides`). Los
+  accesos rápidos (Importar/Solicitudes/Ventas/Campañas/Relaciones/Nueva Solicitud/Gestión
+  Equipo) siguen como fila fija encima del carrusel.
+- **Widgets lado a lado (escritorio):** debajo del carrusel, grid de 2 columnas
+  (`.dashd-widgets-grid`, 1 columna bajo 768px):
+  - **Últimas Campañas:** 3 campañas activas más recientes (`cargarCampañasActivas()` →
+    `GET /api/gestiones-maestro`) con nombre, barra de progreso `completadas/total · %` y
+    "Ver todas" → `/gestion-lote`; cada tarjeta → `/gestion-lote?id=ID`.
+  - **Últimas Solicitudes:** 3 solicitudes más recientes del usuario (`cargarUltimasSolicitudes()`
+    → `GET /api/excel/solicitudes?limite=3`), cada fila con nombre, badge de estado coloreado
+    (`.sol-widget-badge`) y cédula; "Ver todas" y tarjetas → `/solicitudes`.
 
 ### 11.2 Solicitudes
 
