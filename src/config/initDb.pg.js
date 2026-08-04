@@ -271,7 +271,8 @@ const initTables = async () => {
             'accion_url': 'TEXT',
             'accion_texto': 'TEXT',
             'fecha_expiracion': 'TIMESTAMP',
-            'accion_modulo': 'TEXT'       // 🆕 Deep Link Router
+            'accion_modulo': 'TEXT',       // 🆕 Deep Link Router
+            'es_novedad': 'INTEGER DEFAULT 0'  // 🆕 Novedades: 1 = anuncio de nueva funcionalidad
         })) {
             try {
                 await client.query(`ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS ${col} ${tipo}`);

@@ -996,7 +996,7 @@ async function cargarNotificaciones() {
         tbody.innerHTML = data.data.map(n => `
             <tr class="${n.leida ? '' : 'notif-no-leida'}">
                 <td>${n.leida ? '📖' : '📩'}</td>
-                <td><strong>${escapeHtml(n.titulo)}</strong></td>
+                <td><strong>${escapeHtml(n.titulo)}</strong>${Number(n.es_novedad) === 1 ? ' <span style="background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:4px;vertical-align:middle">🆕 NUEVO</span>' : ''}</td>
                 <td style="white-space:pre-line;font-size:13px">${escapeHtml(n.mensaje)}</td>
                 <td><span style="background:${tipoColores[n.tipo] || '#6b7280'};color:white;padding:3px 8px;border-radius:4px;font-size:11px">${tipoIconos[n.tipo] || 'ℹ️'} ${n.tipo}</span></td>
                 <td>
@@ -1027,14 +1027,15 @@ async function cargarNotificaciones() {
                 const prioridadLabel = prioridadLabels[n.prioridad] || 'Normal';
                 const leidaStatus = n.leida ? '📖 Leída' : '📩 No leída';
                 const destinatario = n.destinatario_id ? 'Usuario #' + n.destinatario_id : '🌐 Todos';
+                const esNovedad = Number(n.es_novedad) === 1;
 
-                return `<div class="notif-admin-card ${n.leida ? 'notif-admin-card-leida' : 'notif-admin-card-no-leida'}">
+                return `<div class="notif-admin-card ${n.leida ? 'notif-admin-card-leida' : 'notif-admin-card-no-leida'}${esNovedad ? ' notif-admin-card-novedad' : ''}">
                     <div class="notif-admin-card-header">
-                        <div class="notif-admin-card-icon" style="background:${tipoColor}20">
-                            <span>${tipoIcono}</span>
+                        <div class="notif-admin-card-icon" style="background:${esNovedad ? '#7c3aed20' : tipoColor + '20'}">
+                            <span>${esNovedad ? '✨' : tipoIcono}</span>
                         </div>
                         <div class="notif-admin-card-info">
-                            <div class="notif-admin-card-title">${escapeHtml(n.titulo)}</div>
+                            <div class="notif-admin-card-title">${escapeHtml(n.titulo)}${esNovedad ? ' <span style="background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:4px;vertical-align:middle">🆕 NUEVO</span>' : ''}</div>
                             <div class="notif-admin-card-meta">
                                 <span class="notif-admin-card-tipo" style="background:${tipoColor}20;color:${tipoColor}">${tipoIcono} ${n.tipo}</span>
                                 <span style="color:${prioridadColores[n.prioridad] || '#6b7280'}">${prioridadIcono} ${prioridadLabel}</span>
@@ -1209,6 +1210,7 @@ async function abrirModalCrearNotificacion() {
     document.getElementById('notifPrioridad').value = 'normal';
     document.getElementById('notifAccionTexto').value = '';
     document.getElementById('notifFechaExpiracion').value = '';
+    document.getElementById('notifEsNovedad').checked = false;
     _abrirModal(_MODALES.notif);
 }
 
@@ -1225,6 +1227,7 @@ async function crearNotificacion() {
     var accion_texto = document.getElementById('notifAccionTexto').value.trim() || null;
     const fecha_expiracion = document.getElementById('notifFechaExpiracion').value || null;
     const destinatario_id = document.getElementById('notifDestinatario').value || null;
+    const es_novedad = document.getElementById('notifEsNovedad').checked ? 1 : 0;
 
     // 🆕 Deep Link Router: el valor del select ahora es un moduleId (no una URL)
     // Si se seleccionó un módulo, se envía como accion_modulo.
@@ -1258,7 +1261,8 @@ async function crearNotificacion() {
                 accion_url,        // Se envía null si se usó módulo
                 accion_texto,
                 fecha_expiracion,
-                destinatario_id
+                destinatario_id,
+                es_novedad         // 🆕 1 = anuncio de nueva funcionalidad
             })
         });
         if (res.ok) {

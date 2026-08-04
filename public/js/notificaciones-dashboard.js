@@ -319,15 +319,16 @@ function mostrarToastNotificacion(notif) {
     }
 
     const toast = document.createElement('div');
-    toast.className = `notif-toast notif-toast-${notif.tipo || 'info'}`;
+    const esNovedad = Number(notif.es_novedad) === 1;
+    toast.className = `notif-toast notif-toast-${notif.tipo || 'info'}${esNovedad ? ' notif-toast-novedad' : ''}`;
     toast.setAttribute('data-notif-id', notif.id || '');
 
-    const tipoIcono = NOTIF_CONFIG.TIPO_ICONOS[notif.tipo] || 'ℹ️';
+    const tipoIcono = esNovedad ? '✨' : (NOTIF_CONFIG.TIPO_ICONOS[notif.tipo] || 'ℹ️');
 
     toast.innerHTML = `
         <div class="notif-toast-icon">${tipoIcono}</div>
         <div class="notif-toast-content" onclick="abrirPanelNotificaciones()">
-            <div class="notif-toast-title">${escapeHtmlNotif(notif.titulo)}</div>
+            <div class="notif-toast-title">${escapeHtmlNotif(notif.titulo)} ${esNovedad ? '<span class="notif-nuevo-badge">🆕 NUEVO</span>' : ''}</div>
             <div class="notif-toast-msg">${escapeHtmlNotif(notif.mensaje ? notif.mensaje.substring(0, 80) : '')}</div>
         </div>
         <button class="notif-toast-close" onclick="cerrarToast(this)">✕</button>
@@ -403,8 +404,48 @@ async function cargarNotificacionesUsuario() {
             return;
         }
 
-        // Renderizar cards
-        body.innerHTML = data.data.map((n, index) => renderizarNotificacion(n, index)).join('');
+        // ================================================================
+        // 🆕 SEPARAR NOVEDADES (anuncios de funcionalidades) del resto
+        // Las novedades se muestran en una sección destacada al inicio.
+        // ================================================================
+        const novedades = (data.data || []).filter(n => Number(n.es_novedad) === 1);
+        const normales = (data.data || []).filter(n => Number(n.es_novedad) !== 1);
+
+        let html = '';
+
+        // Sección destacada de Novedades
+        if (novedades.length > 0) {
+            const noLeidasNovedades = novedades.filter(n => !n.leida).length;
+            html += `
+                <div class="notif-novedades-header">
+                    <div class="notif-novedades-header-title">✨ Novedades</div>
+                    <div class="notif-novedades-header-sub">Nuevas funcionalidades de Archivox</div>
+                    ${noLeidasNovedades > 0 ? `<span class="notif-novedades-count">${noLeidasNovedades} nueva${noLeidasNovedades > 1 ? 's' : ''}</span>` : ''}
+                </div>
+                <div class="notif-novedades-list">
+                    ${novedades.map((n, i) => renderizarNotificacion(n, i, true)).join('')}
+                </div>
+            `;
+        }
+
+        // Notificaciones normales
+        if (normales.length > 0) {
+            if (novedades.length > 0) {
+                html += `<div class="notif-divider">📌 Notificaciones</div>`;
+            }
+            html += normales.map((n, i) => renderizarNotificacion(n, i, false)).join('');
+        }
+
+        if (!html) {
+            html = `
+                <div class="notif-empty">
+                    <div class="notif-empty-icon">🔔</div>
+                    <h4>Sin notificaciones</h4>
+                    <p>No tienes notificaciones nuevas</p>
+                </div>`;
+        }
+
+        body.innerHTML = html;
 
         // Animar las que llegaron nuevas (las primeras si son no leídas)
         const items = body.querySelectorAll('.notif-item');
@@ -426,7 +467,7 @@ async function cargarNotificacionesUsuario() {
 // ============================================================================
 // RENDERIZAR UNA NOTIFICACIÓN (Card moderna)
 // ============================================================================
-function renderizarNotificacion(n, index) {
+function renderizarNotificacion(n, index, esNovedad) {
     const tipoIcono = NOTIF_CONFIG.TIPO_ICONOS[n.tipo] || 'ℹ️';
     const tipoColor = NOTIF_CONFIG.TIPO_COLORES[n.tipo] || '#6b7280';
     const prioridad = n.prioridad || 'normal';
@@ -437,6 +478,10 @@ function renderizarNotificacion(n, index) {
     const claseNoLeida = esNoLeida ? 'notif-item-no-leida' : '';
     const claseNew = (esNoLeida && index < 3) ? 'notif-item-new' : '';
     const claseTipo = `notif-tipo-badge-${n.tipo || 'info'}`;
+    // 🆕 Novedades: clase especial + badge "NUEVO"
+    const esNovedadBool = esNovedad || Number(n.es_novedad) === 1;
+    const claseNovedad = esNovedadBool ? 'notif-item-novedad' : '';
+    const badgeNovedad = esNovedadBool ? '<span class="notif-nuevo-badge">🆕 NUEVO</span>' : '';
 
     // Fecha formateada
     const fechaHTML = formatearFechaNotif(n.created_at);
@@ -462,7 +507,7 @@ function renderizarNotificacion(n, index) {
     const cardOnClick = `marcarLeidaUsuario(${n.id}${n.accion_url ? `, this.dataset.accionUrl` : ''}${n.accion_modulo ? `, this.dataset.accionModulo` : ''})`;
 
     return `
-        <div class="notif-item ${claseNoLeida} ${clasePrioridad} ${claseNew} ${claseExpirada}"
+        <div class="notif-item ${claseNoLeida} ${clasePrioridad} ${claseNew} ${claseExpirada} ${claseNovedad}"
              data-id="${n.id}"
              data-leida="${n.leida ? 'true' : 'false'}"
              ${dataAccionUrl}
@@ -476,7 +521,7 @@ function renderizarNotificacion(n, index) {
             </div>
             <div class="notif-item-content">
                 <div class="notif-item-header">
-                    <div class="notif-item-title">${escapeHtmlNotif(n.titulo)}</div>
+                    <div class="notif-item-title">${escapeHtmlNotif(n.titulo)} ${badgeNovedad}</div>
                     <span class="notif-item-tipo-badge ${claseTipo}">${tipoIcono} ${n.tipo || 'info'}</span>
                 </div>
                 <div class="notif-item-msg">${escapeHtmlNotif(n.mensaje)}</div>

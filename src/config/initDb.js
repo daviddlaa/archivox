@@ -336,7 +336,8 @@ const notifNewCols = {
     'accion_url': 'TEXT',
     'accion_texto': 'TEXT',
     'fecha_expiracion': 'TEXT',
-    'accion_modulo': 'TEXT'         // 🆕 Deep Link Router: identificador lógico del módulo
+    'accion_modulo': 'TEXT',        // 🆕 Deep Link Router: identificador lógico del módulo
+    'es_novedad': 'INTEGER DEFAULT 0'  // 🆕 Novedades: 1 = anuncio de nueva funcionalidad
 };
 let notifMigradas = 0;
 for (const [col, tipo] of Object.entries(notifNewCols)) {

@@ -827,6 +827,13 @@ body {
 .notif-admin-card-no-leida::before {
     background: linear-gradient(180deg, #3b82f6, #60a5fa);
 }
+.notif-admin-card-novedad::before {
+    background: linear-gradient(180deg, #7c3aed, #2563eb);
+}
+.notif-admin-card-novedad {
+    border: 1px solid #ede9fe;
+    background: linear-gradient(135deg, #faf5ff, #ffffff);
+}
 
 .notif-admin-card-header {
     display: flex;

@@ -62,7 +62,7 @@ exports.listar = async (req, res) => {
         console.warn('[Notificaciones] Usando fallback - verificar migración de columnas en PostgreSQL');
         // Fallback seguro: respeta filtro de destinatario para usuarios no-admin
         try {
-            let fallbackSql = `SELECT n.id, n.titulo, n.mensaje, n.tipo, n.leida, n.created_at, u.username as creador_username
+            let fallbackSql = `SELECT n.id, n.titulo, n.mensaje, n.tipo, n.leida, n.es_novedad, n.created_at, u.username as creador_username
                                FROM notificaciones n
                                LEFT JOIN usuarios u ON n.creador_id = u.id WHERE 1=1`;
             const fallbackParams = [];
@@ -98,7 +98,7 @@ exports.listar = async (req, res) => {
 exports.crear = async (req, res) => {
     try {
         const adminSession = req.session.usuario;
-        const { titulo, mensaje, tipo = 'info', prioridad = 'normal', destinatario_id, accion_url, accion_texto, fecha_expiracion, accion_modulo } = req.body;
+        const { titulo, mensaje, tipo = 'info', prioridad = 'normal', destinatario_id, accion_url, accion_texto, fecha_expiracion, accion_modulo, es_novedad } = req.body;
 
         if (!titulo || !mensaje) {
             return res.status(400).json({ error: 'Título y mensaje son requeridos' });
@@ -109,10 +109,10 @@ exports.crear = async (req, res) => {
         const prioridadFinal = prioridadesValidas.includes(prioridad) ? prioridad : 'normal';
 
         const result = await pool.query(
-            `INSERT INTO notificaciones (titulo, mensaje, tipo, prioridad, creador_id, destinatario_id, accion_url, accion_texto, fecha_expiracion, accion_modulo, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP)
+            `INSERT INTO notificaciones (titulo, mensaje, tipo, prioridad, creador_id, destinatario_id, accion_url, accion_texto, fecha_expiracion, accion_modulo, es_novedad, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP)
              RETURNING id`,
-            [titulo, mensaje, tipo, prioridadFinal, adminSession.id, destinatario_id || null, accion_url || null, accion_texto || null, fecha_expiracion || null, accion_modulo || null]
+            [titulo, mensaje, tipo, prioridadFinal, adminSession.id, destinatario_id || null, accion_url || null, accion_texto || null, fecha_expiracion || null, accion_modulo || null, Number(es_novedad) ? 1 : 0]
         );
 
         const newId = result.rows?.[0]?.id || result.lastInsertRowid;
@@ -123,7 +123,7 @@ exports.crear = async (req, res) => {
                 `INSERT INTO audit_log (usuario_id, accion, target_type, target_id, detalle, ip_address, created_at)
                  VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)`,
                 [adminSession.id, 'notification.created', 'notification', newId,
-                 JSON.stringify({ titulo, tipo, prioridad: prioridadFinal, destinatario: destinatario_id || 'todos', accion_url }),
+                 JSON.stringify({ titulo, tipo, prioridad: prioridadFinal, destinatario: destinatario_id || 'todos', accion_url, es_novedad: Number(es_novedad) ? 1 : 0 }),
                  req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip]
             );
         } catch (e) { /* ignora error de auditoría */ }
@@ -142,6 +142,7 @@ exports.crear = async (req, res) => {
                 accion_url: accion_url || null,
                 accion_texto: accion_texto || null,
                 accion_modulo: accion_modulo || null,  // 🆕 Deep Link Router
+                es_novedad: Number(es_novedad) ? 1 : 0,  // 🆕 Novedades: anuncio de funcionalidad
                 fecha_expiracion: fecha_expiracion || null,
                 leida: 0,
                 creador_username: adminSession.username,

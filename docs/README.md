@@ -879,7 +879,26 @@ El cliente (`public/js/notificaciones-dashboard.js`) reconecta el SSE con **back
 | `notification.archived` | `{id, usuarioId}` | Notificación archivada |
 | `count.updated` | `{no_leidas}` | Actualización de contador |
 
-### 10.4 Deep Link Router
+### 10.4 Centro de Novedades (🆕 Anuncios de funcionalidades)
+
+Las notificaciones pueden marcarse como **Novedad** (`es_novedad = 1`), lo que las
+convierte en anuncios destacados de nuevas funcionalidades visibles para **todos los
+usuarios**:
+
+- **Columna `es_novedad`** (INTEGER, default 0) en la tabla `notificaciones` — migrada
+automáticamente al iniciar el servidor (SQLite y PostgreSQL, idempotente).
+- **Panel admin:** checkbox "✨ Anunciar como Novedad" en el modal de crear notificación
+(además del selector de módulo/deep link). Las novedades se marcan con badge "🆕 NUEVO"
+en la tabla y las cards móviles.
+- **Panel usuario:** las novedades se muestran en una **sección destacada "✨ Novedades"**
+al inicio del centro de notificaciones, separadas de las notificaciones normales, con
+header degradado (violeta→azul), badge "🆕 NUEVO" animado y borde lateral degradado.
+- **Toast en tiempo real:** cuando llega una novedad por SSE, el toast usa estilo y
+degradado propio (borde violeta, icono ✨).
+- **Deep links:** las novedades usan el mismo `accion_modulo` del DeepLinkRouter, así que
+el botón de acción lleva a la pantalla correcta según la plataforma del usuario.
+
+### 10.5 Deep Link Router
 
 Las notificaciones pueden incluir un `accion_modulo` que permite navegar directamente al módulo correspondiente:
 
@@ -1054,6 +1073,7 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - **Orden de lista por prioridad (D3/M3):** La lista se ordena amarillo → sin clasificar → verde → rojo, con destacadas primero, en desktop y móvil; el carrusel móvil reordena sus tarjetas con el mismo criterio.
 - **Atajos de teclado desktop (D3):** `/` busca, `j`/`k` navegan tarjetas, `Enter` abre la última gestión, `1-4` filtran semáforo, `0` limpia, `Esc` cierra; foco visual `.card-focused`.
 - **Rail/workspace (D2):** Panel lateral de campañas colapsable con transición de `grid-template-columns` (0.28s) y fade-in de tarjetas (`railFadeIn`); el estado persiste en `localStorage`.
+- **WhatsApp Directo con plantillas:** el envío de mensajes (botón "💬 Directo" en desktop e icono 💬 en las tarjetas móviles) usa las **plantillas del usuario** (ver §11.12); todos los modales de Campañas (WhatsApp, Gestionar, Ver gestión, Historial) escapan sus datos para evitar inyección HTML.
 
 ### 11.6 Relaciones
 
@@ -1140,7 +1160,8 @@ La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tabla
 **Ruta:** `/plantillas` (desktop), `/m/plantillas` (móvil)
 **Archivos:** `plantillas.controller.js`, `plantillas.routes.js`, `public/desktop/js/plantillas.js`, `public/movil/js/plantillas.js`
 
-- CRUD de plantillas de WhatsApp por usuario (máx. **5**, límite leído dinámicamente del campo `max` que devuelve la API; los textos se escapan con `escaparParaHTML()` en el modal de WhatsApp Directo), con la variable `{nombre}` que se reemplaza con el nombre del cliente
+- CRUD de plantillas de WhatsApp por usuario (máx. **5**, límite leído dinámicamente del campo `max` de la API y validado de forma **atómica** en el backend), con la variable `{nombre}` que se reemplaza con el nombre del cliente
+- **Seguridad (v1.3):** todos los modales de Campañas (WhatsApp Directo, Gestionar, Ver gestión, Historial) escapan sus datos con `escaparParaHTML()`/`escaparParaAtributo()`
 - Pantallas desktop (grid de tarjetas) y móvil (lista), modal crear/editar con contador de caracteres (2000) e inserción rápida de `{nombre}`
 - Contador de uso con barra de progreso y empty state
 - **Integración con WhatsApp Directo** de Gestión por Lotes: las plantillas del usuario reemplazan los mensajes fijos (fallback al mensaje predeterminado si no hay plantillas); la variable `{nombre}` se reemplaza al abrir el modal; en móvil el icono 💬 de cada tarjeta abre este modal (v1.3)

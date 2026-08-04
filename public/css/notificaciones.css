@@ -507,6 +507,113 @@
     border-bottom: 1px solid #e5e7eb;
 }
 
+/* ========================================================================
+   🆕 NOVEDADES - SECCIÓN DESTACADA DE NUEVAS FUNCIONALIDADES
+   ======================================================================== */
+.notif-novedades-header {
+    padding: 16px 20px 10px;
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    color: white;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    position: relative;
+    overflow: hidden;
+}
+.notif-novedades-header::after {
+    content: '✨';
+    position: absolute;
+    right: 16px;
+    top: 8px;
+    font-size: 32px;
+    opacity: 0.25;
+    transform: rotate(15deg);
+}
+.notif-novedades-header-title {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.notif-novedades-header-sub {
+    font-size: 11px;
+    opacity: 0.85;
+    margin-top: 2px;
+}
+.notif-novedades-count {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 8px;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+    backdrop-filter: blur(4px);
+}
+
+.notif-novedades-list {
+    background: #faf5ff;
+}
+.notif-novedades-list .notif-item {
+    border-bottom: 1px solid #ede9fe;
+}
+.notif-novedades-list .notif-item:last-child {
+    border-bottom: 2px solid #c4b5fd;
+}
+
+/* Card de novedad: borde lateral degradado + fondo sutil */
+.notif-item-novedad {
+    background: linear-gradient(90deg, rgba(124,58,237,0.06), transparent 40%);
+}
+.notif-item-novedad::before {
+    background: linear-gradient(180deg, #7c3aed, #2563eb) !important;
+    opacity: 1;
+}
+.notif-item-novedad:hover {
+    background: linear-gradient(90deg, rgba(124,58,237,0.12), transparent 55%);
+}
+.notif-item-novedad .notif-item-title {
+    color: #5b21b6;
+}
+.notif-item-novedad.notif-item-no-leida {
+    background: linear-gradient(90deg, rgba(124,58,237,0.14), rgba(124,58,237,0.04) 60%);
+}
+.notif-item-novedad.notif-item-no-leida:hover {
+    background: linear-gradient(90deg, rgba(124,58,237,0.2), rgba(124,58,237,0.08) 60%);
+}
+
+/* Badge NUEVO */
+.notif-nuevo-badge {
+    display: inline-block;
+    margin-left: 6px;
+    background: linear-gradient(135deg, #f59e0b, #f97316);
+    color: white;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    vertical-align: middle;
+    box-shadow: 0 1px 4px rgba(249,115,22,0.4);
+    animation: notifNuevoPulse 2s ease infinite;
+}
+@keyframes notifNuevoPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
+/* Toast de novedad */
+.notif-toast-novedad {
+    border-left: 4px solid #7c3aed;
+    background: linear-gradient(135deg, #faf5ff, #ffffff);
+}
+.notif-toast-novedad .notif-toast-icon {
+    filter: drop-shadow(0 0 6px rgba(124,58,237,0.4));
+}
+
 /* ===== NOTIFICACIÓN EXPIRADA ===== */
 .notif-item-expirada {
     opacity: 0.6;

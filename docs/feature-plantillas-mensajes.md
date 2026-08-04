@@ -254,11 +254,16 @@ public/js/deep-link-router.js                 # Módulo deep link 'plantillas'
 2. Entrar a `/plantillas` (desktop) o `/m/plantillas` (móvil).
 3. Crear una plantilla con `{nombre}` en el mensaje → debe aparecer en el grid con la
    variable resaltada y el contador debe subir.
-4. Abrir una campaña en `/gestion-lote`, clic en "💬 Directo" de una solicitud → el modal
-   debe mostrar los botones de las plantillas y el textarea precargado con la primera
-   (con el nombre del cliente reemplazado).
-5. Crear 6 plantillas → la 6.ª debe rechazarse con el mensaje de límite.
+4. Abrir una campaña en `/gestion-lote`: en desktop hacer clic en "💬 Directo" y en móvil
+   en el icono 💬 de una tarjeta → el modal debe mostrar los botones de las plantillas y el
+   textarea precargado con la primera (con el nombre del cliente reemplazado).
+5. Crear 6 plantillas → la 6.ª debe rechazarse con el mensaje de límite (validación
+   atómica: `INSERT` condicional, sin condición de carrera).
 6. Eliminar una plantilla → debe pedir confirmación y actualizar el contador.
+7. Crear una plantilla cuyo nombre/contenido contenga caracteres especiales (`<`, `>`, `"`, `'`)
+   y abrir el modal de WhatsApp Directo → debe verse como texto plano, sin romper el modal.
+8. En móvil, verificar que el icono 💬 de las tarjetas de campaña abra el modal de
+   plantillas y que "Abrir WhatsApp al enviar" siga funcionando desde el botón 📤 Enviar.
 
 ## Evolución futura
 
