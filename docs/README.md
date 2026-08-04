@@ -920,8 +920,9 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
   subtítulo y 3 chips de acceso rápido (📤 Importar Excel · 📋 Consultar solicitudes ·
   📊 Monitorear estados), (2) KPIs — tarjeta Mi Equipo si eres líder (tamaño natural,
   centrada) o las 4 stats (Total/Activadas/Rechazadas/Aprobadas) en grid 2×2 si no
-  (`ajustarSlideEquipo`), (3) Estados, (4) Segmentos (gráficos más pequeños, min-height 140px).
-  Altura uniforme y contenido centrado (`igualarAlturaDashdSlides`). Los accesos rápidos
+  (`ajustarSlideEquipo`), (3) Estados, (4) Segmentos (gráficos más pequeños, 98px de alto,
+  30% menos que los 140px originales). Altura uniforme y contenido centrado
+  (`igualarAlturaDashdSlides`). Los accesos rápidos
   (Importar/Solicitudes/Ventas/Campañas/Relaciones/Nueva Solicitud/Gestión Equipo) siguen
   como fila fija encima del carrusel.
 - **Widgets lado a lado (escritorio):** debajo del carrusel, grid de 2 columnas
