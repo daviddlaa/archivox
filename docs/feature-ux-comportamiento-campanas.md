@@ -216,3 +216,11 @@ GET /api/gestiones-maestro/:gestionId/solicitudes/:solicitudId/historial
 ```
 
 El endpoint valida que el usuario tenga acceso a la campaña y que la solicitud pertenezca a ella. Después obtiene las gestiones asociadas a esa campaña o las gestiones generales de la solicitud (`gestion_maestro_id IS NULL`). Esto evita que un usuario normal vea una última gestión en la tarjeta pero reciba un historial vacío por un filtro exclusivo de `usuario_id`.
+
+El destacado dentro de una campaña usa el endpoint contextual:
+
+```text
+PUT /api/gestiones-maestro/:gestionId/solicitudes/:solicitudId/destacar
+```
+
+La ruta general `PUT /api/excel/solicitudes/:id/destacar` mantiene la restricción de propietario para la pantalla global de Solicitudes. La ruta contextual permite la acción a usuarios con acceso operativo a la campaña, después de validar que la solicitud pertenezca a ella.

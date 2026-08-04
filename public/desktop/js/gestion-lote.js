@@ -939,7 +939,7 @@ function abrirGestion(solicitudId, tipo) {
 async function toggleDestacado(solicitudId, nuevoEstado, eventRef) {
     var badgeEl = (eventRef && eventRef.currentTarget) || (typeof event !== 'undefined' && event ? event.target : null);
     try {
-        var response = await fetch('/api/excel/solicitudes/' + solicitudId + '/destacar', {
+        var response = await fetch('/api/gestiones-maestro/' + gestionId + '/solicitudes/' + encodeURIComponent(solicitudId) + '/destacar', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ destacado: Number(nuevoEstado) })
@@ -1021,7 +1021,7 @@ async function guardarGestionIndividual(solicitudId) {
                 var solActual = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
                 var nuevoDestacado = checkboxDestacar.checked ? 1 : 0;
                 if (solActual && nuevoDestacado !== (solActual.destacado || 0)) {
-                    await fetch('/api/excel/solicitudes/' + solicitudId + '/destacar', {
+                    await fetch('/api/gestiones-maestro/' + gestionId + '/solicitudes/' + encodeURIComponent(solicitudId) + '/destacar', {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ destacado: nuevoDestacado })

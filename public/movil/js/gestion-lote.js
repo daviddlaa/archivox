@@ -628,7 +628,7 @@ async function guardarGestionIndividual(solicitudId) {
                 var solActual = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
                 var nuevoDestacado = checkboxDestacar.checked ? 1 : 0;
                 if (solActual && nuevoDestacado !== (solActual.destacado || 0)) {
-                    await fetch('/api/excel/solicitudes/' + solicitudId + '/destacar', {
+                    await fetch('/api/gestiones-maestro/' + gestionId + '/solicitudes/' + encodeURIComponent(solicitudId) + '/destacar', {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ destacado: nuevoDestacado })
@@ -652,7 +652,7 @@ async function guardarGestionIndividual(solicitudId) {
 // Alternar destacado de una solicitud
 async function toggleDestacado(solicitudId, nuevoEstado) {
     try {
-        var response = await fetch('/api/excel/solicitudes/' + solicitudId + '/destacar', {
+        var response = await fetch('/api/gestiones-maestro/' + gestionId + '/solicitudes/' + encodeURIComponent(solicitudId) + '/destacar', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ destacado: nuevoEstado })
@@ -662,6 +662,8 @@ async function toggleDestacado(solicitudId, nuevoEstado) {
         
         if (response.ok && !resultado.error) {
             await cargarDatosGestionMovil();
+        } else {
+            alert(resultado.error || 'No se pudo actualizar el destacado');
         }
     } catch (error) {
         console.error('[movil] Error alternando destacado:', error);

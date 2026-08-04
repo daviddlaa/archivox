@@ -1123,6 +1123,8 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 | DELETE | `/api/gestiones-maestro/:id` | ✅ | Eliminar campaña |
 | PUT | `/api/gestiones-maestro/:id/agregar-solicitudes` | ✅ | Agregar solicitudes |
 | PUT | `/api/gestiones-maestro/:id/quitar-solicitud` | ✅ | Quitar solicitud |
+| GET | `/api/gestiones-maestro/:id/solicitudes/:solicitudId/historial` | ✅ | Historial contextual de solicitud |
+| PUT | `/api/gestiones-maestro/:id/solicitudes/:solicitudId/destacar` | ✅ | Destacar solicitud con acceso a campaña |
 | PUT | `/api/gestiones-maestro/:id/asignar-agente` | ✅ | Asignar agente |
 | PUT | `/api/gestiones-maestro/:id/quitar-asignacion` | ✅ | Quitar asignación |
 

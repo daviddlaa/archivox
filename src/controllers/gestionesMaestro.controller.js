@@ -327,6 +327,53 @@ async function getHistorialSolicitudCampana(req, res) {
     }
 }
 
+// PUT /api/gestiones-maestro/:id/solicitudes/:solicitudId/destacar
+// Permite destacar una solicitud cuando el usuario tiene acceso operativo a la campaña.
+async function destacarSolicitudCampana(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) return res.status(401).json({ error: 'No autenticado' });
+
+        const { id, solicitudId } = req.params;
+        const destacado = Number(req.body && req.body.destacado);
+        if (destacado !== 0 && destacado !== 1) {
+            return res.status(400).json({ error: 'El campo destacado debe ser 0 o 1' });
+        }
+
+        const access = buildGestionAccessWhere(req, id);
+        const gestionResult = await pool.query(
+            'SELECT gm.id, gm.solicitudes_ids FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access),
+            access.params
+        );
+        const gestion = getFirstRow(gestionResult);
+        if (!gestion) return res.status(404).json({ error: 'Campaña no encontrada' });
+
+        let solicitudIds = [];
+        try { solicitudIds = JSON.parse(gestion.solicitudes_ids || '[]'); } catch (e) { solicitudIds = []; }
+        if (solicitudIds.map(String).indexOf(String(solicitudId)) === -1) {
+            return res.status(404).json({ error: 'La solicitud no pertenece a esta campaña' });
+        }
+
+        const result = await pool.query(
+            `UPDATE solicitudes
+             SET destacado = ?, fecha_actualizacion = CURRENT_TIMESTAMP
+             WHERE id_solicitud = ?
+             RETURNING id_solicitud, destacado`,
+            [destacado, solicitudId]
+        );
+        const actualizado = getFirstRow(result);
+        if (!actualizado) return res.status(404).json({ error: 'Solicitud no encontrada' });
+
+        res.json({
+            mensaje: destacado === 1 ? 'Solicitud destacada' : 'Solicitud no destacada',
+            data: actualizado
+        });
+    } catch (error) {
+        console.error('Error destacarSolicitudCampana:', error);
+        res.status(500).json({ error: 'Error al actualizar el destacado' });
+    }
+}
+
 // POST /api/gestiones-maestro - Crear nueva gestión por lotes
 async function createGestionMaestro(req, res) {
     try {
@@ -1050,6 +1097,7 @@ module.exports = {
     quitarAsignacionAgente: quitarAsignacionAgente,
     actualizarSemaforoSolicitud: actualizarSemaforoSolicitud,
     historialSolicitudCampana: getHistorialSolicitudCampana,
+    destacarSolicitudCampana: destacarSolicitudCampana,
     // Aliases en inglés para excel.routes.js
     getGestionesMaestro: getGestionesMaestro,
     getGestionMaestroById: getGestionMaestroById,

@@ -13,6 +13,7 @@ router.get('/', controller.listarGestionesMaestro);
 // Rutas específicas ANTES de /:id para no capturar subpaths
 router.get('/:id/progreso', controller.obtenerProgresoGestion);
 router.get('/:id/solicitudes/:solicitudId/historial', controller.historialSolicitudCampana);
+router.put('/:id/solicitudes/:solicitudId/destacar', controller.destacarSolicitudCampana);
 router.put('/:id/agregar-solicitudes', controller.agregarSolicitudesACampana);
 router.put('/:id/quitar-solicitud', controller.quitarSolicitudDeCampana);
 router.put('/:id/asignar-agente', controller.asignarAgenteACampana);
