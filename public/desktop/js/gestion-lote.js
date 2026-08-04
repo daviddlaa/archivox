@@ -163,13 +163,55 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// Navegación por teclado — j/k entre cards, 1-4 semáforo, / búsqueda
+var _cardNavIndex = -1;
+
+function _cardElements() {
+    return Array.prototype.slice.call(document.querySelectorAll('#lista-solicitudes .sol-card'));
+}
+
+function _cardSelect(idx) {
+    var cards = _cardElements();
+    if (!cards.length) return;
+    var prev = document.querySelector('#lista-solicitudes .sol-card.card-focused');
+    if (prev) prev.classList.remove('card-focused');
+    _cardNavIndex = Math.max(0, Math.min(idx, cards.length - 1));
+    var el = cards[_cardNavIndex];
+    el.classList.add('card-focused');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && CampanaMoreMenu.isOpen) {
-        CampanaMoreMenu.close();
+    if (e.key === 'Escape' && CampanaMoreMenu.isOpen) { CampanaMoreMenu.close(); return; }
+    if (e.key === 'Escape' && CampanasPopover.isOpen) { CampanasPopover.close(); return; }
+    if (e.key === 'Escape') {
+        var focused = document.querySelector('#lista-solicitudes .sol-card.card-focused');
+        if (focused) { focused.classList.remove('card-focused'); _cardNavIndex = -1; }
+        return;
     }
-    if (e.key === 'Escape' && CampanasPopover.isOpen) {
-        CampanasPopover.close();
+    var tag = (e.target.tagName || '').toLowerCase();
+    var inInput = tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable;
+    if (inInput) return;
+
+    if (e.key === '/' || (e.key === 'k' && (e.ctrlKey || e.metaKey))) {
+        e.preventDefault();
+        var busq = document.getElementById('busqueda');
+        if (busq) busq.focus();
+        return;
     }
+    if (e.key === 'j') { _cardSelect(_cardNavIndex + 1); return; }
+    if (e.key === 'k') { _cardSelect(_cardNavIndex - 1); return; }
+    if (e.key === 'Enter') {
+        var cards = _cardElements();
+        if (_cardNavIndex >= 0 && _cardNavIndex < cards.length) {
+            var btn = cards[_cardNavIndex].querySelector('.sol-ultima-gestion');
+            if (btn) btn.click();
+        }
+        return;
+    }
+    var keyMap = { '1': 'sin_clasificar', '2': 'amarillo', '3': 'verde', '4': 'rojo' };
+    if (keyMap[e.key]) { setFiltroSemaforo(keyMap[e.key]); return; }
+    if (e.key === '0') { setFiltroSemaforo(null); return; }
 });
 
 // Obtener ID de la gestión de la URL
@@ -879,6 +921,8 @@ function actualizarProgreso() {
 // Renderizar lista de solicitudes
 function renderizarSolicitudes(lista) {
     var container = document.getElementById('lista-solicitudes');
+    // Guardar posición de scroll antes de re-render
+    var scrollY = container ? container.scrollTop : 0;
     
     if (!lista || lista.length === 0) {
         container.innerHTML = '<div class="empty">No hay solicitudes en esta gestión</div>';
@@ -924,11 +968,14 @@ function renderizarSolicitudes(lista) {
         return;
     }
     
-    // Ordenar: destacadas primero (🔥 al inicio)
+    // Ordenar: destacadas primero (🔥 al inicio), luego por prioridad de semáforo
+    var PRIORIDAD_SEMAFORO = { amarillo: 0, sin_clasificar: 1, verde: 2, rojo: 3 };
     activas.sort(function(a, b) {
         if (a.destacado == 1 && b.destacado != 1) return -1;
         if (a.destacado != 1 && b.destacado == 1) return 1;
-        return 0;
+        var pa = PRIORIDAD_SEMAFORO[normalizarSemaforo(a.semaforo)] || 4;
+        var pb = PRIORIDAD_SEMAFORO[normalizarSemaforo(b.semaforo)] || 4;
+        return pa - pb;
     });
     completadas.sort(function(a, b) {
         return new Date(b.fecha_gestion || 0).getTime() - new Date(a.fecha_gestion || 0).getTime();
@@ -1022,6 +1069,10 @@ function renderizarSolicitudes(lista) {
         html += '</div></section>';
     }
     container.innerHTML = html;
+    // Restaurar posición de scroll si el contenido es lo suficientemente largo
+    if (scrollY > 0 && container.scrollHeight > scrollY) {
+        container.scrollTop = scrollY;
+    }
 }
 
 function renderizarTarjetaCompletada(sol) {

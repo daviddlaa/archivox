@@ -2365,6 +2365,13 @@ body {
     }
 }
 
+/* ===== D3 — Keyboard focus ring ===== */
+.sol-card.card-focused {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(99,102,241,.15);
+}
+
 /* ===== D2 — Workspace 2 columnas + rail derecho plegable ===== */
 .container-campana {
     max-width: 1480px;
@@ -2375,6 +2382,7 @@ body {
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
     align-items: start;
+    transition: grid-template-columns .28s cubic-bezier(.4,0,.2,1);
 }
 
 .campana-workspace.workspace-active:not(.rail-collapsed) {
@@ -2397,6 +2405,12 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
+    animation: railFadeIn .25s ease-out;
+}
+
+@keyframes railFadeIn {
+    from { opacity: 0; transform: translateX(12px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
 .campana-rail[hidden] {

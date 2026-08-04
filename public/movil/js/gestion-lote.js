@@ -484,6 +484,8 @@ async function cambiarSemaforoMovil(solicitudId, semaforo) {
 
 function renderizarSolicitudes(lista) {
     var container = document.getElementById('lista-solicitudes');
+    // Guardar posición de scroll antes de re-render
+    var scrollY = container ? container.scrollTop : 0;
     if (!lista || lista.length === 0) {
         container.innerHTML = '<div class="sin-campana"><p>No hay solicitudes en esta gestión</p></div>';
         return;
@@ -518,11 +520,14 @@ function renderizarSolicitudes(lista) {
     var completadas = filtradas.filter(function(sol) { return sol.tipo_gestion === 'Completada'; });
     var activasFiltradas = filtradas.filter(function(sol) { return sol.tipo_gestion !== 'Completada'; });
 
-    // Ordenar: destacadas primero (🔥 al inicio)
+    // Ordenar: destacadas primero (🔥 al inicio), luego por prioridad de semáforo
+    var PRIORIDAD_SEMAFORO_MOVIL = { amarillo: 0, sin_clasificar: 1, verde: 2, rojo: 3 };
     activasFiltradas.sort(function(a, b) {
         if (a.destacado == 1 && b.destacado != 1) return -1;
         if (a.destacado != 1 && b.destacado == 1) return 1;
-        return 0;
+        var pa = PRIORIDAD_SEMAFORO_MOVIL[normalizarSemaforoMovil(a.semaforo)] || 4;
+        var pb = PRIORIDAD_SEMAFORO_MOVIL[normalizarSemaforoMovil(b.semaforo)] || 4;
+        return pa - pb;
     });
     completadas.sort(function(a, b) { return new Date(b.fecha_gestion || 0).getTime() - new Date(a.fecha_gestion || 0).getTime(); });
     
@@ -594,6 +599,10 @@ html += '<div class="sol-botones">';
         html += '</div></section>';
     }
     container.innerHTML = html;
+    // Restaurar posición de scroll si el contenido es lo suficientemente largo
+    if (scrollY > 0 && container.scrollHeight > scrollY) {
+        container.scrollTop = scrollY;
+    }
 }
 
 function renderizarTarjetaCompletadaMovil(sol) {
