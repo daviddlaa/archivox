@@ -2,6 +2,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const crypto = require('crypto');
 const session = require('express-session');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -35,7 +36,15 @@ app.use(express.urlencoded({ extended: true }));
 // NOTA: La sesión va ANTES del rate limiter para poder contar por usuario
 // autenticado (no por IP), evitando bloquear usuarios legítimos.
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'default-secret-change-me',
+    // SEGURIDAD: nunca usar un secret por defecto conocido (permite falsificar cookies).
+    // Si no hay SESSION_SECRET, se genera uno aleatorio por arranque (las sesiones
+    // se invalidan al reiniciar, pero nadie puede forjar cookies).
+    secret: process.env.SESSION_SECRET || (() => {
+        if (process.env.NODE_ENV === 'production') {
+            console.error('⚠️ [SEGURIDAD] SESSION_SECRET no definido en producción. Se genera un secreto aleatorio: las sesiones se perderán al reiniciar el servidor. Define SESSION_SECRET en tu entorno (Render).');
+        }
+        return crypto.randomBytes(32).toString('hex');
+    })(),
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -341,7 +350,17 @@ app.use('/api/plantillas', require('./src/routes/plantillas.routes'));
 // Catálogos dinámicos (estados, segmentos, etc.)
 app.use('/api/catalogos', require('./src/routes/catalog.routes'));
 
-// Archivos estáticos
+// SEGURIDAD: Bloquear acceso directo a archivos HTML por estáticos.
+// Las páginas se sirven SOLO a través de las rutas protegidas con requireAuthPage.
+// Sin esto, cualquiera podría descargar el HTML/JS de cada pantalla sin loguearse.
+app.use((req, res, next) => {
+    if (/\\.html$/i.test(req.path)) {
+        return res.redirect('/login');
+    }
+    next();
+});
+
+// Archivos estáticos (CSS/JS/imágenes, NO páginas HTML)
 app.use(express.static('public'));
 
 // ========================================================================

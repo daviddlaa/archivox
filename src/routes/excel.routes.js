@@ -37,7 +37,7 @@ router.post(
     excelController.crearSolicitudManual
 );
 
-router.get('/solicitudes', excelController.listarSolicitudes);
+router.get('/solicitudes', requiresAuth, excelController.listarSolicitudes);
 
 // Búsqueda directa en servidor (evita infinite scroll)
 router.get(
@@ -69,38 +69,45 @@ router.get(
 
 router.get(
     '/dashboard/segmentos',
+    requiresAuth,
     dashboardController.dashboardSegmentos
 );
 router.get(
     '/dashboard/estados',
+    requiresAuth,
     dashboardController.dashboardEstados
 );
 
 // Rutas filtradas para filtros en cascada
 router.get(
     '/dashboard/segmentos/filtrado',
+    requiresAuth,
     dashboardController.dashboardSegmentosFiltrado
 );
 
 router.get(
     '/dashboard/estados/filtrado',
+    requiresAuth,
     dashboardController.dashboardEstadosFiltrado
 );
 
 // Rutas de promedio
 router.get(
     '/dashboard/promedio/mes',
+    requiresAuth,
     dashboardController.dashboardPromedioMes
 );
 
 router.get(
     '/dashboard/promedio/semana',
+    requiresAuth,
     dashboardController.dashboardPromedioSemana
 );
 
 // Rutas de ventas mensuales
 router.get(
     '/dashboard/ventas-mensuales',
+    requiresAuth,
     dashboardController.dashboardVentasMensuales
 );
 

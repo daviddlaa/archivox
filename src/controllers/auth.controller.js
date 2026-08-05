@@ -66,12 +66,40 @@ async function registrarAuditoria(usuarioId, accion, targetType, targetId, detal
 // ============================================================================
 // REGISTRO DE USUARIO
 // ============================================================================
+// SEGURIDAD: El registro público está CERRADO por defecto.
+//  - Solo se permite registrar cuando NO existe ningún usuario (primer arranque)
+//  - O cuando la variable de entorno REGISTRO_ABIERTO='true' está definida
+// Los usuarios se crean desde el Panel SuperAdmin (admin/usuarios).
+exports.registroAbierto = async () => {
+    if (process.env.REGISTRO_ABIERTO === 'true' || process.env.REGISTRO_ABIERTO === '1') {
+        return true;
+    }
+    try {
+        const result = await pool.query('SELECT COUNT(*) as count FROM usuarios');
+        const total = Number(result.rows && result.rows[0] && result.rows[0].count) || 0;
+        return total === 0;
+    } catch (e) {
+        // Fail-closed: si no se puede consultar la BD, NO abrir el registro público.
+        // (initDb corre al arrancar, así que la tabla usuarios siempre existe aquí)
+        console.error('[Auth] No se pudo verificar estado del registro:', e.message);
+        return false;
+    }
+};
+
 exports.registrar = async (req, res) => {
     const { username, password, nombre, email } = req.body;
 
     if (!username || !password) {
         return res.status(400).json({
             error: 'Usuario y contraseña son requeridos'
+        });
+    }
+
+    // SEGURIDAD: Verificar si el registro público está permitido
+    const abierto = await exports.registroAbierto();
+    if (!abierto) {
+        return res.status(403).json({
+            error: 'El registro público está cerrado. Contacta al administrador para crear tu cuenta.'
         });
     }
 
@@ -430,6 +458,20 @@ exports.verificarSesion = (req, res) => {
         res.json({
             autenticado: false
         });
+    }
+};
+
+// ============================================================================
+// ESTADO DEL REGISTRO PÚBLICO (para que el frontend oculte el formulario)
+// ============================================================================
+// GET /api/auth/registro-estado
+exports.registroEstado = async (req, res) => {
+    try {
+        const abierto = await exports.registroAbierto();
+        res.json({ abierto: !!abierto });
+    } catch (err) {
+        console.error('[Auth] Error en registroEstado:', err.message);
+        res.json({ abierto: false });
     }
 };
 

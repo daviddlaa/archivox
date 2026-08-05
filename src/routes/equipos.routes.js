@@ -54,8 +54,8 @@ router.delete('/:id', requiresRole('superadmin'), equiposController.eliminar);
 // RUTAS DE GESTIÓN DE AGENTES (líder de su equipo o superadmin)
 // ============================================================================
 
-// Listar miembros del equipo
-router.get('/:id/miembros', equiposController.listarMiembros);
+// Listar miembros del equipo (solo el equipo del usuario o superadmin)
+router.get('/:id/miembros', requiresEquipo('ver'), equiposController.listarMiembros);
 
 // Crear agente en el equipo (líder puede crear en su equipo, superadmin en cualquier)
 router.post('/:id/agentes', requiresPermissionAsync('agentes:crear'), equiposController.crearAgente);
@@ -79,7 +79,7 @@ router.get('/:id/dashboard', requiresEquipo('ver'), equiposController.dashboardE
 // Gestiones del equipo (protegido: solo el equipo del usuario)
 router.get('/:id/gestiones', requiresEquipo('ver'), equiposController.gestionesEquipo);
 
-// Campañas del equipo
-router.get('/:id/campanas', equiposController.campanasEquipo);
+// Campañas del equipo (solo el equipo del usuario o superadmin)
+router.get('/:id/campanas', requiresEquipo('ver'), equiposController.campanasEquipo);
 
 module.exports = router;

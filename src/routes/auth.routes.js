@@ -18,6 +18,9 @@ router.post('/registrar', authController.registrar);
 router.post('/login', loginLimiter, authController.login);
 router.post('/logout', authController.logout);
 
+// Estado del registro público (para que el frontend oculte/muestre el formulario)
+router.get('/registro-estado', authController.registroEstado);
+
 // Ruta protegida - verificar sesión
 router.get('/sesion', requiresAuth, authController.verificarSesion);
 

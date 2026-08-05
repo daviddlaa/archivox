@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/gestionesMaestro.controller');
+const { requiresAuth } = require('../middleware/auth.middleware');
+
+// SEGURIDAD: todas las rutas requieren sesión activa
+// (los controladores también verifican internamente; esto es defensa en profundidad)
+router.use(requiresAuth);
 
 // Rutas para gestión maestro (gestión por lotes)
 

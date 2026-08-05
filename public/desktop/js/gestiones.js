@@ -50,7 +50,7 @@ try {
             console.error('Error HTTP:', response.status, response.statusText);
             if (response.status === 401) {
                 alert('Sesión expirada. Por favor inicie sesión nuevamente.');
-                window.location.href = '/desktop/login.html';
+                window.location.href = '/login';
             } else {
                 alert('Error al buscar gestiones: ' + response.status);
             }
@@ -64,7 +64,7 @@ try {
             console.error('API Error:', result.error);
             if (result.error === 'No autenticado') {
                 alert('Sesión expirada. Por favor inicie sesión nuevamente.');
-                window.location.href = '/desktop/login.html';
+                window.location.href = '/login';
             } else {
                 alert('Error: ' + result.error);
             }

@@ -7,6 +7,18 @@ const mensajeDiv = document.getElementById('mensaje');
 // Verificar si ya está logueado al cargar
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // SEGURIDAD: si el registro público está cerrado, ocultar el formulario de registro
+        fetch('/api/auth/registro-estado')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.abierto === false) {
+                    var toggle = document.querySelector('.toggle-form');
+                    if (toggle) toggle.style.display = 'none';
+                    if (registroForm) registroForm.style.display = 'none';
+                }
+            })
+            .catch(function() { /* si falla, dejar visible (el backend igualmente bloquea) */ });
+
         // Verificar si viene de un logout reciente (evitar re-entrada automática)
         const justLoggedOut = sessionStorage.getItem('justLoggedOut');
         const now = Date.now();

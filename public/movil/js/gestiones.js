@@ -46,7 +46,7 @@ async function buscarGestiones() {
             console.error('Error HTTP:', response.status);
             if (response.status === 401) {
                 alert('Sesión expirada');
-                window.location.href = '/movil/login.html';
+                window.location.href = '/m/login';
             }
             return;
         }
@@ -57,7 +57,7 @@ async function buscarGestiones() {
             console.error('API Error:', result.error);
             if (result.error === 'No autenticado') {
                 alert('Sesión expirada');
-                window.location.href = '/movil/login.html';
+                window.location.href = '/m/login';
             }
             return;
         }
