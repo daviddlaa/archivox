@@ -2119,9 +2119,22 @@ body {
 
 /* ===== D1 COMPACT — Header KPI + panel operativo denso ===== */
 .page-header-campana {
-    margin-bottom: 14px;
+    margin-bottom: 0;
     padding: 14px 18px;
     align-items: flex-start;
+    position: sticky;
+    top: 0;
+    z-index: 90;
+}
+
+/* Sticky: cabecera + filtros + rail quedan visibles; las cards pasan por debajo */
+.campana-main #filtros-row {
+    position: sticky;
+    top: 0; /* JS lo ajusta con la altura real del header */
+    z-index: 85;
+    background: var(--bg-general);
+    margin-bottom: 0;
+    padding: 10px 0 12px;
 }
 
 .page-header-campana .page-header-left #gestion-nombre {

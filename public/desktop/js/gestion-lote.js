@@ -223,6 +223,11 @@ function obtenerGestionId() {
 // Cargar datos de la gestión al iniciar
 async function init() {
     console.log('[init] Iniciando carga de gestion-lote...');
+    window.addEventListener('resize', ajustarStickyDesktop);
+    if (window.ResizeObserver) {
+        var headerObs = document.querySelector('.page-header-campana');
+        if (headerObs) new ResizeObserver(ajustarStickyDesktop).observe(headerObs);
+    }
     
     await cargarListaCampanas();
     console.log('[init] Campañas cargadas, verificando ID en URL...');
@@ -444,6 +449,7 @@ async function cargarDatosGestion() {
         
         actualizarProgreso();
         renderizarSolicitudes(solicitudes);
+        ajustarStickyDesktop();
         
     } catch (error) {
         console.error('Error cargando datos de gestión:', error);
@@ -746,6 +752,22 @@ function ejecutarSiguienteAccion() {
         var lista = document.getElementById('lista-solicitudes');
         if (lista) lista.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+}
+
+// Cabecera + filtros + rail sticky: se pegan debajo del header (altura dinámica)
+function ajustarStickyDesktop() {
+    var header = document.querySelector('.page-header-campana');
+    var filtros = document.getElementById('filtros-row');
+    var rail = document.getElementById('campana-rail');
+    var lista = document.getElementById('lista-solicitudes');
+    if (!header) return;
+    var top = header.offsetHeight;
+    if (filtros) filtros.style.top = top + 'px';
+    if (rail) {
+        rail.style.top = (top + 12) + 'px';
+        rail.style.maxHeight = 'calc(100vh - ' + (top + 24) + 'px)';
+    }
+    if (lista) lista.style.scrollMarginTop = (top + (filtros ? filtros.offsetHeight : 0)) + 'px';
 }
 
 function mostrarConfirmacionGestion(mensaje) {
