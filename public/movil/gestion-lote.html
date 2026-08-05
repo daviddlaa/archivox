@@ -15,7 +15,6 @@
     <div class="header header-campana-compact">
         <div class="header-title">
             <h1>🚀 Campañas</h1>
-            <p id="gestion-titulo">Selecciona una campaña</p>
             <div class="header-kpi-mobile" id="header-kpi-mobile" hidden aria-live="polite">
                 <strong id="progreso-porcentaje">0%</strong>
                 <span class="kpi-dot" aria-hidden="true">·</span>
@@ -30,6 +29,7 @@
             <button type="button" class="header-campana-btn" id="btn-campana-selector" onclick="toggleCampanasSheet()" aria-haspopup="dialog">
                 📋 <span id="campana-btn-label">Campañas</span> <span class="header-campana-chevron" aria-hidden="true">▾</span>
             </button>
+            <button type="button" class="header-prioridad-btn" id="siguiente-accion-mobile-btn" onclick="ejecutarSiguienteAccionMovil()" style="display:none;" aria-live="polite" aria-label="Ir a la prioridad de la campaña"></button>
         </div>
     </div>
 
@@ -56,13 +56,6 @@
             <strong id="ultima-actividad-mobile">Sin actividad registrada</strong>
             <small id="actividad-mobile-detalle">Cuando registres una gestión, aparecerá aquí.</small>
         </div>
-    </div>
-
-    <!-- Prioridad compacta -->
-    <div class="siguiente-mobile siguiente-mobile-compact" id="siguiente-accion-mobile" style="display:none;" aria-live="polite">
-        <span class="siguiente-mobile-label">Prioridad</span>
-        <strong id="siguiente-accion-mobile-texto"></strong>
-        <button type="button" id="siguiente-accion-mobile-btn" onclick="ejecutarSiguienteAccionMovil()">Ver</button>
     </div>
 
     <!-- Semáforo + Consejo en una sola fila -->

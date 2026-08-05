@@ -53,6 +53,7 @@ function obtenerGestionId() {
 
 async function init() {
     console.log('[movil-init] Iniciando carga de gestion-lote...');
+    window.addEventListener('resize', ajustarStickySemaforo);
     try {
         await cargarListaCampanas();
         console.log('[movil-init] Campañas cargadas');
@@ -194,9 +195,6 @@ async function cargarDatosGestionMovil() {
 
         datosGestion = await response.json();
         
-        var titulo = document.getElementById('gestion-titulo');
-        if (titulo) titulo.textContent = datosGestion.nombre || 'Gestión #' + gestionId;
-
         var panel = document.getElementById('panel-progreso');
         if (panel) panel.style.display = 'none';
         var filtros = document.getElementById('filtros-row');
@@ -227,6 +225,7 @@ async function cargarDatosGestionMovil() {
 
         renderizarSolicitudes(solicitudes);
         actualizarProgreso();
+        ajustarStickySemaforo();
     } catch (error) {
         console.error('[movil-cargarDatos] Error:', error);
         var container = document.getElementById('lista-solicitudes');
@@ -448,32 +447,48 @@ function setFiltroSemaforoMovil(valor) {
 }
 
 function actualizarSiguienteAccionMovilTexto(total) {
-    var bloque = document.getElementById('siguiente-accion-mobile');
-    var texto = document.getElementById('siguiente-accion-mobile-texto');
     var boton = document.getElementById('siguiente-accion-mobile-btn');
-    if (!bloque || !texto || !boton) return;
+    if (!boton) return;
     var conteo = obtenerConteoSemaforoMovil();
     var prioridad = null;
-    if (conteo.amarillo > 0) prioridad = { filtro: 'amarillo', texto: 'Seguimiento (' + conteo.amarillo + ')' };
-    else if (conteo.sin_clasificar > 0) prioridad = { filtro: 'sin_clasificar', texto: 'Clasificar (' + conteo.sin_clasificar + ')' };
-    else if (conteo.rojo > 0) prioridad = { filtro: 'rojo', texto: 'En espera (' + conteo.rojo + ')' };
+    if (conteo.amarillo > 0) prioridad = { filtro: 'amarillo', texto: '▶ Seguimiento (' + conteo.amarillo + ')' };
+    else if (conteo.sin_clasificar > 0) prioridad = { filtro: 'sin_clasificar', texto: '▶ Clasificar (' + conteo.sin_clasificar + ')' };
+    else if (conteo.rojo > 0) prioridad = { filtro: 'rojo', texto: '▶ En espera (' + conteo.rojo + ')' };
     else if (total > 0 && (solicitudes || []).some(function(sol) { return sol.tipo_gestion !== 'Completada' && (!sol.gestion_id || !sol.tipo_gestion || sol.tipo_gestion === 'Pendiente'); })) prioridad = { filtro: null, texto: 'Registrar gestión' };
-    var activas = (solicitudes || []).filter(function(sol) { return sol.tipo_gestion !== 'Completada'; });
-    texto.textContent = prioridad ? prioridad.texto : (total > 0 && activas.length === 0 ? 'Completada' : (total > 0 ? 'Al día' : 'Sin solicitudes'));
     boton.dataset.semaforo = prioridad && prioridad.filtro ? prioridad.filtro : '';
-    boton.style.display = prioridad && prioridad.filtro ? 'inline-flex' : 'none';
-    boton.textContent = 'Ver';
-    bloque.style.display = 'flex';
+    if (prioridad && prioridad.filtro) {
+        boton.textContent = prioridad.texto;
+        boton.style.display = 'inline-flex';
+    } else {
+        boton.style.display = 'none';
+    }
+    ajustarStickySemaforo();
 }
 
 function ejecutarSiguienteAccionMovil() {
     var boton = document.getElementById('siguiente-accion-mobile-btn');
     var filtro = boton && boton.dataset.semaforo;
     if (filtro) {
-        setFiltroSemaforoMovil(filtro);
+        // Aplica la prioridad (no alterna): si ya está activa, la mantiene
+        if (filtroSemaforoMovil !== filtro) {
+            filtroSemaforoMovil = filtro;
+            actualizarSemaforoMovil();
+            renderizarSolicitudes(todasLasSolicitudes);
+        }
         var lista = document.getElementById('lista-solicitudes');
         if (lista) lista.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+}
+
+// El semáforo es sticky: se pega justo debajo del header (altura dinámica)
+function ajustarStickySemaforo() {
+    var header = document.querySelector('.header');
+    var semaforo = document.getElementById('semaforo-mobile');
+    var lista = document.getElementById('lista-solicitudes');
+    if (!header || !semaforo) return;
+    var top = header.offsetHeight;
+    semaforo.style.top = top + 'px';
+    if (lista) lista.style.scrollMarginTop = (top + semaforo.offsetHeight) + 'px';
 }
 
 function mostrarConfirmacionGestionMovil(mensaje) {
@@ -1545,11 +1560,6 @@ async function guardarEdicionCampanaMovil(id) {
             alert('✅ Campaña actualizada correctamente');
             cerrarModalEditarCampanaMovil();
             await cargarListaCampanas();
-            // Si es la campaña activa, actualizar el título
-            if (String(gestionId) === String(id)) {
-                var tituloEl = document.getElementById('gestion-titulo');
-                if (tituloEl) tituloEl.textContent = nombre;
-            }
         } else {
             alert('Error: ' + (resultado.error || 'Error al actualizar campaña'));
             if (submitBtn) { submitBtn.textContent = '💾 Guardar'; submitBtn.disabled = false; }
