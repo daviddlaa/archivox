@@ -354,7 +354,7 @@ app.use('/api/catalogos', require('./src/routes/catalog.routes'));
 // Las páginas se sirven SOLO a través de las rutas protegidas con requireAuthPage.
 // Sin esto, cualquiera podría descargar el HTML/JS de cada pantalla sin loguearse.
 app.use((req, res, next) => {
-    if (/\\.html$/i.test(req.path)) {
+    if (/\.html$/i.test(req.path)) {
         return res.redirect('/login');
     }
     next();

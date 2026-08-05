@@ -109,12 +109,45 @@ Riesgo: inconsistencia. La protección depende de que cada autor se acuerde de c
 
 ### Pendiente (requiere refactor mayor, no rompe por sí solo)
 - **CSP desactivado**: reactivarlo requiere mover cientos de handlers `onclick` inline a listeners y estilos inline a clases. No se toca en esta ronda para no romper el funcionamiento actual.
-- **Cookie `secure`**: verificar que Render tenga `NODE_ENV=production` setado.
 - **MemoryStore**: opcional migrar a sesiones persistentes (conectar-redis / postgres) si se escala a más de una instancia.
-- **Verificar en Render** que `SESSION_SECRET` esté configurado.
 
 ---
 
-## 6. Impacto visual
+## 6. Estado de producción (Render) — 5 de agosto de 2026
+
+Servicio: **archivox** (`srv-d8j41tmrnols73ca6vr0`) — https://archivox.onrender.com
+
+| Variable | Estado | Nota |
+|---|---|---|
+| `DATABASE_URL` | ✅ Configurada | PostgreSQL en Render |
+| `NODE_ENV` | ✅ Configurada | Activa el flag `secure` de la cookie (solo HTTPS) |
+| `SESSION_SECRET` | ✅ Configurada (5/ago/2026) | Secreto aleatorio de 96 caracteres hex. **Antes de configurarla**, el sistema usaba el secret por defecto (vulnerabilidad crítica de falsificación de cookies). **Efecto**: al guardarla, Render reinició el servicio y todos los usuarios se desloguearon una vez (normal, no se repetirá) |
+| `REGISTRO_ABIERTO` | No configurada | Registro público **cerrado** por defecto (solo primer usuario o si se activa esta variable con `true`) |
+
+### Cómo cambiar el SESSION_SECRET en Render (referencia)
+1. Panel del Web Service → **Environment → Environment Variables → Edit**.
+2. Agregar fila: **Key** `SESSION_SECRET` / **Value** un valor aleatorio largo (p. ej. generado con `crypto.randomBytes(48).toString('hex')`).
+3. **Save** → Render re-despliega. Los usuarios se desloguean una única vez.
+
+### Checklist de verificación post-deploy
+- [x] `SESSION_SECRET` configurada
+- [x] `NODE_ENV` configurada (cookie segura)
+- [x] Verificado en producción (5/ago): `/api/debug/health` → `{status:ok, database:connected}` (sin tablas ni conteos)
+- [x] Verificado en producción: `/api/excel/solicitudes` y `/api/gestiones-maestro` sin sesión → **401**
+- [ ] ⚠️ Re-desplegar tras fix del regex `.html` (ver nota)
+- [ ] Probar que `/desktop/solicitudes.html` directo redirige a `/login`
+- [ ] Probar que el login no muestra "Regístrate"
+- [ ] Probar login de un usuario normal y acceso a todas las pantallas
+- [ ] Probar el panel SuperAdmin (/admin)
+
+### ⚠️ Nota de fix post-deploy (5/ago/2026)
+El primer deploy incluyó un error en el regex del middleware de bloqueo `.html`:
+`/\\.html$/i` (doble backslash) en lugar de `/\.html$/i`. El doble backslash hacía que el regex **nunca matcheara** y el bloqueo no actuara. Corregido en `app.js` línea 357 y **pendiente de commit + re-deploy**. Verificación del fix:
+- `solicitudes.html` → matchea ✅ / `index.html` → matchea ✅ / `login.html` → matchea ✅
+- `main.css` → NO matchea ✅ / `app.js` (JS) → NO matchea ✅
+
+---
+
+## 7. Impacto visual
 
 Ninguna de las correcciones aplicadas cambia la interfaz de los usuarios autenticados. Único cambio visible: el formulario "Regístrate" de la página de login deja de mostrarse cuando el registro está cerrado.
