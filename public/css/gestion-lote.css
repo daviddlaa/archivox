@@ -2118,6 +2118,32 @@ body {
 }
 
 /* ===== D1 COMPACT — Header KPI + panel operativo denso ===== */
+
+/* ===== FIX STICKY: el scroll real debe ocurrir en .contenido, no en el documento =====
+   .layout usaba min-height:100vh (crece con el contenido) y .contenido overflow-y:auto
+   sin altura fija, asi que el documento (body) era quien scrolleaba y el sticky quedaba
+   atrapado en .contenido (que nunca se mueve) -> la cabecera se iba con las cards.
+   Con height fija, .contenido es el scroll container real y el sticky funciona.
+   Se quita el padding-top para que la cabecera se pegue flush al tope. */
+.layout {
+    height: 100vh;
+}
+
+.contenido {
+    padding-top: 0;
+}
+
+/* El contenido ya se centra con .container; sin max-width en .contenido la barra
+   de scroll queda en el borde de la ventana (como antes), no a mitad de pantalla. */
+.layout .contenido {
+    max-width: none;
+    margin: 0;
+}
+
+.container-campana {
+    padding-top: 0;
+}
+
 .page-header-campana {
     margin-bottom: 0;
     padding: 14px 18px;
