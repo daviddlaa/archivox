@@ -410,9 +410,9 @@ function crearEstructuraPanelAgentes() {
             </aside>
         </div>`;
 
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = html;
-    document.body.appendChild(wrapper.firstChild);
+    // insertAdjacentHTML: robusto ante whitespace inicial (wrapper.firstChild
+    // puede ser un nodo de texto con los saltos de línea del template literal)
+    document.body.insertAdjacentHTML('beforeend', html);
 
     requestAnimationFrame(() => {
         const overlay = document.getElementById('panel-agentes-overlay');

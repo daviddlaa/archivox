@@ -200,6 +200,8 @@ ARCHIVOX/
 │   ├── feature-rediseño-semaforo-campañas.md  # Rediseño del indicador de estado v6.1 (Agosto 2026)
 │   ├── feature-ux-comportamiento-campanas.md  # UX de progreso y prioridad v2.0 (Agosto 2026)
 │   ├── feature-plantillas-mensajes.md         # Plantillas de mensajes personalizadas (Agosto 2026)
+│   ├── feature-panel-lateral-solicitudes.md   # Panel lateral de detalle/edición en Solicitudes (Agosto 2026)
+│   ├── feature-panel-lateral-agentes.md       # Panel lateral de gestión de agentes del equipo (Agosto 2026)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
 │       ├── informe-auditoria-flujo-multi-equipo.md
@@ -1108,20 +1110,29 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - Campañas del equipo
 - Gestiones del equipo
 
-**Jerarquía del panel (desktop, `public/desktop/equipo.html`):** pasarela única (KPIs / Agentes / Campañas) → feed de **Gestiones Recientes del Equipo** (destacado para el líder, sin scroll).
+**Jerarquía del panel (desktop, `public/desktop/equipo.html`):** pasarela única (KPIs / Campañas) → feed de **Gestiones Recientes del Equipo** (destacado para el líder, sin scroll). La gestión de agentes vive en un **panel lateral** propio (ver abajo).
 
-**Pasarela (desktop):** carrusel de **3 slides** con dots clicables + flechas ‹ › con loop, sin autoplay, colocado encima del feed de gestiones para que ningún bloque quede perdido al final:
+**Pasarela (desktop):** carrusel de **2 slides** con dots clicables + flechas ‹ › con loop, sin autoplay, colocado encima del feed de gestiones para que ningún bloque quede perdido al final:
 - **Slide 1 — KPIs del Equipo:** los 4 stats (👥 Agentes, 📋 Asignaciones Activas, 📢 Campañas, 📝 Gestiones 7 días) en **una fila de 4 tarjetas verticales** (icono arriba, texto abajo, centrados) en pantallas anchas; vuelven a grilla 2×2 en pantallas angostas. IDs conservados (`totalAgentes`, `totalAsignaciones`, `totalCampanas`, `totalGestiones`) actualizados por `cargarDashboard()`.
-- **Slide 2 — Agentes del Equipo:** tabla completa (Usuario, Nombre, Estado, Asignadas, Gestionadas 7d, Ingreso, Acciones) con botón "+ Nuevo" en el encabezado.
-- **Slide 3 — Campañas del Equipo:** tabla completa con progreso.
+- **Slide 2 — Campañas del Equipo:** tabla completa con progreso.
 
-La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tablas, botones, flechas y dots reducidos únicamente dentro de los slides (`.equipo-slide`); el feed de gestiones no se ve afectado. La altura se iguala entre slides vía `igualarAlturaEquipoSlides()`; las tablas conservan su scroll horizontal.
+La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tablas, botones, flechas y dots reducidos únicamente dentro de los slides (`.equipo-slide`); el feed de gestiones no se ve afectado. La altura se iguala entre slides vía `igualarAlturaEquipoSlides()`; las tablas conservan su scroll horizontal. Al quitar el slide de agentes (Agosto 2026), la pasarela **ya no colapsa** aunque el equipo tenga muchos agentes.
+
+**Panel Lateral de Agentes (desktop, Agosto 2026):** la gestión de agentes salió de la pasarela y se movió a un **panel deslizante desde la derecha** (mismo patrón que el panel de Solicitudes, ver §11.2). Ver `docs/feature-panel-lateral-agentes.md` para documentación completa.
+- **Acceso:** botón **"👥 Agentes (n)"** en el header del equipo (junto a la campana) con contador en vivo → `abrirPanelAgentes()`.
+- **Vista lista:** tarjetas por agente (avatar con inicial, usuario, nombre, badge de estado, switch activar/desactivar, 📋 asignadas, 📝 gestiones 7d, 📅 ingreso) y acciones **📋 Asignaciones** / **✏️ Editar**.
+- **Vista crear (➕ Nuevo Agente):** formulario dentro del panel (usuario, nombre, email, contraseña con validaciones de 8+ chars, mayúscula y número) → `POST /api/equipos/:id/agentes`.
+- **Vista editar (✏️ Editar):** nombre y email → `PUT /api/equipos/:id/agentes/:agenteId`; sección **🔑 Cambiar contraseña (opcional)** → `PUT /api/equipos/:id/agentes/:agenteId/reset-password`. La contraseña se valida **antes** de guardar (evita guardados parciales).
+- **Switch activar/desactivar:** `PUT /api/equipos/:id/agentes/:agenteId/toggle-active` con confirmación y revert en fallo.
+- **Asignaciones:** sub-vista dentro del panel (resumen 📋 / 📝 + enlace a las solicitudes del agente) con "← Volver a la lista"; usa los datos en memoria (sin fetch extra).
+- **Cierre:** ✕, clic fuera o tecla **Escape**; el overlay se crea/elimina dinámicamente y bloquea el scroll del body mientras está abierto.
+- Los modales antiguos (crear agente / ver asignaciones) fueron **eliminados**.
 
 **Feed de gestiones (desktop):**
 - Tarjetas tipo timeline: avatar del agente, nombre, **badge de tipo coloreado** (Completada=verde, Llamada=ámbar, Seguimiento=azul, Visita=púrpura, otros=gris), fecha/hora, `#solicitud · cliente` (enlaza a `/solicitudes?buscar=ID`) y observación recortada a 120 chars.
 - Filtros rápidos por **agente** y por **tipo de gestión** (del lado del cliente, sobre las registros cargados).
 - Botón **"Cargar más"** que incrementa el `limite` del endpoint `/api/equipos/:id/gestiones` en 20 (oculto cuando no quedan registros).
-- La fila de botones grandes (Nuevo Agente / Importar / Ver Solicitudes) se eliminó: "Nuevo Agente" queda en la cabecera de la sección Agentes; Importar/Solicitudes siguen en el menú lateral.
+- La fila de botones grandes (Nuevo Agente / Importar / Ver Solicitudes) se eliminó: "Nuevo Agente" queda dentro del **panel lateral de agentes** (botón "👥 Agentes" del header); Importar/Solicitudes siguen en el menú lateral.
 
 ### 11.9 Panel de Administración
 
