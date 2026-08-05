@@ -101,18 +101,30 @@
     </div>
 
     <!-- Filtros -->
-    <div class="filtros-mobile" id="filtros-row" style="display: none;">
-        <input type="text" id="busqueda" placeholder="🔍 Buscar por id, cédula, nombre o teléfono...">
-        <select id="filtro-estado">
-            <option value="">Todos los estados</option>
-            <option value="Pendiente">Pendiente</option>
-            <option value="Llamada">Llamada</option>
-            <option value="WhatsApp">WhatsApp</option>
-            <option value="Seguimiento">Seguimiento</option>
-            <option value="Cobranza">Cobranza</option>
-            <option value="Cita">Cita</option>
-            <option value="Completada">Completada</option>
-        </select>
+    <!-- Bottom sheet: buscar y filtrar -->
+    <div class="filtros-bs-overlay" id="filtros-bs-overlay" onclick="cerrarFiltrosSheet()"></div>
+    <div class="filtros-bs-sheet" id="filtros-bs-sheet" role="dialog" aria-label="Buscar y filtrar">
+        <div class="filtros-bs-handle"></div>
+        <div class="filtros-bs-header">
+            <div class="filtros-bs-header-title">🔍 Buscar y filtrar</div>
+            <button type="button" class="filtros-bs-close" onclick="cerrarFiltrosSheet()" aria-label="Cerrar">✕</button>
+        </div>
+        <div class="filtros-bs-body">
+            <label class="filtros-bs-label" for="busqueda">Buscar</label>
+            <input type="text" id="busqueda" placeholder="Por id, cédula, nombre o teléfono...">
+            <label class="filtros-bs-label" for="filtro-estado">Estado</label>
+            <select id="filtro-estado">
+                <option value="">Todos los estados</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Llamada">Llamada</option>
+                <option value="WhatsApp">WhatsApp</option>
+                <option value="Seguimiento">Seguimiento</option>
+                <option value="Cobranza">Cobranza</option>
+                <option value="Cita">Cita</option>
+                <option value="Completada">Completada</option>
+            </select>
+            <button type="button" class="btn-filtros-limpiar" id="btn-filtros-limpiar" onclick="limpiarFiltrosBusqueda()">✕ Limpiar filtros</button>
+        </div>
     </div>
 
     <!-- Contenedores ocultos (acciones en bottom sheet de campaña) -->
@@ -137,6 +149,10 @@
             <span class="nav-bottom-icon">📋</span>
             <span class="nav-bottom-label">Solicitudes</span>
         </a>
+        <button type="button" class="nav-item btn-filtros-nav" id="btn-filtros-trigger" onclick="toggleFiltrosSheet()" aria-expanded="false" aria-controls="filtros-bs-sheet" aria-label="Buscar y filtrar">
+            <span class="nav-bottom-icon">🔍<span class="filtros-nav-badge" id="filtros-trigger-badge" style="display:none;"></span></span>
+            <span class="nav-bottom-label">Filtrar</span>
+        </button>
         <a href="#" onclick="Drawer.toggle(); return false;" class="nav-item">
             <span class="nav-bottom-icon">☰</span>
             <span class="nav-bottom-label">Menú</span>

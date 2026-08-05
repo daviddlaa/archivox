@@ -197,8 +197,6 @@ async function cargarDatosGestionMovil() {
         
         var panel = document.getElementById('panel-progreso');
         if (panel) panel.style.display = 'none';
-        var filtros = document.getElementById('filtros-row');
-        if (filtros) filtros.style.display = 'flex';
         var semaforoPanel = document.getElementById('semaforo-mobile');
         if (semaforoPanel) semaforoPanel.style.display = 'block';
 
@@ -440,6 +438,57 @@ function cerrarRecoSheet() {
     if (chip) chip.setAttribute('aria-expanded', 'false');
 }
 
+// ===== Bottom sheet de búsqueda y filtros (botón 🔍 del footer) =====
+function toggleFiltrosSheet() {
+    var sheet = document.getElementById('filtros-bs-sheet');
+    if (!sheet) return;
+    var abrir = !sheet.classList.contains('visible');
+    if (abrir) {
+        abrirFiltrosSheet();
+    } else {
+        cerrarFiltrosSheet();
+    }
+}
+
+function abrirFiltrosSheet() {
+    var overlay = document.getElementById('filtros-bs-overlay');
+    var sheet = document.getElementById('filtros-bs-sheet');
+    if (overlay) overlay.classList.add('visible');
+    if (sheet) sheet.classList.add('visible');
+    var btn = document.getElementById('btn-filtros-trigger');
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+    var input = document.getElementById('busqueda');
+    if (input) setTimeout(function() { input.focus(); }, 250);
+}
+
+function cerrarFiltrosSheet() {
+    var overlay = document.getElementById('filtros-bs-overlay');
+    var sheet = document.getElementById('filtros-bs-sheet');
+    if (overlay) overlay.classList.remove('visible');
+    if (sheet) sheet.classList.remove('visible');
+    var btn = document.getElementById('btn-filtros-trigger');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+function limpiarFiltrosBusqueda() {
+    var input = document.getElementById('busqueda');
+    var select = document.getElementById('filtro-estado');
+    if (input) input.value = '';
+    if (select) select.value = '';
+    actualizarIndicadorFiltros();
+    if (!gestionId) return; // sin campaña, no re-renderizar el estado vacío
+    renderizarSolicitudes(todasLasSolicitudes);
+}
+
+function actualizarIndicadorFiltros() {
+    var badge = document.getElementById('filtros-trigger-badge');
+    if (!badge) return;
+    var input = document.getElementById('busqueda');
+    var select = document.getElementById('filtro-estado');
+    var activos = (input && input.value && input.value.length) || (select && select.value && select.value.length) || !!filtroSemaforoMovil;
+    badge.style.display = activos ? 'inline-flex' : 'none';
+}
+
 function setFiltroSemaforoMovil(valor) {
     filtroSemaforoMovil = valor && filtroSemaforoMovil === valor ? null : (valor || null);
     actualizarSemaforoMovil();
@@ -624,6 +673,7 @@ function renderizarSolicitudes(lista, sinEntrada) {
     // Guardar posición de scroll antes de re-render
     var scrollY = container ? container.scrollTop : 0;
     if (container) container.classList.toggle('no-stagger', !!sinEntrada);
+    actualizarIndicadorFiltros();
     if (!lista || lista.length === 0) {
         container.innerHTML = '<div class="sin-campana"><p>No hay solicitudes en esta gestión</p></div>';
         return;
