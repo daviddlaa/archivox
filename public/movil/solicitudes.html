@@ -43,24 +43,28 @@
         </div>
     </div>
 
-    <!-- Filtros unificados -->
+    <!-- Filtros unificados: selects compactos con auto-aplicar -->
     <div class="filtros-unificado">
         <div class="filtros-row">
             <div class="filtro-grupo">
                 <span class="filtro-label">📌 Estado</span>
-                <div class="filtro-botones" id="filtro-estado">
-                    <button class="filtro-btn active" data-value="">Todos</button>
-                </div>
+                <select id="filtro-estado-select" class="filtro-select">
+                    <option value="">Todos</option>
+                </select>
             </div>
             <div class="filtro-grupo">
                 <span class="filtro-label">🏷️ Segmento</span>
-                <div class="filtro-botones" id="filtro-segmento">
-                    <button class="filtro-btn active" data-value="">Todos</button>
-                </div>
+                <select id="filtro-segmento-select" class="filtro-select">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="filtro-grupo filtro-grupo-limpiar">
+                <span class="filtro-label">&nbsp;</span>
+                <button type="button" class="filtro-btn btn-limpiar-movil" onclick="limpiarFiltrosLider()">✕ Limpiar</button>
             </div>
         </div>
         <!-- Filtros solo para Lider+ -->
-        <div id="filtrosLider" class="filtros-row" style="display:none;margin-top:8px;">
+        <div id="filtrosLider" class="filtros-lider" style="display:none;">
             <div class="filtro-grupo">
                 <span class="filtro-label">📅 Desde</span>
                 <input type="date" id="fechaDesde" class="filtro-input-date">
@@ -69,14 +73,10 @@
                 <span class="filtro-label">📅 Hasta</span>
                 <input type="date" id="fechaHasta" class="filtro-input-date">
             </div>
-            <div class="filtro-grupo">
+            <div class="filtro-grupo filtro-grupo-vendedor">
                 <span class="filtro-label">👤 Vendedor</span>
                 <input type="text" id="filtroVendedor" placeholder="Buscar..." class="filtro-input-text" list="vendedoresList">
                 <datalist id="vendedoresList"></datalist>
-            </div>
-            <div class="filtro-grupo" style="flex-direction:row;gap:4px;">
-                <button class="filtro-btn" onclick="aplicarFiltrosLider()" style="background:#2563eb;color:white;">Aplicar</button>
-                <button class="filtro-btn" onclick="limpiarFiltrosLider()">Limpiar</button>
             </div>
         </div>
     </div>

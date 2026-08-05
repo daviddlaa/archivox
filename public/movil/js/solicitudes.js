@@ -345,24 +345,30 @@ async function cargarMasSolicitudes() {
 
 
 
-// Renderizar botones de filtros dinámicos
+// Llenar los selects de filtros con las opciones dinámicas
 function renderizarFiltros() {
     // Estados
     const estados = [...new Set(todosDatos.map(d => d.estado).filter(Boolean))];
-    const estadoBtns = document.getElementById('filtro-estado');
-    estadoBtns.innerHTML = '<button class="filtro-btn active" data-value="">Todos</button>';
-    estados.forEach(e => {
-        estadoBtns.innerHTML += `<button class="filtro-btn" data-value="${e}">${e}</button>`;
-    });
-    
+    const estadoSelect = document.getElementById('filtro-estado-select');
+    if (estadoSelect) {
+        estadoSelect.innerHTML = '<option value="">Todos</option>';
+        estados.forEach(e => {
+            estadoSelect.innerHTML += `<option value="${e}">${e}</option>`;
+        });
+        if (filtros.estado) estadoSelect.value = filtros.estado;
+    }
+
     // Segmentos
     const segmentos = [...new Set(todosDatos.map(d => d.segmento).filter(Boolean))];
-    const segmentoBtns = document.getElementById('filtro-segmento');
-    segmentoBtns.innerHTML = '<button class="filtro-btn active" data-value="">Todos</button>';
-    segmentos.forEach(s => {
-        segmentoBtns.innerHTML += `<button class="filtro-btn" data-value="${s}">${s}</button>`;
-    });
-    
+    const segmentoSelect = document.getElementById('filtro-segmento-select');
+    if (segmentoSelect) {
+        segmentoSelect.innerHTML = '<option value="">Todos</option>';
+        segmentos.forEach(s => {
+            segmentoSelect.innerHTML += `<option value="${s}">${s}</option>`;
+        });
+        if (filtros.segmento) segmentoSelect.value = filtros.segmento;
+    }
+
     // Adjuntar eventos
     adjuntarEventos();
 }
@@ -373,7 +379,7 @@ function renderizarFiltros() {
 function mostrarFiltrosLider() {
     var filtrosLider = document.getElementById('filtrosLider');
     if (filtrosLider) {
-        filtrosLider.style.display = 'flex';
+        filtrosLider.style.display = 'grid';
         var fd = document.getElementById('fechaDesde');
         var fh = document.getElementById('fechaHasta');
         var fv = document.getElementById('filtroVendedor');
@@ -418,6 +424,19 @@ function aplicarFiltrosLider() {
 }
 
 function limpiarFiltrosLider() {
+    // Cancelar timers pendientes para evitar búsquedas redundantes
+    clearTimeout(timerVendedorFiltro);
+    clearTimeout(debounceBusqueda);
+
+    // Limpiar selects de Estado y Segmento
+    filtros.estado = '';
+    filtros.segmento = '';
+    var selEstado = document.getElementById('filtro-estado-select');
+    var selSegmento = document.getElementById('filtro-segmento-select');
+    if (selEstado) selEstado.value = '';
+    if (selSegmento) selSegmento.value = '';
+
+    // Limpiar fechas y vendedor
     var fd = document.getElementById('fechaDesde');
     var fh = document.getElementById('fechaHasta');
     var fv = document.getElementById('filtroVendedor');
@@ -430,6 +449,13 @@ function limpiarFiltrosLider() {
     sessionStorage.removeItem('sol_fecha_desde');
     sessionStorage.removeItem('sol_fecha_hasta');
     sessionStorage.removeItem('sol_vendedor');
+
+    // Limpiar también el buscador (reset total)
+    var inputBusqueda = document.getElementById('cedula');
+    if (inputBusqueda) inputBusqueda.value = '';
+    busquedaActiva = false;
+    filtros.busqueda = '';
+
     buscarEnServidor(true);
 }
 
@@ -516,29 +542,44 @@ function buscarConDebounce() {
     }, 300);
 }
 
-// Adjuntar eventos a los botones - NUEVO: filtra directamente del servidor
+// Adjuntar eventos de filtros - NUEVO: todo aplica en tiempo real (sin botón Aplicar)
+var timerVendedorFiltro = null;
+
 function adjuntarEventos() {
-    // Estado buttons
-    document.querySelectorAll('#filtro-estado .filtro-btn').forEach(btn => {
-        btn.onclick = function() {
-            document.querySelectorAll('#filtro-estado .filtro-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            filtros.estado = this.dataset.value;
+    // Select de Estado: aplica al cambiar
+    var selEstado = document.getElementById('filtro-estado-select');
+    if (selEstado) {
+        selEstado.onchange = function() {
+            filtros.estado = this.value;
             buscarEnServidor(true); // Reset offset al cambiar filtro
         };
-    });
-    
-    // Segmento buttons
-    document.querySelectorAll('#filtro-segmento .filtro-btn').forEach(btn => {
-        btn.onclick = function() {
-            document.querySelectorAll('#filtro-segmento .filtro-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            filtros.segmento = this.dataset.value;
+    }
+
+    // Select de Segmento: aplica al cambiar
+    var selSegmento = document.getElementById('filtro-segmento-select');
+    if (selSegmento) {
+        selSegmento.onchange = function() {
+            filtros.segmento = this.value;
             buscarEnServidor(true); // Reset offset al cambiar filtro
         };
-    });
-    
-// Buscador en tiempo real - NUEVA VERSIÓN: buscar en servidor
+    }
+
+    // Fechas (líder+): aplican al cambiar
+    var fd = document.getElementById('fechaDesde');
+    var fh = document.getElementById('fechaHasta');
+    if (fd) fd.onchange = aplicarFiltrosLider;
+    if (fh) fh.onchange = aplicarFiltrosLider;
+
+    // Vendedor (líder+): aplica con debounce mientras se escribe
+    var fv = document.getElementById('filtroVendedor');
+    if (fv) {
+        fv.oninput = function() {
+            clearTimeout(timerVendedorFiltro);
+            timerVendedorFiltro = setTimeout(aplicarFiltrosLider, 400);
+        };
+    }
+
+    // Buscador en tiempo real - buscar en servidor
     const input = document.getElementById('cedula');
     input.oninput = function() {
         buscarConDebounce(); // Busca en servidor con debounce, respeta filtros activos
