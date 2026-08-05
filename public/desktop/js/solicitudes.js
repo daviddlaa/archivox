@@ -899,10 +899,15 @@ function renderizarCards(datos) {
         html +=      (item.nombre || 'Sin nombre');
         html += '  </div>';
 
+        // FILA 2.5: Cédula + Teléfono (números explícitos, uno al lado del otro)
+        html += '  <div class="card-fila-contacto">';
+        html += '    <span class="card-contacto-item" title="Cédula: ' + (item.cedula || '') + '">🪪 <span>' + (item.cedula || '—') + '</span></span>';
+        html += '    <span class="card-contacto-item" title="Teléfono: ' + (item.celular || '') + '">📞 <span>' + (item.celular || '—') + '</span></span>';
+        html += '  </div>';
+
         // FILA 3: Botones de acción
         html += '  <div class="card-fila-3">';
         html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesCard(' + id + ')">📋 Gestiones</button>';
-        html += '    <button class="card-btn btn-llamar" onclick="event.stopPropagation(); llamarClienteDesktop(\'' + (item.celular || '') + '\')">📞 Llamar</button>';
         html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); whatsAppClienteDesktop(\'' + (item.celular || '') + '\', \'' + escaparParaAtributoDesktop(item.nombre || '') + '\')">💬 WhatsApp</button>';
         html += '  </div>';
 
@@ -1623,16 +1628,6 @@ function guardarGestionDesktop(id) {
 }
 
 // ============================================================================
-// LLAMAR DESKTOP
-// ============================================================================
-function llamarClienteDesktop(celular) {
-    if (!celular) { alert('No hay número de celular'); return; }
-    var numeroLimpio = celular.replace(/\D/g, '');
-    if (!numeroLimpio) { alert('No hay número de celular'); return; }
-    window.open('tel:' + numeroLimpio, '_self');
-}
-
-// ============================================================================
 // WHATSAPP DESKTOP
 // ============================================================================
 function whatsAppClienteDesktop(celular, nombre) {
@@ -2039,7 +2034,6 @@ function renderPanelDetalle(datos, info) {
     var html = '';
 
     html += '<div class="panel-acciones">';
-    html += '  <button class="panel-accion-btn" onclick="llamarClienteDesktop(\'' + escaparParaAtributoDesktop(celular) + '\')">📞 <span>Llamar</span></button>';
     html += '  <button class="panel-accion-btn" onclick="whatsAppClienteDesktop(\'' + escaparParaAtributoDesktop(celular) + '\', \'' + escaparParaAtributoDesktop(nombre) + '\')">💬 <span>WhatsApp</span></button>';
     html += '</div>';
 
