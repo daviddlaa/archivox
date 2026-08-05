@@ -8,453 +8,24 @@
     padding: 30px;
 }
 
-/* ===== HEADER ACTIONS ===== */
-.header-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-    background: white;
-    padding: 25px 35px;
-    border-radius: 16px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    flex-wrap: wrap;
-    gap: 20px;
-}
+/* ============================================================
+   (Secciones del layout antiguo eliminadas Ago 2026 por estar sin uso:
+   .header-actions, .btn-principal/.btn-secundario, .btn-nueva-solicitud-header,
+   .btn-excel-header, .stats-grid, .stat-card, .stat-total/.stat-showing/.stat-selected,
+   .stat-value/.stat-label, .actions-mini, .btn-action, .btn-excel, .btn-whatsapp,
+   .btn-gestion, .filter-column, .filter-label, .filter-buttons, .filter-btn,
+   .search-row, .main-content-grid — el layout actual usa las clases "unificado"
+   del CSS compartido /css/solicitudes.css)
+   ============================================================ */
 
-.header-actions h1 {
-    margin: 0;
-    color: #1f2937;
-    font-size: 28px;
-    font-weight: 700;
-}
-
-.header-actions .subtitulo {
-    color: #6b7280;
-    margin-top: 6px;
-    margin-bottom: 0;
-    font-size: 15px;
-}
-
-.btn-principal {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    color: white;
-    text-decoration: none;
-    padding: 14px 22px;
-    border-radius: 10px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 15px;
-}
-
-.btn-principal:hover {
-    background: #1d4ed8;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
-}
-
-.btn-secundario {
-    background: #f3f4f6;
-    color: #374151;
-    text-decoration: none;
-    padding: 14px 22px;
-    border-radius: 10px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 15px;
-}
-
-.btn-secundario:hover {
-    background: #e5e7eb;
-}
-
-/* Botón Nueva Solicitud en el header */
-.btn-nueva-solicitud-header {
-    background: linear-gradient(135deg, #059669, #047857);
-    color: white;
-    text-decoration: none;
-    padding: 14px 22px;
-    border-radius: 10px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 15px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.btn-nueva-solicitud-header:hover {
-    background: linear-gradient(135deg, #047857, #065f46);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
-}
-
-/* Botón Importar Excel en el header */
-.btn-excel-header {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    color: white;
-    text-decoration: none;
-    padding: 14px 22px;
-    border-radius: 10px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 15px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.btn-excel-header:hover {
-    background: linear-gradient(135deg, #16a34a, #15803d);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
-}
-
-/* ===== STATS GRID - TODO EN UNA FILA HORIZONTAL ===== */
-.stats-grid {
-    display: grid;
-    grid-template-columns: auto auto auto auto auto;
-    gap: 10px;
-    margin-bottom: 12px;
-    background: white;
-    padding: 10px 14px;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-/* KPIs ultra-compactos */
-.stat-card {
-    background: #f8fafc;
-    padding: 6px 10px;
-    border-radius: 6px;
-    text-align: center;
-    border: 1px solid transparent;
-    transition: all 0.2s ease;
-    min-width: 70px;
-}
-
-.stat-card:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-}
-
-.stat-total {
-    background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
-    border-color: #6366f1;
-}
-
-.stat-showing {
-    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-    border-color: #10b981;
-}
-
-.stat-selected {
-    background: linear-gradient(135deg, #fef3c7, #fde68a);
-    border-color: #f59e0b;
-}
-
-.stat-value {
-    display: block;
-    font-size: 16px;
-    font-weight: bold;
-    color: #1f2937;
-}
-
-.stat-label {
-    display: block;
-    font-size: 9px;
-    color: #6b7280;
-    margin-top: 2px;
-    text-transform: uppercase;
-    font-weight: 600;
-}
-
-/* Actions Mini */
-.actions-mini {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-.btn-action {
-    padding: 12px 18px;
-    border-radius: 10px;
-    font-weight: 700;
-    cursor: pointer;
-    border: none;
-    font-size: 14px;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-excel {
-    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
-    color: white !important;
-}
-
-.btn-excel:hover {
-    background: #16a34a !important;
-}
-
-.btn-whatsapp {
-    background: #25D366;
-    color: white;
-}
-
-.btn-whatsapp:hover {
-    background: #128C7E;
-}
-
-.btn-gestion {
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    color: white;
-}
-
-.btn-gestion:hover {
-    background: #4f46e5;
-}
-
-/* ===== FILTROS ===== */
-.filter-column {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.filter-label {
-    font-weight: 700;
-    color: #374151;
-    font-size: 13px;
-}
-
-.filter-buttons {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
-.filter-btn {
-    background: #f3f4f6;
-    border: 1px solid #e5e7eb;
-    color: #374151;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-
-.filter-btn:hover {
-    background: #e5e7eb;
-}
-
-.filter-btn.active {
-    background: #2563eb;
-    border-color: #2563eb;
-    color: white;
-}
-
-/* ===== SEARCH ROW ===== */
-.search-row {
-    margin-bottom: 24px;
-}
-
-.search-row input {
-    width: 100%;
-    padding: 16px 22px;
-    border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    font-size: 16px;
-    transition: all 0.2s ease;
-    background: white;
-}
-
-.search-row input:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-/* ===== MAIN CONTENT GRID ===== */
-.main-content-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0;
-    align-items: start;
-}
-
-/* ===== RESUMEN + ACCIONES RAPIDAS (FILA HORIZONTAL) ===== */
-.resumen-acciones-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: white;
-    padding: 12px 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.resumen-compacto {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-}
-
-.resumen-label {
-    color: #6b7280;
-    font-weight: 600;
-}
-
-.resumen-value {
-    color: #1f2937;
-    font-weight: 700;
-}
-
-.resumen-divider {
-    color: #d1d5db;
-    margin: 0 4px;
-}
-
-.acciones-fila {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.action-row-btn {
-    padding: 6px 12px;
-    background: #f3f4f6;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #374151;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.action-row-btn:hover {
-    background: #e5e7eb;
-    border-color: #d1d5db;
-}
-
-.action-row-btn.btn-danger {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #dc2626;
-}
-
-.action-row-btn.btn-danger:hover {
-    background: #fee2e2;
-    border-color: #f87171;
-}
-
-/* Info Panel */
-.info-panel {
-    background: white;
-    padding: 24px;
-    border-radius: 16px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    position: sticky;
-    top: 20px;
-}
-
-.info-panel h3 {
-    margin: 0 0 18px 0;
-    color: #1f2937;
-    font-size: 20px;
-    font-weight: 700;
-}
-
-.info-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    margin-bottom: 24px;
-}
-
-.info-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 14px;
-    background: #f8fafc;
-    border-radius: 10px;
-}
-
-.info-label {
-    font-size: 13px;
-    color: #6b7280;
-    text-transform: uppercase;
-    font-weight: 600;
-}
-
-.info-value {
-    font-size: 16px;
-    font-weight: 700;
-    color: #1f2937;
-}
-
-/* Quick Actions */
-.quick-actions {
-    border-top: 2px solid #e5e7eb;
-    padding-top: 18px;
-}
-
-.quick-actions h4 {
-    margin: 0 0 14px 0;
-    color: #374151;
-    font-size: 15px;
-    font-weight: 700;
-}
-
-.quick-btn {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 10px;
-    background: #f3f4f6;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    color: #374151;
-    transition: all 0.2s ease;
-    text-align: left;
-}
-
-.quick-btn:hover {
-    background: #e5e7eb;
-    transform: translateX(3px);
-}
-
-.quick-btn.btn-danger {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #dc2626;
-}
-
-.quick-btn.btn-danger:hover {
-    background: #fee2e2;
-    border-color: #f87171;
-}
+/* ============================================================
+   (Secciones del layout antiguo eliminadas Ago 2026 por estar sin uso:
+   .resumen-acciones-row, .resumen-compacto, .resumen-label, .resumen-value,
+   .resumen-divider, .acciones-fila, .action-row-btn, .info-panel, .info-stats,
+   .info-stat, .info-label/.info-value (genéricos), .quick-actions, .quick-btn.
+   El panel de edición usa reglas scoped propias:
+   #editar-solicitud-modal-overlay .editar-info-item .info-label/.info-value)
+   ============================================================ */
 
 /* Table Panel */
 .table-panel {
@@ -465,389 +36,24 @@
     width: 100%;
 }
 
-/* ===== ESTILOS PARA STATS CARDS (KPIs) ===== */
-.stat-card {
-    flex: 1;
-    min-width: 140px;
-    max-width: 100%;
-    background: #f8fafc;
-    padding: 18px 16px;
-    border-radius: 12px;
-    text-align: center;
-    border: 2px solid transparent;
-    transition: all 0.2s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    word-wrap: break-word;
-    word-break: break-word;
-}
-
-.stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-}
-
-.stat-card .stat-value {
-    display: block;
-    font-size: 28px;
-    font-weight: bold;
-    color: #1f2937;
-    line-height: 1.2;
-    margin-bottom: 6px;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.stat-card .stat-label {
-    display: block;
-    font-size: 11px;
-    color: #6b7280;
-    margin-top: 4px;
-    text-transform: uppercase;
-    font-weight: 600;
-    line-height: 1.3;
-    max-width: 100%;
-    word-wrap: break-word;
-    word-break: break-word;
-}
-
-.stat-total {
-    background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
-    border-color: #6366f1;
-}
-
-.stat-showing {
-    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-    border-color: #10b981;
-}
-
-.stat-selected {
-    background: linear-gradient(135deg, #fef3c7, #fde68a);
-    border-color: #f59e0b;
-}
+/* (Segundo bloque de .stat-card/.stat-value/.stat-label/.stat-total eliminado Ago 2026:
+   los KPIs actuales usan .stat-card-compacto del CSS compartido) */
 
 /* ===== ESTILOS PARA TABLA ===== */
-.table-container {
-    overflow-x: auto;
-    width: 100%;
-}
+/* (Eliminado Ago 2026: la vista de tabla antigua ya no se renderiza en escritorio;
+   las tarjetas usan el CSS compartido /css/solicitudes.css) */
 
-.table-container table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 800px;
-}
+/* ===== CARDS ===== */
+/* Nota: la estructura de la tarjeta (.solicitud-card, .card-fila-*, .card-badge,
+   .cards-grid-unificado) se define en /css/solicitudes.css (CSS compartido Desktop+Móvil).
+   Aquí solo deben vivir reglas EXCLUSIVAS de escritorio (ver docs/convencion-css-solicitudes.md). */
 
-/* Thead */
-.table-container thead {
-    background: linear-gradient(135deg, #1f2937, #111827);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.table-container thead th {
-    padding: 14px 12px;
-    text-align: left;
-    color: white;
-    font-weight: 600;
-    font-size: 12px;
-    text-transform: uppercase;
-    border: none;
-    white-space: nowrap;
-    letter-spacing: 0.5px;
-}
-
-.table-container thead th.sortable {
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.table-container thead th.sortable:hover {
-    background: rgba(255,255,255,0.15);
-}
-
-.table-container thead th.th-checkbox {
-    width: 45px;
-    text-align: center;
-}
-
-/* Tbody */
-.table-container tbody tr {
-    transition: all 0.2s ease;
-    border-bottom: 1px solid #f3f4f6;
-}
-
-.table-container tbody tr:hover {
-    background: linear-gradient(90deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
-}
-
-.table-container tbody tr:nth-child(even) {
-    background: #f9fafb;
-}
-
-.table-container tbody tr:nth-child(even):hover {
-    background: linear-gradient(90deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08));
-}
-
-.table-container tbody td {
-    padding: 12px;
-    font-size: 13px;
-    color: #374151;
-    vertical-align: middle;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
-}
-
-/* Override específico para CÓDIGO/SEGMENTO y PRODUCTO/FECHA - permiten múltiples líneas */
-.table-container tbody td:nth-child(7),
-.table-container tbody td:nth-child(8) {
-    white-space: normal !important;
-    overflow: visible !important;
-    text-overflow: unset !important;
-    max-width: none !important;
-}
-
-.table-container tbody td.cell-checkbox {
-    width: 45px;
-    text-align: center;
-}
-
-/* ===== CELL COMBINADO - CÓDIGO/SEGMENTO y PRODUCTO/FECHA ===== */
-/* Forzar el layout de celdas combinadas */
-.table-container tbody td .cell-combinado,
-td .cell-combinado {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 3px !important;
-    line-height: 1.4 !important;
-    width: 100% !important;
-    min-width: 100px !important;
-    max-width: 180px !important;
-    padding: 2px 0 !important;
-}
-
-/* Forzar block en las celdas para estas columnas */
-.table-container tbody td:nth-child(7),
-.table-container tbody td:nth-child(8) {
-    display: block !important;
-    padding-top: 12px !important;
-    padding-bottom: 12px !important;
-}
-
-/* Estilos específicos para código plus */
-.cell-combinado .codigo-plus-cell,
-.codigo-plus-cell {
-    display: block !important;
-    font-weight: 700 !important;
-    color: #1f2937 !important;
-    font-size: 13px !important;
-    white-space: nowrap !important;
-    width: 100% !important;
-    margin-bottom: 2px !important;
-}
-
-/* Estilos específicos para segmento */
-.cell-combinado .segmento-cell,
-.segmento-cell {
-    display: block !important;
-    font-size: 11px !important;
-    color: #6b7280 !important;
-    white-space: normal !important;
-    width: 100% !important;
-    line-height: 1.3 !important;
-}
-
-/* Cell Combinado - Producto + Fecha */
-.cell-combinado.producto-fecha {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.cell-combinado.producto-fecha .producto-cell {
-    font-weight: 600;
-    color: #1f2937;
-    font-size: 13px;
-    white-space: nowrap;
-}
-
-.cell-combinado.producto-fecha .fecha-cell {
-    font-size: 11px;
-    color: #6b7280;
-    white-space: normal;
-}
-
-/* Cell Actions */
-.cell-actions {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    justify-content: center;
-}
-
-.cell-actions button {
-    padding: 6px 10px;
-    border: none;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
-
-.cell-actions .btn-ver {
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.cell-actions .btn-ver:hover {
-    background: #bfdbfe;
-}
-
-.cell-actions .btn-gestionar {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.cell-actions .btn-gestionar:hover {
-    background: #a7f3d0;
-}
-
-.cell-actions .btn-eliminar {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.cell-actions .btn-eliminar:hover {
-    background: #fecaca;
-}
-
-/* Badges para estado */
-.badge-estado {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.badge-estado.pendiente {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.badge-estado.procesando {
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.badge-estado.aprobado {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.badge-estado.rechazado {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.badge-estado.completado {
-    background: #e0e7ff;
-    color: #3730a3;
-}
-
-/* Table empty state */
-.table-empty {
-    text-align: center;
-    padding: 60px 20px;
-    color: #6b7280;
-}
-
-.table-empty-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-    opacity: 0.5;
-}
-
-.table-empty-text {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 8px;
-}
-
-.table-empty-subtext {
-    font-size: 14px;
-    color: #9ca3af;
-}
-
-/* ===== CARDS CONTAINER (MOSTRANDO SOLO CARDS EN ESCRITORIO) ===== */
-.cards-container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    padding: 16px;
-    width: 100%;
-}
-
-/* Estilo de cada Card */
-.solicitud-card {
-    background: white;
-    border-radius: 12px;
-    padding: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    transition: all 0.2s ease;
-    border: 2px solid transparent;
-}
-
-.solicitud-card:hover {
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    transform: translateY(-2px);
-}
-
-.solicitud-card.seleccionada,
-.solicitud-card.fila-seleccionada {
-    border: 2px solid #2563eb;
-    background: #eff6ff;
-}
-
-/* ===== FILA 1: Checkbox + ID + Segmento + Estado (sin wrapping) ===== */
+/* ===== FILA 1: Checkbox + Segmento + Estado ===== */
+/* .card-fila-1: solo se conservan las props que el CSS compartido no define
+   (display/flex, gap, margin, overflow las cubre /css/solicitudes.css) */
 .card-fila-1 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
     min-height: 30px;
     flex-wrap: nowrap;
-    overflow: hidden;
-}
-
-.card-fila-1 .card-checkbox-wrapper {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-}
-
-.card-fila-1 .card-checkbox {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-}
-
-.card-fila-1 .card-id {
-    font-size: 12px;
-    font-weight: 600;
-    color: #6b7280;
-    flex-shrink: 0;
-    white-space: nowrap;
 }
 
 .card-fila-1 .card-badge {
@@ -866,18 +72,6 @@ td .cell-combinado {
     max-width: 100%;
 }
 
-.card-fila-1 .card-badge.badge-segmento {
-    background: #eef2ff;
-    color: #4338ca;
-    border: 1.5px solid #c7d2fe;
-    flex-shrink: 1;
-    min-width: 0;
-    max-width: 35%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 .card-fila-1 .card-badge.badge-estado {
     flex-shrink: 0;
     margin-left: auto;
@@ -888,131 +82,10 @@ td .cell-combinado {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
-/* Nombre del cliente */
-.cliente-nombre {
-    font-size: 16px;
-    font-weight: 600;
-    color: #1f2937;
-    margin-bottom: 8px;
-    line-height: 1.3;
-}
-
-/* Info row: Cédula y Celular */
-.cliente-info-row {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 10px;
-    font-size: 13px;
-    color: #6b7280;
-}
-
-/* Última gestión en card */
-.cliente-ultima-gestion {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 10px;
-    padding: 6px 8px;
-    background: #f9fafb;
-    border-radius: 6px;
-    border-left: 3px solid #22c55e;
-}
-
-.cliente-ultima-gestion.vacia {
-    border-left-color: #d1d5db;
-    background: #f9fafb;
-}
-
-.ultima-gestion-badge {
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 10px;
-    font-weight: 600;
-    color: #374151;
-    white-space: nowrap;
-}
-
-.ultima-gestion-fecha {
-    font-size: 10px;
-    color: #6b7280;
-    white-space: nowrap;
-}
-
-.ultima-gestion-obs {
-    width: 100%;
-    font-size: 11px;
-    color: #374151;
-    margin-top: 2px;
-    line-height: 1.3;
-    font-style: italic;
-}
-
-.ultima-gestion-sin {
-    font-size: 11px;
-    color: #9ca3af;
-    font-style: italic;
-}
-
-/* Detalles tags */
-.cliente-detalle {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 12px;
-}
-
-.cliente-tag {
-    background: #f3f4f6;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    color: #374151;
-}
-
-/* Card actions */
-.card-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-}
-
-.card-action-btn {
-    padding: 6px 12px;
-    border: none;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.card-gestiones-btn {
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.card-gestiones-btn:hover {
-    background: #bfdbfe;
-}
-
-.card-completar-btn {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.card-completar-btn:hover {
-    background: #a7f3d0;
-}
-
-/* Info vacío cuando no hay datos */
-.no-data {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 60px 20px;
-    color: #6b7280;
-    font-size: 16px;
-}
+/* (Bloques legacy del diseño antiguo de tarjeta eliminados Ago 2026:
+   .cliente-nombre, .cliente-info-row, .cliente-ultima-gestion, .cliente-detalle,
+   .cliente-tag, .card-actions, .card-action-btn, .card-gestiones-btn,
+   .card-completar-btn, .no-data — clases sin uso en el render actual) */
 
 /* ===== MODAL DE GESTIONES ===== */
 .modal-overlay {
@@ -1813,7 +886,9 @@ td .cell-combinado {
 }
 
 /* Make cards clickable to toggle selection on desktop */
-.solicitud-card {
+/* Nota: el CSS compartido define cursor:default. Este override usa `body` para
+   ganar por especificidad (0,1,1) vs (0,1,0) aunque el compartido se cargue después. */
+body .solicitud-card {
     cursor: pointer;
 }
 
@@ -2672,57 +1747,12 @@ body .solicitud-card.seleccionada::after {
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 1200px) {
-    .stats-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    
-    .main-content-grid {
-        grid-template-columns: 260px 1fr;
-    }
-    
-    .cards-container {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    }
-}
-
+/* (Reglas responsive de la vista antigua eliminadas Ago 2026: .stats-grid,
+   .main-content-grid, .cards-container, .header-actions, .info-panel,
+   .stat-card — clases sin uso. Se conserva .container.) */
 @media (max-width: 768px) {
     .container {
         padding: 20px;
-    }
-    
-    .header-actions {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .main-content-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .info-panel {
-        position: static;
-        margin-bottom: 20px;
-    }
-    
-    .stat-card {
-        min-width: 100px;
-    }
-    
-    .stat-card .stat-value {
-        font-size: 24px;
-    }
-    
-    .stat-card .stat-label {
-        font-size: 10px;
-    }
-    
-    .cards-container {
-        grid-template-columns: 1fr;
     }
 }
 
@@ -3151,5 +2181,291 @@ body .solicitud-card.seleccionada::after {
         border-radius: 16px 16px 0 0;
         height: 92vh;
         align-self: flex-end;
+    }
+}
+
+/* ============================================================================
+   HEADER UNIFICADO CON KPIs + MENÚ DE ACCIONES (Rediseño Ago 2026)
+   ============================================================================ */
+.page-header-center {
+    display: flex;
+    align-items: center;
+}
+
+.kpis-inline {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.kpi-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1.5px solid transparent;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-inline:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+}
+
+.kpi-inline .kpi-valor {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1f2937;
+    line-height: 1;
+}
+
+.kpi-inline .kpi-etiqueta {
+    color: #4b5563;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.kpi-total {
+    background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+    border-color: #818cf8;
+}
+
+.kpi-mostrando {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    border-color: #34d399;
+}
+
+.kpi-selecc {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-color: #fbbf24;
+}
+
+/* ===== MENÚ DE ACCIONES (⋮) ===== */
+.menu-acciones {
+    position: relative;
+}
+
+.menu-acciones-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    border: 1.5px solid #e5e7eb;
+    background: white;
+    font-size: 20px;
+    font-weight: 700;
+    color: #374151;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.menu-acciones-btn:hover {
+    background: #f3f4f6;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+.menu-acciones-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.16);
+    border: 1px solid #e5e7eb;
+    min-width: 200px;
+    z-index: 1000;
+    display: none;
+    overflow: hidden;
+    animation: dropDownIn 0.15s ease;
+}
+
+.menu-acciones-dropdown.visible {
+    display: block;
+}
+
+.menu-acciones-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 13px 16px;
+    border: none;
+    background: white;
+    color: #374151;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: left;
+    transition: background 0.15s ease;
+    box-sizing: border-box;
+}
+
+.menu-acciones-item:hover {
+    background: #f3f4f6;
+}
+
+.menu-acciones-item:active {
+    background: #e5e7eb;
+}
+
+/* ============================================================================
+   TOOLBAR ÚNICA DE FILTROS (todo visible en una fila)
+   ============================================================================ */
+.toolbar-filtros {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: white;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid #f0f0f0;
+}
+
+.toolbar-busqueda {
+    flex: 1 1 220px;
+    min-width: 180px;
+}
+
+.toolbar-busqueda input {
+    width: 100%;
+    padding: 9px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 13px;
+    background: white;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.toolbar-busqueda input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.toolbar-filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.toolbar-filtro label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.toolbar-filtro .filtro-select,
+.toolbar-filtro .filtro-input-date,
+.toolbar-filtro .filtro-input-text {
+    padding: 8px 10px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #374151;
+    background: white;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    min-height: 38px;
+}
+
+.toolbar-filtro .filtro-select {
+    min-width: 140px;
+    max-width: 190px;
+    cursor: pointer;
+}
+
+.toolbar-filtro .filtro-input-date {
+    width: 140px;
+}
+
+.toolbar-filtro .filtro-input-text {
+    width: 150px;
+}
+
+.toolbar-filtro .filtro-select:focus,
+.toolbar-filtro .filtro-input-date:focus,
+.toolbar-filtro .filtro-input-text:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.toolbar-filtros-lider {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.toolbar-acciones {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-left: auto;
+}
+
+.toolbar-btn {
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1.5px solid #e5e7eb;
+    background: #f3f4f6;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    min-height: 38px;
+}
+
+.toolbar-btn:hover {
+    background: #e5e7eb;
+}
+
+.toolbar-btn-seleccionar {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: white;
+}
+
+.toolbar-btn-seleccionar:hover {
+    background: #1d4ed8;
+}
+
+.toolbar-btn-limpiar {
+    width: 38px;
+    padding: 9px 0;
+}
+
+.toolbar-btn-limpiar:hover {
+    background: #fee2e2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+/* Responsive: en pantallas medianas los KPIs bajan a su propia línea */
+@media (max-width: 1100px) {
+    .page-header-center {
+        order: 3;
+        width: 100%;
+    }
+    .kpis-inline {
+        justify-content: flex-start;
     }
 }
