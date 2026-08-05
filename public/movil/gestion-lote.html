@@ -65,34 +65,36 @@
         <button type="button" id="siguiente-accion-mobile-btn" onclick="ejecutarSiguienteAccionMovil()">Ver</button>
     </div>
 
-    <!-- Semáforo horizontal (carrusel) -->
+    <!-- Semáforo + Consejo en una sola fila -->
     <div class="semaforo-mobile semaforo-mobile-carousel" id="semaforo-mobile" style="display:none;">
-        <div class="semaforo-mobile-heading">
-            <span>Estado</span>
-            <button type="button" id="btn-semaforo-mobile-todos" onclick="setFiltroSemaforoMovil(null)" style="display:none;">Ver todas</button>
-        </div>
-        <div class="semaforo-mobile-scroll" id="semaforo-mobile-scroll" role="group" aria-label="Filtrar por estado">
-            <button type="button" class="semaforo-mobile-card semaforo-mobile-amarillo" data-semaforo="amarillo" data-prio="1" onclick="setFiltroSemaforoMovil('amarillo')"><strong id="count-mobile-amarillo">0</strong><span>Seguimiento</span></button>
-            <button type="button" class="semaforo-mobile-card semaforo-mobile-sin" data-semaforo="sin_clasificar" data-prio="2" onclick="setFiltroSemaforoMovil('sin_clasificar')"><strong id="count-mobile-sin_clasificar">0</strong><span>Sin clasificar</span></button>
-            <button type="button" class="semaforo-mobile-card semaforo-mobile-verde" data-semaforo="verde" data-prio="3" onclick="setFiltroSemaforoMovil('verde')"><strong id="count-mobile-verde">0</strong><span>Encaminadas</span></button>
-            <button type="button" class="semaforo-mobile-card semaforo-mobile-rojo" data-semaforo="rojo" data-prio="4" onclick="setFiltroSemaforoMovil('rojo')"><strong id="count-mobile-rojo">0</strong><span>En espera</span></button>
+        <div class="semaforo-mobile-row">
+            <div class="semaforo-mobile-scroll" id="semaforo-mobile-scroll" role="group" aria-label="Filtrar por estado">
+                <button type="button" class="semaforo-mobile-card semaforo-mobile-amarillo" data-semaforo="amarillo" data-prio="1" onclick="setFiltroSemaforoMovil('amarillo')"><strong id="count-mobile-amarillo">0</strong><span>Seguimiento</span></button>
+                <button type="button" class="semaforo-mobile-card semaforo-mobile-sin" data-semaforo="sin_clasificar" data-prio="2" onclick="setFiltroSemaforoMovil('sin_clasificar')"><strong id="count-mobile-sin_clasificar">0</strong><span>Sin clasificar</span></button>
+                <button type="button" class="semaforo-mobile-card semaforo-mobile-verde" data-semaforo="verde" data-prio="3" onclick="setFiltroSemaforoMovil('verde')"><strong id="count-mobile-verde">0</strong><span>Encaminadas</span></button>
+                <button type="button" class="semaforo-mobile-card semaforo-mobile-rojo" data-semaforo="rojo" data-prio="4" onclick="setFiltroSemaforoMovil('rojo')"><strong id="count-mobile-rojo">0</strong><span>En espera</span></button>
+            </div>
+            <button type="button" class="reco-chip" id="reco-chip-btn" onclick="toggleRecoChipMovil()" aria-expanded="false" aria-controls="reco-bs-sheet" title="Consejo de la campaña">
+                <span id="recomendacion-mobile-icon">💡</span>
+                <span>Consejo</span>
+            </button>
         </div>
     </div>
 
-    <div class="reco-chip-row" id="reco-chip-row" style="display:none;">
-        <button type="button" class="reco-chip" id="reco-chip-btn" onclick="toggleRecoChipMovil()" aria-expanded="false" aria-controls="recomendaciones-mobile">
-            <span id="recomendacion-mobile-icon">💡</span>
-            <span>Consejo</span>
-        </button>
-    </div>
-
-    <section class="recomendaciones-mobile recomendaciones-mobile-sheet" id="recomendaciones-mobile" hidden aria-live="polite">
-        <div class="recomendaciones-mobile-header">
-            <div><span>Asistente</span><strong>Recomendación</strong></div>
-            <button type="button" onclick="toggleRecoChipMovil()" aria-expanded="true" aria-controls="recomendaciones-mobile-contenido">Cerrar</button>
+    <!-- Bottom sheet: recomendación del asistente -->
+    <div class="reco-bs-overlay" id="reco-bs-overlay" onclick="cerrarRecoSheet()"></div>
+    <div class="reco-bs-sheet" id="reco-bs-sheet" role="dialog" aria-label="Consejo de la campaña">
+        <div class="reco-bs-handle"></div>
+        <div class="reco-bs-header">
+            <div class="reco-bs-header-title">
+                <span>Asistente</span>
+                <strong>Recomendación</strong>
+            </div>
+            <button type="button" class="reco-bs-close" onclick="cerrarRecoSheet()" aria-label="Cerrar">✕</button>
         </div>
-        <div id="recomendaciones-mobile-contenido" class="recomendaciones-mobile-contenido">
+        <div class="reco-bs-body">
             <div class="recomendacion-mobile-principal">
+                <span id="reco-sheet-icon">💡</span>
                 <div>
                     <strong id="recomendacion-mobile-titulo">Registra cada gestión mientras conversas.</strong>
                     <small id="recomendacion-mobile-texto">Mantener el historial actualizado evita olvidos.</small>
@@ -103,7 +105,7 @@
                 <div class="buenas-practicas-mobile" id="buenas-practicas-mobile"></div>
             </details>
         </div>
-    </section>
+    </div>
 
     <!-- Filtros -->
     <div class="filtros-mobile" id="filtros-row" style="display: none;">

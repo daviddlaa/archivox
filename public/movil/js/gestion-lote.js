@@ -207,11 +207,7 @@ async function cargarDatosGestionMovil() {
         var kpiMobile = document.getElementById('header-kpi-mobile');
         if (kpiMobile) kpiMobile.hidden = false;
 
-        var recoChipRow = document.getElementById('reco-chip-row');
-        if (recoChipRow) recoChipRow.style.display = 'flex';
-
-        var recoPanel = document.getElementById('recomendaciones-mobile');
-        if (recoPanel) recoPanel.hidden = true;
+        cerrarRecoSheet();
 
         var containerExportar = document.getElementById('exportar-excel-container');
         if (containerExportar) containerExportar.style.display = 'none';
@@ -323,8 +319,6 @@ function actualizarSemaforoMovil(conteo) {
             card.classList.toggle('is-empty', !(conteo[key] || 0));
         }
     });
-    var clear = document.getElementById('btn-semaforo-mobile-todos');
-    if (clear) clear.style.display = filtroSemaforoMovil ? 'inline-flex' : 'none';
     reordenarCarruselSemaforoMovil(conteo);
     actualizarRecomendacionesMovil(conteo);
 }
@@ -384,9 +378,11 @@ function actualizarRecomendacionesMovil(conteo) {
     else if (conteo.rojo >= 3) contexto = { icon: '⏳', title: 'Hay solicitudes en espera.', text: 'Respeta el tiempo y trabaja primero las amarillas.' };
     else contexto = { icon: '💡', title: 'Registra cada gestión mientras conversas.', text: 'Un historial actualizado evita olvidos.' };
     var icon = document.getElementById('recomendacion-mobile-icon');
+    var sheetIcon = document.getElementById('reco-sheet-icon');
     var title = document.getElementById('recomendacion-mobile-titulo');
     var text = document.getElementById('recomendacion-mobile-texto');
     if (icon) icon.textContent = contexto.icon;
+    if (sheetIcon) sheetIcon.textContent = contexto.icon;
     if (title) title.textContent = contexto.title;
     if (text) text.textContent = contexto.text;
     mostrarBuenaPracticaMovil();
@@ -416,13 +412,33 @@ function toggleRecomendaciones(modo) {
 }
 
 function toggleRecoChipMovil() {
-    var panel = document.getElementById('recomendaciones-mobile');
+    var sheet = document.getElementById('reco-bs-sheet');
+    if (!sheet) return;
+    var abrir = !sheet.classList.contains('visible');
+    if (abrir) {
+        abrirRecoSheet();
+    } else {
+        cerrarRecoSheet();
+    }
     var chip = document.getElementById('reco-chip-btn');
-    if (!panel) return;
-    var abrir = panel.hidden;
-    panel.hidden = !abrir;
     if (chip) chip.setAttribute('aria-expanded', String(abrir));
     try { localStorage.setItem('campanas_reco_open_mobile', abrir ? '1' : '0'); } catch (e) {}
+}
+
+function abrirRecoSheet() {
+    var overlay = document.getElementById('reco-bs-overlay');
+    var sheet = document.getElementById('reco-bs-sheet');
+    if (overlay) overlay.classList.add('visible');
+    if (sheet) sheet.classList.add('visible');
+}
+
+function cerrarRecoSheet() {
+    var overlay = document.getElementById('reco-bs-overlay');
+    var sheet = document.getElementById('reco-bs-sheet');
+    if (overlay) overlay.classList.remove('visible');
+    if (sheet) sheet.classList.remove('visible');
+    var chip = document.getElementById('reco-chip-btn');
+    if (chip) chip.setAttribute('aria-expanded', 'false');
 }
 
 function setFiltroSemaforoMovil(valor) {
@@ -534,15 +550,53 @@ async function cambiarSemaforoSolicitudMovil(solicitudId, semaforo, eventRef) {
             if (String(sol.id_solicitud) === String(solicitudId)) sol.semaforo = valor;
         });
 
-        var card = origin && origin.closest ? origin.closest('.sol-card') : null;
-        if (card) {
-            card.classList.remove('sol-semaforo-flash');
-            void card.offsetWidth;
-            card.classList.add('sol-semaforo-flash');
+        var container = document.getElementById('lista-solicitudes');
+        var motionOk = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        var oldRects = {};
+        if (container && motionOk) {
+            container.querySelectorAll('.sol-card[data-sol-id]').forEach(function(c) {
+                oldRects[c.getAttribute('data-sol-id')] = c.getBoundingClientRect();
+            });
         }
 
-        renderizarSolicitudes(todasLasSolicitudes);
+        // Si el filtro activo ya no incluye esta tarjeta → animar salida antes de re-render
+        var card = origin && origin.closest ? origin.closest('.sol-card') : null;
+        if (filtroSemaforoMovil && filtroSemaforoMovil !== valor && card && motionOk) {
+            card.classList.add('sol-card-exit');
+            await new Promise(function(r) { setTimeout(r, 220); });
+        }
+
+        renderizarSolicitudes(todasLasSolicitudes, true);
         actualizarSemaforoMovil(data.semaforo_conteos);
+
+        if (container && motionOk) {
+            // FLIP: las tarjetas que permanecen se deslizan a su nueva posición
+            container.querySelectorAll('.sol-card[data-sol-id]').forEach(function(c) {
+                var id = c.getAttribute('data-sol-id');
+                var old = oldRects[id];
+                if (!old) return;
+                var nr = c.getBoundingClientRect();
+                var dx = old.left - nr.left;
+                var dy = old.top - nr.top;
+                if (!dx && !dy) return;
+                c.style.transition = 'none';
+                c.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+                requestAnimationFrame(function() {
+                    requestAnimationFrame(function() {
+                        c.style.transition = '';
+                        c.style.transform = '';
+                    });
+                });
+            });
+            // Bump en la tarjeta del semáforo destino del carrusel
+            var target = document.querySelector('.semaforo-mobile-card[data-semaforo="' + valor + '"]');
+            if (target) {
+                target.classList.remove('bump');
+                void target.offsetWidth;
+                target.classList.add('bump');
+            }
+        }
+
         mostrarConfirmacionGestionMovil('Estado actualizado');
     } catch (error) {
         console.error('[movil] Error actualizando semáforo:', error);
@@ -550,10 +604,11 @@ async function cambiarSemaforoSolicitudMovil(solicitudId, semaforo, eventRef) {
     }
 }
 
-function renderizarSolicitudes(lista) {
+function renderizarSolicitudes(lista, sinEntrada) {
     var container = document.getElementById('lista-solicitudes');
     // Guardar posición de scroll antes de re-render
     var scrollY = container ? container.scrollTop : 0;
+    if (container) container.classList.toggle('no-stagger', !!sinEntrada);
     if (!lista || lista.length === 0) {
         container.innerHTML = '<div class="sin-campana"><p>No hay solicitudes en esta gestión</p></div>';
         return;

@@ -947,19 +947,6 @@
     white-space: nowrap;
 }
 
-.recomendaciones-mobile {
-    margin: 12px 16px 0;
-    padding: 12px 13px;
-    border: 1px solid #e5e7eb;
-    border-radius: 13px;
-    background: #fbfcfe;
-}
-.recomendaciones-mobile-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.recomendaciones-mobile-header > div { display: flex; flex-direction: column; gap: 3px; }
-.recomendaciones-mobile-header span { color: #94a3b8; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.recomendaciones-mobile-header strong { color: #334155; font-size: 12px; }
-.recomendaciones-mobile-header button { border: 0; background: transparent; color: #6366f1; font-size: 10px; font-weight: 700; }
-.recomendaciones-mobile-contenido { margin-top: 10px; }
 .recomendacion-mobile-principal { display: flex; align-items: flex-start; gap: 9px; }
 .recomendacion-mobile-principal > span { display: grid; width: 28px; height: 28px; flex: 0 0 28px; place-items: center; border-radius: 8px; background: #eef2ff; font-size: 14px; }
 .recomendacion-mobile-principal > div { display: flex; flex-direction: column; gap: 3px; }
@@ -973,26 +960,6 @@
 
 .semaforo-mobile {
     margin: 14px 16px 0;
-}
-
-.semaforo-mobile-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    color: #334155;
-    font-size: 12px;
-    font-weight: 800;
-}
-
-.semaforo-mobile-heading button {
-    padding: 5px 8px;
-    border: 1px solid #e2e8f0;
-    border-radius: 7px;
-    background: white;
-    color: #64748b;
-    font-size: 10px;
-    font-weight: 700;
 }
 
 .semaforo-mobile-grid {
@@ -1102,22 +1069,6 @@
     }
 }
 
-/* Flash al cambiar estado */
-.sol-card.sol-semaforo-flash {
-    animation: sol-semaforo-flash-movil .7s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes sol-semaforo-flash-movil {
-    0% { box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08); }
-    30% { box-shadow: 0 4px 18px rgba(99, 102, 241, 0.14), 0 0 0 2px rgba(99, 102, 241, 0.16); }
-    60% { box-shadow: 0 2px 10px rgba(99, 102, 241, 0.08), 0 0 0 1px rgba(99, 102, 241, 0.1); }
-    100% { box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .sol-card.sol-semaforo-flash { animation: none; }
-}
-
 .sol-semaforo-status {
     display: flex;
     width: 100%;
@@ -1157,7 +1108,7 @@
 .campana-toast-mobile.visible { opacity: 1; transform: translateY(0); }
 
 @media (prefers-reduced-motion: reduce) {
-    .avance-mobile-track span, .campana-toast-mobile, .semaforo-mobile-card, .sol-card, .sol-destacado-badge { transition: none; animation: none; }
+    .avance-mobile-track span, .campana-toast-mobile, .semaforo-mobile-card, .sol-card, .sol-destacado-badge, .sol-card.sol-card-exit, .semaforo-mobile-card.bump, .reco-bs-sheet, .reco-bs-overlay { transition: none; animation: none; }
 }
 
 /* ===== CIERRE DEL CICLO EN MOBILE ===== */
@@ -1357,40 +1308,150 @@
     font-size: 11px;
 }
 
-.reco-chip-row {
-    display: flex;
-    justify-content: flex-start;
-    margin: 8px 12px 0;
-}
-
 .reco-chip {
     display: inline-flex;
+    flex: 0 0 54px;
+    flex-direction: column;
     align-items: center;
-    gap: 6px;
-    min-height: 34px;
-    padding: 6px 12px;
+    justify-content: center;
+    gap: 2px;
+    min-height: 46px;
+    padding: 6px 2px;
     border: 1px solid #e2e8f0;
-    border-radius: 999px;
+    border-radius: 10px;
     background: #fff;
     color: #475569;
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 9px;
+    font-weight: 800;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
 }
 
 .reco-chip:active {
-    transform: scale(0.97);
+    transform: scale(0.94);
     background: #f8fafc;
 }
 
-.recomendaciones-mobile-sheet {
-    margin: 8px 12px 0;
-    padding: 10px 12px;
+.reco-chip #recomendacion-mobile-icon {
+    font-size: 16px;
+    line-height: 1;
 }
 
-.recomendaciones-mobile-sheet[hidden] {
-    display: none !important;
+/* ===== Bottom sheet de recomendaciones del asistente ===== */
+.reco-bs-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    background: rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+.reco-bs-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.reco-bs-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 70vh;
+    background: #ffffff;
+    border-radius: 20px 20px 0 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.2);
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.reco-bs-sheet.visible {
+    transform: translateY(0);
+}
+
+.reco-bs-handle {
+    width: 36px;
+    height: 4px;
+    background: #d1d5db;
+    border-radius: 4px;
+    margin: 10px auto 0;
+    flex-shrink: 0;
+}
+
+.reco-bs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid #f3f4f6;
+    flex-shrink: 0;
+}
+
+.reco-bs-header-title {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.reco-bs-header-title span {
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+.reco-bs-header-title strong {
+    color: #334155;
+    font-size: 14px;
+}
+
+.reco-bs-close {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    padding: 0;
+    flex-shrink: 0;
+}
+.reco-bs-close:active {
+    background: #e5e7eb;
+    transform: scale(0.92);
+}
+
+.reco-bs-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px 16px 18px;
+    flex: 1;
+}
+
+/* ===== Salida de tarjeta al reclasificar con filtro activo ===== */
+.sol-card.sol-card-exit {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* ===== Bump en la tarjeta del semáforo destino ===== */
+.semaforo-mobile-card.bump {
+    animation: semaforo-bump 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes semaforo-bump {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.14); }
+    100% { transform: scale(1); }
 }
 
 .buenas-practicas-mobile-details {
@@ -1447,29 +1508,31 @@
 
 /* filtros-mobile — estilos unificados arriba */
 
-/* ===== M2 — Semáforo horizontal sin scroll — 4 botones en fila ===== */
+/* ===== M2 — Semáforo horizontal + Consejo en una sola fila ===== */
 .semaforo-mobile-carousel {
     margin: 8px 0 0;
 }
 
-.semaforo-mobile-carousel .semaforo-mobile-heading {
-    padding: 0 12px;
-    margin-bottom: 6px;
-    font-size: 11px;
+.semaforo-mobile-row {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+    padding: 0 12px 4px;
 }
 
 .semaforo-mobile-scroll {
     display: flex;
+    flex: 1;
+    min-width: 0;
     gap: 6px;
-    padding: 0 12px 4px;
 }
 
 .semaforo-mobile-carousel .semaforo-mobile-card {
     flex: 1 1 0;
     min-width: 0;
     width: auto;
-    min-height: 50px;
-    padding: 8px 6px;
+    min-height: 46px;
+    padding: 7px 4px;
     border-radius: 10px;
     align-items: center;
     justify-content: center;
@@ -1477,7 +1540,7 @@
 }
 
 .semaforo-mobile-carousel .semaforo-mobile-card strong {
-    font-size: 17px;
+    font-size: 16px;
 }
 
 .semaforo-mobile-carousel .semaforo-mobile-card span {
@@ -1485,6 +1548,10 @@
     font-size: 9px;
     font-weight: 800;
     line-height: 1.15;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
 }
 
 .semaforo-mobile-carousel .semaforo-mobile-card.is-priority {
@@ -1493,4 +1560,9 @@
 
 .semaforo-mobile-carousel .semaforo-mobile-card.active {
     box-shadow: 0 0 0 2px currentColor;
+}
+
+/* Sin fadeIn en cascada cuando el re-render viene de un cambio de semáforo (FLIP) */
+.no-stagger .sol-card {
+    animation: none !important;
 }
