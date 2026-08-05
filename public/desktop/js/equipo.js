@@ -114,49 +114,24 @@ async function cargarDashboard() {
 }
 
 // ============================================================================
-// CARGAR AGENTES
+// CARGAR AGENTES (solo datos + contador del header; la UI vive en el panel)
 // ============================================================================
 async function cargarAgentes() {
-    const tbody = document.getElementById('agentesTableBody');
-
     try {
         const equipoId = window._equipoId;
-        if (!equipoId) {
-            tbody.innerHTML = '<tr><td colspan="7" class="equipo-loading">Sin equipo asignado</td></tr>';
-            return;
-        }
+        if (!equipoId) return;
 
         const res = await fetch(`/api/equipos/${equipoId}/dashboard`);
         if (!res.ok) throw new Error('Error ' + res.status);
         const data = await res.json();
 
-        const agentes = data.agentes || [];
+        _agentesData = data.agentes || [];
 
-        if (agentes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="equipo-loading">No hay agentes en tu equipo. ¡Crea el primero!</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = agentes.map(a => {
-            const estado = a.is_active ? 'activo' : 'inactivo';
-            return `<tr>
-                <td><strong>${escapeHtml(a.username)}</strong></td>
-                <td>${escapeHtml(a.nombre || '-')}</td>
-                <td><span class="equipo-status-dot ${estado}"></span><span style="text-transform:capitalize">${estado}</span></td>
-                <td><strong>${parseInt(a.asignadas || 0).toLocaleString()}</strong></td>
-                <td><strong>${parseInt(a.gestiones_7d || 0).toLocaleString()}</strong></td>
-                <td style="color:#6b7280;font-size:12px;">${formatearFecha(a.fecha_ingreso) || '-'}</td>
-                <td>
-                    <button class="equipo-action-btn equipo-action-btn-primary" onclick="verAsignacionesAgente(${a.id}, '${escapeHtml(a.username)}')" title="Ver asignaciones">
-                        📋 Asignaciones
-                    </button>
-                </td>
-            </tr>`;
-        }).join('');
+        const contador = document.getElementById('agentesHeaderCount');
+        if (contador) contador.textContent = _agentesData.length;
 
     } catch (err) {
         console.error('[Equipo] Error cargar agentes:', err);
-        tbody.innerHTML = '<tr><td colspan="7" class="equipo-loading" style="color:#dc2626">Error al cargar agentes</td></tr>';
     }
 }
 
@@ -407,34 +382,247 @@ function initEquipoCarousel() {
 }
 
 // ============================================================================
-// CREAR AGENTE
+// PANEL LATERAL DE AGENTES (escritorio)
+// Gestión completa fuera de la pasarela: lista, crear, editar,
+// activar/desactivar, reset de contraseña y asignaciones.
 // ============================================================================
-function abrirModalCrearAgente() {
-    document.getElementById('createAgenteUsername').value = '';
-    document.getElementById('createAgenteNombre').value = '';
-    document.getElementById('createAgentePassword').value = '';
-    document.getElementById('createAgenteEmail').value = '';
-    document.getElementById('createAgenteModal').style.display = 'flex';
+let _agentesData = [];
+let _panelAgentesAbierto = false;
+let _panelAgentesEscAttached = false;
+
+function crearEstructuraPanelAgentes() {
+    let existente = document.getElementById('panel-agentes-overlay');
+    if (existente) return existente;
+
+    const html = `
+        <div class="panel-agentes-overlay" id="panel-agentes-overlay" onclick="cerrarPanelAgentes()">
+            <aside class="panel-agentes" onclick="event.stopPropagation()">
+                <div class="panel-agentes-header">
+                    <div class="panel-agentes-titulo">
+                        <span class="panel-agentes-titulo-icono">👥</span>
+                        <span id="panel-agentes-titulo">Agentes del Equipo</span>
+                    </div>
+                    <button class="panel-agentes-close" onclick="cerrarPanelAgentes()" aria-label="Cerrar">✕</button>
+                </div>
+                <div class="panel-agentes-body" id="panel-agentes-body">
+                    <div class="panel-agentes-loading">⏳ Cargando agentes...</div>
+                </div>
+            </aside>
+        </div>`;
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html;
+    document.body.appendChild(wrapper.firstChild);
+
+    requestAnimationFrame(() => {
+        const overlay = document.getElementById('panel-agentes-overlay');
+        const aside = overlay ? overlay.querySelector('.panel-agentes') : null;
+        if (overlay) overlay.classList.add('abierto-overlay');
+        if (aside) aside.classList.add('abierto');
+    });
+
+    document.body.style.overflow = 'hidden';
+    _panelAgentesAbierto = true;
+
+    if (!_panelAgentesEscAttached) {
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && _panelAgentesAbierto) cerrarPanelAgentes();
+        });
+        _panelAgentesEscAttached = true;
+    }
+
+    return document.getElementById('panel-agentes-overlay');
 }
 
-function cerrarModalCrearAgente(event) {
-    if (event && event.target !== event.currentTarget) return;
-    document.getElementById('createAgenteModal').style.display = 'none';
+async function abrirPanelAgentes() {
+    crearEstructuraPanelAgentes();
+    const body = document.getElementById('panel-agentes-body');
+    body.innerHTML = '<div class="panel-agentes-loading">⏳ Cargando agentes...</div>';
+
+    try {
+        const equipoId = window._equipoId;
+        if (!equipoId) {
+            body.innerHTML = '<div class="panel-agentes-loading">Sin equipo asignado</div>';
+            return;
+        }
+
+        const [dashRes, miembrosRes] = await Promise.all([
+            fetch(`/api/equipos/${equipoId}/dashboard`),
+            fetch(`/api/equipos/${equipoId}/miembros`)
+        ]);
+
+        if (!dashRes.ok) throw new Error('Error al cargar agentes (' + dashRes.status + ')');
+        const dashData = await dashRes.json();
+        const miembrosData = dashRes.ok ? ((await miembrosRes.json()).data || []) : [];
+        const mapaMiembros = {};
+        miembrosData.forEach(m => { mapaMiembros[m.usuario_id] = m; });
+
+        _agentesData = (dashData.agentes || []).map(a => Object.assign({}, a, {
+            email: mapaMiembros[a.id] ? mapaMiembros[a.id].email : undefined,
+            fecha_ingreso: mapaMiembros[a.id] ? mapaMiembros[a.id].fecha_ingreso : undefined
+        }));
+
+        const contador = document.getElementById('agentesHeaderCount');
+        if (contador) contador.textContent = _agentesData.length;
+
+        renderPanelAgentesLista();
+    } catch (err) {
+        console.error('[Equipo] Error abrir panel agentes:', err);
+        body.innerHTML = '<div class="panel-agentes-loading" style="color:#dc2626">Error al cargar agentes</div>';
+    }
+}
+
+function cerrarPanelAgentes() {
+    const overlay = document.getElementById('panel-agentes-overlay');
+    if (!overlay) return;
+    const aside = overlay.querySelector('.panel-agentes');
+    if (aside) aside.classList.remove('abierto');
+    overlay.classList.remove('abierto-overlay');
+    _panelAgentesAbierto = false;
+    document.body.style.overflow = '';
+
+    setTimeout(() => {
+        const ov = document.getElementById('panel-agentes-overlay');
+        if (ov && !_panelAgentesAbierto) ov.remove();
+    }, 300);
+}
+
+// ── Vista Lista ──
+function renderPanelAgentesLista() {
+    const body = document.getElementById('panel-agentes-body');
+    document.getElementById('panel-agentes-titulo').textContent = 'Agentes del Equipo';
+
+    if (!_agentesData.length) {
+        body.innerHTML = `
+            <div class="panel-agentes-vacio">
+                <div class="panel-agentes-vacio-icono">👥</div>
+                <h3>No hay agentes</h3>
+                <p>Crea el primer agente de tu equipo.</p>
+                <button class="equipo-btn equipo-btn-primary" onclick="nuevoAgenteEnPanel()">➕ Nuevo Agente</button>
+            </div>`;
+        return;
+    }
+
+    let html = `<button class="panel-agentes-nuevo" onclick="nuevoAgenteEnPanel()">
+                    <span class="panel-agentes-nuevo-icono">➕</span> Nuevo Agente
+                </button>`;
+    html += '<div class="panel-agentes-lista">';
+
+    _agentesData.forEach(a => {
+        const activo = !!a.is_active;
+        const estado = activo ? 'activo' : 'inactivo';
+        const inicial = escapeHtml(((a.nombre || a.username || '?').trim()[0] || '?').toUpperCase());
+        const ingreso = formatearFecha(a.fecha_ingreso) || '-';
+        const asignadas = parseInt(a.asignadas || 0).toLocaleString();
+        const gestiones7d = parseInt(a.gestiones_7d || 0).toLocaleString();
+
+        html += `
+            <div class="panel-agente-card ${estado}">
+                <div class="panel-agente-top">
+                    <div class="panel-agente-avatar ${estado}">${inicial}</div>
+                    <div class="panel-agente-info">
+                        <span class="panel-agente-username">${escapeHtml(a.username)}</span>
+                        <span class="panel-agente-nombre">${escapeHtml(a.nombre || '-')}</span>
+                    </div>
+                    <span class="panel-agente-badge ${estado}">${activo ? '●' : '○'} ${estado}</span>
+                    <label class="panel-agente-switch" title="Activar/Desactivar agente">
+                        <input type="checkbox" onchange="toggleActivoAgente(${a.id}, this)" ${activo ? 'checked' : ''}>
+                        <span class="panel-agente-switch-slider"></span>
+                    </label>
+                </div>
+                <div class="panel-agente-stats">
+                    <div class="panel-agente-stat"><b>${asignadas}</b>📋 Asignadas</div>
+                    <div class="panel-agente-stat"><b>${gestiones7d}</b>📝 Gestiones 7d</div>
+                </div>
+                <div class="panel-agente-ingreso">📅 Ingreso: ${escapeHtml(ingreso)}</div>
+                <div class="panel-agente-acciones">
+                    <button class="panel-agente-btn panel-agente-btn-primary" onclick="verAsignacionesAgente(${a.id}, '${escapeHtml(a.username)}')">📋 Asignaciones</button>
+                    <button class="panel-agente-btn panel-agente-btn-secondary" onclick="editarAgenteEnPanel(${a.id})">✏️ Editar</button>
+                </div>
+            </div>`;
+    });
+
+    html += '</div>';
+    body.innerHTML = html;
+}
+
+// ── Vista Formulario (Nuevo / Editar) ──
+function nuevoAgenteEnPanel() {
+    renderPanelFormAgente('nuevo', null);
+}
+
+function editarAgenteEnPanel(agenteId) {
+    const agente = _agentesData.find(a => a.id == agenteId);
+    if (!agente) return;
+    renderPanelFormAgente('editar', agente);
+}
+
+function renderPanelFormAgente(modo, agente) {
+    const body = document.getElementById('panel-agentes-body');
+    const titulo = document.getElementById('panel-agentes-titulo');
+    const esNuevo = modo === 'nuevo';
+
+    titulo.textContent = esNuevo ? '➕ Nuevo Agente' : '✏️ Editar: ' + (agente.username || '');
+
+    const usernameField = esNuevo ? `
+        <div class="equipo-form-group">
+            <label>Usuario *</label>
+            <input type="text" id="panelAgenteUsername" placeholder="Nombre de usuario" autocomplete="off">
+        </div>` : '';
+
+    const passwordField = esNuevo ? `
+        <div class="equipo-form-group">
+            <label>Contraseña *</label>
+            <input type="text" id="panelAgentePassword" placeholder="Mín 8 caracteres, mayúscula y número" autocomplete="off">
+        </div>` : `
+        <div class="panel-agentes-seccion">
+            <h3>🔑 Cambiar contraseña <span>(opcional)</span></h3>
+            <div class="equipo-form-group">
+                <label>Nueva contraseña</label>
+                <input type="text" id="panelAgentePassword" placeholder="Déjalo vacío para no cambiarla" autocomplete="off">
+            </div>
+        </div>`;
+
+    const submitHandler = esNuevo ? 'crearAgente()' : 'guardarAgenteEdicion(' + (agente ? agente.id : '') + ')';
+
+    body.innerHTML = `
+        <button class="panel-agentes-volver" onclick="renderPanelAgentesLista()">← Volver a la lista</button>
+        <form class="panel-agentes-form" onsubmit="event.preventDefault(); ${submitHandler}">
+            ${usernameField}
+            <div class="equipo-form-group">
+                <label>Nombre</label>
+                <input type="text" id="panelAgenteNombre" placeholder="Nombre completo" autocomplete="off" value="${esNuevo ? '' : escapeHtml(agente.nombre || '')}">
+            </div>
+            <div class="equipo-form-group">
+                <label>Email (opcional)</label>
+                <input type="email" id="panelAgenteEmail" placeholder="correo@ejemplo.com" autocomplete="off" value="${esNuevo ? '' : escapeHtml(agente.email || '')}">
+            </div>
+            ${passwordField}
+            <button type="submit" class="panel-agentes-submit">${esNuevo ? '➕ Crear Agente' : '💾 Guardar Cambios'}</button>
+        </form>`;
+
+    if (esNuevo) {
+        const u = document.getElementById('panelAgenteUsername');
+        if (u) u.focus();
+    }
 }
 
 async function crearAgente() {
     const equipoId = window._equipoId;
-    if (!equipoId) return alert('No hay equipo asignado');
+    if (!equipoId) return mostrarToast('⚠️ No hay equipo asignado', 'error');
 
-    const username = document.getElementById('createAgenteUsername').value.trim();
-    const nombre = document.getElementById('createAgenteNombre').value.trim();
-    const password = document.getElementById('createAgentePassword').value;
-    const email = document.getElementById('createAgenteEmail').value.trim() || null;
+    const username = document.getElementById('panelAgenteUsername').value.trim();
+    const nombre = document.getElementById('panelAgenteNombre').value.trim();
+    const password = document.getElementById('panelAgentePassword').value;
+    const email = document.getElementById('panelAgenteEmail').value.trim() || null;
 
-    if (!username || !password) return alert('Usuario y contraseña son requeridos');
-    if (password.length < 8) return alert('La contraseña debe tener al menos 8 caracteres');
-    if (!/[A-Z]/.test(password)) return alert('La contraseña debe contener al menos una mayúscula');
-    if (!/[0-9]/.test(password)) return alert('La contraseña debe contener al menos un número');
+    if (!username || !password) return mostrarToast('⚠️ Usuario y contraseña son requeridos', 'error');
+    if (password.length < 8) return mostrarToast('⚠️ La contraseña debe tener al menos 8 caracteres', 'error');
+    if (!/[A-Z]/.test(password)) return mostrarToast('⚠️ La contraseña debe contener al menos una mayúscula', 'error');
+    if (!/[0-9]/.test(password)) return mostrarToast('⚠️ La contraseña debe contener al menos un número', 'error');
+
+    const btn = document.querySelector('.panel-agentes-submit');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Creando...'; }
 
     try {
         const res = await fetch(`/api/equipos/${equipoId}/agentes`, {
@@ -442,95 +630,154 @@ async function crearAgente() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, nombre, password, email })
         });
-
         const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Error al crear agente');
 
-        if (res.ok) {
-            cerrarModalCrearAgente();
-            await cargarAgentes();
-            await cargarDashboard();
-            mostrarToast('✅ Agente creado: ' + username);
-        } else {
-            alert(result.error || 'Error al crear agente');
-        }
+        mostrarToast('✅ Agente creado: ' + username);
+        await cargarDashboard();
+        await abrirPanelAgentes();
     } catch (err) {
         console.error('[Equipo] Error crear agente:', err);
-        alert('Error de conexión');
+        mostrarToast('⚠️ ' + err.message, 'error');
+        if (btn) { btn.disabled = false; btn.textContent = '➕ Crear Agente'; }
     }
 }
 
 // ============================================================================
-// VER ASIGNACIONES DE UN AGENTE
+// VER ASIGNACIONES DE UN AGENTE (dentro del panel)
 // ============================================================================
-// Usa el dashboard del equipo para mostrar resumen y enlace a solicitudes.
 async function verAsignacionesAgente(agenteId, username) {
-    document.getElementById('asignacionesModalTitle').textContent = `📋 Asignaciones de ${username}`;
-    document.getElementById('asignacionesContent').innerHTML = '<div class="equipo-loading">Cargando información...</div>';
-    document.getElementById('verAsignacionesModal').style.display = 'flex';
+    const body = document.getElementById('panel-agentes-body');
+    const titulo = document.getElementById('panel-agentes-titulo');
+    titulo.textContent = '📋 Asignaciones de ' + username;
+    body.innerHTML = `
+        <button class="panel-agentes-volver" onclick="renderPanelAgentesLista()">← Volver a la lista</button>
+        <div class="panel-agentes-loading">Cargando información...</div>`;
+
+    // Los datos ya están en memoria (los carga abrirPanelAgentes)
+    const agente = _agentesData.find(a => a.id == agenteId);
+
+    if (!agente) {
+        body.innerHTML = `
+            <button class="panel-agentes-volver" onclick="renderPanelAgentesLista()">← Volver a la lista</button>
+            <div class="panel-agentes-vacio">
+                <div class="panel-agentes-vacio-icono">👤</div>
+                <h3>Sin información</h3>
+                <p>No se encontró información del agente.</p>
+            </div>`;
+        return;
+    }
+
+    const asignadas = parseInt(agente.asignadas || 0);
+    const gestiones7d = parseInt(agente.gestiones_7d || 0);
+
+    body.innerHTML = `
+        <button class="panel-agentes-volver" onclick="renderPanelAgentesLista()">← Volver a la lista</button>
+        <div class="panel-agentes-asignaciones">
+            <div class="asignaciones-agente-card">
+                <div class="asignaciones-agente-header">
+                    <span style="font-size:32px;">👤</span>
+                    <div>
+                        <div class="asignaciones-agente-nombre">${escapeHtml(username)}</div>
+                        <div style="font-size:12px;color:#6b7280;">${escapeHtml(agente.nombre || '')}</div>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+                    <div style="background:#ecfdf5;padding:14px;border-radius:8px;border:1px solid #a7f3d0;text-align:center;">
+                        <div style="font-size:28px;font-weight:700;color:#065f46;">${asignadas.toLocaleString()}</div>
+                        <div style="font-size:12px;color:#047857;font-weight:600;">📋 Solicitudes Asignadas</div>
+                    </div>
+                    <div style="background:#ede9fe;padding:14px;border-radius:8px;border:1px solid #ddd6fe;text-align:center;">
+                        <div style="font-size:28px;font-weight:700;color:#5b21b6;">${gestiones7d.toLocaleString()}</div>
+                        <div style="font-size:12px;color:#6d28d9;font-weight:600;">📝 Gestiones (7 días)</div>
+                    </div>
+                </div>
+                <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb;">
+                    <a href="/solicitudes?usuario=${agenteId}" target="_blank" class="panel-agentes-link-solicitudes">
+                        📋 Ver todas las solicitudes de ${escapeHtml(username)}
+                    </a>
+                </div>
+            </div>
+        </div>`;
+}
+
+// ============================================================================
+// GUARDAR EDICIÓN DE AGENTE (nombre, email y contraseña opcional)
+// ============================================================================
+async function guardarAgenteEdicion(agenteId) {
+    const equipoId = window._equipoId;
+    const nombre = document.getElementById('panelAgenteNombre').value.trim();
+    const email = document.getElementById('panelAgenteEmail').value.trim() || null;
+    const nuevaPassword = document.getElementById('panelAgentePassword').value;
+
+    // Validar la contraseña ANTES de guardar nada (evita guardados parciales)
+    if (nuevaPassword && (nuevaPassword.length < 8 || !/[A-Z]/.test(nuevaPassword) || !/[0-9]/.test(nuevaPassword))) {
+        mostrarToast('⚠️ Contraseña: mín 8 caracteres, una mayúscula y un número', 'error');
+        return;
+    }
+
+    const btn = document.querySelector('.panel-agentes-submit');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
 
     try {
-        const equipoId = window._equipoId;
-        const res = await fetch(`/api/equipos/${equipoId}/dashboard`);
-        if (!res.ok) throw new Error('Error ' + res.status);
-        const data = await res.json();
+        const res = await fetch(`/api/equipos/${equipoId}/agentes/${agenteId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre, email })
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Error al actualizar agente');
 
-        const agente = (data.agentes || []).find(a => a.id === agenteId || a.id == agenteId);
-
-        if (!agente) {
-            document.getElementById('asignacionesContent').innerHTML = `
-                <div style="text-align:center;padding:30px;color:#6b7280;">
-                    <div style="font-size:48px;margin-bottom:12px;">👤</div>
-                    <p>No se encontró información del agente.</p>
-                </div>
-            `;
-            return;
+        if (nuevaPassword) {
+            const pwdRes = await fetch(`/api/equipos/${equipoId}/agentes/${agenteId}/reset-password`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nueva_password: nuevaPassword })
+            });
+            const pwdData = await pwdRes.json();
+            if (!pwdRes.ok) throw new Error(pwdData.error || 'Error al cambiar contraseña');
         }
 
-        const asignadas = parseInt(agente.asignadas || 0);
-        const gestiones7d = parseInt(agente.gestiones_7d || 0);
-
-        document.getElementById('asignacionesContent').innerHTML = `
-            <div style="padding:10px 0;">
-                <div class="asignaciones-agente-card">
-                    <div class="asignaciones-agente-header">
-                        <span style="font-size:32px;">👤</span>
-                        <div>
-                            <div class="asignaciones-agente-nombre">${escapeHtml(username)}</div>
-                            <div style="font-size:12px;color:#6b7280;">${escapeHtml(agente.nombre || '')}</div>
-                        </div>
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
-                        <div style="background:#ecfdf5;padding:14px;border-radius:8px;border:1px solid #a7f3d0;text-align:center;">
-                            <div style="font-size:28px;font-weight:700;color:#065f46;">${asignadas.toLocaleString()}</div>
-                            <div style="font-size:12px;color:#047857;font-weight:600;">📋 Solicitudes Asignadas</div>
-                        </div>
-                        <div style="background:#ede9fe;padding:14px;border-radius:8px;border:1px solid #ddd6fe;text-align:center;">
-                            <div style="font-size:28px;font-weight:700;color:#5b21b6;">${gestiones7d.toLocaleString()}</div>
-                            <div style="font-size:12px;color:#6d28d9;font-weight:600;">📝 Gestiones (7 días)</div>
-                        </div>
-                    </div>
-                    <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb;">
-                        <a href="/solicitudes?usuario=${agenteId}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:#6366f1;color:white;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;">
-                            📋 Ver todas las solicitudes de ${escapeHtml(username)}
-                        </a>
-                    </div>
-                </div>
-            </div>
-        `;
-
+        mostrarToast('✅ Agente actualizado');
+        await cargarDashboard();
+        await abrirPanelAgentes();
     } catch (err) {
-        console.error('[Equipo] Error cargar asignaciones:', err);
-        document.getElementById('asignacionesContent').innerHTML = `
-            <div style="text-align:center;padding:30px;color:#dc2626;">
-                <p>Error al cargar información: ${escapeHtml(err.message)}</p>
-            </div>
-        `;
+        console.error('[Equipo] Error editar agente:', err);
+        mostrarToast('⚠️ ' + err.message, 'error');
+        if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Cambios'; }
     }
 }
 
-function cerrarModalAsignaciones(event) {
-    if (event && event.target !== event.currentTarget) return;
-    document.getElementById('verAsignacionesModal').style.display = 'none';
+// ============================================================================
+// ACTIVAR / DESACTIVAR AGENTE
+// ============================================================================
+async function toggleActivoAgente(agenteId, checkbox) {
+    const equipoId = window._equipoId;
+    const accion = checkbox.checked ? 'activar' : 'desactivar';
+    const agente = _agentesData.find(a => a.id == agenteId);
+    if (!confirm(`¿Seguro que deseas ${accion} al agente ${agente ? agente.username : ''}?`)) {
+        checkbox.checked = !checkbox.checked;
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/equipos/${equipoId}/agentes/${agenteId}/toggle-active`, {
+            method: 'PUT'
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al cambiar estado');
+
+        const idx = _agentesData.findIndex(a => a.id == agenteId);
+        if (idx >= 0) _agentesData[idx].is_active = data.is_active;
+
+        mostrarToast('✅ ' + data.mensaje);
+        await cargarDashboard();
+        renderPanelAgentesLista();
+    } catch (err) {
+        console.error('[Equipo] Error toggle agente:', err);
+        checkbox.checked = !checkbox.checked;
+        mostrarToast('⚠️ ' + err.message, 'error');
+    }
 }
 
 // ============================================================================
@@ -555,8 +802,8 @@ function formatearFecha(fecha) {
     } catch(e) { return fecha; }
 }
 
-// Toast notifications
-function mostrarToast(mensaje) {
+// Toast notifications (tipo: 'success' por defecto, 'error' para fallos)
+function mostrarToast(mensaje, tipo) {
     const existing = document.querySelector('.equipo-toast');
     if (existing) existing.remove();
 
@@ -566,7 +813,7 @@ function mostrarToast(mensaje) {
     toast.style.cssText = `
         position: fixed; bottom: 24px; right: 24px;
         padding: 12px 20px; border-radius: 10px;
-        background: #10b981; color: white;
+        background: ${tipo === 'error' ? '#ef4444' : '#10b981'}; color: white;
         font-weight: 600; font-size: 13px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         z-index: 9999;
