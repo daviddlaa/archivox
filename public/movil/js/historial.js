@@ -69,7 +69,7 @@ function renderizarLista(registros) {
             <div class="item-historial">
                 <div class="header">
                     <span class="id">ID: ${reg.solicitud_id}</span>
-                    <span class="campo ${reg.campo}">${reg.campo}</span>
+                    <span class="campo ${reg.campo}">${reg.campo === 'no_aplica_credito' ? 'No aplica crédito' : reg.campo}</span>
                 </div>
                 <div class="valores">
                     <span class="anterior">${reg.valor_anterior || '-'}</span> 

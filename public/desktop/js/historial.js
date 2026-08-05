@@ -42,8 +42,9 @@ var historial = {
         for (var i = 0; i < registros.length; i++) {
             var reg = registros[i];
             var fecha = new Date(reg.fecha_actualizacion).toLocaleString('es-ES');
-            var badgeClass = reg.campo === 'estado' ? 'badge-estado' : 'badge-segmento';
-            html += '<tr><td>' + reg.solicitud_id + '</td><td><span class="' + badgeClass + '">' + reg.campo + '</span></td><td>' + (reg.valor_anterior || '-') + '</td><td>' + (reg.valor_nuevo || '-') + '</td><td>' + fecha + '</td></tr>';
+            var badgeClass = reg.campo === 'estado' ? 'badge-estado' : reg.campo === 'no_aplica_credito' ? 'badge-noaplica' : 'badge-segmento';
+            var campoLabel = reg.campo === 'no_aplica_credito' ? 'No aplica crédito' : reg.campo;
+            html += '<tr><td>' + reg.solicitud_id + '</td><td><span class="' + badgeClass + '">' + campoLabel + '</span></td><td>' + (reg.valor_anterior || '-') + '</td><td>' + (reg.valor_nuevo || '-') + '</td><td>' + fecha + '</td></tr>';
         }
         tbody.innerHTML = html;
     },

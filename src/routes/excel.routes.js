@@ -150,6 +150,13 @@ router.put(
     excelController.destacarSolicitud
 );
 
+// Marcar/desmarcar "ya no aplica para crédito" (si está en campaña, sale de ella)
+router.put(
+    '/solicitudes/:id/no-aplica-credito',
+    requiresAuth,
+    excelController.marcarNoAplicaCredito
+);
+
 // ================== EDITAR SOLICITUD (ESTADO + SEGMENTO) ==================
 
 // Actualizar estado y segmento de una solicitud (con auditoría)

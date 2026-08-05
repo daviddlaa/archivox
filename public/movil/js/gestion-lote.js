@@ -727,8 +727,9 @@ function renderizarSolicitudes(lista, sinEntrada) {
         var gestionada = estado !== 'Pendiente';
         var destacada = sol.destacado == 1;
         var semaforo = normalizarSemaforoMovil(sol.semaforo);
+        var noAplica = sol.no_aplica_credito == 0;
 
-        html += '<div class="sol-card sol-semaforo-' + semaforo + ' ' + (gestionada ? 'gestionada' : '') + (destacada ? ' destacada' : '') + '" data-sol-id="' + sol.id_solicitud + '" data-gestion-id="' + (sol.gestion_id || '') + '">';
+        html += '<div class="sol-card sol-semaforo-' + semaforo + ' ' + (gestionada ? 'gestionada' : '') + (destacada ? ' destacada' : '') + (noAplica ? ' no-aplica-credito' : '') + '" data-sol-id="' + sol.id_solicitud + '" data-gestion-id="' + (sol.gestion_id || '') + '">';
         html += '<div class="sol-header">';
         html += '<div class="sol-header-badges">';
         if (destacada) {
@@ -777,6 +778,9 @@ html += '<div class="sol-botones">';
         
         // Botón quitar de campaña
         html += '<button class="btn-sol btn-sol-quitar" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar</button>';
+        
+        // Botón flag "ya no aplica para crédito"
+        html += '<button class="btn-sol btn-sol-noaplica' + (noAplica ? ' activo' : '') + '" onclick="confirmarMarcarNoAplicaCreditoMovil(\'' + sol.id_solicitud + '\', ' + (noAplica ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '">' + (noAplica ? '👍' : '👎') + '</button>';
         html += '</div>';
         
         html += '</div>';
@@ -1228,6 +1232,100 @@ async function quitarSolicitudDeCampana(solicitudId) {
     }
 }
 
+// ================== FLAG "YA NO APLICA PARA CRÉDITO" (MÓVIL) ==================
+
+function confirmarMarcarNoAplicaCreditoMovil(solicitudId, nuevoValor) {
+    if (nuevoValor === 1) {
+        // Revertir: directo (no vuelve a ninguna campaña)
+        marcarNoAplicaCreditoMovil(solicitudId, 1);
+        return;
+    }
+    
+    var overlay = document.createElement('div');
+    overlay.id = 'modal-no-aplica-credito-movil';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:10000;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s ease;';
+    
+    var sheet = document.createElement('div');
+    sheet.style.cssText = 'background:white;width:100%;max-height:70vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden;animation:slideUp 0.3s ease;box-shadow:0 -10px 40px rgba(0,0,0,0.15);';
+    
+    var nombreCampana = (datosGestion && datosGestion.nombre) ? datosGestion.nombre : '—';
+    
+    sheet.innerHTML = 
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid #e5e7eb;flex-shrink:0;">' +
+            '<h2 style="margin:0;font-size:17px;color:#dc2626;">👎 No aplica para crédito</h2>' +
+            '<button onclick="cerrarModalNoAplicaCreditoMovil()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#6b7280;">✕</button>' +
+        '</div>' +
+        '<div style="padding:16px 18px 20px;overflow-y:auto;flex:1;">' +
+            '<div style="background:#fef2f2;padding:14px;border-radius:12px;margin-bottom:16px;">' +
+                '<p style="margin:0 0 6px;font-size:14px;color:#991b1b;"><strong>Solicitud:</strong> #' + solicitudId + '</p>' +
+                '<p style="margin:0;font-size:13px;color:#991b1b;"><strong>Campaña:</strong> ' + escaparParaHTML(nombreCampana) + '</p>' +
+            '</div>' +
+            '<div style="background:#fef3c7;border:1px solid #f59e0b;padding:14px;border-radius:10px;">' +
+                '<p style="margin:0 0 6px;font-weight:bold;font-size:13px;color:#92400e;">⚠️ ¿Estás seguro?</p>' +
+                '<ul style="margin:0;padding-left:18px;font-size:12px;color:#92400e;">' +
+                    '<li style="margin-bottom:4px;">Se marcará como <strong>ya no aplica para crédito</strong>.</li>' +
+                    '<li style="margin-bottom:4px;">Será <strong>quitada de esta campaña</strong>.</li>' +
+                    '<li style="margin-bottom:4px;">Las gestiones registradas <strong>NO</strong> se eliminarán.</li>' +
+                    '<li>Puedes revertirlo desde el listado de solicitudes.</li>' +
+                '</ul>' +
+            '</div>' +
+            '<div style="display:flex;gap:10px;margin-top:20px;">' +
+                '<button type="button" onclick="cerrarModalNoAplicaCreditoMovil()" style="flex:1;padding:14px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;">Cancelar</button>' +
+                '<button type="button" id="btn-confirmar-no-aplica-movil" onclick="marcarNoAplicaCreditoMovil(' + solicitudId + ', 0)" style="flex:1;padding:14px;background:#dc2626;color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">👎 Marcar</button>' +
+            '</div>' +
+        '</div>';
+    
+    overlay.appendChild(sheet);
+    document.body.appendChild(overlay);
+    
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) cerrarModalNoAplicaCreditoMovil();
+    });
+}
+
+function cerrarModalNoAplicaCreditoMovil() {
+    var modal = document.getElementById('modal-no-aplica-credito-movil');
+    if (modal) {
+        modal.style.transition = 'opacity 0.2s ease';
+        modal.style.opacity = '0';
+        setTimeout(function() { modal.remove(); }, 200);
+    }
+}
+
+async function marcarNoAplicaCreditoMovil(solicitudId, valor) {
+    var btn = document.getElementById('btn-confirmar-no-aplica-movil');
+    if (btn) { btn.textContent = '⏳ Procesando...'; btn.disabled = true; }
+    
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + gestionId + '/solicitudes/' + encodeURIComponent(solicitudId) + '/no-aplica-credito', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ no_aplica_credito: Number(valor) })
+        });
+        
+        var resultado = await response.json().catch(function() { return {}; });
+        
+        if (!response.ok || resultado.error) {
+            alert(resultado.error || 'No se pudo actualizar la solicitud');
+            if (btn) { btn.textContent = '👎 Marcar'; btn.disabled = false; }
+            return;
+        }
+        
+        cerrarModalNoAplicaCreditoMovil();
+        if (Number(valor) === 0) {
+            alert('✅ Marcada como "ya no aplica para crédito" y quitada de la campaña');
+        } else {
+            alert('✅ Solicitud restaurada: aplica para crédito');
+        }
+        await cargarDatosGestionMovil();
+        await cargarListaCampanas();
+    } catch (error) {
+        console.error('[movil] Error marcando no aplica crédito:', error);
+        alert('Error al actualizar la solicitud');
+        if (btn) { btn.textContent = '👎 Marcar'; btn.disabled = false; }
+    }
+}
+
 // ================== AGREGAR SOLICITUDES A CAMPAÑA (MÓVIL - REDISEÑADO) ==================
 
 function abrirModalAgregarSolicitudesMovil() {
@@ -1333,7 +1431,8 @@ async function buscarSolicitudesParaAgregarMovil(event) {
         for (var i = 0; i < lista.length; i++) {
             var sol = lista[i];
             var idSol = sol.id_solicitud || sol.id;
-            if (idsEnCampana.indexOf(idSol) === -1) {
+            // Excluir las que ya están en la campaña y las marcadas como "ya no aplica para crédito"
+            if (idsEnCampana.indexOf(idSol) === -1 && sol.no_aplica_credito != 0) {
                 solicitudesDisponibles.push(sol);
             }
         }

@@ -754,6 +754,24 @@ async function agregarSolicitudesACampana(req, res) {
         // Normalizar nuevos IDs a números
         var nuevosIds = solicitudes_ids.map(function(id) { return Number(id); });
 
+        // Excluir solicitudes marcadas como "ya no aplica para crédito" (no se pueden agregar a campañas)
+        try {
+            const placeholdersFlag = nuevosIds.map(function() { return '?'; }).join(',');
+            const resultFlag = await pool.query(
+                'SELECT id_solicitud FROM solicitudes WHERE no_aplica_credito = 0 AND id_solicitud IN (' + placeholdersFlag + ')',
+                nuevosIds
+            );
+            const flagged = getRows(resultFlag).map(function(r) { return r.id_solicitud; });
+            if (flagged.length > 0) {
+                return res.status(400).json({
+                    error: 'No se pueden agregar solicitudes marcadas como "ya no aplica para crédito"',
+                    ids: flagged
+                });
+            }
+        } catch (e) {
+            console.error('[agregarSolicitudesACampana] Error verificando no_aplica_credito:', e.message);
+        }
+
         // Agregar nuevos IDs evitando duplicados
         var idsActualizados = [...idsExistentes];
         var agregados = 0;
@@ -828,6 +846,79 @@ async function agregarSolicitudesACampana(req, res) {
     }
 }
 
+// Lógica de BD para quitar una solicitud de una campaña (reutilizable sin contexto HTTP)
+// NO elimina gestiones: solo la desvincula de la campaña (usada por quitar-solicitud y por el flag "no aplica crédito")
+async function quitarSolicitudDeCampanaDb(gestionId, solicitudIdNum) {
+    // Obtener la campaña
+    const resultGM = await pool.query('SELECT * FROM gestiones_maestro WHERE id = ?', [gestionId]);
+    const gestion = getFirstRow(resultGM);
+    if (!gestion) {
+        return { error: 'Gestión no encontrada' };
+    }
+
+    // Parsear IDs existentes (normalizar a números por si están como strings en BD)
+    var idsExistentes = [];
+    try {
+        if (gestion.solicitudes_ids) {
+            idsExistentes = JSON.parse(gestion.solicitudes_ids).map(function(id) { return Number(id); });
+        }
+    } catch (e) {
+        console.error('[quitarSolicitudDeCampanaDb] Error parseando solicitudes_ids:', e);
+    }
+
+    // Verificar que la solicitud existe en la campaña
+    var index = idsExistentes.indexOf(Number(solicitudIdNum));
+    if (index === -1) {
+        return { error: 'La solicitud no pertenece a esta campaña' };
+    }
+
+    // Quitar el ID
+    idsExistentes.splice(index, 1);
+
+    // Recalcular gestionadas: si la solicitud tenía gestión, restar 1
+    var nuevasGestionadas = gestion.gestionadas || 0;
+    try {
+        const resultCheckGestion = await pool.query(
+            'SELECT COUNT(*) as count FROM gestiones WHERE solicitud_id = ? AND gestion_maestro_id = ?',
+            [solicitudIdNum, gestionId]
+        );
+        var checkRow = getFirstRow(resultCheckGestion);
+        var count = checkRow ? (checkRow.count || 0) : 0;
+        if (count > 0) {
+            nuevasGestionadas = Math.max(0, nuevasGestionadas - 1);
+        }
+    } catch (e) {
+        console.error('[quitarSolicitudDeCampanaDb] Error contando gestiones:', e.message);
+    }
+
+    // Guardar los IDs actualizados
+    const solicitudesIdsJson = JSON.stringify(idsExistentes);
+    await pool.query(`
+        UPDATE gestiones_maestro 
+        SET solicitudes_ids = ?, total_solicitudes = ?, gestionadas = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    `, [solicitudesIdsJson, idsExistentes.length, nuevasGestionadas, gestionId]);
+
+    // Limpiar campana_id de la solicitud quitada
+    try {
+        await pool.query(
+            'UPDATE solicitudes SET campana_id = NULL WHERE id_solicitud = ? AND campana_id = ?',
+            [solicitudIdNum, gestionId]
+        );
+    } catch (e) {
+        console.error('[quitarSolicitudDeCampanaDb] Error limpiando campana_id:', e);
+    }
+
+    // Quitar del puente semáforo
+    try {
+        await eliminarSemaforoSolicitudes(gestionId, [Number(solicitudIdNum)]);
+    } catch (e) {
+        console.error('[quitarSolicitudDeCampanaDb] Error semáforo:', e.message);
+    }
+
+    return { ok: true, total: idsExistentes.length };
+}
+
 // PUT /api/gestiones-maestro/:id/quitar-solicitud - Quitar una solicitud de una campaña
 async function quitarSolicitudDeCampana(req, res) {
     try {
@@ -854,77 +945,111 @@ async function quitarSolicitudDeCampana(req, res) {
             return res.status(404).json({ error: 'Gestión no encontrada' });
         }
 
-        // Parsear IDs existentes (normalizar a números por si están como strings en BD)
-        var idsExistentes = [];
-        try {
-            if (gestion.solicitudes_ids) {
-                idsExistentes = JSON.parse(gestion.solicitudes_ids).map(function(id) { return Number(id); });
-            }
-        } catch (e) {
-            console.error('[quitarSolicitudDeCampana] Error parseando solicitudes_ids:', e);
+        const resultado = await quitarSolicitudDeCampanaDb(id, Number(solicitud_id));
+        if (resultado.error) {
+            return res.status(400).json({ error: resultado.error });
         }
 
-        // Normalizar solicitud_id a número
-        var solicitudIdNum = Number(solicitud_id);
-
-        // Verificar que la solicitud existe en la campaña
-        var index = idsExistentes.indexOf(solicitudIdNum);
-        if (index === -1) {
-            return res.status(400).json({ error: 'La solicitud no pertenece a esta campaña' });
-        }
-
-        // Quitar el ID
-        idsExistentes.splice(index, 1);
-
-        // Calcular nuevas gestionadas: si la solicitud tenía gestión, restar 1
-        var nuevasGestionadas = gestion.gestionadas || 0;
-        // Verificar si había gestiones asociadas a esta solicitud en esta campaña
-        const resultCheckGestion = await pool.query(
-            'SELECT COUNT(*) as count FROM gestiones WHERE solicitud_id = ? AND gestion_maestro_id = ?',
-            [solicitud_id, id]
-        );
-        var checkRow = getFirstRow(resultCheckGestion);
-        var count = checkRow ? (checkRow.count || 0) : 0;
-        if (count > 0) {
-            nuevasGestionadas = Math.max(0, nuevasGestionadas - 1);
-        }
-
-        // Guardar los IDs actualizados
-        const solicitudesIdsJson = JSON.stringify(idsExistentes);
-        await pool.query(`
-            UPDATE gestiones_maestro 
-            SET solicitudes_ids = ?, total_solicitudes = ?, gestionadas = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        `, [solicitudesIdsJson, idsExistentes.length, nuevasGestionadas, id]);
-
-        // Limpiar campana_id de la solicitud quitada
-        try {
-            await pool.query(
-                'UPDATE solicitudes SET campana_id = NULL WHERE id_solicitud = ? AND campana_id = ?',
-                [solicitud_id, id]
-            );
-        } catch (e) {
-            console.error('[quitarSolicitudDeCampana] Error limpiando campana_id:', e);
-        }
-
-        // Quitar del puente semáforo
-        try {
-            await eliminarSemaforoSolicitudes(id, [solicitudIdNum]);
-        } catch (e) {
-            console.error('[quitarSolicitudDeCampana] Error semáforo:', e.message);
-        }
-
-        console.log('[quitarSolicitudDeCampana] Quitada solicitud', solicitud_id, 'de campaña', id, 'Total:', idsExistentes.length);
+        console.log('[quitarSolicitudDeCampana] Quitada solicitud', solicitud_id, 'de campaña', id, 'Total:', resultado.total);
 
         res.json({
             mensaje: 'Solicitud quitada correctamente',
-            total: idsExistentes.length
+            total: resultado.total
         });
     } catch (error) {
         console.error('Error en quitarSolicitudDeCampana:', error);
         res.status(500).json({ error: 'Error al quitar solicitud de la campaña' });
     }
 }
+
+// ============================================================================
+// FLAG "YA NO APLICA PARA CRÉDITO" (contexto campaña)
+// ============================================================================
+// PUT /api/gestiones-maestro/:id/solicitudes/:solicitudId/no-aplica-credito
+// no_aplica_credito = 1 → aplica (default) | 0 → ya no aplica
+// Al marcar (0), la solicitud SALE de la campaña (las gestiones se conservan).
+// Al desmarcar (1), NO vuelve a ninguna campaña automáticamente.
+async function marcarNoAplicaCreditoSolicitud(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+
+        const { id, solicitudId } = req.params;
+        const nuevoValor = Number(req.body && req.body.no_aplica_credito);
+        if (nuevoValor !== 0 && nuevoValor !== 1) {
+            return res.status(400).json({ error: 'El campo no_aplica_credito debe ser 0 o 1' });
+        }
+        const solicitudIdNum = Number(solicitudId);
+        if (!solicitudIdNum || isNaN(solicitudIdNum)) {
+            return res.status(400).json({ error: 'solicitudId inválido' });
+        }
+
+        // Verificar que la campaña existe y el usuario tiene acceso
+        const access = buildGestionAccessWhere(req, id);
+        const checkSql = 'SELECT gm.id FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access);
+        const resultGM = await pool.query(checkSql, access.params);
+        const gestion = getFirstRow(resultGM);
+        if (!gestion) {
+            return res.status(404).json({ error: 'Gestión no encontrada' });
+        }
+
+        // Estado actual de la solicitud
+        const solResult = await pool.query(
+            'SELECT id_solicitud, no_aplica_credito FROM solicitudes WHERE id_solicitud = ?',
+            [solicitudIdNum]
+        );
+        const sol = getFirstRow(solResult);
+        if (!sol) {
+            return res.status(404).json({ error: 'Solicitud no encontrada' });
+        }
+        const valorAnterior = sol.no_aplica_credito == null ? 1 : Number(sol.no_aplica_credito);
+
+        let removidaDeCampana = false;
+
+        // Setear el flag primero (dato primario)
+        if (valorAnterior !== nuevoValor) {
+            await pool.query(
+                'UPDATE solicitudes SET no_aplica_credito = ?, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id_solicitud = ?',
+                [nuevoValor, solicitudIdNum]
+            );
+
+            // Auditoría
+            try {
+                await pool.query(
+                    'INSERT INTO historial_actualizaciones (solicitud_id, usuario_id, campo, valor_anterior, valor_nuevo) VALUES (?, ?, ?, ?, ?)',
+                    [solicitudIdNum, usuario_id, 'no_aplica_credito', String(valorAnterior), String(nuevoValor)]
+                );
+            } catch (e) {
+                console.error('[marcarNoAplicaCreditoSolicitud] Error guardando auditoría:', e.message);
+            }
+        }
+
+        // Al marcar (0): quitar la solicitud de esta campaña
+        if (nuevoValor === 0) {
+            const resQuitar = await quitarSolicitudDeCampanaDb(id, solicitudIdNum);
+            if (resQuitar.error) {
+                console.log('[marcarNoAplicaCreditoSolicitud] La solicitud no estaba en la campaña:', resQuitar.error);
+            } else {
+                removidaDeCampana = true;
+            }
+        }
+
+        res.json({
+            mensaje: nuevoValor === 0
+                ? 'Solicitud marcada como "ya no aplica para crédito"'
+                : 'Solicitud restaurada: aplica para crédito',
+            id_solicitud: solicitudIdNum,
+            no_aplica_credito: nuevoValor,
+            removida_de_campana: removidaDeCampana
+        });
+    } catch (error) {
+        console.error('Error en marcarNoAplicaCreditoSolicitud:', error);
+        res.status(500).json({ error: 'Error al actualizar el flag de crédito' });
+    }
+}
+
 
 // ============================================================================
 // ASIGNAR CAMPAÑA A AGENTE
@@ -1139,6 +1264,9 @@ module.exports = {
     actualizarSemaforoSolicitud: actualizarSemaforoSolicitud,
     historialSolicitudCampana: getHistorialSolicitudCampana,
     destacarSolicitudCampana: destacarSolicitudCampana,
+    // Flag "ya no aplica para crédito"
+    marcarNoAplicaCreditoSolicitud: marcarNoAplicaCreditoSolicitud,
+    quitarSolicitudDeCampanaDb: quitarSolicitudDeCampanaDb,
     // Aliases en inglés para excel.routes.js
     getGestionesMaestro: getGestionesMaestro,
     getGestionMaestroById: getGestionMaestroById,

@@ -1,0 +1,63 @@
+# 👍👎 Feature: Flag "Ya no aplica para crédito"
+
+> **Agosto 2026**
+
+## Propósito
+
+Cuando un agente precalifica con el cliente en el **sistema madre** (externo) y el cliente **ya no tiene crédito**, la solicitud debe:
+1. Marcarse con un flag binario (`no_aplica_credito = 0`).
+2. **Salir de la campaña** activa (dejar de llamarse).
+3. Conservar su historial de gestiones.
+
+El marcado se hace con un botón **👎** (pulgar abajo) en las tarjetas, **sin texto adicional** (las cards ya están cargadas). Es **reversible** (👍), pero la solicitud revertida **no vuelve a ninguna campaña** automáticamente.
+
+## Modelo de datos
+
+| Columna | Tabla | Tipo | Default | Significado |
+|---|---|---|---|---|
+| `no_aplica_credito` | `solicitudes` | `INTEGER NOT NULL DEFAULT 1` | `1` | `1` = aplica para crédito · `0` = ya no aplica |
+
+- **Todas las solicitudes existentes migran a `1`** (aplica). Solo el 👎 las pasa a `0`.
+- Sin texto, sin estados nuevos: es un flag ortogonal al `estado` del flujo.
+
+### Migración
+- `migrations/011_add_no_aplica_credito.js` — `ALTER TABLE solicitudes ADD COLUMN no_aplica_credito INTEGER NOT NULL DEFAULT 1` + índice `idx_solicitudes_no_aplica_credito`.
+- `src/config/initDb.js` y `src/config/initDb.pg.js` — columna en `CREATE TABLE` + `ALTER` para BD existentes + índice.
+
+## Backend
+
+### Endpoints
+| Método | Ruta | Función | Descripción |
+|---|---|---|---|
+| `PUT` | `/api/gestiones-maestro/:id/solicitudes/:solicitudId/no-aplica-credito` | `marcarNoAplicaCreditoSolicitud` | Marca/desmarca con validación de acceso a la campaña. Al marcar (`0`) **quita la solicitud de la campaña** (reutiliza `quitarSolicitudDeCampanaDb`). |
+| `PUT` | `/api/excel/solicitudes/:id/no-aplica-credito` | `marcarNoAplicaCredito` | Marca/desmarca desde el listado general (la solicitud debe ser del usuario). Si está en una campaña (`campana_id`), también sale de ella. |
+
+Body: `{ "no_aplica_credito": 0 | 1 }`.
+
+### Reglas
+- Al marcar `0`: flag = 0 + **sale de la campaña** (gestiones se conservan).
+- Al desmarcar `1`: flag = 1, **no** se re-agrega a ninguna campaña.
+- **Auditoría**: cada cambio se registra en `historial_actualizaciones` (campo `no_aplica_credito`, con etiqueta "No aplica crédito" en el módulo Historial).
+- **Agregar a campañas**: `agregarSolicitudesACampana` **rechaza** solicitudes con flag = 0 (`400` con la lista de IDs).
+- Selector "agregar solicitudes a campaña" (desktop y móvil): excluye las marcadas.
+
+### Refactor
+- Se extrajo `quitarSolicitudDeCampanaDb(gestionId, solicitudIdNum)` (lógica de BD reutilizable) del handler `quitarSolicitudDeCampana`, exportada para el listado general.
+
+## Frontend
+
+| Pantalla | Acción |
+|---|---|
+| Campañas desktop (`gestion-lote.js`) | Botón **👎/👍** en `sol-acciones` + modal de confirmación ("será quitada de esta campaña") |
+| Campañas móvil (`gestion-lote.js`) | Botón **👎/👍** en `sol-acciones-secundarias` + bottom-sheet de confirmación |
+| Solicitudes desktop (`solicitudes.js`) | Botón **👎/👍** en `card-fila-3`; confirmación solo si está en campaña |
+| Solicitudes móvil (`solicitudes.js`) | Ítem en menú **⋮** ("👎 Ya no aplica para crédito" / "👍 Aplica para crédito") |
+
+- Estado visual **sin texto**: `filter: grayscale(.75)` + `opacity: .78` en las tarjetas marcadas (`.no-aplica-credito`).
+- CSS compartido: `public/css/no-aplica-credito.css` (incluido en las 4 páginas).
+- Tras marcar en campaña: se recarga la campaña (la solicitud desaparece) y el listado lateral.
+
+## Fuera de alcance (fase 2 si se desea)
+- Importación por Excel del flag.
+- KPIs nuevos en el dashboard (contador de "no aplican").
+- Tabla de estados formal.

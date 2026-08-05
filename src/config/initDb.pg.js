@@ -50,6 +50,7 @@ const initTables = async () => {
                 vendedor TEXT,
                 campana_id INTEGER,
                 destacado INTEGER DEFAULT 0,
+                no_aplica_credito INTEGER DEFAULT 1,
                 fecha_importacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
@@ -63,6 +64,18 @@ const initTables = async () => {
             // Fallback para PostgreSQL < 9.6
             try {
                 await client.query(`ALTER TABLE solicitudes ADD COLUMN observaciones TEXT`);
+            } catch (e2) {
+                // Columna ya existe, ignorar
+            }
+        }
+
+        // Migración: agregar columna no_aplica_credito a solicitudes si no existe
+        // 1 = aplica para crédito (default) | 0 = ya no aplica para crédito
+        try {
+            await client.query(`ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS no_aplica_credito INTEGER NOT NULL DEFAULT 1`);
+        } catch (e) {
+            try {
+                await client.query(`ALTER TABLE solicitudes ADD COLUMN no_aplica_credito INTEGER NOT NULL DEFAULT 1`);
             } catch (e2) {
                 // Columna ya existe, ignorar
             }
@@ -424,6 +437,12 @@ const initTables = async () => {
         await client.query(`
             CREATE INDEX IF NOT EXISTS idx_solicitudes_campana
             ON solicitudes(campana_id)
+        `);
+
+        // Solicitudes: filtros por flag "ya no aplica para crédito"
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_solicitudes_no_aplica_credito
+            ON solicitudes(no_aplica_credito)
         `);
 
         // Gestiones: LATERAL JOIN (la consulta más frecuente del sistema)

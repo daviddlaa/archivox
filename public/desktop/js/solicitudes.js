@@ -834,6 +834,67 @@ async function confirmarAgregarCampanaDesktop() {
 // ============================================================================
 
 // ============================================================================
+// FLAG "YA NO APLICA PARA CRÉDITO" (DESKTOP)
+// ============================================================================
+
+function confirmarNoAplicaCreditoDesktop(id, nuevoValor, tieneCampana) {
+    if (nuevoValor === 1) {
+        // Revertir: directo
+        marcarNoAplicaCreditoDesktop(id, 1);
+        return;
+    }
+    
+    var contenido = '';
+    contenido += '<div style="padding:24px;max-width:420px;">';
+    contenido += '<h2 style="margin:0 0 16px;font-size:18px;color:#dc2626;">👎 Marcar como "Ya no aplica para crédito"</h2>';
+    contenido += '<div style="background:#fef2f2;padding:14px;border-radius:12px;margin-bottom:16px;font-size:14px;color:#991b1b;"><strong>Solicitud:</strong> #' + id + '</div>';
+    contenido += '<div style="background:#fef3c7;border:1px solid #f59e0b;padding:14px;border-radius:10px;margin-bottom:20px;">';
+    contenido += '<p style="margin:0 0 6px;font-weight:bold;font-size:13px;color:#92400e;">⚠️ ¿Estás seguro?</p>';
+    contenido += '<ul style="margin:0;padding-left:18px;font-size:12px;color:#92400e;">';
+    contenido += '<li style="margin-bottom:4px;">Se marcará como <strong>ya no aplica para crédito</strong>.</li>';
+    if (tieneCampana) contenido += '<li style="margin-bottom:4px;">Será <strong>quitada de su campaña actual</strong>.</li>';
+    contenido += '<li style="margin-bottom:4px;">Las gestiones registradas <strong>NO</strong> se eliminarán.</li>';
+    contenido += '<li>Puedes revertirlo después pulsando 👍.</li>';
+    contenido += '</ul>';
+    contenido += '</div>';
+    contenido += '<div style="display:flex;gap:10px;">';
+    contenido += '<button class="btn-cancelar" onclick="cerrarModal()" style="flex:1;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Cancelar</button>';
+    contenido += '<button class="btn-eliminar" id="btn-confirmar-no-aplica" onclick="marcarNoAplicaCreditoDesktop(' + id + ', 0)" style="flex:1;padding:12px;background:#dc2626;color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">👎 Marcar</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+    crearModal(contenido);
+}
+
+async function marcarNoAplicaCreditoDesktop(id, valor) {
+    var btn = document.getElementById('btn-confirmar-no-aplica');
+    if (btn) { btn.textContent = '⏳ Procesando...'; btn.disabled = true; }
+    
+    try {
+        var response = await fetch('/api/excel/solicitudes/' + encodeURIComponent(id) + '/no-aplica-credito', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ no_aplica_credito: Number(valor) })
+        });
+        
+        var resultado = await response.json().catch(function() { return {}; });
+        
+        if (!response.ok || resultado.error) {
+            alert(resultado.error || 'No se pudo actualizar la solicitud');
+            if (btn) { btn.textContent = '👎 Marcar'; btn.disabled = false; }
+            return;
+        }
+        
+        if (btn) cerrarModal();
+        alert(Number(valor) === 0 ? '✅ Marcada como "ya no aplica para crédito"' : '✅ Solicitud restaurada: aplica para crédito');
+        buscarEnServidor(true);
+    } catch (error) {
+        console.error('Error marcando no aplica crédito:', error);
+        alert('Error al actualizar la solicitud');
+        if (btn) { btn.textContent = '👎 Marcar'; btn.disabled = false; }
+    }
+}
+
+// ============================================================================
 // RENDERIZAR CARDS
 // ============================================================================
 function renderizarCards(datos) {
@@ -882,8 +943,9 @@ function renderizarCards(datos) {
         };
         var colorGestion = coloresGestion[item.ultima_gestion_tipo] || '#f3f4f6';
         var fechaGestion = item.ultima_gestion_fecha ? new Date(item.ultima_gestion_fecha).toLocaleString('es-ES') : '';
+        var noAplica = item.no_aplica_credito == 0;
 
-        html += '<div class="solicitud-card ' + seleccionado + '" data-id="' + id + '" onclick="toggleCardDesktop(\'' + id + '\', event)">';
+        html += '<div class="solicitud-card ' + seleccionado + (noAplica ? ' no-aplica-credito' : '') + '" data-id="' + id + '" onclick="toggleCardDesktop(\'' + id + '\', event)">';
 
         // FILA 1: Checkbox + Segmento + Estado
         html += '  <div class="card-fila-1">';
@@ -909,6 +971,7 @@ function renderizarCards(datos) {
         html += '  <div class="card-fila-3">';
         html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesCard(' + id + ')">📋 Gestiones</button>';
         html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); whatsAppClienteDesktop(\'' + (item.celular || '') + '\', \'' + escaparParaAtributoDesktop(item.nombre || '') + '\')">💬 WhatsApp</button>';
+        html += '    <button class="card-btn btn-no-aplica' + (noAplica ? ' activo' : '') + '" onclick="event.stopPropagation(); confirmarNoAplicaCreditoDesktop(' + id + ', ' + (noAplica ? 1 : 0) + ', ' + (item.campana_id ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '">' + (noAplica ? '👍' : '👎') + '</button>';
         html += '  </div>';
 
         // FILA 4: Seguimiento (última gestión)

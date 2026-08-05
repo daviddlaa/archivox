@@ -14,6 +14,7 @@ router.get('/', controller.listarGestionesMaestro);
 router.get('/:id/progreso', controller.obtenerProgresoGestion);
 router.get('/:id/solicitudes/:solicitudId/historial', controller.historialSolicitudCampana);
 router.put('/:id/solicitudes/:solicitudId/destacar', controller.destacarSolicitudCampana);
+router.put('/:id/solicitudes/:solicitudId/no-aplica-credito', controller.marcarNoAplicaCreditoSolicitud);
 router.put('/:id/agregar-solicitudes', controller.agregarSolicitudesACampana);
 router.put('/:id/quitar-solicitud', controller.quitarSolicitudDeCampana);
 router.put('/:id/asignar-agente', controller.asignarAgenteACampana);

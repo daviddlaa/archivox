@@ -102,6 +102,7 @@ db.exec(`
         vendedor TEXT,
         campana_id INTEGER,
         destacado INTEGER DEFAULT 0,
+        no_aplica_credito INTEGER DEFAULT 1,
         fecha_importacion DATETIME DEFAULT CURRENT_TIMESTAMP,
         fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
@@ -112,6 +113,15 @@ db.exec(`
 try {
     db.exec(`ALTER TABLE solicitudes ADD COLUMN observaciones TEXT`);
     console.log('[DB] Columna solicitudes.observaciones agregada');
+} catch (err) {
+    // Columna ya existe, ignorar
+}
+
+// Migración: agregar columna no_aplica_credito a solicitudes si no existe
+// 1 = aplica para crédito (default) | 0 = ya no aplica para crédito
+try {
+    db.exec(`ALTER TABLE solicitudes ADD COLUMN no_aplica_credito INTEGER NOT NULL DEFAULT 1`);
+    console.log('[DB] Columna solicitudes.no_aplica_credito agregada');
 } catch (err) {
     // Columna ya existe, ignorar
 }
@@ -719,6 +729,9 @@ try {
 } catch (e) { /* ignorar */ }
 try {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_solicitudes_campana ON solicitudes(campana_id)`);
+} catch (e) { /* ignorar */ }
+try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_solicitudes_no_aplica_credito ON solicitudes(no_aplica_credito)`);
 } catch (e) { /* ignorar */ }
 try {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_gestiones_solicitud_usuario_fecha ON gestiones(solicitud_id, usuario_id, fecha_gestion DESC)`);

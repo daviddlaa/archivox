@@ -1,6 +1,7 @@
 const excelService = require('../services/excel.service');
 const pool = require('../config/db.js');
 const cache = require('../config/cache.js');
+const gmController = require('./gestionesMaestro.controller');
 const fs = require('fs');
 const path = require('path');
 
@@ -763,6 +764,80 @@ exports.actualizarSolicitudEditar = async (req, res) => {
 
     } catch (err) {
         console.error('Error actualizarSolicitudEditar:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// ================== NO APLICA PARA CRÉDITO (FLAG GENERAL) ==================
+
+// Marcar/desmarcar el flag "ya no aplica para crédito" desde el listado general de solicitudes.
+// no_aplica_credito = 1 → aplica (default) | 0 → ya no aplica
+// Al marcar (0), si la solicitud está en una campaña, también sale de ella (las gestiones se conservan).
+exports.marcarNoAplicaCredito = async (req, res) => {
+    const usuarioId = req.session.usuario?.id;
+    if (!usuarioId) {
+        return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { id } = req.params;
+    const nuevoValor = Number(req.body && req.body.no_aplica_credito);
+    if (nuevoValor !== 0 && nuevoValor !== 1) {
+        return res.status(400).json({ error: 'El campo no_aplica_credito debe ser 0 o 1' });
+    }
+
+    try {
+        // Verificar que la solicitud existe y pertenece al usuario
+        const solResult = await pool.query(
+            'SELECT id_solicitud, no_aplica_credito, campana_id FROM solicitudes WHERE id_solicitud = $1 AND usuario_id = $2',
+            [id, usuarioId]
+        );
+        if (solResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Solicitud no encontrada' });
+        }
+        const sol = solResult.rows[0];
+        const valorAnterior = sol.no_aplica_credito == null ? 1 : Number(sol.no_aplica_credito);
+
+        let removidaDeCampana = false;
+
+        // Al marcar (0): si está en una campaña, sale de ella
+        if (nuevoValor === 0 && sol.campana_id) {
+            try {
+                const resQuitar = await gmController.quitarSolicitudDeCampanaDb(sol.campana_id, Number(sol.id_solicitud));
+                removidaDeCampana = !resQuitar.error;
+            } catch (e) {
+                console.error('[marcarNoAplicaCredito] Error quitando de campaña:', e.message);
+            }
+        }
+
+        // Setear el flag
+        if (valorAnterior !== nuevoValor) {
+            await pool.query(
+                `UPDATE solicitudes SET no_aplica_credito = $1, fecha_actualizacion = CURRENT_TIMESTAMP
+                 WHERE id_solicitud = $2 AND usuario_id = $3`,
+                [nuevoValor, id, usuarioId]
+            );
+
+            // Auditoría
+            try {
+                await pool.query(
+                    'INSERT INTO historial_actualizaciones (solicitud_id, usuario_id, campo, valor_anterior, valor_nuevo) VALUES ($1, $2, $3, $4, $5)',
+                    [id, usuarioId, 'no_aplica_credito', String(valorAnterior), String(nuevoValor)]
+                );
+            } catch (auditErr) {
+                console.error('[marcarNoAplicaCredito] Error guardando auditoría:', auditErr.message);
+            }
+        }
+
+        res.json({
+            mensaje: nuevoValor === 0
+                ? 'Solicitud marcada como "ya no aplica para crédito"'
+                : 'Solicitud restaurada: aplica para crédito',
+            id_solicitud: Number(id),
+            no_aplica_credito: nuevoValor,
+            removida_de_campana: removidaDeCampana
+        });
+    } catch (err) {
+        console.error('Error marcarNoAplicaCredito:', err);
         res.status(500).json({ error: err.message });
     }
 };

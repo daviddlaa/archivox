@@ -1,0 +1,57 @@
+/* ============================================================
+   FLAG "YA NO APLICA PARA CRÉDITO" (thumbs-down 👎)
+   Columna: solicitudes.no_aplica_credito (1 = aplica, 0 = no aplica)
+   ============================================================ */
+
+/* Tarjeta marcada: atenuada y desaturada (botones siguen visibles/clickables) */
+.sol-card.no-aplica-credito,
+.solicitud-card.no-aplica-credito {
+    filter: grayscale(0.75);
+    opacity: 0.78;
+    transition: filter 0.25s ease, opacity 0.25s ease;
+}
+
+/* Botón thumbs — campañas desktop */
+.btn-accion.btn-no-aplica {
+    background: #f3f4f6;
+    color: #4b5563;
+    font-size: 14px;
+    padding: 8px 12px;
+}
+.btn-accion.btn-no-aplica:hover {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.btn-accion.btn-no-aplica.activo {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Botón thumbs — campañas móvil */
+.btn-sol.btn-sol-noaplica {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+.btn-sol.btn-sol-noaplica.activo {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Botón thumbs — solicitudes desktop */
+.card-btn.btn-no-aplica {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+.card-btn.btn-no-aplica:hover {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.card-btn.btn-no-aplica.activo {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Ítem del menú ⋮ en móvil (solicitudes) */
+.dropdown-item.dropdown-item-warning {
+    color: #92400e;
+}

@@ -1031,7 +1031,8 @@ function renderizarSolicitudes(lista) {
         var gestionada = estado !== 'Pendiente';
         
         var destacada = sol.destacado == 1;
-        html += '<div class="sol-card ' + (gestionada ? 'gestionada' : 'pendiente') + ' sol-semaforo-' + semaforo + (destacada ? ' destacada' : '') + '" data-id="' + sol.id_solicitud + '">';
+        var noAplica = sol.no_aplica_credito == 0;
+        html += '<div class="sol-card ' + (gestionada ? 'gestionada' : 'pendiente') + ' sol-semaforo-' + semaforo + (destacada ? ' destacada' : '') + (noAplica ? ' no-aplica-credito' : '') + '" data-id="' + sol.id_solicitud + '">';
         
         // Header — nombre y estado de gestión; el semáforo ocupa una fila propia
         html += '<div class="sol-header">';
@@ -1083,6 +1084,8 @@ function renderizarSolicitudes(lista) {
         html += '<button class="btn-accion tertiary" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button>';
         
         html += '<button class="btn-accion btn-quitar-solicitud" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar</button>';
+        
+        html += '<button type="button" class="btn-accion btn-no-aplica' + (noAplica ? ' activo' : '') + '" onclick="event.stopPropagation(); confirmarMarcarNoAplicaCredito(\'' + sol.id_solicitud + '\', ' + (noAplica ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '">' + (noAplica ? '👍' : '👎') + '</button>';
         
         html += '</div>';
         
@@ -1518,6 +1521,74 @@ async function quitarSolicitudDeCampana(solicitudId) {
     }
 }
 
+// ================== FLAG "YA NO APLICA PARA CRÉDITO" (DESKTOP) ==================
+
+function confirmarMarcarNoAplicaCredito(solicitudId, nuevoValor) {
+    if (nuevoValor === 1) {
+        // Revertir: directo (no vuelve a ninguna campaña)
+        marcarNoAplicaCredito(solicitudId, 1);
+        return;
+    }
+    
+    var contenido = '';
+    contenido += '<div class="modal-gestion">';
+    contenido += '<h2>👎 Marcar como "Ya no aplica para crédito"</h2>';
+    contenido += '<div class="modal-info">';
+    contenido += '<p><strong>Solicitud:</strong> #' + solicitudId + '</p>';
+    contenido += '<p><strong>Campaña:</strong> ' + (datosGestion ? escaparParaHTML(datosGestion.nombre || '—') : '—') + '</p>';
+    contenido += '</div>';
+    contenido += '<div class="modal-advertencia">';
+    contenido += '<p>⚠️ <strong>¿Estás seguro?</strong></p>';
+    contenido += '<ul>';
+    contenido += '<li>La solicitud se marcará como <strong>ya no aplica para crédito</strong>.</li>';
+    contenido += '<li>Será <strong>quitada de esta campaña</strong>.</li>';
+    contenido += '<li>Las gestiones registradas <strong>NO</strong> se eliminarán.</li>';
+    contenido += '<li>Puedes revertirlo desde el listado de solicitudes (no vuelve a la campaña).</li>';
+    contenido += '</ul>';
+    contenido += '</div>';
+    contenido += '<div class="modal-botones">';
+    contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>';
+    contenido += '<button class="btn-eliminar" id="btn-confirmar-no-aplica" onclick="marcarNoAplicaCredito(' + solicitudId + ', 0)">👎 Marcar</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+    
+    crearModal(contenido);
+}
+
+async function marcarNoAplicaCredito(solicitudId, valor) {
+    var btn = document.getElementById('btn-confirmar-no-aplica');
+    if (btn) { btn.textContent = '⏳ Procesando...'; btn.disabled = true; }
+    
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + gestionId + '/solicitudes/' + encodeURIComponent(solicitudId) + '/no-aplica-credito', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ no_aplica_credito: Number(valor) })
+        });
+        
+        var resultado = await response.json().catch(function() { return {}; });
+        
+        if (!response.ok || resultado.error) {
+            alert(resultado.error || 'No se pudo actualizar la solicitud');
+            if (btn) { btn.textContent = '👎 Marcar'; btn.disabled = false; }
+            return;
+        }
+        
+        if (btn) cerrarModal();
+        if (Number(valor) === 0) {
+            alert('✅ Marcada como "ya no aplica para crédito" y quitada de la campaña');
+        } else {
+            alert('✅ Solicitud restaurada: aplica para crédito');
+        }
+        await cargarDatosGestion();
+        await cargarListaCampanas();
+    } catch (error) {
+        console.error('Error marcando no aplica crédito:', error);
+        alert('Error al actualizar la solicitud');
+        if (btn) { btn.textContent = '👎 Marcar'; btn.disabled = false; }
+    }
+}
+
 // ================== AGREGAR SOLICITUDES A CAMPAÑA ==================
 
 function abrirModalAgregarSolicitudes() {
@@ -1591,7 +1662,8 @@ async function buscarSolicitudesParaAgregar(event) {
         for (var i = 0; i < lista.length; i++) {
             var sol = lista[i];
             var idSol = sol.id_solicitud || sol.id;
-            if (idsEnCampana.indexOf(idSol) === -1) {
+            // Excluir las que ya están en la campaña y las marcadas como "ya no aplica para crédito"
+            if (idsEnCampana.indexOf(idSol) === -1 && sol.no_aplica_credito != 0) {
                 solicitudesDisponibles.push(sol);
             }
         }
