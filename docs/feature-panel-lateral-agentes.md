@@ -66,7 +66,8 @@ Sacar la gestión de agentes de la pasarela y unificarla en un **único panel la
 
 ## 4. Funcionamiento del Panel
 
-- `abrirPanelAgentes()` construye dinámicamente un overlay (`#panel-agentes-overlay`) + `<aside class="panel-agentes">` fijo a la derecha, lo agrega al `body` y anima su entrada (`requestAnimationFrame`).
+- `abrirPanelAgentes()` construye dinámicamente un overlay (`#panel-agentes-overlay`) + `<aside class="panel-agentes">` fijo a la derecha, lo agrega al `body` con `document.body.insertAdjacentHTML('beforeend', html)` y anima su entrada (`requestAnimationFrame`).
+- **Corrección de inserción (Agosto 2026):** inicialmente el overlay se insertaba con `wrapper.firstChild`, que resultó ser un **nodo de texto** (el salto de línea inicial del template literal), por lo que el overlay nunca entraba al DOM y el clic en el botón lanzaba `Cannot set properties of null (setting 'innerHTML')` sin abrir nada. Se reemplazó por `insertAdjacentHTML('beforeend', ...)`, el mismo mecanismo que usa el panel de Solicitudes (`panel-solicitud`).
 - **Cierre:** botón ✕, clic fuera del panel, o tecla **Escape** (`cerrarPanelAgentes()`). Al cerrar se quita la animación, se restaura el scroll del body y el overlay se elimina del DOM después de 300ms (si no fue reabierto en ese lapso).
 - **Scroll lock:** mientras el panel está abierto, `document.body.style.overflow = 'hidden'`.
 - **Navegación:** el panel tiene vistas intercambiables en su body: Lista → Crear / Editar / Asignaciones, todas con botón "← Volver a la lista".
@@ -199,6 +200,8 @@ Añadidos al final de `public/desktop/css/equipo.css`:
 - [x] La pasarela quedó con 2 slides y dots sincronizados (con muchos agentes ya no colapsa).
 - [x] `node --check` pasa en `equipo.js`.
 - [x] Sin referencias rotas a los modales/ids eliminados.
+- [x] **Verificación end-to-end en navegador real** (login como líder + Puppeteer): el clic en el botón abre el panel; se probaron lista de tarjetas, formulario "➕ Nuevo Agente", edición ("✅ Agente actualizado"), switch activar/desactivar con confirmación ("✅ Agente desactivado"), sub-vista de asignaciones y cierre con Escape — **0 errores de consola**.
+- [x] Bug corregido: el overlay se inserta con `insertAdjacentHTML` (robusto ante whitespace inicial); antes `wrapper.firstChild` insertaba un nodo de texto y el panel no abría.
 
 ---
 
@@ -207,6 +210,7 @@ Añadidos al final de `public/desktop/css/equipo.css`:
 - **Solo escritorio:** el panel lateral de agentes es exclusivo de `/equipo` (desktop). La versión móvil (`/m/equipo`) no se modificó (ya usa tarjetas, no pasarela).
 - Se eliminaron los modales `createAgenteModal` y `verAsignacionesModal` y sus funciones asociadas (`abrirModalCrearAgente`, `cerrarModalCrearAgente`, `cerrarModalAsignaciones`) junto con el tbody `agentesTableBody`; no quedan referencias rotas.
 - Sin cambios de esquema de BD ni de rutas del backend.
+- **Nota local (SQLite):** el endpoint `POST /api/equipos/:id/agentes` usa `pool.connect()` (sintaxis PostgreSQL), que la capa de abstracción SQLite local no implementa; por eso la creación de agentes solo puede verificarse de punta a punta en **producción (PostgreSQL)**. Es una limitación pre-existente del backend, ajena a este feature (el modal antiguo usaba el mismo endpoint).
 
 ---
 
