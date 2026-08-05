@@ -1043,6 +1043,7 @@ function renderizarSolicitudes(lista) {
             html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1, event)" title="Destacar tarjeta">🔥 Destacar</span>';
         }
         html += '<span class="sol-estado" style="background:' + colorFondo + ';">' + estado + '</span>';
+        if (noAplica) html += '<span class="noaplica-mini-badge">👎 No aplica</span>';
         html += '</div>';
         // Selector segmentado: el estado operativo debe ser visible y accionable
         html += '<div class="sol-semaforo-switch" role="group" aria-label="Estado de espera">';

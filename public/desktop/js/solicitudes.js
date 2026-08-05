@@ -954,6 +954,7 @@ function renderizarCards(datos) {
         html += '    </div>';
         html += '    <span class="card-badge badge-segmento" title="' + (item.segmento || 'Sin segmento') + '">' + (item.segmento || '—') + '</span>';
         html += '    <span class="card-badge badge-estado ' + estadoClase + '" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
+        if (noAplica) html += '    <span class="noaplica-mini-badge">👎 No aplica</span>';
         html += '  </div>';
 
         // FILA 2: Nombre
@@ -1043,6 +1044,7 @@ async function cargarEstados() {
                 var select = document.getElementById('filtro-estado-select');
                 if (select) {
                     var html = '<option value="">Todos</option>';
+                    html += '<option value="__no_aplica_credito__"' + (estadoActual === '__no_aplica_credito__' ? ' selected' : '') + '>👎 No aplica para crédito</option>';
                     for (var i = 0; i < data.length; i++) {
                         var e = data[i].estado || data[i];
                         var sel = estadoActual === e ? ' selected' : '';
@@ -1217,7 +1219,7 @@ function cerrarMenuAcciones() {
 function actualizarInfoPanel() {
     var resumenEstado = document.getElementById('resumen-estado');
     var resumenSegmento = document.getElementById('resumen-segmento');
-    if (resumenEstado) resumenEstado.textContent = estadoActual || 'Todos';
+    if (resumenEstado) resumenEstado.textContent = estadoActual === '__no_aplica_credito__' ? 'No aplica para crédito' : (estadoActual || 'Todos');
     if (resumenSegmento) resumenSegmento.textContent = segmentoActual || 'Todos';
 }
 

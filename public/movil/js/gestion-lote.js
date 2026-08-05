@@ -738,6 +738,7 @@ function renderizarSolicitudes(lista, sinEntrada) {
             html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1, event)" title="Destacar tarjeta">🔥 Destacar</span>';
         }
         html += '<div class="sol-badge estado-' + estado.replace(/\s+/g,'') + '">' + estado + '</div>';
+        if (noAplica) html += '<span class="noaplica-mini-badge">👎 No aplica</span>';
         html += '</div>';
         html += '</div>';
 

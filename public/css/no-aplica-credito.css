@@ -55,3 +55,26 @@
 .dropdown-item.dropdown-item-warning {
     color: #92400e;
 }
+
+/* Badge pequeño del emoji con label en tarjetas marcadas */
+.noaplica-mini-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: #fee2e2;
+    color: #991b1b;
+    white-space: nowrap;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+/* Permitir que la fila de badges de las cards envuelva con el badge extra
+   (desktop fuerza flex-wrap: nowrap; esta regla se carga después y gana) */
+.card-fila-1 {
+    flex-wrap: wrap;
+}

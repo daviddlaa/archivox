@@ -150,7 +150,10 @@ exports.listarSolicitudes = async (req, res) => {
     const params = [usuarioId];
     let paramIndex = 2;
 
-    if (estado) {
+    if (estado === '__no_aplica_credito__') {
+        // Filtro especial: solicitudes marcadas como "ya no aplica para crédito"
+        sql += ' AND s.no_aplica_credito = 0';
+    } else if (estado) {
         sql += ' AND s.estado = $' + paramIndex++;
         params.push(estado);
     }
@@ -214,7 +217,8 @@ exports.listarSolicitudes = async (req, res) => {
                 let countSql = 'SELECT COUNT(*) as total FROM solicitudes s WHERE s.usuario_id = $1';
                 const countParams = [usuarioId];
                 let countIdx = 2;
-                if (estado) { countSql += ' AND s.estado = $' + countIdx++; countParams.push(estado); }
+                if (estado === '__no_aplica_credito__') { countSql += ' AND s.no_aplica_credito = 0'; }
+                else if (estado) { countSql += ' AND s.estado = $' + countIdx++; countParams.push(estado); }
                 if (segmento) { countSql += ' AND s.segmento = $' + countIdx++; countParams.push(segmento); }
                 if (isLeader) {
                     if (fecha_desde) { countSql += ' AND s.fecha_solicitud >= $' + countIdx++; countParams.push(fecha_desde); }
@@ -1379,7 +1383,10 @@ exports.buscarSolicitudes = async (req, res) => {
             }
         }
 
-        if (estado) {
+        if (estado === '__no_aplica_credito__') {
+            // Filtro especial: solicitudes marcadas como "ya no aplica para crédito"
+            sql += ` AND s.no_aplica_credito = 0`;
+        } else if (estado) {
             sql += ` AND s.estado = $${paramIdx++}`;
             params.push(estado);
         }
@@ -1436,7 +1443,8 @@ exports.buscarSolicitudes = async (req, res) => {
                         countSql += ' AND (' + conds.join(' AND ') + ')';
                     }
                 }
-                if (estado) { countSql += ` AND s.estado = $${cIdx++}`; countParams.push(estado); }
+                if (estado === '__no_aplica_credito__') { countSql += ` AND s.no_aplica_credito = 0`; }
+                else if (estado) { countSql += ` AND s.estado = $${cIdx++}`; countParams.push(estado); }
                 if (segmento) { countSql += ` AND s.segmento = $${cIdx++}`; countParams.push(segmento); }
                 if (isLeader) {
                     if (fecha_desde) { countSql += ` AND s.fecha_solicitud >= $${cIdx++}`; countParams.push(fecha_desde); }

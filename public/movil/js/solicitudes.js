@@ -352,6 +352,7 @@ function renderizarFiltros() {
     const estadoSelect = document.getElementById('filtro-estado-select');
     if (estadoSelect) {
         estadoSelect.innerHTML = '<option value="">Todos</option>';
+        estadoSelect.innerHTML += '<option value="__no_aplica_credito__">👎 No aplica para crédito</option>';
         estados.forEach(e => {
             estadoSelect.innerHTML += `<option value="${e}">${e}</option>`;
         });
@@ -589,7 +590,9 @@ function adjuntarEventos() {
 // Aplicar filtros y renderizar
 function aplicarFiltros() {
     const filtrados = todosDatos.filter(d => {
-        if (filtros.estado && d.estado !== filtros.estado) return false;
+        if (filtros.estado === '__no_aplica_credito__') {
+            if (d.no_aplica_credito != 0) return false;
+        } else if (filtros.estado && d.estado !== filtros.estado) return false;
         if (filtros.segmento && d.segmento !== filtros.segmento) return false;
 if (filtros.busqueda) {
             const q = filtros.busqueda;
@@ -713,6 +716,7 @@ function renderizarCards(datos) {
         html += '  <div class="card-fila-1">';
         html += '    <span class="card-badge badge-segmento">' + (item.segmento || 'Sin segmento') + '</span>';
         html += '    <span class="card-badge badge-estado ' + estadoClase + '" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
+        if (noAplica) html += '    <span class="noaplica-mini-badge">👎 No aplica</span>';
         html += '  </div>';
 
         // FILA 2: Nombre

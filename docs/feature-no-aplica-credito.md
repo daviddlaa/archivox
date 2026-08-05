@@ -57,6 +57,17 @@ Body: `{ "no_aplica_credito": 0 | 1 }`.
 - CSS compartido: `public/css/no-aplica-credito.css` (incluido en las 4 páginas).
 - Tras marcar en campaña: se recarga la campaña (la solicitud desaparece) y el listado lateral.
 
+## Filtro en el selector de estado (solicitudes)
+
+- El selector de estado de la página de solicitudes (desktop y móvil) incluye la opción **"👎 No aplica para crédito"** (valor especial `__no_aplica_credito__`).
+- **Backend** (`listarSolicitudes` y `buscarSolicitudes`, consulta y conteo): el sentinel se traduce a `AND s.no_aplica_credito = 0`.
+- **Frontend**: desktop inserta la opción tras "Todos" (respeta `sessionStorage`); móvil la inserta en `renderizarFiltros` y la maneja en `aplicarFiltros`. El resumen muestra "No aplica para crédito".
+
+## Badge pequeño en tarjetas marcadas
+
+- Las tarjetas marcadas (flag = 0) muestran el badge **"👎 No aplica"** en pequeño (clase `noaplica-mini-badge`, 11px) en: solicitudes desktop (fila 1), solicitudes móvil (fila 1), campañas desktop (header) y campañas móvil (header).
+- CSS en `public/css/no-aplica-credito.css` (incluido en las 4 páginas) + `flex-wrap` para que la fila de badges no se recorte en pantallas angostas.
+
 ## Fuera de alcance (fase 2 si se desea)
 - Importación por Excel del flag.
 - KPIs nuevos en el dashboard (contador de "no aplican").
