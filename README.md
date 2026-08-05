@@ -389,3 +389,7 @@ Ver `docs/README.md` para documentacion completa del sistema (1375+ lineas), inc
 |---------|-------|-----------|
 | Rediseño del Indicador de Estado (Semáforo) v6 | Agosto 2026 | `docs/feature-rediseño-semaforo-campañas.md` |
 | Rediseño UX de Campañas: progreso y prioridad | Agosto 2026 | `docs/feature-ux-comportamiento-campanas.md` |
+| Tarjeta de Solicitudes Desktop: sin botón Llamar, cédula + teléfono visibles, fix checkbox duplicado y limpieza CSS | Agosto 2026 | `docs/feature-tarjeta-solicitudes-escritorio.md` |
+| Convención de propiedad de los CSS de Solicitudes (compartido vs desktop vs móvil) | Agosto 2026 | `docs/convencion-css-solicitudes.md` |
+| Header unificado + toolbar de filtros con auto-aplicar en Solicitudes Desktop | Agosto 2026 | `docs/feature-header-filtros-solicitudes-desktop.md` |
+| Filtros móviles compactos: selects, auto-aplicar en tiempo real y Limpiar total | Agosto 2026 | `docs/feature-filtros-movil-solicitudes.md` |

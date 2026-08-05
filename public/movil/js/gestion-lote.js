@@ -608,13 +608,13 @@ function renderizarSolicitudes(lista) {
         var destacada = sol.destacado == 1;
         var semaforo = normalizarSemaforoMovil(sol.semaforo);
 
-        html += '<div class="sol-card sol-semaforo-' + semaforo + ' ' + (gestionada ? 'gestionada' : '') + (destacada ? ' destacada' : '') + '" data-gestion-id="' + (sol.gestion_id || '') + '">';
+        html += '<div class="sol-card sol-semaforo-' + semaforo + ' ' + (gestionada ? 'gestionada' : '') + (destacada ? ' destacada' : '') + '" data-sol-id="' + sol.id_solicitud + '" data-gestion-id="' + (sol.gestion_id || '') + '">';
         html += '<div class="sol-header">';
         html += '<div class="sol-header-badges">';
         if (destacada) {
-            html += '<span class="sol-destacado-badge sol-destacado-badge-on" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 0)" title="Quitar destacado">🔥 Destacada</span>';
+            html += '<span class="sol-destacado-badge sol-destacado-badge-on" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 0, event)" title="Quitar destacado">🔥 Destacada</span>';
         } else {
-            html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1)" title="Destacar tarjeta">🔥 Destacar</span>';
+            html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1, event)" title="Destacar tarjeta">🔥 Destacar</span>';
         }
         html += '<div class="sol-badge estado-' + estado.replace(/\s+/g,'') + '">' + estado + '</div>';
         html += '</div>';
@@ -884,24 +884,51 @@ async function guardarGestionIndividual(solicitudId) {
     }
 }
 
-// Alternar destacado de una solicitud
-async function toggleDestacado(solicitudId, nuevoEstado) {
+// Alternar destacado de una solicitud (solo anima el badge; no pinta la tarjeta)
+async function toggleDestacado(solicitudId, nuevoEstado, eventRef) {
     try {
         var response = await fetch('/api/gestiones-maestro/' + gestionId + '/solicitudes/' + encodeURIComponent(solicitudId) + '/destacar', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ destacado: nuevoEstado })
+            body: JSON.stringify({ destacado: Number(nuevoEstado) })
         });
-        
-        var resultado = await response.json();
-        
-        if (response.ok && !resultado.error) {
-            await cargarDatosGestionMovil();
-        } else {
+
+        var resultado = await response.json().catch(function() { return {}; });
+
+        if (!response.ok || resultado.error) {
             alert(resultado.error || 'No se pudo actualizar el destacado');
+            return;
         }
+
+        var val = Number(nuevoEstado) === 1 ? 1 : 0;
+        for (var i = 0; i < todasLasSolicitudes.length; i++) {
+            if (String(todasLasSolicitudes[i].id_solicitud) === String(solicitudId)) {
+                todasLasSolicitudes[i].destacado = val;
+            }
+        }
+        for (var j = 0; j < solicitudes.length; j++) {
+            if (String(solicitudes[j].id_solicitud) === String(solicitudId)) {
+                solicitudes[j].destacado = val;
+            }
+        }
+
+        renderizarSolicitudes(todasLasSolicitudes);
+
+        // Animación del badge recién pintado (solo el botón, no la tarjeta)
+        setTimeout(function() {
+            var cards = document.querySelectorAll('.sol-card[data-sol-id="' + solicitudId + '"]');
+            if (cards.length > 0) {
+                var badge = cards[0].querySelector('.sol-destacado-badge');
+                if (badge) {
+                    badge.classList.remove('pop');
+                    void badge.offsetWidth;
+                    badge.classList.add('pop');
+                }
+            }
+        }, 30);
     } catch (error) {
         console.error('[movil] Error alternando destacado:', error);
+        alert('Error al actualizar el destacado');
     }
 }
 

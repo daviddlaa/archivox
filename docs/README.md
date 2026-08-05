@@ -202,6 +202,10 @@ ARCHIVOX/
 │   ├── feature-plantillas-mensajes.md         # Plantillas de mensajes personalizadas (Agosto 2026)
 │   ├── feature-panel-lateral-solicitudes.md   # Panel lateral de detalle/edición en Solicitudes (Agosto 2026)
 │   ├── feature-panel-lateral-agentes.md       # Panel lateral de gestión de agentes del equipo (Agosto 2026)
+│   ├── feature-tarjeta-solicitudes-escritorio.md  # Tarjeta Solicitudes Desktop: sin Llamar, cédula+teléfono, fix checkbox, limpieza CSS (Agosto 2026)
+│   ├── convencion-css-solicitudes.md          # Convención de propiedad de los CSS de Solicitudes (Agosto 2026)
+│   ├── feature-header-filtros-solicitudes-desktop.md # Header unificado + toolbar con auto-aplicar (Agosto 2026)
+│   ├── feature-filtros-movil-solicitudes.md   # Filtros móviles compactos: selects + auto-aplicar (Agosto 2026)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
 │       ├── informe-auditoria-flujo-multi-equipo.md
@@ -1029,6 +1033,43 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - Gestión directa (crear gestión)
 - Exportación de seleccionadas
 - Eliminación individual/masiva
+- **Tarjeta de solicitudes (escritorio, rediseño):** sin botón
+  "📞 Llamar" (ni en la tarjeta ni en el panel lateral); fila nueva
+  `card-fila-contacto` con cédula 🪪 y teléfono 📞 uno al lado del otro
+  debajo del nombre; se corrigió el "checkbox duplicado" al seleccionar
+  (el `::after` con ✓ del CSS compartido se oculta solo en escritorio con
+  override `body .solicitud-card.seleccionada::after { display:none }`;
+  en móvil se conserva porque no hay checkbox). Además se limpiaron ~155
+  líneas de CSS muerto de `public/desktop/css/solicitudes.css`. Ver
+  `docs/feature-tarjeta-solicitudes-escritorio.md`.
+- **Convención de CSS de Solicitudes:** el CSS compartido
+  (`public/css/solicitudes.css`) solo contiene la estructura de tarjeta
+  que usan ambas plataformas; cada plataforma agrega su CSS propio y las
+  reglas no se duplican. Regla de oro: nunca duplicar la misma regla en
+  dos archivos, y los overrides usan mayor especificidad (ej. prefijo
+  `body `) porque el CSS compartido se carga después. Ver
+  `docs/convencion-css-solicitudes.md`.
+- **Header unificado (escritorio, rediseño):** los KPIs (Total /
+  Mostrando / Selecc) viven dentro del header como pills compactas
+  (`.kpi-inline`); la campana 🔔 queda sola siempre visible; los botones
+  Dashboard / Nueva Solicitud / Importar Excel se agruparon en un menú
+  desplegable ⋮ (`toggleMenuAcciones`/`cerrarMenuAcciones`, se cierra con
+  clic fuera o `Escape`). Los filtros de Estado y Segmento pasaron de
+  botones chips a **selects** (`filtro-estado-select` /
+  `filtro-segmento-select`) dentro de una toolbar única que también
+  contiene el buscador, los filtros de líder (Desde/Hasta/Vendedor) y el
+  botón Limpiar; **todo aplica automáticamente al cambiar** (selects y
+  fechas con `onchange`, vendedor con debounce 400 ms). La vieja barra
+  `acciones-unificado` (Exportar/Marcar) se eliminó. Ver
+  `docs/feature-header-filtros-solicitudes-desktop.md`.
+- **Filtros móviles (rediseño):** los chips de Estado/Segmento se
+  reemplazaron por **selects** desplegables en una fila compacta con
+  botón ✕ Limpiar; los filtros de líder usan un grid de 2 columnas
+  (Desde/Hasta) + Vendedor a ancho completo; se eliminó el botón Aplicar
+  porque **todo aplica en tiempo real** (selects/fechas con `onchange`,
+  vendedor con debounce 400 ms). `limpiarFiltrosLider()` resetea todo
+  (estado + segmento + fechas + vendedor + buscador) y cancela timers
+  pendientes. Ver `docs/feature-filtros-movil-solicitudes.md`.
 
 ### 11.3 Importación Excel
 
