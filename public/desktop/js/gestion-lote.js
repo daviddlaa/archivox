@@ -1937,9 +1937,9 @@ function confirmarEliminarCampaña(id, nombre, total, gestionadas) {
     contenido += '<div class="modal-advertencia">';
     contenido += '<p>⚠️ <strong>IMPORTANTE:</strong></p>';
     contenido += '<ul>';
-contenido += '<li>Se eliminarán <strong>TODAS las gestione</strong> registradas en estas ' + total + ' solicitudes.</li>';
+    contenido += '<li>El historial de <strong>gestiones</strong> de estas ' + total + ' solicitudes <strong>NO se eliminará</strong>: quedará en el historial general de cada solicitud.</li>';
     contenido += '<li>Esta acción es <strong>IRREVERSIBLE</strong>.</li>';
-    contenido += '<li>Los datos de las solicitudes originale NO se eliminarán.</li>';
+    contenido += '<li>Los datos de las solicitudes originales NO se eliminarán.</li>';
     contenido += '</ul>';
     contenido += '</div>';
     

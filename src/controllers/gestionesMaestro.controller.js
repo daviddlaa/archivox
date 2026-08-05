@@ -564,7 +564,7 @@ async function deleteGestionMaestro(req, res) {
             return res.status(404).json({ error: 'Gestión no encontrada' });
         }
         
-        // Eliminar puente semáforo
+        // Eliminar puente semáforo (estado rojo/amarillo/verde específico de la campaña)
         try {
             await pool.query(`
                 DELETE FROM gestiones_maestro_solicitudes WHERE gestion_maestro_id = ?
@@ -573,17 +573,41 @@ async function deleteGestionMaestro(req, res) {
             console.error('[deleteGestionMaestro] Error borrando semáforo:', e.message);
         }
 
-        // Eliminar primero las gestione individuales
-        await pool.query(`
-            DELETE FROM gestiones WHERE gestion_maestro_id = ?
-        `, [id]);
+        // ✅ CONSERVAR el historial de gestiones: NO se borran, solo se desvinculan de la campaña.
+        // Las consultas de historial general usan `gestion_maestro_id IS NULL`, por lo que
+        // las gestiones de las solicitudes siguen visibles tras eliminar la campaña.
+        try {
+            await pool.query(`
+                UPDATE gestiones SET gestion_maestro_id = NULL WHERE gestion_maestro_id = ?
+            `, [id]);
+        } catch (e) {
+            console.error('[deleteGestionMaestro] Error desvinculando gestiones de la campaña:', e.message);
+        }
+
+        // Limpiar campana_id de las solicitudes para evitar referencias a una campaña inexistente
+        try {
+            await pool.query(`
+                UPDATE solicitudes SET campana_id = NULL WHERE campana_id = ?
+            `, [id]);
+        } catch (e) {
+            console.error('[deleteGestionMaestro] Error limpiando campana_id de solicitudes:', e.message);
+        }
+
+        // Limpiar filas huérfanas de la asociación campaña ↔ equipo
+        try {
+            await pool.query(`
+                DELETE FROM campañas_equipo WHERE campaña_id = ?
+            `, [id]);
+        } catch (e) {
+            console.error('[deleteGestionMaestro] Error limpiando campañas_equipo:', e.message);
+        }
         
         // Eliminar el maestro
         await pool.query(`
             DELETE FROM gestiones_maestro WHERE id = ?
         `, [id]);
         
-        res.json({ mensaje: 'Gestión eliminada correctamente' });
+        res.json({ mensaje: 'Campaña eliminada correctamente. El historial de gestiones de las solicitudes se conserva.' });
     } catch (error) {
         console.error('Error en deleteGestionMaestro:', error);
         res.status(500).json({ error: 'Error al eliminar gestión' });

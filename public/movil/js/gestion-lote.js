@@ -1654,7 +1654,7 @@ function confirmarEliminarCampañaMovil(id, nombre, total, gestionadas) {
             '<div style="background:#fef3c7;border:1px solid #f59e0b;padding:14px;border-radius:10px;margin-bottom:16px;">' +
                 '<p style="margin:0 0 6px;font-weight:bold;font-size:13px;color:#92400e;">⚠️ IMPORTANTE:</p>' +
                 '<ul style="margin:0;padding-left:18px;font-size:12px;color:#92400e;">' +
-                    '<li style="margin-bottom:4px;">Se eliminarán <strong>TODAS las gestiones</strong> registradas.</li>' +
+                    '<li style="margin-bottom:4px;">El historial de <strong>gestiones</strong> de las solicitudes <strong>NO se eliminará</strong>: quedará en el historial general de cada solicitud.</li>' +
                     '<li style="margin-bottom:4px;">Esta acción es <strong>IRREVERSIBLE</strong>.</li>' +
                     '<li>Los datos de las solicitudes originales NO se eliminarán.</li>' +
                 '</ul>' +

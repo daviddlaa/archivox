@@ -391,7 +391,7 @@ GET    /api/gestiones-maestro              → Listar campañas (filtra por usua
 POST   /api/gestiones-maestro              → Crear campaña (asigna usuario_id)
 GET    /api/gestiones-maestro/:id          → Ver campaña (filtra por usuario_id)
 PUT    /api/gestiones-maestro/:id          → Actualizar campaña
-DELETE /api/gestiones-maestro/:id          → Eliminar campaña (CASCADE gestiones)
+DELETE /api/gestiones-maestro/:id          → Eliminar campaña (las gestiones de las solicitudes se conservan, solo se desvinculan)
 GET    /api/gestiones-maestro/:id/progreso → Progreso de campaña
 PUT    /api/gestiones-maestro/:id/agregar-solicitudes    → Agregar solicitudes
 PUT    /api/gestiones-maestro/:id/quitar-solicitud       → Quitar solicitud
