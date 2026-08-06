@@ -344,6 +344,61 @@ async function getHistorialSolicitudCampana(req, res) {
     }
 }
 
+// GET /api/gestiones-maestro/:id/historial
+// Historial GENERAL de gestiones de toda la campaña (todas las solicitudes que siguen en ella).
+// Cada entrada es navegable desde el frontend (salta a la tarjeta sin importar su semáforo).
+async function getHistorialGeneralCampana(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) return res.status(401).json({ error: 'No autenticado' });
+
+        const { id } = req.params;
+        const access = buildGestionAccessWhere(req, id);
+        const gestionResult = await pool.query(
+            'SELECT gm.id, gm.nombre, gm.solicitudes_ids FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access),
+            access.params
+        );
+        const gestion = getFirstRow(gestionResult);
+        if (!gestion) return res.status(404).json({ error: 'Campaña no encontrada' });
+
+        let solicitudIds = [];
+        try { solicitudIds = JSON.parse(gestion.solicitudes_ids || '[]'); } catch (e) { solicitudIds = []; }
+
+        if (solicitudIds.length === 0) {
+            return res.json({ gestion: gestion, total: 0, gestiones: [] });
+        }
+
+        const placeholders = solicitudIds.map(function() { return '?'; }).join(',');
+        const result = await pool.query(`
+            SELECT g.id,
+                   g.solicitud_id,
+                   g.tipo_gestion,
+                   g.observacion,
+                   g.fecha_gestion,
+                   g.usuario_id,
+                   u.username AS vendedor,
+                   s.nombre AS nombre_cliente,
+                   s.cedula,
+                   s.celular,
+                   CASE WHEN gms.semaforo IS NULL THEN 'sin_clasificar' ELSE gms.semaforo END AS semaforo
+            FROM gestiones g
+            LEFT JOIN solicitudes s ON s.id_solicitud = g.solicitud_id
+            LEFT JOIN usuarios u ON u.id = g.usuario_id
+            LEFT JOIN gestiones_maestro_solicitudes gms
+                ON gms.gestion_maestro_id = ? AND gms.id_solicitud = g.solicitud_id
+            WHERE g.solicitud_id IN (${placeholders})
+              AND (g.gestion_maestro_id = ? OR g.gestion_maestro_id IS NULL)
+            ORDER BY g.fecha_gestion DESC
+        `, [id].concat(solicitudIds).concat([id]));
+
+        const gestiones = getRows(result);
+        res.json({ gestion: gestion, total: gestiones.length, gestiones: gestiones });
+    } catch (error) {
+        console.error('Error en getHistorialGeneralCampana:', error);
+        res.status(500).json({ error: 'Error al cargar el historial general de la campaña' });
+    }
+}
+
 // PUT /api/gestiones-maestro/:id/solicitudes/:solicitudId/destacar
 // Permite destacar una solicitud cuando el usuario tiene acceso operativo a la campaña.
 async function destacarSolicitudCampana(req, res) {
@@ -1263,6 +1318,7 @@ module.exports = {
     quitarAsignacionAgente: quitarAsignacionAgente,
     actualizarSemaforoSolicitud: actualizarSemaforoSolicitud,
     historialSolicitudCampana: getHistorialSolicitudCampana,
+    historialGeneralCampana: getHistorialGeneralCampana,
     destacarSolicitudCampana: destacarSolicitudCampana,
     // Flag "ya no aplica para crédito"
     marcarNoAplicaCreditoSolicitud: marcarNoAplicaCreditoSolicitud,

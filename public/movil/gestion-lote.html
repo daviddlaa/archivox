@@ -30,7 +30,7 @@
             <button type="button" class="header-campana-btn" id="btn-campana-selector" onclick="toggleCampanasSheet()" aria-haspopup="dialog">
                 📋 <span id="campana-btn-label">Campañas</span> <span class="header-campana-chevron" aria-hidden="true">▾</span>
             </button>
-            <button type="button" class="header-prioridad-btn" id="siguiente-accion-mobile-btn" onclick="ejecutarSiguienteAccionMovil()" style="display:none;" aria-live="polite" aria-label="Ir a la prioridad de la campaña"></button>
+            <button type="button" class="header-prioridad-btn header-historial-btn" id="btn-historial-campana-movil" onclick="abrirHistorialCampanaMovil()" style="display:none;" aria-label="Ver las últimas gestiones de la campaña">🕘 Últimas gestiones</button>
         </div>
     </div>
 
@@ -63,8 +63,8 @@
     <div class="semaforo-mobile semaforo-mobile-carousel" id="semaforo-mobile" style="display:none;">
         <div class="semaforo-mobile-row">
             <div class="semaforo-mobile-scroll" id="semaforo-mobile-scroll" role="group" aria-label="Filtrar por estado">
-                <button type="button" class="semaforo-mobile-card semaforo-mobile-amarillo" data-semaforo="amarillo" data-prio="1" onclick="setFiltroSemaforoMovil('amarillo')"><strong id="count-mobile-amarillo">0</strong><span>Seguimiento</span></button>
-                <button type="button" class="semaforo-mobile-card semaforo-mobile-sin" data-semaforo="sin_clasificar" data-prio="2" onclick="setFiltroSemaforoMovil('sin_clasificar')"><strong id="count-mobile-sin_clasificar">0</strong><span>Sin clasificar</span></button>
+                <button type="button" class="semaforo-mobile-card semaforo-mobile-sin" data-semaforo="sin_clasificar" data-prio="1" onclick="setFiltroSemaforoMovil('sin_clasificar')"><strong id="count-mobile-sin_clasificar">0</strong><span>Sin clasificar</span></button>
+                <button type="button" class="semaforo-mobile-card semaforo-mobile-amarillo" data-semaforo="amarillo" data-prio="2" onclick="setFiltroSemaforoMovil('amarillo')"><strong id="count-mobile-amarillo">0</strong><span>Seguimiento</span></button>
                 <button type="button" class="semaforo-mobile-card semaforo-mobile-verde" data-semaforo="verde" data-prio="3" onclick="setFiltroSemaforoMovil('verde')"><strong id="count-mobile-verde">0</strong><span>Encaminadas</span></button>
                 <button type="button" class="semaforo-mobile-card semaforo-mobile-rojo" data-semaforo="rojo" data-prio="4" onclick="setFiltroSemaforoMovil('rojo')"><strong id="count-mobile-rojo">0</strong><span>En espera</span></button>
             </div>

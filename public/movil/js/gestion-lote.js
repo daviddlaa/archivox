@@ -223,6 +223,7 @@ async function cargarDatosGestionMovil() {
 
         renderizarSolicitudes(solicitudes);
         actualizarProgreso();
+        mostrarBotonHistorialCampanaMovil();
         ajustarStickySemaforo();
     } catch (error) {
         console.error('[movil-cargarDatos] Error:', error);
@@ -257,7 +258,6 @@ function actualizarProgreso() {
     }
     actualizarActividadMovil();
     actualizarSemaforoMovil();
-    actualizarSiguienteAccionMovilTexto(total);
 }
 
 function normalizarSemaforoMovil(valor) {
@@ -321,8 +321,8 @@ function actualizarSemaforoMovil(conteo) {
 }
 
 function prioridadSemaforoMovil(conteo) {
-    if ((conteo.amarillo || 0) > 0) return 'amarillo';
     if ((conteo.sin_clasificar || 0) > 0) return 'sin_clasificar';
+    if ((conteo.amarillo || 0) > 0) return 'amarillo';
     if ((conteo.verde || 0) > 0) return 'verde';
     if ((conteo.rojo || 0) > 0) return 'rojo';
     return null;
@@ -331,7 +331,7 @@ function prioridadSemaforoMovil(conteo) {
 function reordenarCarruselSemaforoMovil(conteo) {
     var scroll = document.getElementById('semaforo-mobile-scroll');
     if (!scroll) return;
-    var ordenBase = ['amarillo', 'sin_clasificar', 'verde', 'rojo'];
+    var ordenBase = ['sin_clasificar', 'amarillo', 'verde', 'rojo'];
     var prioridad = prioridadSemaforoMovil(conteo);
     var orden = ordenBase.slice();
     if (prioridad) {
@@ -466,38 +466,130 @@ function setFiltroSemaforoMovil(valor) {
     renderizarSolicitudes(todasLasSolicitudes);
 }
 
-function actualizarSiguienteAccionMovilTexto(total) {
-    var boton = document.getElementById('siguiente-accion-mobile-btn');
-    if (!boton) return;
-    var conteo = obtenerConteoSemaforoMovil();
-    var prioridad = null;
-    if (conteo.amarillo > 0) prioridad = { filtro: 'amarillo', texto: '▶ Seguimiento (' + conteo.amarillo + ')' };
-    else if (conteo.sin_clasificar > 0) prioridad = { filtro: 'sin_clasificar', texto: '▶ Clasificar (' + conteo.sin_clasificar + ')' };
-    else if (conteo.rojo > 0) prioridad = { filtro: 'rojo', texto: '▶ En espera (' + conteo.rojo + ')' };
-    else if (total > 0 && (solicitudes || []).some(function(sol) { return sol.tipo_gestion !== 'Completada' && (!sol.gestion_id || !sol.tipo_gestion || sol.tipo_gestion === 'Pendiente'); })) prioridad = { filtro: null, texto: 'Registrar gestión' };
-    boton.dataset.semaforo = prioridad && prioridad.filtro ? prioridad.filtro : '';
-    if (prioridad && prioridad.filtro) {
-        boton.textContent = prioridad.texto;
-        boton.style.display = 'inline-flex';
-    } else {
-        boton.style.display = 'none';
-    }
-    ajustarStickySemaforo();
+// ===== HISTORIAL GENERAL DE LA CAMPAÑA (móvil) =====
+function mostrarBotonHistorialCampanaMovil() {
+    var boton = document.getElementById('btn-historial-campana-movil');
+    if (boton) boton.style.display = 'inline-flex';
 }
 
-function ejecutarSiguienteAccionMovil() {
-    var boton = document.getElementById('siguiente-accion-mobile-btn');
-    var filtro = boton && boton.dataset.semaforo;
-    if (filtro) {
-        // Aplica la prioridad (no alterna): si ya está activa, la mantiene
-        if (filtroSemaforoMovil !== filtro) {
-            filtroSemaforoMovil = filtro;
-            actualizarSemaforoMovil();
-            renderizarSolicitudes(todasLasSolicitudes);
+async function abrirHistorialCampanaMovil() {
+    if (!gestionId) return;
+    try {
+        crearModal('<div class="modal-gestion" style="text-align:center;padding:20px;"><h2>🕘 Últimas gestiones</h2><p>⏳ Cargando...</p></div>');
+
+        var response = await fetch('/api/gestiones-maestro/' + gestionId + '/historial');
+        if (!response.ok) throw new Error('Error al cargar historial general');
+
+        var data = await response.json();
+        var gestiones = (data && data.gestiones) || [];
+        var nombreCampana = (data && data.gestion && data.gestion.nombre) ? data.gestion.nombre : 'Campaña';
+
+        var contenido = '';
+        contenido += '<div class="modal-gestion">';
+        contenido += '<h2 class="historial-modal-titulo" style="word-break:break-word;">🕘 Últimas gestiones · ' + escaparParaHTML(nombreCampana) + '</h2>';
+
+        if (!gestiones.length) {
+            contenido += '<div style="text-align:center;padding:20px;color:#6b7280;font-size:13px;">No hay gestiones registradas en esta campaña</div>';
+        } else {
+            contenido += '<div style="margin-bottom:8px;color:#6b7280;font-size:12px;">📊 ' + gestiones.length + ' gestione(s) · toca una para ir a su tarjeta</div>';
+            contenido += '<div style="max-height:60vh;overflow-y:auto;">';
+
+            var coloresTipo = {
+                'Pendiente': '#fef3c7',
+                'Llamada': '#d1fae5',
+                'WhatsApp': '#dcfce7',
+                'Seguimiento': '#dbeafe',
+                'Cobranza': '#fee2e2',
+                'Cita': '#e0e7ff',
+                'Completada': '#bbf7d0'
+            };
+            var coloresSemaforo = {
+                'sin_clasificar': { bg: '#e5e7eb', texto: '⚪ Sin clasificar' },
+                'amarillo': { bg: '#fef3c7', texto: '🟡 Seguimiento' },
+                'verde': { bg: '#d1fae5', texto: '🟢 Encaminada' },
+                'rojo': { bg: '#fee2e2', texto: '🔴 En espera' }
+            };
+
+            for (var i = 0; i < gestiones.length; i++) {
+                var g = gestiones[i];
+                var fecha = formatearFechaHistorialMovil(g.fecha_gestion);
+                var isLast = i === gestiones.length - 1;
+                var colorBadge = coloresTipo[g.tipo_gestion] || '#f3f4f6';
+                var semaforo = coloresSemaforo[g.semaforo] || coloresSemaforo['sin_clasificar'];
+                var nombreCliente = g.nombre_cliente || 'Solicitud #' + g.solicitud_id;
+
+                contenido += '<div style="display:flex;gap:12px;position:relative;cursor:pointer;" onclick="navegarACardMovil(\'' + g.solicitud_id + '\')">';
+                contenido += '<div style="display:flex;flex-direction:column;align-items:center;">';
+                contenido += '<div style="width:12px;height:12px;border-radius:50%;background:' + colorBadge + ';border:2px solid #9ca3af;flex-shrink:0;"></div>';
+                if (!isLast) contenido += '<div style="width:2px;flex:1;background:#e5e7eb;margin:4px 0;"></div>';
+                contenido += '</div>';
+                contenido += '<div style="flex:1;padding-bottom:' + (isLast ? '0' : '12px') + ';">';
+                contenido += '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:3px;">';
+                contenido += '<strong style="font-size:13px;color:#111827;">' + escaparParaHTML(nombreCliente) + '</strong>';
+                contenido += '<span style="font-size:10px;color:#374151;background:' + semaforo.bg + ';padding:2px 8px;border-radius:10px;font-weight:600;flex-shrink:0;">' + semaforo.texto + '</span>';
+                contenido += '</div>';
+                contenido += '<div style="font-size:10px;color:#9ca3af;margin-bottom:3px;">#' + g.solicitud_id + (g.cedula ? ' · 🆔 ' + escaparParaHTML(g.cedula) : '') + '</div>';
+                contenido += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">';
+                contenido += '<span style="background:' + colorBadge + ';padding:1px 8px;border-radius:10px;font-size:10px;font-weight:600;color:#374151;">' + escaparParaHTML(g.tipo_gestion || '—') + '</span>';
+                if (g.vendedor) contenido += '<span style="font-size:10px;color:#2563eb;font-weight:600;">🏷️ ' + escaparParaHTML(g.vendedor) + '</span>';
+                contenido += '<span style="font-size:10px;color:#9ca3af;">⏱️ ' + fecha + '</span>';
+                contenido += '</div>';
+                contenido += '<div style="background:#f9fafb;padding:8px 10px;border-radius:6px;font-size:12px;color:#374151;line-height:1.4;">' + escaparParaHTML(g.observacion || 'Sin observación') + '</div>';
+                contenido += '</div>';
+                contenido += '</div>';
+            }
+
+            contenido += '</div>';
         }
-        var lista = document.getElementById('lista-solicitudes');
-        if (lista) lista.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        contenido += '<div style="margin-top:12px;text-align:right;">';
+        contenido += '<button class="btn-cerrar" onclick="cerrarModal()" style="padding:8px 20px;background:#f3f4f6;border:none;border-radius:8px;cursor:pointer;font-size:14px;">Cerrar</button>';
+        contenido += '</div>';
+        contenido += '</div>';
+
+        cerrarModal();
+        crearModal(contenido, { alto: '75vh' });
+    } catch (error) {
+        console.error('[movil] Error cargando historial general:', error);
+        cerrarModal();
+        alert('Error al cargar el historial de la campaña');
     }
+}
+
+// Ir a la tarjeta de una solicitud desde el historial general, sin importar su semáforo
+function navegarACardMovil(solicitudId) {
+    cerrarModal();
+
+    filtroSemaforoMovil = null;
+    var inputBusqueda = document.getElementById('busqueda');
+    if (inputBusqueda) inputBusqueda.value = '';
+    var selectEstado = document.getElementById('filtro-estado');
+    if (selectEstado) selectEstado.value = '';
+    actualizarSemaforoMovil();
+    renderizarSolicitudes(todasLasSolicitudes);
+
+    var target = document.querySelector('.sol-card[data-sol-id="' + solicitudId + '"]');
+    if (!target) {
+        alert('La solicitud ya no está en esta campaña');
+        return;
+    }
+
+    if (target.closest('.solicitudes-completadas-mobile')) {
+        var heading = document.querySelector('.completadas-mobile-heading');
+        var listaCompletadas = heading && heading.nextElementSibling;
+        if (heading && listaCompletadas && listaCompletadas.hidden) toggleCompletadasMovil(heading);
+        target = document.querySelector('.sol-card[data-sol-id="' + solicitudId + '"]');
+        if (!target) return;
+    }
+
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    target.classList.remove('sol-card-nav-flash');
+    void target.offsetWidth;
+    target.classList.add('sol-card-nav-flash');
+    setTimeout(function() {
+        target.classList.remove('sol-card-nav-flash');
+    }, 1600);
 }
 
 // El semáforo es sticky: se pega justo debajo del header (altura dinámica)
