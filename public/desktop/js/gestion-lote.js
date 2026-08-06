@@ -1382,6 +1382,26 @@ function verGestion(solicitudId) {
     crearModal(contenido);
 }
 
+// Formato de fecha estilo WhatsApp: Hoy/Ayer/El lunes/Hace X semanas + hora
+function formatearFechaHistorial(fecha) {
+    if (!fecha) return '—';
+    var d = new Date(fecha);
+    if (isNaN(d.getTime())) return '—';
+    var ahora = new Date();
+    var hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+    var dia = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var diff = Math.round((hoy.getTime() - dia.getTime()) / 86400000);
+    var hora = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    if (diff <= 0) return 'Hoy · ' + hora;
+    if (diff === 1) return 'Ayer · ' + hora;
+    if (diff < 7) return 'El ' + ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][d.getDay()] + ' · ' + hora;
+    var semanas = Math.floor(diff / 7);
+    if (semanas <= 4) return 'Hace ' + (semanas === 1 ? 'una semana' : semanas + ' semanas') + ' · ' + hora;
+    var meses = Math.floor(diff / 30);
+    if (meses <= 11) return 'Hace ' + (meses === 1 ? 'un mes' : meses + ' meses') + ' · ' + hora;
+    return d.toLocaleDateString('es-ES') + ' · ' + hora;
+}
+
 // Ver historial completo de gestiones de una solicitud
 async function verHistorial(solicitudId) {
     try {
@@ -1392,15 +1412,19 @@ async function verHistorial(solicitudId) {
         
         var gestiones = await response.json();
         
+        var sol = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
+        var nombreCliente = (sol && sol.nombre) ? sol.nombre : 'Solicitud #' + solicitudId;
+        
         var contenido = '';
         contenido += '<div class="modal-gestion">';
-        contenido += '<h2 style="margin-top:0;">📋 Historial - Solicitud #' + solicitudId + '</h2>';
+        contenido += '<h2 style="margin-top:0;word-break:break-word;overflow-wrap:anywhere;">📋 Historial · ' + escaparParaHTML(nombreCliente) + '</h2>';
+        contenido += '<div style="color:#9ca3af;font-size:12px;margin-bottom:8px;">Solicitud #' + solicitudId + '</div>';
         
         if (!gestiones || gestiones.length === 0) {
             contenido += '<div style="text-align:center;padding:20px;color:#6b7280;">No hay gestiones registradas para esta solicitud</div>';
         } else {
             contenido += '<div style="margin-bottom:12px;color:#6b7280;font-size:13px;">📊 Total: ' + gestiones.length + ' gestione(s)</div>';
-            contenido += '<div style="max-height:450px;overflow-y:auto;">';
+            contenido += '<div style="max-height:65vh;overflow-y:auto;">';
             
             var coloresTipo = {
                 'Pendiente': '#fef3c7',
@@ -1414,7 +1438,7 @@ async function verHistorial(solicitudId) {
             
             for (var i = 0; i < gestiones.length; i++) {
                 var g = gestiones[i];
-                var fecha = g.fecha_gestion ? new Date(g.fecha_gestion).toLocaleString('es-ES') : '—';
+                var fecha = formatearFechaHistorial(g.fecha_gestion);
                 var isLast = i === gestiones.length - 1;
                 var colorBadge = coloresTipo[g.tipo_gestion] || '#f3f4f6';
                 

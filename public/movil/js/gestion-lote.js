@@ -1029,6 +1029,26 @@ function verGestion(solicitudId) {
     crearModal(contenido);
 }
 
+// Formato de fecha estilo WhatsApp: Hoy/Ayer/El lunes/Hace X semanas + hora (móvil)
+function formatearFechaHistorialMovil(fecha) {
+    if (!fecha) return '—';
+    var d = new Date(fecha);
+    if (isNaN(d.getTime())) return '—';
+    var ahora = new Date();
+    var hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+    var dia = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var diff = Math.round((hoy.getTime() - dia.getTime()) / 86400000);
+    var hora = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    if (diff <= 0) return 'Hoy · ' + hora;
+    if (diff === 1) return 'Ayer · ' + hora;
+    if (diff < 7) return 'El ' + ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][d.getDay()] + ' · ' + hora;
+    var semanas = Math.floor(diff / 7);
+    if (semanas <= 4) return 'Hace ' + (semanas === 1 ? 'una semana' : semanas + ' semanas') + ' · ' + hora;
+    var meses = Math.floor(diff / 30);
+    if (meses <= 11) return 'Hace ' + (meses === 1 ? 'un mes' : meses + ' meses') + ' · ' + hora;
+    return d.toLocaleDateString('es-ES') + ' · ' + hora;
+}
+
 // Ver historial completo de gestiones de una solicitud (móvil)
 async function verHistorial(solicitudId) {
     try {
@@ -1039,15 +1059,19 @@ async function verHistorial(solicitudId) {
         
         var gestiones = await response.json();
         
+        var sol = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
+        var nombreCliente = (sol && sol.nombre) ? sol.nombre : 'Solicitud #' + solicitudId;
+        
         var contenido = '';
         contenido += '<div class="modal-gestion">';
-        contenido += '<h2 style="margin-top:0;font-size:16px;">📋 Historial - Solicitud #' + solicitudId + '</h2>';
+        contenido += '<h2 class="historial-modal-titulo">📋 Historial · ' + escaparParaHTML(nombreCliente) + '</h2>';
+        contenido += '<div style="color:#9ca3af;font-size:11px;margin:2px 0 8px;">Solicitud #' + solicitudId + '</div>';
         
         if (!gestiones || gestiones.length === 0) {
             contenido += '<div style="text-align:center;padding:15px;color:#6b7280;font-size:13px;">No hay gestiones registradas</div>';
         } else {
             contenido += '<div style="margin-bottom:8px;color:#6b7280;font-size:12px;">📊 Total: ' + gestiones.length + ' gestione(s)</div>';
-            contenido += '<div style="max-height:350px;overflow-y:auto;">';
+            contenido += '<div style="max-height:40vh;overflow-y:auto;">';
             
             var coloresTipo = {
                 'Pendiente': '#fef3c7',
@@ -1061,7 +1085,7 @@ async function verHistorial(solicitudId) {
             
             for (var i = 0; i < gestiones.length; i++) {
                 var g = gestiones[i];
-                var fecha = g.fecha_gestion ? new Date(g.fecha_gestion).toLocaleString('es-ES') : '—';
+                var fecha = formatearFechaHistorialMovil(g.fecha_gestion);
                 var isLast = i === gestiones.length - 1;
                 var colorBadge = coloresTipo[g.tipo_gestion] || '#f3f4f6';
                 
@@ -1094,7 +1118,7 @@ async function verHistorial(solicitudId) {
         contenido += '</div>';
         
         cerrarModal();
-        crearModal(contenido);
+        crearModal(contenido, { alto: '55vh' });
         
     } catch (error) {
         console.error('[movil] Error cargando historial:', error);
@@ -1103,7 +1127,7 @@ async function verHistorial(solicitudId) {
     }
 }
 
-function crearModal(contenido) {
+function crearModal(contenido, opciones) {
     var modalExistente = document.getElementById('modal-generico');
     if (modalExistente) modalExistente.remove();
 
@@ -1113,6 +1137,7 @@ function crearModal(contenido) {
 
     var modal = document.createElement('div');
     modal.style.cssText = 'background: white; border-radius: 16px; max-width: 600px; width: 90%; max-height: 90vh; overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4); padding: 20px;';
+    if (opciones && opciones.alto) modal.style.maxHeight = opciones.alto;
     modal.innerHTML = contenido;
 
     overlay.onclick = function(e) { if (e.target === overlay) cerrarModal(); };

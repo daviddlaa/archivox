@@ -1585,3 +1585,16 @@
 .no-stagger .sol-card {
     animation: none !important;
 }
+
+/* Título del modal de historial: evita desbordes con nombres de cliente largos */
+.historial-modal-titulo {
+    margin: 0;
+    font-size: 16px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
