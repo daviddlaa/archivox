@@ -558,6 +558,20 @@
     letter-spacing: 0.2px;
 }
 
+.sol-segmento-badge {
+    max-width: 120px;
+    overflow: hidden;
+    padding: 4px 8px;
+    border: 1px solid #c7d2fe;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: 10px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .sol-header-badges {
     display: flex;
     gap: 6px;
@@ -669,12 +683,18 @@
     font-size: 13px;
     color: #374151;
     padding: 10px 12px;
-    background: #f0fdf4;
+    background: #f8fafc;
     border-radius: 10px;
     margin-bottom: 10px;
-    border-left: 3px solid #22c55e;
+    border-left: 3px solid #cbd5e1;
     line-height: 1.5;
 }
+
+/* Color de la última gestión según el semáforo de la tarjeta */
+.sol-card.sol-semaforo-sin_clasificar .sol-obs { border-left-color: #94a3b8; background: #f1f5f9; }
+.sol-card.sol-semaforo-verde .sol-obs { border-left-color: #6b9e78; background: #e9f6ed; }
+.sol-card.sol-semaforo-amarillo .sol-obs { border-left-color: #d3a437; background: #fbf3dd; }
+.sol-card.sol-semaforo-rojo .sol-obs { border-left-color: #cf6657; background: #fbece9; }
 
 /* ===== BOTONES DE ACCIÓN EN TARJETAS — Touch-optimized ===== */
 .sol-botones {

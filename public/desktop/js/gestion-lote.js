@@ -946,6 +946,11 @@ function actualizarProgreso() {
     actualizarEstadoCampanaTexto();
 }
 
+// Normaliza el texto para búsqueda: minúsculas, sin tildes, sin espacios sobrantes
+function normalizarBusqueda(texto) {
+    return String(texto || '').toLowerCase().trim().replace(/\s+/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 // Renderizar lista de solicitudes
 function renderizarSolicitudes(lista) {
     var container = document.getElementById('lista-solicitudes');
@@ -959,18 +964,20 @@ function renderizarSolicitudes(lista) {
     
     var busquedaEl = document.getElementById('busqueda');
     var filtroEstadoEl = document.getElementById('filtro-estado');
-    var busqueda = busquedaEl ? busquedaEl.value.toLowerCase() : '';
+    var busqueda = busquedaEl ? normalizarBusqueda(busquedaEl.value) : '';
     var filtroEstado = filtroEstadoEl ? filtroEstadoEl.value : '';
     
     // Filtrar
     var filtradas = lista.filter(function(sol) {
         // Filtro por búsqueda
         if (busqueda) {
-            var matchId = sol.id_solicitud && String(sol.id_solicitud).includes(busqueda);
-            var matchCedula = sol.cedula && sol.cedula.toString().toLowerCase().includes(busqueda);
-            var matchNombre = sol.nombre && sol.nombre.toLowerCase().includes(busqueda);
-            var matchCelular = sol.celular && sol.celular.toString().includes(busqueda);
-            if (!matchId && !matchCedula && !matchNombre && !matchCelular) return false;
+            var matchId = sol.id_solicitud && normalizarBusqueda(sol.id_solicitud).includes(busqueda);
+            var matchCedula = sol.cedula && normalizarBusqueda(sol.cedula).includes(busqueda);
+            var matchNombre = sol.nombre && normalizarBusqueda(sol.nombre).includes(busqueda);
+            var matchCelular = sol.celular && normalizarBusqueda(sol.celular).includes(busqueda);
+            var matchObs = sol.gestion_obs && normalizarBusqueda(sol.gestion_obs).includes(busqueda);
+            var matchTipo = sol.tipo_gestion && normalizarBusqueda(sol.tipo_gestion).includes(busqueda);
+            if (!matchId && !matchCedula && !matchNombre && !matchCelular && !matchObs && !matchTipo) return false;
         }
         
         // Filtro por tipo de seguimiento (sin cambios)

@@ -68,3 +68,10 @@ Resultado: al hacer scroll se ve aproximadamente el **40% de la siguiente tarjet
 
 - `docs/README.md` — estructura del proyecto (lista de docs).
 - `README.md` — tabla de Features Recientes.
+
+---
+
+## Cambios posteriores (Agosto 2026)
+
+- **Segmento del cliente en la esquina superior derecha:** la etiqueta del segmento salió de la fila `.sol-datos` y ahora se muestra como pill (`.sol-segmento-badge`) dentro de `.sol-header-badges`, junto a las badges de estado/destacado.
+- **Color dinámico de la última gestión:** la caja `.sol-obs` (con su línea vertical izquierda) ya no es verde fija; toma el color del semáforo de la tarjeta vía `.sol-card.sol-semaforo-* .sol-obs` (borde gris `#94a3b8` / verde `#6b9e78` / amarillo `#d3a437` / rojo `#cf6657` + fondo tenue del mismo tono).

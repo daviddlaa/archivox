@@ -639,6 +639,11 @@ async function cambiarSemaforoSolicitudMovil(solicitudId, semaforo, eventRef) {
     }
 }
 
+// Normaliza el texto para búsqueda: minúsculas, sin tildes, sin espacios sobrantes
+function normalizarBusqueda(texto) {
+    return String(texto || '').toLowerCase().trim().replace(/\s+/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 function renderizarSolicitudes(lista, sinEntrada) {
     var container = document.getElementById('lista-solicitudes');
     // Guardar posición de scroll antes de re-render
@@ -650,16 +655,18 @@ function renderizarSolicitudes(lista, sinEntrada) {
         return;
     }
 
-    var busqueda = (document.getElementById('busqueda') && document.getElementById('busqueda').value.toLowerCase()) || '';
+    var busqueda = (document.getElementById('busqueda') && normalizarBusqueda(document.getElementById('busqueda').value)) || '';
     var filtroEstado = (document.getElementById('filtro-estado') && document.getElementById('filtro-estado').value) || '';
 
     var filtradas = lista.filter(function(sol) {
         if (busqueda) {
-            var matchId = sol.id_solicitud && String(sol.id_solicitud).includes(busqueda);
-            var matchCedula = sol.cedula && sol.cedula.toString().toLowerCase().includes(busqueda);
-            var matchNombre = sol.nombre && sol.nombre.toLowerCase().includes(busqueda);
-            var matchCelular = sol.celular && sol.celular.toString().includes(busqueda);
-            if (!matchId && !matchCedula && !matchNombre && !matchCelular) return false;
+            var matchId = sol.id_solicitud && normalizarBusqueda(sol.id_solicitud).includes(busqueda);
+            var matchCedula = sol.cedula && normalizarBusqueda(sol.cedula).includes(busqueda);
+            var matchNombre = sol.nombre && normalizarBusqueda(sol.nombre).includes(busqueda);
+            var matchCelular = sol.celular && normalizarBusqueda(sol.celular).includes(busqueda);
+            var matchObs = sol.gestion_obs && normalizarBusqueda(sol.gestion_obs).includes(busqueda);
+            var matchTipo = sol.tipo_gestion && normalizarBusqueda(sol.tipo_gestion).includes(busqueda);
+            if (!matchId && !matchCedula && !matchNombre && !matchCelular && !matchObs && !matchTipo) return false;
         }
         if (filtroEstado) {
             var estadoActual = sol.tipo_gestion || 'Pendiente';
@@ -710,6 +717,7 @@ function renderizarSolicitudes(lista, sinEntrada) {
         }
         html += '<div class="sol-badge estado-' + estado.replace(/\s+/g,'') + '">' + estado + '</div>';
         if (noAplica) html += '<span class="noaplica-mini-badge">👎 No aplica</span>';
+        html += '<span class="sol-segmento-badge" title="Segmento">' + (sol.segmento ? escaparParaHTML(sol.segmento) : '—') + '</span>';
         html += '</div>';
         html += '</div>';
 
@@ -726,7 +734,6 @@ function renderizarSolicitudes(lista, sinEntrada) {
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.cedula || '') + '\', \'cédula\')" title="Copiar cédula">🆔 ' + (sol.cedula || '—') + '</span>';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.celular || '') + '\', \'teléfono\')" title="Copiar teléfono">📱 ' + (sol.celular || '—') + '</span>';
         html += '<span class="sol-chat-icon" onclick="abrirGestionWhatsApp(\'' + escaparParaAtributo(sol.id_solicitud) + '\', \'' + escaparParaAtributo(sol.celular || '') + '\')" title="Enviar WhatsApp con plantilla">💬</span>';
-        html += '<span>🏷️ ' + (sol.segmento || '—') + '</span>';
         html += '</div>';
 
         if (observacion) {
