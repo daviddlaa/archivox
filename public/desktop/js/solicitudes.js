@@ -52,11 +52,11 @@ let campanaSeleccionadaId = null;
 // ============================================================================
 // UTILIDADES
 // ============================================================================
-function getCacheKey(q, estado, segmento, offset) {
-    return `${q}|${estado}|${segmento}|${offset}`;
+function getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor) {
+    return `${q}|${estado}|${segmento}|${offset}|${fechaDesde}|${fechaHasta}|${vendedor}`;
 }
-function getFromCache(q, estado, segmento, offset) {
-    const key = getCacheKey(q, estado, segmento, offset);
+function getFromCache(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor) {
+    const key = getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor);
     const entry = queryCache.get(key);
     if (entry && Date.now() - entry.timestamp < CONFIG.CACHE_TTL) {
         return entry.data;
@@ -64,8 +64,8 @@ function getFromCache(q, estado, segmento, offset) {
     queryCache.delete(key);
     return null;
 }
-function setCache(q, estado, segmento, offset, data) {
-    const key = getCacheKey(q, estado, segmento, offset);
+function setCache(q, estado, segmento, offset, data, fechaDesde, fechaHasta, vendedor) {
+    const key = getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor);
     queryCache.set(key, { data, timestamp: Date.now() });
 }
 function persistirEstado() {
@@ -115,6 +115,11 @@ async function init() {
         configurarEventosCheckboxes();
         actualizarInfoPanel();
         restaurarFiltrosUI();
+
+        // Re-aplicar filtros persistidos para que la lista coincida con la UI restaurada
+        if (estadoActual || segmentoActual || fechaDesdeActual || fechaHastaActual || vendedorActual) {
+            buscarEnServidor(true);
+        }
     } catch (error) {
         console.error('[Solicitudes] Error init:', error);
     }
@@ -155,7 +160,7 @@ async function buscarEnServidor(resetOffset, extraOffset) {
     const tieneFiltros = !!(termino || estadoActual || segmentoActual);
     const nuevoOffset = (extraOffset !== null) ? extraOffset : (resetOffset ? 0 : currentOffset);
 
-    const cached = resetOffset ? getFromCache(termino, estadoActual, segmentoActual, 0) : null;
+    const cached = resetOffset ? getFromCache(termino, estadoActual, segmentoActual, 0, fechaDesdeActual, fechaHastaActual, vendedorActual) : null;
     if (cached) {
         todosDatos = cached;
         currentOffset = cached.length;
@@ -186,7 +191,7 @@ async function buscarEnServidor(resetOffset, extraOffset) {
                 todosDatos = datosRecibidos;
                 currentOffset = datosRecibidos.length;
                 datosRecibidos.total = total;
-                setCache(termino, estadoActual, segmentoActual, 0, datosRecibidos);
+                setCache(termino, estadoActual, segmentoActual, 0, datosRecibidos, fechaDesdeActual, fechaHastaActual, vendedorActual);
             } else {
                 for (let i = 0; i < datosRecibidos.length; i++) todosDatos.push(datosRecibidos[i]);
                 currentOffset += datosRecibidos.length;

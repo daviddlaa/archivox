@@ -108,6 +108,15 @@ Añadidos al final de `public/desktop/css/solicitudes.css`:
 
 ---
 
+## Corrección (Agosto 2026): filtros de fecha/vendedor aplicando en conjunto
+
+Se corrigió que el filtro de fecha (Desde/Hasta) y vendedor no se aplicara junto con Estado/Segmento (mostraba todas las activadas en vez de solo las del mes):
+
+1. **Clave de caché incompleta (causa raíz).** El caché del cliente (TTL 30s) usaba `q|estado|segmento|offset` sin las fechas ni el vendedor. Si primero filtrabas por Estado y luego elegías el mes (dentro de 30s), la caché devolvía el resultado anterior sin mandar las fechas al servidor. Ahora `getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor)` incluye **todas** las dimensiones, y `buscarEnServidor` las pasa a `getFromCache`/`setCache`.
+2. **Filtros persistidos no re-aplicados al recargar.** `init()` ahora detecta `estadoActual/segmentoActual/fechaDesdeActual/fechaHastaActual/vendedorActual` en `sessionStorage` y ejecuta `buscarEnServidor(true)` tras `restaurarFiltrosUI()`, para que la lista coincida con la UI restaurada.
+
+Detalle completo: `docs/informe-fix-filtros-fecha-solicitudes.md`.
+
 ## Verificación
 
 - ✅ `node --check public/desktop/js/solicitudes.js` — sin errores de sintaxis.

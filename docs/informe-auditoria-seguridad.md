@@ -134,8 +134,7 @@ Servicio: **archivox** (`srv-d8j41tmrnols73ca6vr0`) — https://archivox.onrende
 - [x] `NODE_ENV` configurada (cookie segura)
 - [x] Verificado en producción (5/ago): `/api/debug/health` → `{status:ok, database:connected}` (sin tablas ni conteos)
 - [x] Verificado en producción: `/api/excel/solicitudes` y `/api/gestiones-maestro` sin sesión → **401**
-- [ ] ⚠️ Re-desplegar tras fix del regex `.html` (ver nota)
-- [ ] Probar que `/desktop/solicitudes.html` directo redirige a `/login`
+- [x] Fix del regex `.html` desplegado y verificado (5/ago): `/desktop/solicitudes.html`, `/admin/index.html` y `/perfil.html` → **302 a /login**; CSS/JS → 200 normal
 - [ ] Probar que el login no muestra "Regístrate"
 - [ ] Probar login de un usuario normal y acceso a todas las pantallas
 - [ ] Probar el panel SuperAdmin (/admin)

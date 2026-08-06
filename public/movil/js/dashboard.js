@@ -115,8 +115,10 @@ window.addEventListener('DOMContentLoaded', function() {
     ajustarAccesoRapido();
     initDashCarousel();
     initDashWidgetCarousel();
-    cargarCampañasActivas();
-    cargarUltimasSolicitudes();
+    igualarAlturaWidgetSlides();
+    Promise.all([cargarCampañasActivas(), cargarUltimasSolicitudes()])
+        .then(igualarAlturaWidgetSlides)
+        .catch(function() { igualarAlturaWidgetSlides(); });
 });
 
 // Iguala la altura de los slides del carrusel de widgets (campañas / solicitudes)
@@ -241,6 +243,12 @@ function escapeHtmlMovil(texto) {
         .replace(/"/g, '&quot;');
 }
 
+function truncarTexto(texto, max) {
+    var t = String(texto == null ? '' : texto);
+    if (t.length <= max) return t;
+    return t.slice(0, Math.max(0, max - 1)) + '…';
+}
+
 async function cargarCampañasActivas() {
     var container = document.getElementById('campanas-activas-lista');
     if (!container) return;
@@ -267,7 +275,7 @@ async function cargarCampañasActivas() {
             html += '<a class="campana-widget-item" href="/m/gestion-lote?id=' + encodeURIComponent(g.id) + '">' +
                 '<span class="campana-widget-icon">📋</span>' +
                 '<span class="campana-widget-info">' +
-                '<span class="campana-widget-name">' + escapeHtmlMovil(g.nombre || 'Campaña #' + g.id) + '</span>' +
+                '<span class="campana-widget-name">' + escapeHtmlMovil(truncarTexto(g.nombre || 'Campaña #' + g.id, 30)) + '</span>' +
                 '<span class="campana-widget-bar"><span style="width:' + pct + '%"></span></span>' +
                 '<span class="campana-widget-stats">' + comp + ' de ' + total + ' · ' + pct + '%</span>' +
                 '</span>' +
@@ -316,10 +324,10 @@ async function cargarUltimasSolicitudes() {
             html += '<a class="campana-widget-item" href="/m/solicitudes">' +
                 '<span class="campana-widget-icon">📋</span>' +
                 '<span class="campana-widget-info">' +
-                '<span class="campana-widget-name">' + escapeHtmlMovil(s.nombre || 'Sin nombre') + '</span>' +
+                '<span class="campana-widget-name">' + escapeHtmlMovil(truncarTexto(s.nombre || 'Sin nombre', 26)) + '</span>' +
                 '<span class="sol-widget-meta">' +
                 '<span class="sol-widget-badge" style="background:' + color + ';">' + escapeHtmlMovil(estado) + '</span>' +
-                (s.cedula ? ' · ' + escapeHtmlMovil(s.cedula) : '') +
+                (s.cedula ? '<span class="sol-widget-cedula">· ' + escapeHtmlMovil(truncarTexto(s.cedula, 15)) + '</span>' : '') +
                 '</span>' +
                 '</span>' +
                 '<span class="campana-widget-chevron">›</span>' +

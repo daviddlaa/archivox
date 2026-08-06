@@ -191,7 +191,7 @@ exports.listarSolicitudes = async (req, res) => {
         }
         if (fecha_hasta) {
             sql += ' AND s.fecha_solicitud <= $' + paramIndex++;
-            params.push(fecha_hasta);
+            params.push(fecha_hasta + ' 23:59:59');
         }
         if (vendedor && vendedor.trim() !== '') {
             sql += ' AND LOWER(s.vendedor) LIKE LOWER($' + paramIndex++ + ')';
@@ -222,7 +222,7 @@ exports.listarSolicitudes = async (req, res) => {
                 if (segmento) { countSql += ' AND s.segmento = $' + countIdx++; countParams.push(segmento); }
                 if (isLeader) {
                     if (fecha_desde) { countSql += ' AND s.fecha_solicitud >= $' + countIdx++; countParams.push(fecha_desde); }
-                    if (fecha_hasta) { countSql += ' AND s.fecha_solicitud <= $' + countIdx++; countParams.push(fecha_hasta); }
+                    if (fecha_hasta) { countSql += ' AND s.fecha_solicitud <= $' + countIdx++; countParams.push(fecha_hasta + ' 23:59:59'); }
                     if (vendedor && vendedor.trim() !== '') { countSql += ' AND LOWER(s.vendedor) LIKE LOWER($' + countIdx++ + ')'; countParams.push('%' + vendedor.trim() + '%'); }
                 }
                 return pool.query(countSql, countParams);
@@ -1404,7 +1404,7 @@ exports.buscarSolicitudes = async (req, res) => {
             }
             if (fecha_hasta) {
                 sql += ` AND s.fecha_solicitud <= $${paramIdx++}`;
-                params.push(fecha_hasta);
+                params.push(fecha_hasta + ' 23:59:59');
             }
             if (vendedor && vendedor.trim() !== '') {
                 sql += ` AND LOWER(s.vendedor) LIKE LOWER($${paramIdx++})`;
@@ -1448,7 +1448,7 @@ exports.buscarSolicitudes = async (req, res) => {
                 if (segmento) { countSql += ` AND s.segmento = $${cIdx++}`; countParams.push(segmento); }
                 if (isLeader) {
                     if (fecha_desde) { countSql += ` AND s.fecha_solicitud >= $${cIdx++}`; countParams.push(fecha_desde); }
-                    if (fecha_hasta) { countSql += ` AND s.fecha_solicitud <= $${cIdx++}`; countParams.push(fecha_hasta); }
+                    if (fecha_hasta) { countSql += ` AND s.fecha_solicitud <= $${cIdx++}`; countParams.push(fecha_hasta + ' 23:59:59'); }
                     if (vendedor && vendedor.trim() !== '') { countSql += ` AND LOWER(s.vendedor) LIKE LOWER($${cIdx++})`; countParams.push('%' + vendedor.trim() + '%'); }
                 }
                 

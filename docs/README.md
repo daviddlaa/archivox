@@ -206,6 +206,8 @@ ARCHIVOX/
 │   ├── convencion-css-solicitudes.md          # Convención de propiedad de los CSS de Solicitudes (Agosto 2026)
 │   ├── feature-header-filtros-solicitudes-desktop.md # Header unificado + toolbar con auto-aplicar (Agosto 2026)
 │   ├── feature-filtros-movil-solicitudes.md   # Filtros móviles compactos: selects + auto-aplicar (Agosto 2026)
+│   ├── informe-fix-filtros-fecha-solicitudes.md      # Fix filtros de fecha/vendedor + caché cliente (Agosto 2026)
+│   ├── informe-fix-widgets-dashboard-movil.md        # Fix widgets dashboard móvil: truncado de nombres y slide (Agosto 2026)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
 │       ├── informe-auditoria-flujo-multi-equipo.md
@@ -691,7 +693,10 @@ El frontend está construido con **HTML + CSS + Vanilla JavaScript** (sin framew
 
 ### 7.3 Características del Cliente
 
-- **Caché cliente**: Las solicitudes se cachean en `localStorage` con TTL
+- **Caché cliente**: Las solicitudes se cachean en memoria (Map) con TTL 30s y la clave
+  incluye **todas** las dimensiones de filtro (`q|estado|segmento|offset|fechaDesde|fechaHasta|vendedor`),
+  de modo que un cambio de fechas o vendedor nunca devuelve resultados cacheados de otro filtro
+  (ver `docs/informe-fix-filtros-fecha-solicitudes.md`).
 - **AbortController**: Las peticiones fetch usan AbortController para cancelar peticiones obsoletas
 - **SSE (Server-Sent Events)**: Notificaciones en tiempo real
 - **Deep Link Router**: Navegación inteligente desde notificaciones
@@ -953,9 +958,14 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - **Widgets en mini-carrusel (móvil):** debajo del carrusel principal, un segundo carrusel
   (`.dash-widget-carousel`, `.dash-widget-slide`, full-width sin "peek") con 2 slides y dots
   `.dash-widget-dots` sincronizados (`initDashWidgetCarousel`). Ambos slides comparten la misma
-  altura (igualador `igualarAlturaWidgetSlides()`, toma la del slide más alto tras renderizar y
-  en `resize`) y su contenido queda centrado verticalmente (`.dash-widget-slide .campanas-widget`
+  altura (igualador `igualarAlturaWidgetSlides()`, toma la del slide más alto tras renderizar,
+  al cargar con `Promise.all` de ambas cargas y en `resize`; `min-height: 190px` como piso) y su
+  contenido queda centrado verticalmente (`.dash-widget-slide .campanas-widget`
   usa `flex:1; justify-content:center`), replicando el comportamiento del carrusel principal:
+  - **Nombres truncados (Agosto 2026):** nombre de campaña a 30 caracteres, nombre de cliente a
+    26 y cédula a 15 (helper `truncarTexto()` con `…`); la cédula se envuelve en
+    `.sol-widget-cedula` con ellipsis. Evita que el contenido desborde el slide y rompa el snap
+    (ver `docs/informe-fix-widgets-dashboard-movil.md`).
   - **Campañas activas:** las 3 campañas activas más recientes (`.campanas-widget`) con nombre,
     barra de progreso `completadas/total · %` y enlace "Ver todas" → `/m/gestion-lote`. Cada
     tarjeta navega a `/m/gestion-lote?id=ID`. Carga vía `GET /api/gestiones-maestro` en
