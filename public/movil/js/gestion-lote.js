@@ -716,7 +716,6 @@ function renderizarSolicitudes(lista, sinEntrada) {
             html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1, event)" title="Destacar tarjeta">🔥 Destacar</span>';
         }
         html += '<div class="sol-badge estado-' + estado.replace(/\s+/g,'') + '">' + estado + '</div>';
-        if (noAplica) html += '<span class="noaplica-mini-badge">👎 No aplica</span>';
         html += '<span class="sol-segmento-badge" title="Segmento">' + (sol.segmento ? escaparParaHTML(sol.segmento) : '—') + '</span>';
         html += '</div>';
         html += '</div>';
@@ -733,6 +732,7 @@ function renderizarSolicitudes(lista, sinEntrada) {
         html += '<div class="sol-datos">';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.cedula || '') + '\', \'cédula\')" title="Copiar cédula">🆔 ' + (sol.cedula || '—') + '</span>';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.celular || '') + '\', \'teléfono\')" title="Copiar teléfono">📱 ' + (sol.celular || '—') + '</span>';
+        html += '<button type="button" class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')" title="Llamar">📞</button>';
         html += '<span class="sol-chat-icon" onclick="abrirGestionWhatsApp(\'' + escaparParaAtributo(sol.id_solicitud) + '\', \'' + escaparParaAtributo(sol.celular || '') + '\')" title="Enviar WhatsApp con plantilla">💬</span>';
         html += '</div>';
 
@@ -740,28 +740,11 @@ function renderizarSolicitudes(lista, sinEntrada) {
             html += '<div class="sol-obs">' + observacion + '</div>';
         }
 
-html += '<div class="sol-botones">';
-        // Acciones táctiles — diseño touch-optimizado (min 48px altura)
-        html += '<button class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')" title="Llamar">📞</button>';
+html += '<div class="sol-botones sol-botones-fila">';
         html += '<button class="btn-sol btn-sol-primary" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
-        html += '<button class="btn-sol btn-sol-more" onclick="toggleAccionesMovil(this)">Más opciones</button>';
-        html += '<div class="sol-acciones-secundarias">';
-        
-        // Botón ver gestión (si tiene gestión registrada)
-        if (gestionada) {
-            html += '<button class="btn-sol btn-sol-ver" onclick="verGestion(\'' + sol.id_solicitud + '\')">👁️ Ver</button>';
-        }
-        
-        // Botón historial para TODAS las cards
         html += '<button class="btn-sol btn-sol-historial" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button>';
-        
-        // Botón quitar de campaña
         html += '<button class="btn-sol btn-sol-quitar" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar</button>';
-        
-        // Botón flag "ya no aplica para crédito"
-        html += '<button class="btn-sol btn-sol-noaplica' + (noAplica ? ' activo' : '') + '" onclick="confirmarMarcarNoAplicaCreditoMovil(\'' + sol.id_solicitud + '\', ' + (noAplica ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '">' + (noAplica ? '👍' : '👎') + '</button>';
-        html += '</div>';
-        
+        html += '<button class="btn-sol btn-sol-noaplica' + (noAplica ? ' activo' : '') + '" onclick="confirmarMarcarNoAplicaCreditoMovil(\'' + sol.id_solicitud + '\', ' + (noAplica ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '">' + (noAplica ? '👍' : '👎') + ' No aplica</button>';
         html += '</div>';
 
         html += '</div>'; // sol-card
@@ -801,14 +784,6 @@ function toggleCompletadasMovil(button) {
     lista.hidden = abierta;
     button.setAttribute('aria-expanded', String(!abierta));
     button.classList.toggle('open', !abierta);
-}
-
-function toggleAccionesMovil(button) {
-    var card = button && button.closest('.sol-card');
-    var extra = card && card.querySelector('.sol-acciones-secundarias');
-    if (!extra) return;
-    var visible = extra.classList.toggle('visible');
-    button.textContent = visible ? 'Ocultar opciones' : 'Más opciones';
 }
 
 function escaparParaHTML(texto) {

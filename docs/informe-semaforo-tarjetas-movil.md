@@ -75,3 +75,7 @@ Resultado: al hacer scroll se ve aproximadamente el **40% de la siguiente tarjet
 
 - **Segmento del cliente en la esquina superior derecha:** la etiqueta del segmento salió de la fila `.sol-datos` y ahora se muestra como pill (`.sol-segmento-badge`) dentro de `.sol-header-badges`, junto a las badges de estado/destacado.
 - **Color dinámico de la última gestión:** la caja `.sol-obs` (con su línea vertical izquierda) ya no es verde fija; toma el color del semáforo de la tarjeta vía `.sol-card.sol-semaforo-* .sol-obs` (borde gris `#94a3b8` / verde `#6b9e78` / amarillo `#d3a437` / rojo `#cf6657` + fondo tenue del mismo tono).
+- **Botón de llamada junto al teléfono:** el 📞 (`.btn-sol-call`, verde con pulso) se movió del bloque `.sol-botones` a la fila `.sol-datos`, entre el teléfono y el 💬 de WhatsApp; en ese contexto se vuelve un círculo de 40px.
+- **Fila inferior de acciones en una línea:** los botones activos quedan en `.sol-botones-fila` (compacta, `flex-wrap: wrap`, fuente 11px): 📋 Seguimiento · 📋 Historial · ❌ Quitar · 👍/👎 No aplica. Se eliminaron **Ver** (redundante con la caja de última gestión), el botón **Más opciones**, el contenedor oculto `.sol-acciones-secundarias` y la función `toggleAccionesMovil`.
+- **Badge "👎 No aplica" del encabezado:** eliminada de las tarjetas activas; la única representación es el botón 👍/👎 No aplica de la fila inferior (el CSS `noaplica-mini-badge` se conserva porque solicitudes desktop/móvil aún lo usan).
+- **Texto de cédula y teléfono +1px:** `.sol-datos` pasó de 12px a 13px.

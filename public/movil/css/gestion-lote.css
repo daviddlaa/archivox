@@ -649,7 +649,7 @@
 }
 
 .sol-datos {
-    font-size: 12px;
+    font-size: 13px;
     color: #6b7280;
     margin-bottom: 6px;
     display: flex;
@@ -679,6 +679,18 @@
     transform: scale(1.2);
 }
 
+/* Botón de llamada en la fila de datos (al lado del teléfono) */
+.sol-datos .btn-sol-call {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 18px;
+}
+
 .sol-obs {
     font-size: 13px;
     color: #374151;
@@ -701,6 +713,19 @@
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
+}
+
+/* Fila compacta de acciones activas (Seguimiento/Historial/Quitar/No aplica) */
+.sol-botones-fila {
+    gap: 4px;
+}
+.sol-botones-fila .btn-sol {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 36px;
+    padding: 7px 4px;
+    font-size: 11px;
+    white-space: nowrap;
 }
 
 .btn-sol {
@@ -1104,10 +1129,6 @@
 .sol-semaforo-amarillo .sol-semaforo-dot, .semaforo-modal-opcion.amarillo .sol-semaforo-dot { background: #d3a437; }
 .sol-semaforo-rojo .sol-semaforo-dot, .semaforo-modal-opcion.rojo .sol-semaforo-dot { background: #cf6657; }
 .sol-semaforo-edit { margin-left: auto; color: #6366f1; font-size: 10px; }
-
-.btn-sol-more { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
-.sol-acciones-secundarias { display: none; width: 100%; gap: 8px; flex-wrap: wrap; }
-.sol-acciones-secundarias.visible { display: flex; }
 
 .modal-semaforo-movil .semaforo-modal-help { margin: -8px 0 14px; color: #64748b; font-size: 12px; }
 .semaforo-modal-opciones { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
