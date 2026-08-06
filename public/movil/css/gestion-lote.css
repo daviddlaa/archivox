@@ -507,14 +507,14 @@
     padding: 0 12px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     padding-bottom: 90px;
 }
 
 .sol-card {
     background: #fff;
     border-radius: 14px;
-    padding: 14px 14px 12px;
+    padding: 11px 12px 10px;
     box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
     border: 1px solid #d9dde7;
     transition: all 0.2s ease;
@@ -539,7 +539,7 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
     gap: 8px;
 }
 .sol-id {
@@ -619,7 +619,7 @@
     font-size: 14px;
     font-weight: 700;
     color: #111827;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     line-height: 1.35;
 }
 .sol-nombre-copy {
@@ -637,7 +637,7 @@
 .sol-datos {
     font-size: 12px;
     color: #6b7280;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     display: flex;
     gap: 14px;
     flex-wrap: wrap;
@@ -668,10 +668,10 @@
 .sol-obs {
     font-size: 13px;
     color: #374151;
-    padding: 12px 14px;
+    padding: 10px 12px;
     background: #f0fdf4;
     border-radius: 10px;
-    margin-bottom: 14px;
+    margin-bottom: 10px;
     border-left: 3px solid #22c55e;
     line-height: 1.5;
 }
@@ -688,7 +688,7 @@
     align-items: center;
     justify-content: center;
     gap: 4px;
-    padding: 10px 12px;
+    padding: 8px 10px;
     border: none;
     border-radius: 10px;
     font-size: 12px;
@@ -697,7 +697,7 @@
     transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     flex: 1 1 auto;
     min-width: 44px;
-    min-height: 42px;
+    min-height: 38px;
     text-align: center;
     line-height: 1.2;
     user-select: none;
@@ -999,7 +999,7 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
     width: 100%;
     gap: 3px;
-    margin: 0 0 8px;
+    margin: 0 0 6px;
     padding: 3px;
     border: 1px solid #e2e8f0;
     border-radius: 9px;
@@ -1008,7 +1008,7 @@
 
 .sol-semaforo-switch-segment {
     display: flex;
-    min-height: 30px;
+    min-height: 26px;
     align-items: center;
     justify-content: center;
     gap: 3px;
@@ -1027,10 +1027,10 @@
 }
 .sol-semaforo-switch-segment:active { transform: scale(0.95); }
 .sol-semaforo-switch-segment.active { color: #334155; box-shadow: 0 1px 4px rgba(15, 23, 42, .1); }
-.sol-semaforo-switch-segment.sin_clasificar.active { background: #e8ecf1; color: #475569; border-color: #cbd5e1; }
-.sol-semaforo-switch-segment.verde.active { background: #d8e9de; color: #2f6b45; border-color: #a9cfb3; }
-.sol-semaforo-switch-segment.amarillo.active { background: #f6e7c4; color: #7c5a22; border-color: #e5c77f; }
-.sol-semaforo-switch-segment.rojo.active { background: #f2d2cc; color: #a03d35; border-color: #e1aaa0; }
+.sol-semaforo-switch-segment.sin_clasificar.active { background: #cbd5e1; color: #334155; border-color: #94a3b8; }
+.sol-semaforo-switch-segment.verde.active { background: #a9cfb3; color: #1f4a30; border-color: #7fbc8f; }
+.sol-semaforo-switch-segment.amarillo.active { background: #e5c77f; color: #5a420f; border-color: #d3a437; }
+.sol-semaforo-switch-segment.rojo.active { background: #e1aaa0; color: #5e2119; border-color: #cf7f72; }
 
 .sol-semaforo-switch-dot {
     width: 6px;
@@ -1052,7 +1052,7 @@
 @media (min-width: 500px) {
     .sol-semaforo-switch-segment {
         font-size: 9px;
-        min-height: 32px;
+        min-height: 28px;
         gap: 4px;
     }
     .sol-semaforo-switch-dot {

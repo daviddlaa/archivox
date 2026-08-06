@@ -718,7 +718,7 @@ function renderizarSolicitudes(lista, sinEntrada) {
         for (var s = 0; s < SEMAFORO_MOVIL.length; s++) {
             var keyS = SEMAFORO_MOVIL[s];
             var activeCls = semaforo === keyS ? ' active' : '';
-            var labelS = keyS === 'sin_clasificar' ? 'Sin clasificar' : keyS === 'verde' ? 'Verde' : keyS === 'amarillo' ? 'Amarillo' : 'Rojo';
+            var labelS = keyS === 'sin_clasificar' ? 'Sin clasificar' : keyS === 'verde' ? 'Encaminada' : keyS === 'amarillo' ? 'Seguimiento' : 'En espera';
             html += '<button type="button" class="sol-semaforo-switch-segment ' + keyS + activeCls + '" data-val="' + keyS + '" onclick="event.stopPropagation(); cambiarSemaforoSolicitudMovil(\'' + sol.id_solicitud + '\', \'' + keyS + '\', event)" aria-label="' + labelS + '"><span class="sol-semaforo-switch-dot"></span><span class="sol-semaforo-switch-text">' + labelS + '</span></button>';
         }
         html += '</div>';

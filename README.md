@@ -396,3 +396,4 @@ Ver `docs/README.md` para documentacion completa del sistema (1375+ lineas), inc
 | Fix filtros de fecha/vendedor en Solicitudes: caché cliente con todas las dimensiones, filtros persistidos re-aplicados y rango `fecha_hasta` con hora final | Agosto 2026 | `docs/informe-fix-filtros-fecha-solicitudes.md` |
 | Fix widgets del Dashboard Móvil: nombres/cédula truncados (30/26/15 chars) y slides del mini-carrusel con altura igualada para snap limpio | Agosto 2026 | `docs/informe-fix-widgets-dashboard-movil.md` |
 | Buscador inline en Campañas móvil: fila búsqueda + estado sticky debajo del semáforo (reemplaza el bottom sheet) | Agosto 2026 | `docs/feature-buscador-inline-campanas-movil.md` |
+| Selector de semáforo con color real en tarjetas móviles (etiquetas semánticas) + tarjetas ~35px más compactas | Agosto 2026 | `docs/informe-semaforo-tarjetas-movil.md` |

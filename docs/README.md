@@ -209,6 +209,7 @@ ARCHIVOX/
 │   ├── informe-fix-filtros-fecha-solicitudes.md      # Fix filtros de fecha/vendedor + caché cliente (Agosto 2026)
 │   ├── informe-fix-widgets-dashboard-movil.md        # Fix widgets dashboard móvil: truncado de nombres y slide (Agosto 2026)
 │   ├── feature-buscador-inline-campanas-movil.md     # Buscador inline en Campañas móvil: reemplaza bottom sheet (Agosto 2026)
+│   ├── informe-semaforo-tarjetas-movil.md            # Selector de semáforo con color real + tarjetas más compactas (Agosto 2026)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
 │       ├── informe-auditoria-flujo-multi-equipo.md
