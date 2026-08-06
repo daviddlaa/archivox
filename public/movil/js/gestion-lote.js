@@ -741,10 +741,10 @@ function renderizarSolicitudes(lista, sinEntrada) {
         }
 
 html += '<div class="sol-botones sol-botones-fila">';
-        html += '<button class="btn-sol btn-sol-primary" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
-        html += '<button class="btn-sol btn-sol-historial" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button>';
-        html += '<button class="btn-sol btn-sol-quitar" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar</button>';
-        html += '<button class="btn-sol btn-sol-noaplica' + (noAplica ? ' activo' : '') + '" onclick="confirmarMarcarNoAplicaCreditoMovil(\'' + sol.id_solicitud + '\', ' + (noAplica ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '">' + (noAplica ? '👍' : '👎') + ' No aplica</button>';
+        html += '<button class="btn-sol btn-sol-primary" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')"><span class="sol-btn-icon">📋</span><span class="sol-btn-label">Seguimiento</span></button>';
+        html += '<button class="btn-sol btn-sol-historial" onclick="verHistorial(\'' + sol.id_solicitud + '\')"><span class="sol-btn-icon">📋</span><span class="sol-btn-label">Historial</span></button>';
+        html += '<button class="btn-sol btn-sol-quitar" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')"><span class="sol-btn-icon">❌</span><span class="sol-btn-label">Quitar</span></button>';
+        html += '<button class="btn-sol btn-sol-noaplica' + (noAplica ? ' activo' : '') + '" onclick="confirmarMarcarNoAplicaCreditoMovil(\'' + sol.id_solicitud + '\', ' + (noAplica ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '"><span class="sol-btn-icon">' + (noAplica ? '👍' : '👎') + '</span><span class="sol-btn-label">No aplica</span></button>';
         html += '</div>';
 
         html += '</div>'; // sol-card
