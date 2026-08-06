@@ -316,40 +316,7 @@ function actualizarSemaforoMovil(conteo) {
             card.classList.toggle('is-empty', !(conteo[key] || 0));
         }
     });
-    reordenarCarruselSemaforoMovil(conteo);
     actualizarRecomendacionesMovil(conteo);
-}
-
-function prioridadSemaforoMovil(conteo) {
-    if ((conteo.sin_clasificar || 0) > 0) return 'sin_clasificar';
-    if ((conteo.amarillo || 0) > 0) return 'amarillo';
-    if ((conteo.verde || 0) > 0) return 'verde';
-    if ((conteo.rojo || 0) > 0) return 'rojo';
-    return null;
-}
-
-function reordenarCarruselSemaforoMovil(conteo) {
-    var scroll = document.getElementById('semaforo-mobile-scroll');
-    if (!scroll) return;
-    var ordenBase = ['sin_clasificar', 'amarillo', 'verde', 'rojo'];
-    var prioridad = prioridadSemaforoMovil(conteo);
-    var orden = ordenBase.slice();
-    if (prioridad) {
-        orden = [prioridad].concat(ordenBase.filter(function(k) { return k !== prioridad; }));
-    }
-    var cards = {};
-    Array.prototype.slice.call(scroll.querySelectorAll('.semaforo-mobile-card')).forEach(function(card) {
-        cards[card.getAttribute('data-semaforo')] = card;
-        card.classList.toggle('is-priority', card.getAttribute('data-semaforo') === prioridad);
-    });
-    orden.forEach(function(key) {
-        if (cards[key]) scroll.appendChild(cards[key]);
-    });
-    if (prioridad && cards[prioridad] && typeof cards[prioridad].scrollIntoView === 'function') {
-        try {
-            cards[prioridad].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
-        } catch (e) {}
-    }
 }
 
 var BUENAS_PRACTICAS_MOVIL = [
@@ -501,7 +468,8 @@ async function abrirHistorialCampanaMovil() {
                 'Seguimiento': '#dbeafe',
                 'Cobranza': '#fee2e2',
                 'Cita': '#e0e7ff',
-                'Completada': '#bbf7d0'
+                'Completada': '#bbf7d0',
+                'Recordatorio': '#ffedd5'
             };
             var coloresSemaforo = {
                 'sin_clasificar': { bg: '#e5e7eb', texto: '⚪ Sin clasificar' },
@@ -808,6 +776,9 @@ function renderizarSolicitudes(lista, sinEntrada) {
             html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1, event)" title="Destacar tarjeta">🔥 Destacar</span>';
         }
         html += '<div class="sol-badge estado-' + estado.replace(/\s+/g,'') + '">' + estado + '</div>';
+        if (sol.recordatorio_id) {
+            html += '<span class="sol-recordatorio-badge" title="Recordatorio ' + escaparParaHTML(sol.recordatorio_canal || 'Llamada') + '">⏰ ' + formatearHoraRecordatorioMovil(sol.recordatorio_fecha) + '</span>';
+        }
         html += '<span class="sol-segmento-badge" title="Segmento">' + (sol.segmento ? escaparParaHTML(sol.segmento) : '—') + '</span>';
         html += '</div>';
         html += '</div>';
@@ -835,6 +806,9 @@ function renderizarSolicitudes(lista, sinEntrada) {
 html += '<div class="sol-botones sol-botones-fila">';
         html += '<button class="btn-sol btn-sol-primary" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')"><span class="sol-btn-icon">📋</span><span class="sol-btn-label">Seguimiento</span></button>';
         html += '<button class="btn-sol btn-sol-historial" onclick="verHistorial(\'' + sol.id_solicitud + '\')"><span class="sol-btn-icon">📋</span><span class="sol-btn-label">Historial</span></button>';
+        if (sol.recordatorio_id) {
+            html += '<button class="btn-sol btn-sol-recordatorio" onclick="verRecordatorioMovil(\'' + sol.id_solicitud + '\')"><span class="sol-btn-icon">⏰</span><span class="sol-btn-label">Recordatorio</span></button>';
+        }
         html += '<button class="btn-sol btn-sol-quitar" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')"><span class="sol-btn-icon">❌</span><span class="sol-btn-label">Quitar</span></button>';
         html += '<button class="btn-sol btn-sol-noaplica' + (noAplica ? ' activo' : '') + '" onclick="confirmarMarcarNoAplicaCreditoMovil(\'' + sol.id_solicitud + '\', ' + (noAplica ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '"><span class="sol-btn-icon">' + (noAplica ? '👍' : '👎') + '</span><span class="sol-btn-label">No aplica</span></button>';
         html += '</div>';
@@ -966,11 +940,12 @@ function abrirGestion(solicitudId, tipo) {
         console.warn('Error marcando campaña activa:', e);
     }
 
-    var opciones = ['Llamada', 'WhatsApp', 'Seguimiento', 'Cobranza', 'Cita', 'Completada', 'Otro'];
+    var opciones = ['Llamada', 'WhatsApp', 'Seguimiento', 'Cobranza', 'Cita', 'Completada', 'Otro', 'Recordatorio'];
     var opcionesDropdown = '';
     for (var i = 0; i < opciones.length; i++) {
         var selected = opciones[i] === tipo ? 'selected' : '';
-        opcionesDropdown += '<option value="' + opciones[i] + '" ' + selected + '>' + opciones[i] + '</option>';
+        var textoOpcion = opciones[i] === 'Recordatorio' ? '⏰ Recordatorio de llamada/mensaje' : opciones[i];
+        opcionesDropdown += '<option value="' + opciones[i] + '" ' + selected + '>' + textoOpcion + '</option>';
     }
 
     var contenido = '';
@@ -983,9 +958,17 @@ function abrirGestion(solicitudId, tipo) {
     contenido += '</div>';
     contenido += '<div class="modal-form">';
     contenido += '<label>📋 Tipo de Gestión:</label>';
-    contenido += '<select id="tipo-gestion-modal">' + opcionesDropdown + '</select>';
-    contenido += '<label>📝 Observación:</label>';
+    contenido += '<select id="tipo-gestion-modal" onchange="alternarModoRecordatorioMovil(this)">' + opcionesDropdown + '</select>';
+    contenido += '<label id="label-observacion-modal">📝 Observación:</label>';
     contenido += '<textarea id="observacion-modal" rows="4" placeholder="Escriba su observación..."></textarea>';
+    
+    // Campos extra para el modo recordatorio
+    contenido += '<div id="recordatorio-fields" style="display:none;margin-bottom:12px;">';
+    contenido += '<label>📱 Canal:</label>';
+    contenido += '<select id="recordatorio-canal"><option value="Llamada">Llamada</option><option value="Mensaje">Mensaje</option></select>';
+    contenido += '<label>🕐 Fecha y hora:</label>';
+    contenido += '<input type="datetime-local" id="recordatorio-fecha" min="' + valorMinimoDatetimeLocalMovil() + '">';
+    contenido += '</div>';
     
     // Toggle destacar
     var destacadoActual = sol.destacado == 1;
@@ -1006,12 +989,24 @@ function abrirGestion(solicitudId, tipo) {
 async function guardarGestionIndividual(solicitudId) {
     var tipo = document.getElementById('tipo-gestion-modal').value;
     var observacion = document.getElementById('observacion-modal').value.trim();
-    if (!observacion) { alert('Por favor escriba una observación'); return; }
+    if (tipo !== 'Recordatorio' && !observacion) { alert('Por favor escriba una observación'); return; }
 
     var btn = document.querySelector('.btn-guardar');
     if (btn) { btn.textContent = '💾 Guardando...'; btn.disabled = true; }
 
     try {
+        if (tipo === 'Recordatorio') {
+            var fechaRec = document.getElementById('recordatorio-fecha').value;
+            if (!fechaRec) {
+                alert('Seleccione la fecha y hora del recordatorio');
+                return;
+            }
+            await guardarRecordatorioModalMovil(solicitudId, observacion, fechaRec);
+            mostrarConfirmacionGestionMovil('⏰ Recordatorio programado');
+            cerrarModal();
+            cargarDatosGestionMovil();
+            return;
+        }
         var bodyLoteMovil = {
             solicitud_id: solicitudId,
             tipo_gestion: tipo,
@@ -1121,6 +1116,115 @@ function verGestion(solicitudId) {
     crearModal(contenido);
 }
 
+// ============================================================================
+// RECORDATORIOS DE LLAMADAS/MENSAJES (móvil)
+// ============================================================================
+
+// Valor "ahora" en formato datetime-local (hora local del navegador)
+function valorMinimoDatetimeLocalMovil() {
+    var d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+}
+
+// Mostrar/ocultar campos de recordatorio según el tipo seleccionado en el modal
+function alternarModoRecordatorioMovil(select) {
+    var block = document.getElementById('recordatorio-fields');
+    if (!block) return;
+    var esRecordatorio = select && select.value === 'Recordatorio';
+    block.style.display = esRecordatorio ? 'block' : 'none';
+    var labelObs = document.getElementById('label-observacion-modal');
+    if (labelObs) {
+        labelObs.textContent = esRecordatorio ? '📝 Nota (opcional):' : '📝 Observación:';
+    }
+}
+
+// Guardar un recordatorio a través del endpoint de la campaña
+async function guardarRecordatorioModalMovil(solicitudId, nota, fecha) {
+    var canal = document.getElementById('recordatorio-canal').value;
+    var response = await fetch('/api/gestiones-maestro/' + gestionId + '/recordatorios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solicitud_id: solicitudId, canal: canal, fecha_recordatorio: fecha, nota: nota || '' })
+    });
+    var resultado = await response.json().catch(function() { return {}; });
+    if (!response.ok || resultado.error) {
+        alert('Error: ' + (resultado.error || 'Error desconocido'));
+        throw new Error(resultado.error || 'Error al programar recordatorio');
+    }
+    return resultado;
+}
+
+// Formato compacto para el badge de la tarjeta: "Hoy 15:30" o "06/08 15:30"
+function formatearHoraRecordatorioMovil(fecha) {
+    if (!fecha) return '';
+    var d = new Date(String(fecha).replace(' ', 'T'));
+    if (isNaN(d.getTime())) return '';
+    var ahora = new Date();
+    var esHoy = d.getFullYear() === ahora.getFullYear() && d.getMonth() === ahora.getMonth() && d.getDate() === ahora.getDate();
+    var hora = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    if (esHoy) return 'Hoy ' + hora;
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) + ' ' + hora;
+}
+
+// Ver el recordatorio pendiente de una solicitud
+function verRecordatorioMovil(solicitudId) {
+    var sol = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
+    if (!sol || !sol.recordatorio_id) {
+        alert('No hay recordatorio pendiente');
+        return;
+    }
+    var contenido = '';
+    contenido += '<div class="modal-ver">';
+    contenido += '<h2>⏰ Recordatorio - Solicitud #' + escaparParaHTML(solicitudId) + '</h2>';
+    contenido += '<div class="modal-info">';
+    contenido += '<p><strong>Cliente:</strong> ' + escaparParaHTML(sol.nombre || '—') + '</p>';
+    contenido += '<p><strong>Canal:</strong> ' + escaparParaHTML(sol.recordatorio_canal || 'Llamada') + '</p>';
+    contenido += '<p><strong>Fecha:</strong> ' + escaparParaHTML(formatearHoraRecordatorioMovil(sol.recordatorio_fecha)) + '</p>';
+    contenido += '<p><strong>Nota:</strong> ' + escaparParaHTML(sol.recordatorio_nota || 'Sin nota') + '</p>';
+    contenido += '</div>';
+    contenido += '<div class="modal-botones">';
+    contenido += '<button class="btn-guardar" onclick="marcarRecordatorioHechoMovil(\'' + sol.id_solicitud + '\')">✅ Marcar hecho</button>';
+    contenido += '<button class="btn-cancelar" onclick="cancelarRecordatorioMovil(\'' + sol.id_solicitud + '\')">🗑 Cancelar</button>';
+    contenido += '<button class="btn-cerrar" onclick="cerrarModal()">Cerrar</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+    crearModal(contenido);
+}
+
+async function marcarRecordatorioHechoMovil(solicitudId) {
+    var sol = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
+    if (!sol || !sol.recordatorio_id) return;
+    await cambiarEstadoRecordatorioMovil(sol.recordatorio_id, 'hecho');
+}
+
+async function cancelarRecordatorioMovil(solicitudId) {
+    var sol = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
+    if (!sol || !sol.recordatorio_id) return;
+    if (!confirm('¿Cancelar este recordatorio?')) return;
+    await cambiarEstadoRecordatorioMovil(sol.recordatorio_id, 'cancelado');
+}
+
+async function cambiarEstadoRecordatorioMovil(rid, estado) {
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + gestionId + '/recordatorios/' + rid + '/estado', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estado: estado })
+        });
+        var resultado = await response.json().catch(function() { return {}; });
+        if (!response.ok || resultado.error) {
+            alert(resultado.error || 'No se pudo actualizar el recordatorio');
+            return;
+        }
+        cerrarModal();
+        cargarDatosGestionMovil();
+    } catch (error) {
+        console.error('Error actualizando recordatorio:', error);
+        alert('Error al actualizar el recordatorio');
+    }
+}
+
 // Formato de fecha estilo WhatsApp: Hoy/Ayer/El lunes/Hace X semanas + hora (móvil)
 function formatearFechaHistorialMovil(fecha) {
     if (!fecha) return '—';
@@ -1172,7 +1276,8 @@ async function verHistorial(solicitudId) {
                 'Seguimiento': '#dbeafe',
                 'Cobranza': '#fee2e2',
                 'Cita': '#e0e7ff',
-                'Completada': '#bbf7d0'
+                'Completada': '#bbf7d0',
+                'Recordatorio': '#ffedd5'
             };
             
             for (var i = 0; i < gestiones.length; i++) {

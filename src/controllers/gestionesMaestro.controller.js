@@ -272,7 +272,12 @@ async function getGestionMaestroById(req, res) {
                    COALESCE(g.observacion, 'Por gestionar') as gestion_obs,
                    g.id as gestion_id,
                    g.fecha_gestion,
-                   COALESCE(gms.semaforo, 'sin_clasificar') as semaforo
+                   COALESCE(gms.semaforo, 'sin_clasificar') as semaforo,
+                   rec.id as recordatorio_id,
+                   rec.canal as recordatorio_canal,
+                   rec.fecha_recordatorio as recordatorio_fecha,
+                   rec.nota as recordatorio_nota,
+                   rec.estado as recordatorio_estado
             FROM solicitudes s
             LEFT JOIN gestiones g ON g.id = (
                 SELECT MAX(g2.id) FROM gestiones g2 
@@ -281,9 +286,15 @@ async function getGestionMaestroById(req, res) {
             )
             LEFT JOIN gestiones_maestro_solicitudes gms
                 ON gms.gestion_maestro_id = ? AND gms.id_solicitud = s.id_solicitud
+            LEFT JOIN recordatorios rec ON rec.id = (
+                SELECT MAX(r2.id) FROM recordatorios r2
+                WHERE r2.solicitud_id = s.id_solicitud
+                AND r2.gestion_maestro_id = ?
+                AND r2.estado = 'pendiente'
+            )
             WHERE s.id_solicitud IN (${placeholders})
             ORDER BY CASE WHEN g.fecha_gestion IS NULL THEN 0 ELSE 1 END DESC, g.fecha_gestion DESC
-        `, [id, id].concat(solicitudesIds));
+        `, [id, id, id].concat(solicitudesIds));
         
         const Solicitudes = getRows(resultSol);
         
@@ -711,6 +722,120 @@ async function createGestion(req, res) {
     } catch (error) {
         console.error('Error en createGestion:', error);
         res.status(500).json({ error: 'Error al guardar gestión' });
+    }
+}
+
+// POST /api/gestiones-maestro/:id/recordatorios
+// Programar un recordatorio de llamada/mensaje dentro de una campaña accesible.
+async function crearRecordatorio(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+
+        const { id } = req.params;
+        const { solicitud_id, canal, fecha_recordatorio, nota } = req.body;
+
+        if (!solicitud_id) {
+            return res.status(400).json({ error: 'solicitud_id es requerido' });
+        }
+        if (['Llamada', 'Mensaje'].indexOf(canal) === -1) {
+            return res.status(400).json({ error: 'canal debe ser Llamada o Mensaje' });
+        }
+        if (!fecha_recordatorio) {
+            return res.status(400).json({ error: 'fecha_recordatorio es requerida' });
+        }
+        const fechaNormalizada = String(fecha_recordatorio).replace('T', ' ').slice(0, 19);
+        if (isNaN(new Date(fechaNormalizada.replace(' ', 'T')).getTime())) {
+            return res.status(400).json({ error: 'fecha_recordatorio no es válida' });
+        }
+
+        // Acceso a la campaña
+        const access = buildGestionAccessWhere(req, id);
+        const resultGM = await pool.query(
+            'SELECT gm.id, gm.solicitudes_ids FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access),
+            access.params
+        );
+        const gestion = getFirstRow(resultGM);
+        if (!gestion) {
+            return res.status(404).json({ error: 'Campaña no encontrada' });
+        }
+
+        // La solicitud debe pertenecer a la campaña
+        let solicitudIds = [];
+        try { solicitudIds = JSON.parse(gestion.solicitudes_ids || '[]'); } catch (e) { solicitudIds = []; }
+        if (solicitudIds.map(String).indexOf(String(solicitud_id)) === -1) {
+            return res.status(404).json({ error: 'La solicitud no pertenece a esta campaña' });
+        }
+
+        // Insertar el recordatorio
+        const result = await pool.query(`
+            INSERT INTO recordatorios (solicitud_id, gestion_maestro_id, usuario_id, canal, fecha_recordatorio, nota)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `, [solicitud_id, id, usuario_id, canal, fechaNormalizada, nota || '']);
+        const recordatorio_id = result.lastInsertRowid;
+
+        // Registrar también una gestión tipo 'Recordatorio' para el historial
+        const resultGestion = await pool.query(`
+            INSERT INTO gestiones (solicitud_id, usuario_id, tipo_gestion, observacion, gestion_maestro_id)
+            VALUES (?, ?, ?, ?, ?)
+        `, [solicitud_id, usuario_id, 'Recordatorio', nota || '', id]);
+
+        await pool.query(`
+            UPDATE gestiones_maestro
+            SET gestionadas = gestionadas + 1,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        `, [id]);
+
+        res.json({
+            id: recordatorio_id,
+            gestion_id: resultGestion.lastInsertRowid,
+            mensaje: 'Recordatorio programado correctamente'
+        });
+    } catch (error) {
+        console.error('Error en crearRecordatorio:', error);
+        res.status(500).json({ error: 'Error al programar recordatorio' });
+    }
+}
+
+// PUT /api/gestiones-maestro/:id/recordatorios/:rid/estado
+// Marcar un recordatorio como hecho o cancelado.
+async function actualizarEstadoRecordatorio(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+
+        const { id, rid } = req.params;
+        const { estado } = req.body;
+
+        if (['hecho', 'cancelado'].indexOf(estado) === -1) {
+            return res.status(400).json({ error: 'estado debe ser hecho o cancelado' });
+        }
+
+        // Acceso a la campaña
+        const access = buildGestionAccessWhere(req, id);
+        const resultGM = await pool.query(
+            'SELECT gm.id FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access),
+            access.params
+        );
+        if (!getFirstRow(resultGM)) {
+            return res.status(404).json({ error: 'Campaña no encontrada' });
+        }
+
+        const result = await pool.query(`
+            UPDATE recordatorios
+            SET estado = ?, completed_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND gestion_maestro_id = ?
+        `, [estado, rid, id]);
+
+        res.json({ mensaje: 'Recordatorio actualizado correctamente' });
+    } catch (error) {
+        console.error('Error en actualizarEstadoRecordatorio:', error);
+        res.status(500).json({ error: 'Error al actualizar recordatorio' });
     }
 }
 
@@ -1320,6 +1445,9 @@ module.exports = {
     historialSolicitudCampana: getHistorialSolicitudCampana,
     historialGeneralCampana: getHistorialGeneralCampana,
     destacarSolicitudCampana: destacarSolicitudCampana,
+    // Recordatorios de llamadas/mensajes
+    crearRecordatorio: crearRecordatorio,
+    actualizarEstadoRecordatorio: actualizarEstadoRecordatorio,
     // Flag "ya no aplica para crédito"
     marcarNoAplicaCreditoSolicitud: marcarNoAplicaCreditoSolicitud,
     quitarSolicitudDeCampanaDb: quitarSolicitudDeCampanaDb,

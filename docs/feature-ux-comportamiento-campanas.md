@@ -222,9 +222,10 @@ con `style.display = 'flex'` para no romper la alineación horizontal.
 El semáforo móvil es un **carrusel horizontal** (`#semaforo-mobile-scroll`) de cuatro
 tarjetas `.semaforo-mobile-card` (una por estado, `data-semaforo`). Cada tarjeta muestra
 su conteo (`#count-mobile-{amarillo,sin_clasificar,verde,rojo}`) y actúa como filtro
-(`setFiltroSemaforoMovil`). El carrusel se **reordena automáticamente por prioridad**
-(`reordenarCarruselSemaforoMovil`): amarillo → sin clasificar → verde → rojo, marca la
-tarjeta prioritaria (`.is-priority`) y hace scroll hasta ella.
+(`setFiltroSemaforoMovil`). El carrusel conserva el **orden fijo** del HTML
+(Sin clasificar · Seguimiento · Encaminadas · En espera); antes de Agosto 2026 se reordenaba
+automáticamente por prioridad (`reordenarCarruselSemaforoMovil`), comportamiento eliminado en
+`docs/fix-semaforo-movil-orden-fijo.md`.
 
 ### Selector de semáforo inline por tarjeta
 

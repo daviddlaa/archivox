@@ -882,6 +882,32 @@
 .estado-Cobranza { background: #fee2e2; color: #991b1b; }
 .estado-Cita { background: #e0e7ff; color: #3730a3; }
 .estado-Completada { background: #bbf7d0; color: #166534; }
+.estado-Recordatorio { background: #ffedd5; color: #9a3412; }
+
+/* Recordatorios de llamadas/mensajes */
+.sol-recordatorio-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    background: #ffedd5;
+    color: #9a3412;
+    border: 1px solid #fed7aa;
+    white-space: nowrap;
+}
+
+.btn-sol-recordatorio {
+    background: #fffbeb;
+    color: #92400e;
+    border: 1.5px solid #fde68a;
+}
+.btn-sol-recordatorio:active {
+    background: #fef3c7;
+    transform: scale(0.94);
+}
 
 /* ===== BOTONES ACCIÓN GLOBALES ===== */
 .btn-agregar-solicitudes {
@@ -1595,10 +1621,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 100%;
-}
-
-.semaforo-mobile-carousel .semaforo-mobile-card.is-priority {
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
 }
 
 .semaforo-mobile-carousel .semaforo-mobile-card.active {

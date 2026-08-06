@@ -207,6 +207,33 @@ db.exec(`
     )
 `);
 
+// Recordatorios de llamadas/mensajes programados desde el modal de gestión
+db.exec(`
+    CREATE TABLE IF NOT EXISTS recordatorios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        solicitud_id INTEGER NOT NULL,
+        gestion_maestro_id INTEGER,
+        usuario_id INTEGER NOT NULL,
+        canal TEXT NOT NULL DEFAULT 'Llamada',
+        fecha_recordatorio DATETIME NOT NULL,
+        nota TEXT,
+        estado TEXT NOT NULL DEFAULT 'pendiente',
+        notificado INTEGER NOT NULL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        completed_at DATETIME
+    )
+`);
+
+db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_recordatorios_gestion_estado
+    ON recordatorios(gestion_maestro_id, estado)
+`);
+
+db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_recordatorios_fecha_estado
+    ON recordatorios(fecha_recordatorio, estado, notificado)
+`);
+
 // Tabla de referencias de solicitudes (Completar Info)
 db.exec(`
     CREATE TABLE IF NOT EXISTS solicitudes_referencias (

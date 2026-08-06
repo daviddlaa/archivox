@@ -387,3 +387,13 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
+// Recordatorios de llamadas/mensajes: revisar vencidos cada 60s.
+// El scheduler reintenta el primer pase cada 5s hasta que la tabla exista
+// (Postgres crea el esquema en background, ver recordatorioScheduler.js).
+try {
+    const { iniciarRecordatorioScheduler } = require('./src/services/recordatorioScheduler');
+    iniciarRecordatorioScheduler();
+} catch (e) {
+    console.error('[RecordatorioScheduler] No se pudo iniciar:', e.message);
+}

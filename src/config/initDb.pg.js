@@ -164,6 +164,33 @@ const initTables = async () => {
             )
         `);
         
+        // Recordatorios de llamadas/mensajes programados desde el modal de gestión
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS recordatorios (
+                id SERIAL PRIMARY KEY,
+                solicitud_id INTEGER NOT NULL,
+                gestion_maestro_id INTEGER REFERENCES gestiones_maestro(id) ON DELETE CASCADE,
+                usuario_id INTEGER NOT NULL,
+                canal TEXT NOT NULL DEFAULT 'Llamada',
+                fecha_recordatorio TIMESTAMP NOT NULL,
+                nota TEXT,
+                estado TEXT NOT NULL DEFAULT 'pendiente',
+                notificado INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                completed_at TIMESTAMP
+            )
+        `);
+
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_recordatorios_gestion_estado
+            ON recordatorios(gestion_maestro_id, estado)
+        `);
+
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_recordatorios_fecha_estado
+            ON recordatorios(fecha_recordatorio, estado, notificado)
+        `);
+        
         // Tabla de referencias de solicitudes (Completar Info)
         await client.query(`
             CREATE TABLE IF NOT EXISTS solicitudes_referencias (

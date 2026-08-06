@@ -12,7 +12,7 @@ Rediseño completo del panel de estado visual (semáforo) utilizado en las campa
 
 **V6 (Actual):** Tarjetas compactas por estado (~30% más pequeñas que V5), colores mejor diferenciados y **paletas CSS totalmente desacopladas** del componente de solicitudes (modificable sin efectos colaterales).
 
-**V6.1:** El **móvil** incorpora el mismo selector segmentado de semáforo dentro de cada tarjeta de solicitud (switch inline con dot + texto), reemplazando el modal de selección anterior. La lista móvil se reordena por prioridad (amarillo → sin clasificar → verde → rojo) y el carrusel del semáforo reordena sus tarjetas automáticamente con el mismo criterio.
+**V6.1:** El **móvil** incorpora el mismo selector segmentado de semáforo dentro de cada tarjeta de solicitud (switch inline con dot + texto), reemplazando el modal de selección anterior. La lista móvil se reordena por prioridad (amarillo → sin clasificar → verde → rojo); el carrusel del semáforo conserva el **orden fijo** Sin clasificar · Seguimiento · Encaminadas · En espera (el reordenamiento automático por prioridad se eliminó en `docs/fix-semaforo-movil-orden-fijo.md`).
 
 ---
 

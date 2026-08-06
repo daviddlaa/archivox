@@ -210,6 +210,9 @@ ARCHIVOX/
 │   ├── informe-fix-widgets-dashboard-movil.md        # Fix widgets dashboard móvil: truncado de nombres y slide (Agosto 2026)
 │   ├── feature-buscador-inline-campanas-movil.md     # Buscador inline en Campañas móvil: reemplaza bottom sheet (Agosto 2026)
 │   ├── informe-semaforo-tarjetas-movil.md            # Selector de semáforo con color real + tarjetas más compactas (Agosto 2026)
+│   ├── feature-historial-campana.md                  # Historial general de campaña: botón "🕘 Últimas gestiones" (Agosto 2026)
+│   ├── feature-recordatorios-campanas.md             # Recordatorios ⏰ de llamada/mensaje en campañas + notificación in-app (Agosto 2026)
+│   ├── fix-semaforo-movil-orden-fijo.md              # Semáforo móvil en orden fijo: Sin clasificar · Seguimiento · Encaminadas · En espera (Agosto 2026)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
 │       ├── informe-auditoria-flujo-multi-equipo.md
@@ -262,14 +265,15 @@ ARCHIVOX/
 │   │   ├── admin.routes.js         # /api/admin/*
 │   │   ├── equipos.routes.js       # /api/equipos/*
 │   │   ├── relaciones.routes.js    # /api/relaciones/*
-│   │   ├── relacionesGestion.routes.js  # /api/relaciones/gestiones/*│   │   ├── gestionesMaestro.routes.js   # /api/gestiones-maestro/*
+│   │   ├── relacionesGestion.routes.js  # /api/relaciones/gestiones/*│   │   ├── gestionesMaestro.routes.js   # /api/gestiones-maestro/* (incl. recordatorios)
 │   │   ├── debug.routes.js              # /api/debug/* (diagnóstico)
 │   │   └── plantillas.routes.js         # /api/plantillas/*
 │   │
 │   └── services/                   # Servicios (lógica reutilizable)
 │       ├── excel.service.js        # Procesamiento de archivos Excel (solicitudes)
 │       ├── relaciones.service.js   # Procesamiento de archivos Excel (relaciones)
-│       └── notificationBus.js      # SSE Bus - Notificaciones en tiempo real
+│       ├── notificationBus.js      # SSE Bus - Notificaciones en tiempo real
+│       └── recordatorioScheduler.js # Scheduler de recordatorios vencidos (cada 60s)
 │
 ├── public/                         # CÓDIGO FRONTEND (estático)
 │   ├── index.html                  # Entry point (redirección a login)
@@ -550,6 +554,21 @@ El wrapper en `db.js` se encarga automáticamente de:
 | creada_en | TIMESTAMP/TEXT | Fecha de creación |
 | actualizada_en | TIMESTAMP/TEXT | Fecha de actualización |
 
+#### `recordatorios` (Agosto 2026)
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | SERIAL/INTEGER PK | ID único |
+| solicitud_id | INTEGER NOT NULL | Solicitud asociada |
+| gestion_maestro_id | INTEGER NOT NULL | Campaña asociada |
+| usuario_id | INTEGER NOT NULL | Usuario que lo programó (destinatario de la notificación) |
+| canal | TEXT NOT NULL | `Llamada` o `Mensaje` |
+| fecha_recordatorio | TIMESTAMP/TEXT | Fecha/hora del recordatorio |
+| nota | TEXT | Nota opcional |
+| estado | TEXT DEFAULT 'pendiente' | `pendiente`, `hecho` o `cancelado` |
+| notificado | INTEGER DEFAULT 0 | 0/1 — ya se generó la notificación |
+| created_at | TIMESTAMP/TEXT | Fecha de creación |
+| completed_at | TIMESTAMP/TEXT | Fecha en que se marcó hecho/cancelado |
+
 #### Otras tablas
 - `ventas_vendedores` - Ventas por vendedor por mes
 - `config_bonos` - Configuración de bonos por mes
@@ -563,6 +582,7 @@ El wrapper en `db.js` se encarga automáticamente de:
 - `asignaciones_solicitudes` - Asignaciones de solicitudes a equipos/agentes (v3.0)
 - `campañas_equipo` - Asociación campañas ↔ equipos (v3.0)
 - `plantillas` - Plantillas de mensajes por usuario (máx. 5, con variable `{nombre}`)
+- `recordatorios` - Recordatorios de llamada/mensaje en campañas (Agosto 2026)
 
 ### 5.3 Índices Compuestos
 
@@ -582,6 +602,8 @@ El sistema cuenta con índices compuestos optimizados para las consultas más fr
 | `idx_historial_usuario_fecha` | historial_actualizaciones | (usuario_id, fecha_actualizacion DESC) | Historial por usuario |
 | `idx_audit_log_accion_fecha` | audit_log | (accion, created_at DESC) | Consulta de auditoría |
 | `idx_plantillas_usuario` | plantillas | (usuario_id) | Plantillas por usuario |
+| `idx_recordatorios_gestion_estado` | recordatorios | (gestion_maestro_id, estado) | Badges ⏰ por campaña |
+| `idx_recordatorios_fecha_estado` | recordatorios | (fecha_recordatorio, estado) | Barrido del scheduler |
 
 ---
 
@@ -1123,9 +1145,10 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 - Gestionar solicitudes en lote dentro de una campaña
 - **Indicador de Estado (Semáforo) v6:** Panel de tarjetas premium compactas por estado (desktop) con tonos suaves diferenciados (gris neutro, sage, ámbar dorado, coral), número protagonista centrado y etiqueta debajo; sin encabezado ni decoraciones. Paletas CSS totalmente desacopladas: `--sem-panel-*` para el panel y `--sem-sol-*` para las tarjetas de solicitud. Ver `docs/feature-rediseño-semaforo-campañas.md` para documentación completa (Agosto 2026).
 - **Rediseño UX de comportamiento v2:** El panel de campaña muestra avance visible, solicitudes restantes, siguiente mejor acción, última actividad relativa y feedback de gestión. La recomendación prioriza seguimiento amarillo, clasificación pendiente y respeta la espera del estado rojo usando únicamente datos reales de la campaña. Ver `docs/feature-ux-comportamiento-campanas.md`.
-- **Experiencia móvil de Campañas:** La versión móvil incorpora el mismo modelo de progreso y prioridad en un layout táctil propio, con selector de campaña por bottom sheet, filtros en una sola línea, carrusel de semáforo (1×4) que se reordena por prioridad, switch segmentado de semáforo inline en cada tarjeta, acciones secundarias agrupadas y tarjetas compactadas (gradientes alineados con desktop, sin ID ni botón WhatsApp redundante, destacado con borde dorado sutil).
+- **Experiencia móvil de Campañas:** La versión móvil incorpora el mismo modelo de progreso y prioridad en un layout táctil propio, con selector de campaña por bottom sheet, filtros en una sola línea, carrusel de semáforo (1×4) en **orden fijo** (Sin clasificar · Seguimiento · Encaminadas · En espera), switch segmentado de semáforo inline en cada tarjeta, acciones secundarias agrupadas y tarjetas compactadas (gradientes alineados con desktop, sin ID ni botón WhatsApp redundante, destacado con borde dorado sutil). El orden fijo se fijó en `docs/fix-semaforo-movil-orden-fijo.md` (antes el carrusel se reordenaba por prioridad en runtime).
+- **Historial general de campaña "🕘 Últimas gestiones":** botón único en móvil (header) y escritorio (píldora en el rail) que abre el historial completo de gestiones de la campaña vía `GET /api/gestiones-maestro/:id/historial`; cada gestión navega a su tarjeta. En escritorio reemplazó el widget "Prioridad / Seguimiento (N) / Ver" (`actualizarSiguienteAccion` eliminado). Ver `docs/feature-historial-campana.md`.
 - **Jerarquía de tarjetas desktop:** El selector semafórico segmentado, el segmento junto al nombre y la última gestión clicable hacen más visible el contexto operativo; el historial se consulta con control de acceso contextual por campaña.
-- **Orden de lista por prioridad (D3/M3):** La lista se ordena amarillo → sin clasificar → verde → rojo, con destacadas primero, en desktop y móvil; el carrusel móvil reordena sus tarjetas con el mismo criterio.
+- **Orden de lista por prioridad (D3/M3):** La lista se ordena amarillo → sin clasificar → verde → rojo, con destacadas primero, en desktop y móvil; el carrusel móvil conserva su orden fijo (Sin clasificar → Seguimiento → Encaminadas → En espera).
 - **Atajos de teclado desktop (D3):** `/` busca, `j`/`k` navegan tarjetas, `Enter` abre la última gestión, `1-4` filtran semáforo, `0` limpia, `Esc` cierra; foco visual `.card-focused`.
 - **Rail/workspace (D2):** Panel lateral de campañas colapsable con transición de `grid-template-columns` (0.28s) y fade-in de tarjetas (`railFadeIn`); el estado persiste en `localStorage`.
 - **WhatsApp Directo con plantillas:** el envío de mensajes (botón "💬 Directo" en desktop e icono 💬 en las tarjetas móviles) usa las **plantillas del usuario** (ver §11.12); todos los modales de Campañas (WhatsApp, Gestionar, Ver gestión, Historial) escapan sus datos para evitar inyección HTML.
@@ -1315,6 +1338,7 @@ La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tabla
 | PUT | `/api/gestiones-maestro/:id/agregar-solicitudes` | ✅ | Agregar solicitudes |
 | PUT | `/api/gestiones-maestro/:id/quitar-solicitud` | ✅ | Quitar solicitud |
 | GET | `/api/gestiones-maestro/:id/solicitudes/:solicitudId/historial` | ✅ | Historial contextual de solicitud |
+| GET | `/api/gestiones-maestro/:id/historial` | ✅ | Historial general de la campaña (todas las gestiones) |
 | PUT | `/api/gestiones-maestro/:id/solicitudes/:solicitudId/destacar` | ✅ | Destacar solicitud con acceso a campaña |
 | PUT | `/api/gestiones-maestro/:id/asignar-agente` | ✅ | Asignar agente |
 | PUT | `/api/gestiones-maestro/:id/quitar-asignacion` | ✅ | Quitar asignación |

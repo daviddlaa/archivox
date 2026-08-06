@@ -167,8 +167,9 @@ ARCHIVOX/
 | `permisos_equipo` | Permisos por equipo (v3.0) |
 | `asignaciones_solicitudes` | Asignaciones a equipos/agentes |
 | `campanas_equipo` | Campanas ↔ equipos |
+| `recordatorios` | Recordatorios ⏰ de llamada/mensaje en campanas (Agosto 2026) |
 
-### Indices Compuestos (11)
+### Indices Compuestos (13)
 
 Optimizados para las consultas mas frecuentes: listado por usuario, dashboard por estado/segmento, busqueda por cedula, gestiones con LATERAL JOIN, notificaciones, historial y auditoria.
 
@@ -397,3 +398,6 @@ Ver `docs/README.md` para documentacion completa del sistema (1375+ lineas), inc
 | Fix widgets del Dashboard Móvil: nombres/cédula truncados (30/26/15 chars) y slides del mini-carrusel con altura igualada para snap limpio | Agosto 2026 | `docs/informe-fix-widgets-dashboard-movil.md` |
 | Buscador inline en Campañas móvil: fila búsqueda + estado sticky debajo del semáforo (reemplaza el bottom sheet) | Agosto 2026 | `docs/feature-buscador-inline-campanas-movil.md` |
 | Selector de semáforo con color real en tarjetas móviles (etiquetas semánticas) + tarjetas ~35px más compactas | Agosto 2026 | `docs/informe-semaforo-tarjetas-movil.md` |
+| Historial general de campaña: botón "🕘 Últimas gestiones" (móvil + escritorio) vía `GET /api/gestiones-maestro/:id/historial`; reemplaza el widget de prioridad en desktop | Agosto 2026 | `docs/feature-historial-campana.md` |
+| Fix semáforo móvil en orden fijo: Sin clasificar · Seguimiento · Encaminadas · En espera (ya no se reordena por prioridad) | Agosto 2026 | `docs/fix-semaforo-movil-orden-fijo.md` |
+| Recordatorios ⏰ de llamada/mensaje en campañas: badge por solicitud (móvil + escritorio), endpoints POST/PUT y scheduler que notifica in-app por SSE al vencer | Agosto 2026 | `docs/feature-recordatorios-campanas.md` |

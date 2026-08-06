@@ -98,7 +98,8 @@ function renderizarLista(datos) {
         'WhatsApp': '#dcfce7',
         'Reclamo': '#fef3c7',
         'Cita': '#e0e7ff',
-        'Otro': '#f3f4f6'
+        'Otro': '#f3f4f6',
+        'Recordatorio': '#ffedd5'
     };
     
     for (var i = 0; i < datos.length; i++) {
