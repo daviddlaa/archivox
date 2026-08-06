@@ -117,11 +117,7 @@
                                 <button type="button" class="semaforo-clear" id="btn-semaforo-todos" onclick="setFiltroSemaforo(null)" style="display:none;">Ver todas</button>
                             </div>
 
-                            <div class="siguiente-accion siguiente-accion-compact siguiente-accion-rail" id="siguiente-accion" aria-live="polite">
-                                <span class="siguiente-label">Prioridad</span>
-                                <strong id="siguiente-accion-texto">Revisa el estado de la campaña para continuar.</strong>
-                                <button type="button" id="siguiente-accion-btn" class="siguiente-accion-btn" style="display:none;" onclick="abrirHistorialCampanaDesktop()" title="Ver las últimas gestiones de la campaña">Ver</button>
-                            </div>
+                            <button type="button" class="historial-campana-btn" id="btn-historial-campana" style="display:none;" onclick="abrirHistorialCampanaDesktop()" title="Ver las últimas gestiones de la campaña" aria-label="Ver las últimas gestiones de la campaña">🕘 Últimas gestiones</button>
 
                             <section class="recomendaciones-panel recomendaciones-panel-compact" id="recomendaciones-panel" aria-live="polite">
                                 <div class="recomendaciones-header">

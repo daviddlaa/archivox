@@ -448,6 +448,7 @@ async function cargarDatosGestion() {
         todasLasSolicitudes = [...solicitudes];
         
         actualizarProgreso();
+        mostrarBotonHistorialCampanaDesktop();
         renderizarSolicitudes(solicitudes);
         ajustarStickyDesktop();
         
@@ -573,7 +574,6 @@ function actualizarBarraSemaforo(conteoExterno) {
     }
     actualizarChipFiltroSemaforo();
 
-    actualizarSiguienteAccion(conteo, total);
     actualizarRecomendacionesDesktop(conteo, total);
 }
 
@@ -721,29 +721,12 @@ function actualizarResumenCampana(total, gestionadas, porcentaje) {
     if (pausaBadge) pausaBadge.hidden = !enPausa;
 }
 
-function actualizarSiguienteAccion(conteo, total) {
-    var textoEl = document.getElementById('siguiente-accion-texto');
-    var btn = document.getElementById('siguiente-accion-btn');
-    if (!textoEl || !btn) return;
-    var prioridad = null;
-    var activas = (solicitudes || []).filter(function(sol) { return sol.tipo_gestion !== 'Completada'; });
-    if (conteo.amarillo > 0) {
-        prioridad = { semaforo: 'amarillo', texto: 'Seguimiento (' + conteo.amarillo + ')' };
-    } else if (conteo.sin_clasificar > 0) {
-        prioridad = { semaforo: 'sin_clasificar', texto: 'Clasificar (' + conteo.sin_clasificar + ')' };
-    } else if (conteo.rojo > 0) {
-        prioridad = { semaforo: 'rojo', texto: 'En espera (' + conteo.rojo + ') · no contactar' };
-    } else if (total > 0 && activas.some(function(sol) {
-        return !sol.gestion_id || !sol.tipo_gestion || sol.tipo_gestion === 'Pendiente';
-    })) {
-        prioridad = { semaforo: null, texto: 'Registrar siguiente gestión' };
-    }
-    textoEl.textContent = prioridad ? prioridad.texto : (total > 0 && activas.length === 0 ? 'Campaña completada' : (total > 0 ? 'Al día' : 'Sin solicitudes'));
-    btn.style.display = total > 0 ? 'inline-flex' : 'none';
-    btn.textContent = 'Ver';
+// ===== HISTORIAL GENERAL DE LA CAMPAÑA (escritorio) =====
+function mostrarBotonHistorialCampanaDesktop() {
+    var boton = document.getElementById('btn-historial-campana');
+    if (boton) boton.style.display = 'inline-flex';
 }
 
-// ===== HISTORIAL GENERAL DE LA CAMPAÑA (escritorio) =====
 async function abrirHistorialCampanaDesktop() {
     if (!gestionId) return;
     try {
