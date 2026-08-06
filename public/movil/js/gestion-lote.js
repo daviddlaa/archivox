@@ -438,55 +438,26 @@ function cerrarRecoSheet() {
     if (chip) chip.setAttribute('aria-expanded', 'false');
 }
 
-// ===== Bottom sheet de búsqueda y filtros (botón 🔍 del footer) =====
-function toggleFiltrosSheet() {
-    var sheet = document.getElementById('filtros-bs-sheet');
-    if (!sheet) return;
-    var abrir = !sheet.classList.contains('visible');
-    if (abrir) {
-        abrirFiltrosSheet();
-    } else {
-        cerrarFiltrosSheet();
-    }
-}
-
-function abrirFiltrosSheet() {
-    var overlay = document.getElementById('filtros-bs-overlay');
-    var sheet = document.getElementById('filtros-bs-sheet');
-    if (overlay) overlay.classList.add('visible');
-    if (sheet) sheet.classList.add('visible');
-    var btn = document.getElementById('btn-filtros-trigger');
-    if (btn) btn.setAttribute('aria-expanded', 'true');
-    var input = document.getElementById('busqueda');
-    if (input) setTimeout(function() { input.focus(); }, 250);
-}
-
-function cerrarFiltrosSheet() {
-    var overlay = document.getElementById('filtros-bs-overlay');
-    var sheet = document.getElementById('filtros-bs-sheet');
-    if (overlay) overlay.classList.remove('visible');
-    if (sheet) sheet.classList.remove('visible');
-    var btn = document.getElementById('btn-filtros-trigger');
-    if (btn) btn.setAttribute('aria-expanded', 'false');
-}
-
+// ===== Filtros inline (búsqueda + estado debajo del semáforo) =====
 function limpiarFiltrosBusqueda() {
     var input = document.getElementById('busqueda');
     var select = document.getElementById('filtro-estado');
     if (input) input.value = '';
     if (select) select.value = '';
+    filtroSemaforoMovil = null;
+    actualizarSemaforoMovil();
     actualizarIndicadorFiltros();
     if (!gestionId) return; // sin campaña, no re-renderizar el estado vacío
     renderizarSolicitudes(todasLasSolicitudes);
 }
 
 function actualizarIndicadorFiltros() {
-    var badge = document.getElementById('filtros-trigger-badge');
-    if (!badge) return;
+    var limpiar = document.getElementById('btn-filtros-limpiar');
+    if (!limpiar) return;
     var input = document.getElementById('busqueda');
     var select = document.getElementById('filtro-estado');
     var activos = (input && input.value && input.value.length) || (select && select.value && select.value.length) || !!filtroSemaforoMovil;
-    badge.style.display = activos ? 'inline-flex' : 'none';
+    limpiar.style.display = activos ? 'flex' : 'none';
 }
 
 function setFiltroSemaforoMovil(valor) {
