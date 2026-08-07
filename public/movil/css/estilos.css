@@ -182,6 +182,12 @@ body {
     line-height: 1;
 }
 
+.nav-bottom-logo {
+    display: block;
+    height: 22px;
+    width: auto;
+}
+
 .nav-bottom-label {
     font-size: 9px;
     font-weight: 600;
