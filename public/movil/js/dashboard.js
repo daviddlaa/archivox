@@ -258,7 +258,7 @@ async function cargarCampañasActivas() {
         var lista = await res.json();
         var activas = (lista || []).filter(function(c) {
             return String(c.estado || 'activa').toLowerCase() === 'activa';
-        });
+        }).slice(0, 4);
 
         if (!activas.length) {
             container.innerHTML = '<div class="campanas-widget-empty">No hay campañas activas.<br><a href="/m/gestion-lote">Crear o ver campañas</a></div>';
@@ -305,7 +305,7 @@ async function cargarUltimasSolicitudes() {
     var container = document.getElementById('ultimas-solicitudes-lista');
     if (!container) return;
     try {
-        var res = await fetch('/api/excel/solicitudes?limite=5');
+        var res = await fetch('/api/excel/solicitudes?limite=4');
         if (!res.ok) throw new Error('status ' + res.status);
         var result = await res.json();
         var lista = Array.isArray(result) ? result : (result.data || []);
