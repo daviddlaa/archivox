@@ -938,11 +938,11 @@ function abrirGestion(solicitudId, tipo) {
     }
 
     var opciones = ['Seguimiento', 'Cobranza', 'Completada', 'Recordatorio'];
-    var opcionesDropdown = '';
+    var iconosTipo = { 'Seguimiento': '📋', 'Cobranza': '💰', 'Completada': '✅', 'Recordatorio': '⏰' };
+    var pillsHtml = '';
     for (var i = 0; i < opciones.length; i++) {
-        var selected = opciones[i] === tipo ? 'selected' : '';
-        var textoOpcion = opciones[i] === 'Recordatorio' ? '⏰ Recordatorio de llamada/mensaje' : opciones[i];
-        opcionesDropdown += '<option value="' + opciones[i] + '" ' + selected + '>' + textoOpcion + '</option>';
+        var activa = opciones[i] === tipo ? ' activo' : '';
+        pillsHtml += '<button type="button" class="tipo-pill' + activa + '" data-tipo="' + opciones[i] + '" onclick="seleccionarTipoMovil(this)">' + (iconosTipo[opciones[i]] || '') + ' ' + opciones[i] + '</button>';
     }
 
     var contenido = '';
@@ -955,7 +955,8 @@ function abrirGestion(solicitudId, tipo) {
     contenido += '</div>';
     contenido += '<div class="modal-form">';
     contenido += '<label>📋 Tipo de Gestión:</label>';
-    contenido += '<select id="tipo-gestion-modal" onchange="alternarModoRecordatorioMovil(this)">' + opcionesDropdown + '</select>';
+    contenido += '<div class="tipo-pills">' + pillsHtml + '</div>';
+    contenido += '<input type="hidden" id="tipo-gestion-modal" value="' + escaparParaAtributo(tipo) + '">';
     contenido += '<label id="label-observacion-modal">📝 Observación:</label>';
     contenido += '<textarea id="observacion-modal" rows="4" placeholder="Escriba su observación..."></textarea>';
     
@@ -981,6 +982,22 @@ function abrirGestion(solicitudId, tipo) {
     contenido += '</div>';
 
     crearModal(contenido);
+}
+
+function seleccionarTipoMovil(pill) {
+    if (!pill) return;
+    var contenedor = pill.closest('.tipo-pills');
+    if (contenedor) {
+        var pills = contenedor.querySelectorAll('.tipo-pill');
+        for (var i = 0; i < pills.length; i++) {
+            pills[i].classList.toggle('activo', pills[i] === pill);
+        }
+    }
+    var hidden = document.getElementById('tipo-gestion-modal');
+    if (hidden) {
+        hidden.value = pill.getAttribute('data-tipo') || '';
+        alternarModoRecordatorioMovil(hidden);
+    }
 }
 
 async function guardarGestionIndividual(solicitudId) {
@@ -2320,7 +2337,7 @@ async function abrirGestionWhatsApp(solicitudId, celular) {
     var mensajeInicial = opcionesMensajes.length ? opcionesMensajes[0].texto : mensajeDefecto;
 
     if (opcionesMensajes.length > 0) {
-        contenido += '<div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;">';
+        contenido += '<div class="plantillas-grid">';
         for (var i = 0; i < opcionesMensajes.length; i++) {
             contenido += '<button type="button" class="btn-plantilla-whatsapp" data-index="' + i + '" data-opciones="' + encodeURIComponent(JSON.stringify(opcionesMensajes)) + '" onclick="cambiarMensajeWhatsAppDesdeBoton(this)">' + escaparParaHTML(opcionesMensajes[i].etiqueta) + '</button>';
         }

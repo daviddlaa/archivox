@@ -1630,3 +1630,193 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+
+/* ===== MODALES MÓVILES — DISEÑO TOUCH ===== */
+.modal-gestion {
+    font-size: 14px;
+    line-height: 1.5;
+}
+.modal-gestion h2 {
+    font-size: 17px;
+    margin: 0 0 12px;
+    word-break: break-word;
+}
+.modal-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+}
+.modal-info p {
+    margin: 0;
+    font-size: 13px;
+    word-break: break-word;
+}
+.modal-form label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 6px;
+}
+.modal-form label:first-of-type {
+    margin-top: 0;
+}
+.modal-form select,
+.modal-form textarea,
+.modal-form input[type="datetime-local"],
+.modal-form input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    background: #fff;
+    color: #111827;
+    margin-bottom: 14px;
+}
+.modal-form select:focus,
+.modal-form textarea:focus,
+.modal-form input[type="datetime-local"]:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+.modal-form textarea {
+    resize: vertical;
+    min-height: 90px;
+}
+.modal-botones {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+}
+.modal-botones .btn-cancelar,
+.modal-botones .btn-guardar {
+    flex: 1;
+    min-height: 48px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+}
+.modal-botones .btn-cancelar {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+}
+.modal-botones .btn-cancelar:active {
+    background: #e5e7eb;
+    transform: scale(0.97);
+}
+.modal-botones .btn-guardar {
+    background: #6366f1;
+    color: #fff;
+    border: none;
+}
+.modal-botones .btn-guardar:active {
+    background: #4f46e5;
+    transform: scale(0.97);
+}
+.modal-botones .btn-guardar:disabled {
+    background: #a5b4fc;
+    cursor: not-allowed;
+}
+
+/* Botón único (ej. modal de semáforo) */
+.modal-gestion > .btn-cancelar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    cursor: pointer;
+}
+.modal-gestion > .btn-cancelar:active {
+    background: #e5e7eb;
+    transform: scale(0.97);
+}
+
+/* Pills de tipo de gestión */
+.tipo-pills {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.tipo-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 12px;
+    background: #f9fafb;
+    color: #4b5563;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: all 0.15s ease;
+}
+.tipo-pill:active {
+    transform: scale(0.96);
+}
+.tipo-pill.activo {
+    border-color: #6366f1;
+    background: #eef2ff;
+    color: #4338ca;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+.tipo-pill[data-tipo="Recordatorio"].activo {
+    border-color: #f59e0b;
+    background: #fffbeb;
+    color: #92400e;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+/* Plantillas WhatsApp: grid de 2 columnas */
+.plantillas-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.btn-plantilla-whatsapp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1.5px solid #86efac;
+    background: #f0fdf4;
+    color: #166534;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+.btn-plantilla-whatsapp:active {
+    background: #dcfce7;
+    transform: scale(0.96);
+}
