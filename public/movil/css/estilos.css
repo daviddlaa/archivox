@@ -43,6 +43,18 @@ body {
     flex-direction: column;
 }
 
+.header-logo-img {
+    display: block;
+    height: 28px;
+    width: auto;
+}
+
+.mm-header-title-img {
+    display: block;
+    height: 22px;
+    width: auto;
+}
+
 .header-title-row {
     display: flex;
     align-items: center;

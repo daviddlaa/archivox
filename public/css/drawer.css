@@ -83,6 +83,16 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
+.drawer-logo-img {
+    display: block;
+    height: 30px;
+    width: auto;
+}
+.mm-header-title-img {
+    display: block;
+    height: 22px;
+    width: auto;
+}
 .drawer-close {
     background: rgba(255,255,255,0.1);
     border: none;

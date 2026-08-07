@@ -125,7 +125,7 @@
                 '<div id="mm-sheet" class="mm-sheet" role="dialog" aria-label="Menú de navegación">' +
                     '<div class="mm-handle"></div>' +
                     '<div class="mm-header">' +
-                        '<span class="mm-header-title">📊 Archivox</span>' +
+                        '<img src="/img/logo/logo-wordmark.svg" alt="Archivox" class="mm-header-title-img" />' +
                         '<button class="mm-close" onclick="MobileMenu.close()" aria-label="Cerrar menú">✕</button>' +
                     '</div>' +
                     '<div class="mm-body">' +
@@ -306,7 +306,7 @@
             '<div id="drawer-overlay" class="drawer-overlay" onclick="Drawer.close()"></div>' +
             '<aside id="drawer" class="drawer">' +
                 '<div class="drawer-header">' +
-                    '<div class="drawer-logo"><h2>' + (esPaginaAdmin() ? '🛡️ Admin' : '📊 Archivox') + '</h2></div>' +
+                    '<div class="drawer-logo">' + (esPaginaAdmin() ? '<h2>🛡️ Admin</h2>' : '<img src="/img/logo/logo-wordmark-blanco.svg" alt="Archivox" class="drawer-logo-img" />') + '</div>' +
                     '<button class="drawer-close" onclick="Drawer.close()">✕</button>' +
                 '</div>' +
                 getNavHTML() +
