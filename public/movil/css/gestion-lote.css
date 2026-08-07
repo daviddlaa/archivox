@@ -885,20 +885,6 @@
 .estado-Recordatorio { background: #ffedd5; color: #9a3412; }
 
 /* Recordatorios de llamadas/mensajes */
-.sol-recordatorio-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 10px;
-    font-weight: 700;
-    background: #ffedd5;
-    color: #9a3412;
-    border: 1px solid #fed7aa;
-    white-space: nowrap;
-}
-
 .btn-sol-recordatorio {
     background: #fffbeb;
     color: #92400e;

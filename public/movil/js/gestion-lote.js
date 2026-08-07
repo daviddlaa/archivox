@@ -776,9 +776,6 @@ function renderizarSolicitudes(lista, sinEntrada) {
             html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1, event)" title="Destacar tarjeta">🔥 Destacar</span>';
         }
         html += '<div class="sol-badge estado-' + estado.replace(/\s+/g,'') + '">' + estado + '</div>';
-        if (sol.recordatorio_id) {
-            html += '<span class="sol-recordatorio-badge" title="Recordatorio ' + escaparParaHTML(sol.recordatorio_canal || 'Llamada') + '">⏰ ' + formatearHoraRecordatorioMovil(sol.recordatorio_fecha) + '</span>';
-        }
         html += '<span class="sol-segmento-badge" title="Segmento">' + (sol.segmento ? escaparParaHTML(sol.segmento) : '—') + '</span>';
         html += '</div>';
         html += '</div>';
