@@ -219,7 +219,35 @@ async function getGestionesMaestro(req, res) {
                    SELECT MAX(g2.id) FROM gestiones g2
                    WHERE g2.solicitud_id = g.solicitud_id
                      AND (g2.gestion_maestro_id = gm.id OR g2.gestion_maestro_id IS NULL)
-               )) AS completadas
+               )) AS completadas,
+            (SELECT COUNT(*) FROM gestiones_maestro_solicitudes gms_v
+             WHERE gms_v.gestion_maestro_id = gm.id
+               AND gms_v.semaforo = 'verde'
+               AND COALESCE((SELECT g3.tipo_gestion FROM gestiones g3 WHERE g3.id = (
+                   SELECT MAX(g4.id) FROM gestiones g4
+                   WHERE g4.solicitud_id = gms_v.id_solicitud
+                     AND (g4.gestion_maestro_id = gm.id OR g4.gestion_maestro_id IS NULL))), 'Pendiente') <> 'Completada') AS semaforo_verde,
+            (SELECT COUNT(*) FROM gestiones_maestro_solicitudes gms_a
+             WHERE gms_a.gestion_maestro_id = gm.id
+               AND gms_a.semaforo = 'amarillo'
+               AND COALESCE((SELECT g3.tipo_gestion FROM gestiones g3 WHERE g3.id = (
+                   SELECT MAX(g4.id) FROM gestiones g4
+                   WHERE g4.solicitud_id = gms_a.id_solicitud
+                     AND (g4.gestion_maestro_id = gm.id OR g4.gestion_maestro_id IS NULL))), 'Pendiente') <> 'Completada') AS semaforo_amarillo,
+            (SELECT COUNT(*) FROM gestiones_maestro_solicitudes gms_r
+             WHERE gms_r.gestion_maestro_id = gm.id
+               AND gms_r.semaforo = 'rojo'
+               AND COALESCE((SELECT g3.tipo_gestion FROM gestiones g3 WHERE g3.id = (
+                   SELECT MAX(g4.id) FROM gestiones g4
+                   WHERE g4.solicitud_id = gms_r.id_solicitud
+                     AND (g4.gestion_maestro_id = gm.id OR g4.gestion_maestro_id IS NULL))), 'Pendiente') <> 'Completada') AS semaforo_rojo,
+            (SELECT COUNT(*) FROM gestiones_maestro_solicitudes gms_s
+             WHERE gms_s.gestion_maestro_id = gm.id
+               AND gms_s.semaforo = 'sin_clasificar'
+               AND COALESCE((SELECT g3.tipo_gestion FROM gestiones g3 WHERE g3.id = (
+                   SELECT MAX(g4.id) FROM gestiones g4
+                   WHERE g4.solicitud_id = gms_s.id_solicitud
+                     AND (g4.gestion_maestro_id = gm.id OR g4.gestion_maestro_id IS NULL))), 'Pendiente') <> 'Completada') AS semaforo_sin_clasificar
             FROM gestiones_maestro gm WHERE ` + buildGestionSQL(access) + ` ORDER BY gm.created_at DESC`;
         const result = await pool.query(sql, access.params);
         

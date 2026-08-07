@@ -235,6 +235,12 @@ function initDashWidgetCarousel() {
 // ============================================================================
 // WIDGET CAMPAÑAS ACTIVAS
 // ============================================================================
+function segmentoSemaforoHtml(conteo, clase) {
+    var n = parseInt(conteo || 0, 10);
+    if (!n) return '';
+    return '<span class="campana-widget-semaforo-seg ' + clase + '" style="flex:' + n + '"></span>';
+}
+
 function escapeHtmlMovil(texto) {
     return String(texto == null ? '' : texto)
         .replace(/&/g, '&amp;')
@@ -272,11 +278,16 @@ async function cargarCampañasActivas() {
             var total = parseInt(g.total_solicitudes || 0, 10);
             var comp = parseInt(g.completadas || 0, 10);
             var pct = total > 0 ? Math.round((comp / total) * 100) : 0;
+            var segSemaforo = segmentoSemaforoHtml(g.semaforo_verde, 'seg-verde')
+                + segmentoSemaforoHtml(g.semaforo_amarillo, 'seg-amarillo')
+                + segmentoSemaforoHtml(g.semaforo_rojo, 'seg-rojo')
+                + segmentoSemaforoHtml(g.semaforo_sin_clasificar, 'seg-sin');
+            if (!segSemaforo) segSemaforo = '<span class="campana-widget-semaforo-seg seg-vacio"></span>';
             html += '<a class="campana-widget-item" href="/m/gestion-lote?id=' + encodeURIComponent(g.id) + '">' +
                 '<span class="campana-widget-icon">📋</span>' +
                 '<span class="campana-widget-info">' +
                 '<span class="campana-widget-name">' + escapeHtmlMovil(truncarTexto(g.nombre || 'Campaña #' + g.id, 30)) + '</span>' +
-                '<span class="campana-widget-bar"><span style="width:' + pct + '%"></span></span>' +
+                '<span class="campana-widget-semaforo">' + segSemaforo + '</span>' +
                 '<span class="campana-widget-stats">' + comp + ' de ' + total + ' · ' + pct + '%</span>' +
                 '</span>' +
                 '<span class="campana-widget-chevron">›</span>' +

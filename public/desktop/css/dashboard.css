@@ -521,6 +521,27 @@
     font-weight: 600;
 }
 
+.campana-widget-semaforo {
+    display: flex;
+    gap: 2px;
+    height: 5px;
+    margin: 5px 0 4px;
+    overflow: hidden;
+    border-radius: 999px;
+}
+
+.campana-widget-semaforo-seg {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+}
+
+.campana-widget-semaforo-seg.seg-verde { background: #6b9e78; }
+.campana-widget-semaforo-seg.seg-amarillo { background: #d3a437; }
+.campana-widget-semaforo-seg.seg-rojo { background: #cf6657; }
+.campana-widget-semaforo-seg.seg-sin { background: #94a3b8; }
+.campana-widget-semaforo-seg.seg-vacio { background: #e2e8f0; }
+
 .campana-widget-chevron {
     font-size: 20px;
     color: #94a3b8;
