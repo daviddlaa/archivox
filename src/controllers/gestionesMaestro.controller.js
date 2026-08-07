@@ -860,6 +860,50 @@ async function actualizarEstadoRecordatorio(req, res) {
     }
 }
 
+// PUT /api/gestiones-maestro/:id/recordatorios/:rid/posponer
+// Reprogramar un recordatorio para una nueva fecha. Vuelve a quedar pendiente
+// (notificado = 0) para que el scheduler vuelva a avisar cuando venza.
+async function posponerRecordatorio(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+
+        const { id, rid } = req.params;
+        const { fecha_recordatorio } = req.body;
+
+        if (!fecha_recordatorio) {
+            return res.status(400).json({ error: 'fecha_recordatorio es requerida' });
+        }
+        const fechaNormalizada = String(fecha_recordatorio).replace('T', ' ').slice(0, 19);
+        if (isNaN(new Date(fechaNormalizada.replace(' ', 'T')).getTime())) {
+            return res.status(400).json({ error: 'fecha_recordatorio no es válida' });
+        }
+
+        // Acceso a la campaña
+        const access = buildGestionAccessWhere(req, id);
+        const resultGM = await pool.query(
+            'SELECT gm.id FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access),
+            access.params
+        );
+        if (!getFirstRow(resultGM)) {
+            return res.status(404).json({ error: 'Campaña no encontrada' });
+        }
+
+        const result = await pool.query(`
+            UPDATE recordatorios
+            SET fecha_recordatorio = ?, estado = 'pendiente', notificado = 0, completed_at = NULL
+            WHERE id = ? AND gestion_maestro_id = ?
+        `, [fechaNormalizada, rid, id]);
+
+        res.json({ mensaje: 'Recordatorio pospuesto correctamente' });
+    } catch (error) {
+        console.error('Error en posponerRecordatorio:', error);
+        res.status(500).json({ error: 'Error al posponer recordatorio' });
+    }
+}
+
 // GET /api/gestiones-maestro/:id/progreso - Obtener progreso de gestión
 async function obtenerProgresoGestion(req, res) {
     try {
@@ -1469,6 +1513,7 @@ module.exports = {
     // Recordatorios de llamadas/mensajes
     crearRecordatorio: crearRecordatorio,
     actualizarEstadoRecordatorio: actualizarEstadoRecordatorio,
+    posponerRecordatorio: posponerRecordatorio,
     // Flag "ya no aplica para crédito"
     marcarNoAplicaCreditoSolicitud: marcarNoAplicaCreditoSolicitud,
     quitarSolicitudDeCampanaDb: quitarSolicitudDeCampanaDb,

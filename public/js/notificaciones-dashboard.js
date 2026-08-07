@@ -41,7 +41,9 @@ let notifState = {
     toastTimeout: null,       // Timeout del toast actual
     pendingCount: 0,          // Contador actual de no leídas
     isInitialized: false,     // ¿Inicializado?
-    notificationsCache: []    // Cache de notificaciones cargadas
+    notificationsCache: [],   // Cache de notificaciones cargadas
+    tabActivo: 'activas',     // Pestaña del panel: 'activas' | 'archivadas'
+    esAdmin: null             // ¿Usuario admin? (se resuelve una vez vía /api/auth/sesion)
 };
 
 // ============================================================================
@@ -94,6 +96,10 @@ function crearPanelNotificaciones() {
                 <button class="notif-panel-close" onclick="cerrarPanelNotificaciones()">✕</button>
             </div>
         </div>
+        <div class="notif-panel-tabs">
+            <button class="notif-panel-tab active" data-tab="activas" onclick="cambiarTabNotificaciones('activas')">🔔 Activas</button>
+            <button class="notif-panel-tab" data-tab="archivadas" onclick="cambiarTabNotificaciones('archivadas')">📦 Archivadas</button>
+        </div>
         <div class="notif-panel-body" id="notif-panel-body">
             <div class="notif-loading">Cargando...</div>
         </div>
@@ -117,9 +123,40 @@ function abrirPanelNotificaciones() {
         panel.classList.add('open');
         overlay.classList.add('open');
         notifState.isPanelOpen = true;
-        cargarNotificacionesUsuario();
+        cambiarTabNotificaciones('activas', false);
         document.body.style.overflow = 'hidden';
     }
+}
+
+// ============================================================================
+// CAMBIAR PESTAÑA DEL PANEL (Activas / Archivadas)
+// ============================================================================
+function cambiarTabNotificaciones(tab, recargar = true) {
+    notifState.tabActivo = tab;
+    const tabs = document.querySelectorAll('.notif-panel-tab');
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    if (recargar) {
+        cargarNotificacionesUsuario();
+    } else {
+        const body = document.getElementById('notif-panel-body');
+        if (body) body.innerHTML = '<div class="notif-loading">Cargando...</div>';
+    }
+}
+
+// Resolver (una sola vez) si el usuario es admin/superadmin, para mostrar
+// acciones reservadas como eliminar definitivamente.
+function esUsuarioAdmin() {
+    return new Promise((resolve) => {
+        if (notifState.esAdmin !== null) return resolve(notifState.esAdmin);
+        fetch('/api/auth/sesion')
+            .then(r => r.json())
+            .then(data => {
+                const u = data && data.autenticado ? data.usuario : null;
+                notifState.esAdmin = !!(u && (u.is_superadmin || u.rol === 'superadmin'));
+                resolve(notifState.esAdmin);
+            })
+            .catch(() => { notifState.esAdmin = false; resolve(false); });
+    });
 }
 
 function cerrarPanelNotificaciones() {
@@ -365,7 +402,11 @@ async function cargarNotificacionesUsuario() {
     body.innerHTML = '<div class="notif-loading">Cargando...</div>';
 
     try {
-        const res = await fetch('/api/admin/notificaciones?limite=30');
+        const esArchivadas = notifState.tabActivo === 'archivadas';
+        const url = esArchivadas
+            ? '/api/admin/notificaciones?archivada=1&limite=50'
+            : '/api/admin/notificaciones?limite=50';
+        const res = await fetch(url);
         if (!res.ok) {
             body.innerHTML = '<div class="notif-empty">Error al cargar notificaciones</div>';
             return;
@@ -375,40 +416,53 @@ async function cargarNotificacionesUsuario() {
         // Cachear
         notifState.notificationsCache = data.data || [];
 
-        // Actualizar badge del panel
+        // Actualizar badge del panel (solo en pestaña Activas)
         const panelCount = document.getElementById('notifPanelCount');
         if (panelCount) {
-            const noLeidas = (data.data || []).filter(n => !n.leida).length;
-            if (noLeidas > 0) {
-                panelCount.textContent = noLeidas;
-                panelCount.style.display = 'inline-flex';
-            } else {
+            if (esArchivadas) {
                 panelCount.style.display = 'none';
+            } else {
+                const noLeidas = (data.data || []).filter(n => !n.leida).length;
+                if (noLeidas > 0) {
+                    panelCount.textContent = noLeidas;
+                    panelCount.style.display = 'inline-flex';
+                } else {
+                    panelCount.style.display = 'none';
+                }
             }
         }
 
-        // Botón "Marcar todas"
+        // Botón "Marcar todas" (solo en pestaña Activas)
         const btnMarkAll = document.getElementById('notifBtnMarkAll');
         if (btnMarkAll) {
-            const hasUnread = (data.data || []).some(n => !n.leida);
+            const hasUnread = !esArchivadas && (data.data || []).some(n => !n.leida);
             btnMarkAll.style.display = hasUnread ? 'inline-flex' : 'none';
         }
 
         if (!data.data || data.data.length === 0) {
             body.innerHTML = `
                 <div class="notif-empty">
-                    <div class="notif-empty-icon">🔔</div>
-                    <h4>Sin notificaciones</h4>
-                    <p>No tienes notificaciones nuevas</p>
+                    <div class="notif-empty-icon">${esArchivadas ? '📦' : '🔔'}</div>
+                    <h4>${esArchivadas ? 'Sin notificaciones archivadas' : 'Sin notificaciones'}</h4>
+                    <p>${esArchivadas ? 'Aquí verás las que archives o las novedades ya leídas' : 'No tienes notificaciones nuevas'}</p>
                 </div>`;
+            return;
+        }
+
+        // Pestaña Archivadas: lista plana con Restaurar / Eliminar
+        if (esArchivadas) {
+            const esAdmin = await esUsuarioAdmin();
+            body.innerHTML = data.data.map(n => renderizarNotificacionArchivada(n, esAdmin)).join('');
             return;
         }
 
         // ================================================================
         // 🆕 SEPARAR NOVEDADES (anuncios de funcionalidades) del resto
         // Las novedades se muestran en una sección destacada al inicio.
+        // Las ya leídas se archivan automáticamente en el backend, así que
+        // aquí solo se muestran las no leídas.
         // ================================================================
-        const novedades = (data.data || []).filter(n => Number(n.es_novedad) === 1);
+        const novedades = (data.data || []).filter(n => Number(n.es_novedad) === 1 && !n.leida);
         const normales = (data.data || []).filter(n => Number(n.es_novedad) !== 1);
 
         let html = '';
@@ -502,6 +556,22 @@ function renderizarNotificacion(n, index, esNovedad) {
     // ¿Está expirada?
     const claseExpirada = (n.fecha_expiracion && new Date(n.fecha_expiracion) < new Date()) ? 'notif-item-expirada' : '';
 
+    // ⏰ RECORDATORIOS: si la notificación está vinculada a un recordatorio
+    // (recordatorio_id), se muestran acciones directas sin salir del menú:
+    // Hecho / Posponer / Eliminar. Tras cada acción la notificación se archiva.
+    const esRecordatorio = n.recordatorio_id != null;
+    let recordatorioHTML = '';
+    if (esRecordatorio) {
+        const campanaId = extraerCampanaId(n.accion_url);
+        recordatorioHTML = `
+            <div class="notif-recordatorio-acciones">
+                <button class="notif-recordatorio-btn hecho" onclick="event.stopPropagation(); marcarRecordatorioHecho(${n.id}, ${n.recordatorio_id}, ${campanaId})" title="Marcar como hecho">✅ Hecho</button>
+                <button class="notif-recordatorio-btn posponer" onclick="event.stopPropagation(); abrirModalPosponer(${n.id}, ${n.recordatorio_id}, ${campanaId})" title="Reprogramar para otra fecha">⏰ Posponer</button>
+                <button class="notif-recordatorio-btn eliminar" onclick="event.stopPropagation(); cancelarRecordatorioNotificacion(${n.id}, ${n.recordatorio_id}, ${campanaId})" title="Cancelar el recordatorio">❌ Eliminar</button>
+            </div>
+        `;
+    }
+
     const dataAccionUrl = n.accion_url ? ` data-accion-url="${escapeHtmlNotif(n.accion_url)}"` : '';
     const dataAccionModulo = n.accion_modulo ? ` data-accion-modulo="${escapeHtmlNotif(n.accion_modulo)}"` : '';
     const cardOnClick = `marcarLeidaUsuario(${n.id}${n.accion_url ? `, this.dataset.accionUrl` : ''}${n.accion_modulo ? `, this.dataset.accionModulo` : ''})`;
@@ -525,6 +595,7 @@ function renderizarNotificacion(n, index, esNovedad) {
                     <span class="notif-item-tipo-badge ${claseTipo}">${tipoIcono} ${n.tipo || 'info'}</span>
                 </div>
                 <div class="notif-item-msg">${escapeHtmlNotif(n.mensaje)}</div>
+                ${recordatorioHTML}
                 <div class="notif-item-footer">
                     <div class="notif-item-date">
                         <i>🕐</i> ${fechaHTML}
@@ -541,6 +612,51 @@ function renderizarNotificacion(n, index, esNovedad) {
             ${esNoLeida ? '<div class="notif-item-dot"></div>' : ''}
         </div>
     `;
+}
+
+// ============================================================================
+// RENDERIZAR NOTIFICACIÓN ARCHIVADA (pestaña 📦 Archivadas)
+// ============================================================================
+function renderizarNotificacionArchivada(n, esAdmin) {
+    const tipoIcono = NOTIF_CONFIG.TIPO_ICONOS[n.tipo] || 'ℹ️';
+    const tipoColor = NOTIF_CONFIG.TIPO_COLORES[n.tipo] || '#6b7280';
+    const claseTipo = `notif-tipo-badge-${n.tipo || 'info'}`;
+    const fechaHTML = formatearFechaNotif(n.created_at);
+    const esRecordatorio = n.recordatorio_id != null;
+
+    return `
+        <div class="notif-item notif-item-archivada" data-id="${n.id}">
+            <div class="notif-item-icon-wrapper" style="background:${tipoColor}20">
+                <span>${esRecordatorio ? '⏰' : tipoIcono}</span>
+            </div>
+            <div class="notif-item-content">
+                <div class="notif-item-header">
+                    <div class="notif-item-title">${escapeHtmlNotif(n.titulo)}</div>
+                    <span class="notif-item-tipo-badge ${claseTipo}">${tipoIcono} ${n.tipo || 'info'}</span>
+                </div>
+                <div class="notif-item-msg">${escapeHtmlNotif(n.mensaje)}</div>
+                <div class="notif-item-footer">
+                    <div class="notif-item-date"><i>🕐</i> ${fechaHTML}</div>
+                    <div style="display:flex;align-items:center;gap:4px">
+                        <button class="notif-item-action-btn" onclick="restaurarNotificacion(${n.id})" title="Restaurar">
+                            ↩ Restaurar
+                        </button>
+                        ${esAdmin ? `
+                        <button class="notif-recordatorio-btn eliminar" onclick="eliminarNotificacion(${n.id})" title="Eliminar definitivamente">
+                            🗑 Eliminar
+                        </button>` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Extraer el id de campaña desde una accion_url tipo "/gestion-lote?id=54"
+function extraerCampanaId(accionUrl) {
+    if (!accionUrl) return null;
+    const m = String(accionUrl).match(/[?&]id=(\d+)/);
+    return m ? parseInt(m[1], 10) : null;
 }
 
 // ============================================================================
@@ -683,6 +799,174 @@ async function archivarNotificacion(id) {
         }
     } catch (e) {
         console.error('[Notificaciones] Error archivar:', e);
+    }
+}
+
+// ============================================================================
+// ACCIONES DE RECORDATORIO DESDE EL PANEL
+// ============================================================================
+// Tras cada acción (Hecho/Posponer/Eliminar) la notificación se archiva
+// automáticamente y el panel se refresca.
+
+async function archivarYRefrescar(notifId, mensaje) {
+    try {
+        await fetch(`/api/admin/notificaciones/${notifId}/archivar`, { method: 'PUT' });
+    } catch (e) {
+        console.warn('[Notificaciones] Error archivando tras acción:', e);
+    }
+    const item = document.querySelector(`.notif-item[data-id="${notifId}"]`);
+    if (item) {
+        item.style.transition = 'all 0.3s ease';
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(30px)';
+        item.style.maxHeight = '0';
+        item.style.padding = '0';
+        setTimeout(() => item.remove(), 300);
+    }
+    await actualizarBadgeNotifUsuario();
+    actualizarContadorPanel();
+    setTimeout(() => {
+        const body = document.getElementById('notif-panel-body');
+        if (body) cargarNotificacionesUsuario();
+    }, 400);
+    if (mensaje) mostrarToastSimple(mensaje);
+}
+
+async function marcarRecordatorioHecho(notifId, rid, campanaId) {
+    if (campanaId) {
+        try {
+            const res = await fetch(`/api/gestiones-maestro/${campanaId}/recordatorios/${rid}/estado`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ estado: 'hecho' })
+            });
+            if (!res.ok) throw new Error('Respuesta no OK');
+        } catch (e) {
+            console.error('[Notificaciones] Error recordatorio hecho:', e);
+            mostrarToastSimple('❌ No se pudo marcar como hecho');
+            return;
+        }
+    }
+    archivarYRefrescar(notifId, '✅ Recordatorio marcado como hecho');
+}
+
+async function cancelarRecordatorioNotificacion(notifId, rid, campanaId) {
+    if (!confirm('¿Cancelar este recordatorio?')) return;
+    if (campanaId) {
+        try {
+            const res = await fetch(`/api/gestiones-maestro/${campanaId}/recordatorios/${rid}/estado`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ estado: 'cancelado' })
+            });
+            if (!res.ok) throw new Error('Respuesta no OK');
+        } catch (e) {
+            console.error('[Notificaciones] Error cancelar recordatorio:', e);
+            mostrarToastSimple('❌ No se pudo cancelar el recordatorio');
+            return;
+        }
+    }
+    archivarYRefrescar(notifId, '❌ Recordatorio cancelado');
+}
+
+function abrirModalPosponer(notifId, rid, campanaId) {
+    if (!campanaId) {
+        mostrarToastSimple('No se pudo reprogramar: falta la campaña');
+        return;
+    }
+
+    const localToInput = (d) => {
+        const pad = x => String(x).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    const overlay = document.createElement('div');
+    overlay.className = 'notif-posponer-overlay';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    const modal = document.createElement('div');
+    modal.className = 'notif-posponer-modal';
+    modal.innerHTML = `
+        <h4>⏰ Posponer recordatorio</h4>
+        <p class="notif-posponer-sub">¿Cuándo quieres que te avise de nuevo?</p>
+        <div class="notif-posponer-presets">
+            <button type="button" data-min="30">+30 min</button>
+            <button type="button" data-min="60">+1 hora</button>
+            <button type="button" data-min="1440">+1 día</button>
+        </div>
+        <label class="notif-posponer-label">Fecha y hora personalizada</label>
+        <input type="datetime-local" id="notifPosponerInput" value="${localToInput(new Date(Date.now() + 30 * 60000))}">
+        <div class="notif-posponer-actions">
+            <button type="button" class="notif-posponer-cancel">Cancelar</button>
+            <button type="button" class="notif-posponer-ok">Guardar</button>
+        </div>
+    `;
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    const input = modal.querySelector('#notifPosponerInput');
+    modal.querySelectorAll('.notif-posponer-presets button').forEach(btn => {
+        btn.onclick = () => {
+            const d = new Date(Date.now() + parseInt(btn.dataset.min, 10) * 60000);
+            input.value = localToInput(d);
+        };
+    });
+    modal.querySelector('.notif-posponer-cancel').onclick = () => overlay.remove();
+    modal.querySelector('.notif-posponer-ok').onclick = async () => {
+        const val = input.value;
+        if (!val) { mostrarToastSimple('Elige una fecha y hora'); return; }
+        overlay.remove();
+        try {
+            const res = await fetch(`/api/gestiones-maestro/${campanaId}/recordatorios/${rid}/posponer`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fecha_recordatorio: val.replace('T', ' ') + ':00' })
+            });
+            if (!res.ok) throw new Error('Respuesta no OK');
+        } catch (e) {
+            console.error('[Notificaciones] Error posponer:', e);
+            mostrarToastSimple('❌ No se pudo posponer');
+            return;
+        }
+        archivarYRefrescar(notifId, '⏰ Recordatorio reprogramado');
+    };
+}
+
+// ============================================================================
+// RESTAURAR / ELIMINAR (pestaña 📦 Archivadas)
+// ============================================================================
+async function restaurarNotificacion(id) {
+    try {
+        const res = await fetch(`/api/admin/notificaciones/${id}/restaurar`, { method: 'PUT' });
+        if (res.ok) {
+            const item = document.querySelector(`.notif-item-archivada[data-id="${id}"]`);
+            if (item) item.remove();
+            setTimeout(() => {
+                const body = document.getElementById('notif-panel-body');
+                if (body && body.querySelectorAll('.notif-item').length === 0) cargarNotificacionesUsuario();
+            }, 300);
+            mostrarToastSimple('↩ Notificación restaurada');
+        }
+    } catch (e) {
+        console.error('[Notificaciones] Error restaurar:', e);
+    }
+}
+
+async function eliminarNotificacion(id) {
+    if (!confirm('¿Eliminar esta notificación definitivamente?')) return;
+    try {
+        const res = await fetch(`/api/admin/notificaciones/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            const item = document.querySelector(`.notif-item-archivada[data-id="${id}"]`);
+            if (item) item.remove();
+            setTimeout(() => {
+                const body = document.getElementById('notif-panel-body');
+                if (body && body.querySelectorAll('.notif-item').length === 0) cargarNotificacionesUsuario();
+            }, 300);
+            mostrarToastSimple('🗑 Notificación eliminada');
+        }
+    } catch (e) {
+        console.error('[Notificaciones] Error eliminar:', e);
     }
 }
 

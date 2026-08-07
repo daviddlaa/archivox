@@ -28,6 +28,7 @@ router.put('/:id/quitar-asignacion', controller.quitarAsignacionAgente);
 router.put('/:id/solicitudes/:solicitudId/semaforo', controller.actualizarSemaforoSolicitud);
 router.post('/:id/recordatorios', controller.crearRecordatorio);
 router.put('/:id/recordatorios/:rid/estado', controller.actualizarEstadoRecordatorio);
+router.put('/:id/recordatorios/:rid/posponer', controller.posponerRecordatorio);
 
 // GET /api/gestiones-maestro/:id - Obtener una gestión con sus solicitudes
 router.get('/:id', controller.obtenerGestionMaestro);

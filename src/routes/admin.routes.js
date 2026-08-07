@@ -51,6 +51,9 @@ router.put('/notificaciones/marcar-todas-leidas', notificacionesController.marca
 // Archivar notificación
 router.put('/notificaciones/:id/archivar', notificacionesController.archivar);
 
+// Restaurar notificación archivada
+router.put('/notificaciones/:id/restaurar', notificacionesController.restaurar);
+
 // ============================================================================
 // MIDDLEWARE DE ROL (SOLO SUPERADMIN DE AHORA EN ADELANTE)
 // ============================================================================

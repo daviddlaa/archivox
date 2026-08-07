@@ -15,7 +15,7 @@ const notificationBus = require('../services/notificationBus.js');
 // GET /api/admin/notificaciones
 exports.listar = async (req, res) => {
     try {
-        const { pagina = 1, limite = 20, tipo, leida } = req.query;
+        const { pagina = 1, limite = 20, tipo, leida, archivada } = req.query;
         const usuario = req.session.usuario;
         const offset = (parseInt(pagina) - 1) * parseInt(limite);
         const esAdmin = usuario.rol === 'admin' || usuario.rol === 'superadmin' || usuario.is_superadmin;
@@ -41,6 +41,15 @@ exports.listar = async (req, res) => {
             sql += ` AND n.leida = $${paramIndex++}`;
             params.push(leida === '1' || leida === 'true' ? 1 : 0);
         }
+        if (archivada !== undefined && archivada !== '') {
+            // ?archivada=1 → solo archivadas ; ?archivada=0 → solo activas
+            const val = archivada === '1' || archivada === 'true' ? 1 : 0;
+            sql += ` AND (n.archivada = $${paramIndex++} OR n.archivada IS NULL)`;
+            params.push(val);
+        } else {
+            // Por defecto: ocultar las archivadas (dejan de reaparecer en el menú)
+            sql += ` AND (n.archivada = 0 OR n.archivada IS NULL)`;
+        }
 
         // Contar y obtener datos
         const [countResult, dataResult] = await Promise.all([
@@ -62,7 +71,7 @@ exports.listar = async (req, res) => {
         console.warn('[Notificaciones] Usando fallback - verificar migración de columnas en PostgreSQL');
         // Fallback seguro: respeta filtro de destinatario para usuarios no-admin
         try {
-            let fallbackSql = `SELECT n.id, n.titulo, n.mensaje, n.tipo, n.leida, n.es_novedad, n.created_at, u.username as creador_username
+            let fallbackSql = `SELECT n.id, n.titulo, n.mensaje, n.tipo, n.leida, n.es_novedad, n.archivada, n.created_at, u.username as creador_username
                                FROM notificaciones n
                                LEFT JOIN usuarios u ON n.creador_id = u.id WHERE 1=1`;
             const fallbackParams = [];
@@ -72,6 +81,7 @@ exports.listar = async (req, res) => {
                 fallbackSql += ` AND (n.destinatario_id IS NULL OR n.destinatario_id = $${fbParamIndex++})`;
                 fallbackParams.push(usuario.id);
             }
+            fallbackSql += ` AND (n.archivada = 0 OR n.archivada IS NULL)`;
 
             fallbackSql += ` ORDER BY n.created_at DESC LIMIT $${fbParamIndex++} OFFSET $${fbParamIndex++}`;
             fallbackParams.push(parseInt(limite), offset);
@@ -156,7 +166,7 @@ exports.crear = async (req, res) => {
             if (destinatario_id) {
                 // Emitir count update solo a ese usuario
                 const countRes = await pool.query(
-                    `SELECT COUNT(*) as total FROM notificaciones WHERE leida = 0 AND (destinatario_id IS NULL OR destinatario_id = $1)`,
+                    `SELECT COUNT(*) as total FROM notificaciones WHERE leida = 0 AND (archivada = 0 OR archivada IS NULL) AND (destinatario_id IS NULL OR destinatario_id = $1)`,
                     [destinatario_id]
                 );
                 notificationBus.emitirAUsuario('count.updated', { no_leidas: parseInt(countRes.rows[0]?.total) || 0 }, destinatario_id);
@@ -184,8 +194,12 @@ exports.marcarLeida = async (req, res) => {
         const { id } = req.params;
         const usuario = req.session.usuario;
 
+        // Las novedades (es_novedad = 1) se ocultan automáticamente al leerlas:
+        // se archivan para no acumularse en el panel. El resto solo se marca leída.
         await pool.query(
-            `UPDATE notificaciones SET leida = 1, leida_at = CURRENT_TIMESTAMP WHERE id = $1`,
+            `UPDATE notificaciones SET leida = 1, leida_at = CURRENT_TIMESTAMP,
+             archivada = CASE WHEN es_novedad = 1 THEN 1 ELSE archivada END
+             WHERE id = $1`,
             [id]
         );
 
@@ -208,7 +222,10 @@ exports.marcarTodasLeidas = async (req, res) => {
         const usuario = req.session.usuario;
         const esAdmin = usuario.rol === 'admin' || usuario.rol === 'superadmin' || usuario.is_superadmin;
 
-        let sql = `UPDATE notificaciones SET leida = 1, leida_at = CURRENT_TIMESTAMP WHERE leida = 0`;
+        // Las novedades se archivan al marcarlas leídas (mismo criterio que marcarLeida)
+        let sql = `UPDATE notificaciones SET leida = 1, leida_at = CURRENT_TIMESTAMP,
+             archivada = CASE WHEN es_novedad = 1 THEN 1 ELSE archivada END
+             WHERE leida = 0`;
         const params = [];
 
         // Si no es admin, solo marcar sus notificaciones
@@ -243,11 +260,34 @@ exports.archivar = async (req, res) => {
             [id]
         );
 
-        notificationBus.emitir('notification.archived', { id, usuarioId: usuario.id });
+        notificationBus.emitir('notification.archived', { id, usuarioId: usuario.id, archivada: 1 });
 
         res.json({ mensaje: 'Notificación archivada' });
     } catch (err) {
         console.error('[Notificaciones] Error archivar:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// ============================================================================
+// RESTAURAR NOTIFICACIÓN ARCHIVADA
+// ============================================================================
+// PUT /api/admin/notificaciones/:id/restaurar
+exports.restaurar = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const usuario = req.session.usuario;
+
+        await pool.query(
+            `UPDATE notificaciones SET archivada = 0 WHERE id = $1`,
+            [id]
+        );
+
+        notificationBus.emitir('notification.archived', { id, usuarioId: usuario.id, archivada: 0 });
+
+        res.json({ mensaje: 'Notificación restaurada' });
+    } catch (err) {
+        console.error('[Notificaciones] Error restaurar:', err);
         res.status(500).json({ error: err.message });
     }
 };
@@ -261,7 +301,7 @@ exports.contarNoLeidas = async (req, res) => {
         const usuario = req.session.usuario;
         const esAdmin = usuario.rol === 'admin' || usuario.rol === 'superadmin' || usuario.is_superadmin;
 
-        let sql = `SELECT COUNT(*) as total FROM notificaciones WHERE leida = 0`;
+        let sql = `SELECT COUNT(*) as total FROM notificaciones WHERE leida = 0 AND (archivada = 0 OR archivada IS NULL)`;
         const params = [];
 
         if (!esAdmin) {

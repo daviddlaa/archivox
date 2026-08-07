@@ -374,7 +374,8 @@ const notifNewCols = {
     'accion_texto': 'TEXT',
     'fecha_expiracion': 'TEXT',
     'accion_modulo': 'TEXT',        // 🆕 Deep Link Router: identificador lógico del módulo
-    'es_novedad': 'INTEGER DEFAULT 0'  // 🆕 Novedades: 1 = anuncio de nueva funcionalidad
+    'es_novedad': 'INTEGER DEFAULT 0',  // 🆕 Novedades: 1 = anuncio de nueva funcionalidad
+    'recordatorio_id': 'INTEGER'    // 🆕 Vínculo con la tabla recordatorios (scheduler)
 };
 let notifMigradas = 0;
 for (const [col, tipo] of Object.entries(notifNewCols)) {

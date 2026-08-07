@@ -495,6 +495,198 @@
     background: #f3f4f6;
 }
 
+/* ===== PESTAÑAS DEL PANEL (Activas / Archivadas) ===== */
+.notif-panel-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 10px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
+    flex-shrink: 0;
+}
+.notif-panel-tab {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+.notif-panel-tab:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+.notif-panel-tab.active {
+    background: #e0e7ff;
+    border-color: #c7d2fe;
+    color: #4338ca;
+}
+
+/* ===== ACCIONES DE RECORDATORIO (Hecho / Posponer / Eliminar) ===== */
+.notif-recordatorio-acciones {
+    display: flex;
+    gap: 6px;
+    margin: 8px 0 10px;
+    flex-wrap: wrap;
+}
+.notif-recordatorio-btn {
+    border: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.notif-recordatorio-btn.hecho {
+    background: #d1fae5;
+    color: #065f46;
+}
+.notif-recordatorio-btn.hecho:hover {
+    background: #a7f3d0;
+}
+.notif-recordatorio-btn.posponer {
+    background: #fef3c7;
+    color: #92400e;
+}
+.notif-recordatorio-btn.posponer:hover {
+    background: #fde68a;
+}
+.notif-recordatorio-btn.eliminar {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.notif-recordatorio-btn.eliminar:hover {
+    background: #fecaca;
+}
+
+/* ===== ITEM ARCHIVADO (pestaña 📦) ===== */
+.notif-item-archivada {
+    opacity: 0.85;
+}
+.notif-item-archivada .notif-item-title {
+    color: #6b7280;
+}
+
+/* ===== MODAL POSPONER RECORDATORIO ===== */
+.notif-posponer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 10050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: notifOverlayIn 0.2s ease;
+}
+.notif-posponer-modal {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 20px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: notifToastIn 0.25s ease;
+}
+.notif-posponer-modal h4 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    color: #1f2937;
+}
+.notif-posponer-sub {
+    margin: 0 0 14px;
+    font-size: 12px;
+    color: #6b7280;
+}
+.notif-posponer-presets {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.notif-posponer-presets button {
+    flex: 1;
+    padding: 8px 6px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+    color: #1f2937;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.notif-posponer-presets button:hover {
+    background: #e0e7ff;
+    border-color: #c7d2fe;
+    color: #4338ca;
+}
+.notif-posponer-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+}
+.notif-posponer-modal input[type="datetime-local"] {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1f2937;
+    box-sizing: border-box;
+    margin-bottom: 16px;
+}
+.notif-posponer-modal input[type="datetime-local"]:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+.notif-posponer-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+.notif-posponer-actions button {
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+.notif-posponer-cancel {
+    background: #f3f4f6;
+    color: #374151;
+}
+.notif-posponer-cancel:hover {
+    background: #e5e7eb;
+}
+.notif-posponer-ok {
+    background: #4338ca;
+    color: #ffffff;
+}
+.notif-posponer-ok:hover {
+    background: #3730a3;
+}
+@keyframes notifOverlayIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
 /* ===== SEPARADOR "NOTIFICACIONES NUEVAS" ===== */
 .notif-divider {
     padding: 10px 20px 6px;

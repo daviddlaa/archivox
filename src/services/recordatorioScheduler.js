@@ -75,9 +75,9 @@ async function procesarRecordatoriosVencidos() {
 
                 // 1. Insertar la notificación (destinatario = creador del recordatorio)
                 const ins = await pool.query(`
-                    INSERT INTO notificaciones (titulo, mensaje, tipo, prioridad, creador_id, destinatario_id, accion_url, accion_texto, fecha_expiracion, accion_modulo, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                `, [titulo, mensaje, 'warning', 'alta', rec.usuario_id, rec.usuario_id, accionUrl, 'Abrir campaña', null, null]);
+                    INSERT INTO notificaciones (titulo, mensaje, tipo, prioridad, creador_id, destinatario_id, accion_url, accion_texto, fecha_expiracion, accion_modulo, recordatorio_id, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                `, [titulo, mensaje, 'warning', 'alta', rec.usuario_id, rec.usuario_id, accionUrl, 'Abrir campaña', null, null, rec.id]);
 
                 const newId = ins.lastInsertRowid;
 
@@ -95,6 +95,7 @@ async function procesarRecordatoriosVencidos() {
                     es_novedad: 0,
                     fecha_expiracion: null,
                     leida: 0,
+                    recordatorio_id: rec.id,
                     creador_username: null,
                     created_at: new Date().toISOString()
                 };

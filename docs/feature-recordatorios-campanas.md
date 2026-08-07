@@ -68,12 +68,15 @@ resto del esquema.
 |--------|------|------|-------------|
 | POST | `/api/gestiones-maestro/:id/recordatorios` | ✅ | Crear recordatorio para una solicitud de la campaña |
 | PUT | `/api/gestiones-maestro/:id/recordatorios/:rid/estado` | ✅ | Cambiar estado (`hecho`/`cancelado`) |
+| PUT | `/api/gestiones-maestro/:id/recordatorios/:rid/posponer` | ✅ | Reprogramar (`fecha_recordatorio`); vuelve a `pendiente`/`notificado=0` |
 
-**Controlador:** `crearRecordatorio` y `actualizarEstadoRecordatorio` en
-`src/controllers/gestionesMaestro.controller.js` (exportados como `crearRecordatorio` y
-`actualizarEstadoRecordatorio`). Validan acceso a la campaña con `buildGestionAccessWhere`,
-que la solicitud pertenezca a la campaña, el canal y la fecha; insertan el recordatorio,
-una gestión de tipo `'Recordatorio'` y aumentan el contador `gestionadas` de la campaña.
+**Controlador:** `crearRecordatorio`, `actualizarEstadoRecordatorio` y `posponerRecordatorio` en
+`src/controllers/gestionesMaestro.controller.js` (exportados con el mismo nombre). Validan
+acceso a la campaña con `buildGestionAccessWhere`, que la solicitud pertenezca a la campaña,
+el canal y la fecha; insertan el recordatorio, una gestión de tipo `'Recordatorio'` y
+aumentan el contador `gestionadas` de la campaña. `posponerRecordatorio` hace un UPDATE de
+`fecha_recordatorio`, `estado='pendiente'`, `notificado=0` y `completed_at=NULL` para que el
+scheduler vuelva a avisar cuando venza.
 
 ### 3.2 Detalle de campaña
 
@@ -92,8 +95,9 @@ Servicio nuevo que corre **cada 60 segundos**:
    servidor): inserta una notificación en `notificaciones` (`tipo='warning'`,
    `prioridad='alta'`, `destinatario_id = usuario_id` del recordatorio, `accion_url =
    '/gestion-lote?id=<campaña>'` sin `accion_modulo` para que el DeepLinkRouter preserve el
-   query), la emite por SSE con `notificationBus.emitir('notification.created', ...)` y
-   marca `notificado=1` (idempotente).
+   query, y **`recordatorio_id = id` del recordatorio** para que el campanario pueda ofrecer
+   las acciones Hecho/Posponer/Eliminar), la emite por SSE con
+   `notificationBus.emitir('notification.created', ...)` y marca `notificado=1` (idempotente).
 3. **Resiliencia al arranque:** si el primer pase falla porque la tabla aún no existe
    (Postgres crea el esquema en background), reintenta cada 5s (máx. 6 veces) antes de caer
    al ciclo de 60s.
@@ -111,6 +115,26 @@ backend normaliza `'T'`→`' '` (`.slice(0,19)`).
 
 **Arranque:** `iniciarRecordatorioScheduler()` se llama en `app.js` al final (tras
 `app.listen`), envuelto en try/catch para no tumbar el servidor.
+
+### 3.4 Gestión del campanario (archivado + acciones del recordatorio)
+
+La columna `notificaciones.recordatorio_id INTEGER` (migración idempotente en `initDb.js` y
+`initDb.pg.js`) vincula cada notificación del scheduler con su recordatorio. Con eso el
+centro de notificaciones (`public/js/notificaciones-dashboard.js`) ofrece:
+
+- **Pestañas 🔔 Activas / 📦 Archivadas** en el panel. El listado (`listar`) **excluye por
+  defecto** las archivadas (`?archivada=1` devuelve solo archivadas), así las archivadas dejan
+  de reaparecer en el menú.
+- **Botones directos en la card del recordatorio:** ✅ Hecho → `estado='hecho'`; ⏰ Posponer
+  → modal con presets (+30 min / +1 h / +1 día) y `datetime-local` → `.../posponer`; ❌
+  Eliminar → `estado='cancelado'`. Tras cada acción la notificación **se archiva** y el panel
+  se refresca. El id de campaña se extrae de `accion_url`.
+- **Novedades:** al marcar leída una notificación `es_novedad=1`, `marcarLeida` la archiva
+  automáticamente (se oculta de la sección ✨ sin acumularse). Las de recordatorio **no** se
+  archivan solo por leerlas.
+- **`contarNoLeidas`** excluye archivadas del numerito.
+- **`PUT /:id/restaurar`** y **`DELETE /:id`** (admin) para la pestaña Archivadas; el DELETE
+  sigue siendo solo `superadmin` (ruta tras `requiresRole` en `admin.routes.js`).
 
 ---
 
