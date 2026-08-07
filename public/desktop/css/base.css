@@ -497,10 +497,26 @@ h3 {
     font-weight: 600;
 }
 
+.page-header-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .page-header-logo-img {
     display: block;
     height: 40px;
     width: auto;
+}
+
+.page-header-logo-text {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: #6366f1;
 }
 
 .page-header-left .subtitulo {

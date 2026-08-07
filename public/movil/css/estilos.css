@@ -43,16 +43,43 @@ body {
     flex-direction: column;
 }
 
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .header-logo-img {
     display: block;
     height: 32px;
     width: auto;
 }
 
+.header-logo-text {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.3px;
+}
+
 .mm-header-title-img {
     display: block;
     height: 26px;
     width: auto;
+}
+.mm-header-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.mm-header-logo-text {
+    font-size: 18px;
+    font-weight: 700;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: #6366f1;
 }
 
 .header-title-row {
