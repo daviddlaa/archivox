@@ -497,6 +497,12 @@ h3 {
     font-weight: 600;
 }
 
+.page-header-logo-img {
+    display: block;
+    height: 40px;
+    width: auto;
+}
+
 .page-header-left .subtitulo {
     color: #6b7280;
     margin-top: 5px;
