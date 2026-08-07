@@ -416,6 +416,9 @@ async function cargarCampañasActivas() {
                 '</a>';
         }
         container.innerHTML = html;
+        var item = container.querySelector('.campana-widget-item');
+        container.style.maxHeight = item ? (item.offsetHeight * 4 + 8 * 3) + 'px' : '';
+        container.style.overflowY = 'auto';
     } catch (e) {
         console.error('Error cargando campañas activas:', e);
         container.innerHTML = '<div class="campanas-widget-empty">No se pudieron cargar las campañas.</div>';
@@ -436,7 +439,7 @@ async function cargarUltimasSolicitudes() {
     var container = document.getElementById('ultimas-solicitudes-lista');
     if (!container) return;
     try {
-        var res = await fetch('/api/excel/solicitudes?limite=5');
+        var res = await fetch('/api/excel/solicitudes?limite=4');
         if (!res.ok) throw new Error('status ' + res.status);
         var result = await res.json();
         var lista = Array.isArray(result) ? result : (result.data || []);

@@ -258,7 +258,7 @@ async function cargarCampañasActivas() {
         var lista = await res.json();
         var activas = (lista || []).filter(function(c) {
             return String(c.estado || 'activa').toLowerCase() === 'activa';
-        }).slice(0, 4);
+        });
 
         if (!activas.length) {
             container.innerHTML = '<div class="campanas-widget-empty">No hay campañas activas.<br><a href="/m/gestion-lote">Crear o ver campañas</a></div>';
@@ -283,6 +283,9 @@ async function cargarCampañasActivas() {
                 '</a>';
         }
         container.innerHTML = html;
+        var item = container.querySelector('.campana-widget-item');
+        container.style.maxHeight = item ? (item.offsetHeight * 4 + 8 * 3) + 'px' : '';
+        container.style.overflowY = 'auto';
         igualarAlturaWidgetSlides();
     } catch (e) {
         console.error('Error cargando campañas activas:', e);
