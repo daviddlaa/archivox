@@ -188,6 +188,9 @@
                         <option value="0">No leídas</option>
                         <option value="1">Leídas</option>
                     </select>
+                    <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap">
+                        <input type="checkbox" id="filterNotifArchivada" onchange="cargarNotificaciones()"> 📦 Ver archivadas
+                    </label>
                     <button class="admin-btn admin-btn-primary" onclick="abrirModalCrearNotificacion()">+ Nueva Notificación</button>
                 </div>
             </div>

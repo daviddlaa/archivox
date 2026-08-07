@@ -345,6 +345,18 @@ const initTables = async () => {
             console.log('   ⏩ notificaciones.archivada ya INTEGER (o no aplica):', e.message.substring(0,60));
         }
 
+        // Migración de limpieza: las notificaciones ya leídas pasan a Archivadas
+        // (modelo coherente: Activas = no leídas; Archivadas = consumidas). Idempotente.
+        try {
+            const limpio = await client.query(`
+                UPDATE notificaciones SET archivada = 1
+                WHERE leida = 1 AND (archivada = 0 OR archivada IS NULL)
+            `);
+            console.log(`   ✅ Limpieza: ${limpio.rowCount || 0} notificaciones leídas movidas a Archivadas`);
+        } catch (e) {
+            console.log('   ⏩ Limpieza de notificaciones no aplicable:', e.message.substring(0,60));
+        }
+
         console.log('   ✅ notificaciones migradas')
 
         // Migración: inferir accion_modulo desde accion_url legacy (PostgreSQL)

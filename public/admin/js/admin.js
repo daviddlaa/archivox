@@ -172,6 +172,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Cargar datos iniciales
         cargarUsuarios();
 
+        // Badge de notificaciones en tiempo real (SSE)
+        actualizarBadgeNotif();
+        iniciarSSEAdmin();
+
         // ================================================================
         // SUPERADMIN MOBILE: Soporte para navegación por ?tab= query param
         // Permite que los enlaces del menú móvil abran tabs específicos
@@ -205,8 +209,10 @@ function actualizarReloj() {
 // TABS
 // ============================================================================
 let conexionesTimer = null;
+let tabActivo = 'usuarios';
 
 function cambiarTab(tab) {
+    tabActivo = tab;
     document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.admin-tab-content').forEach(t => t.classList.remove('active'));
 
@@ -963,8 +969,10 @@ async function cargarNotificaciones() {
         const q = document.getElementById('searchNotif').value;
         const tipo = document.getElementById('filterNotifTipo').value;
         const leida = document.getElementById('filterNotifLeida').value;
+        const archivadaCheck = document.getElementById('filterNotifArchivada');
+        const archivada = archivadaCheck && archivadaCheck.checked ? '1' : '0';
 
-        let url = `/api/admin/notificaciones?pagina=${paginaNotif}&limite=15`;
+        let url = `/api/admin/notificaciones?pagina=${paginaNotif}&limite=15&archivada=${archivada}`;
         if (q) url += `&q=${encodeURIComponent(q)}`;
         if (tipo) url += `&tipo=${tipo}`;
         if (leida !== '') url += `&leida=${leida}`;
@@ -1011,6 +1019,7 @@ async function cargarNotificaciones() {
                 <td>
                     <div class="action-btns">
                         ${!n.leida ? `<button class="action-btn" onclick="marcarLeida(${n.id})" title="Marcar leída">✅</button>` : ''}
+                        ${Number(n.archivada) === 1 ? `<button class="action-btn" onclick="restaurarNotificacionAdmin(${n.id})" title="Restaurar a activas">↩</button>` : ''}
                         <button class="action-btn" onclick="archivarNotificacionAdmin(${n.id})" title="Archivar">📦</button>
                         <button class="action-btn" onclick="eliminarNotificacion(${n.id})" title="Eliminar" style="color:#dc2626">🗑️</button>
                     </div>
@@ -1067,6 +1076,7 @@ async function cargarNotificaciones() {
                     </div>
                     <div class="notif-admin-card-actions">
                         ${!n.leida ? `<button class="admin-user-card-btn admin-user-card-btn-secondary" onclick="marcarLeida(${n.id})">✅ Marcar leída</button>` : ''}
+                        ${Number(n.archivada) === 1 ? `<button class="admin-user-card-btn admin-user-card-btn-secondary" onclick="restaurarNotificacionAdmin(${n.id})">↩ Restaurar</button>` : ''}
                         <button class="admin-user-card-btn admin-user-card-btn-secondary" onclick="archivarNotificacionAdmin(${n.id})">📦 Archivar</button>
                         <button class="admin-user-card-btn admin-user-card-btn-danger" onclick="eliminarNotificacion(${n.id})">🗑️ Eliminar</button>
                         ${n.accion_url ? `<a href="${escapeHtml(n.accion_url)}" target="_blank" class="admin-user-card-btn admin-user-card-btn-primary" style="text-decoration:none;text-align:center">🔗 ${escapeHtml(n.accion_texto || 'Abrir')}</a>` : ''}
@@ -1285,10 +1295,60 @@ async function archivarNotificacionAdmin(id) {
         const res = await fetch(`/api/admin/notificaciones/${id}/archivar`, { method: 'PUT' });
         if (res.ok) {
             cargarNotificaciones();
+            actualizarBadgeNotif();
             mostrarToast('📦 Notificación archivada');
         }
     } catch (err) {
         console.error('Error archivar:', err);
+    }
+}
+
+// Restaurar notificación archivada desde el admin
+async function restaurarNotificacionAdmin(id) {
+    try {
+        const res = await fetch(`/api/admin/notificaciones/${id}/restaurar`, { method: 'PUT' });
+        if (res.ok) {
+            cargarNotificaciones();
+            actualizarBadgeNotif();
+            mostrarToast('↩ Notificación restaurada a activas');
+        }
+    } catch (err) {
+        console.error('Error restaurar:', err);
+    }
+}
+
+// ============================================================================
+// SSE EN VIVO PARA EL BADGE DEL ADMIN (tiempo real)
+// ============================================================================
+function iniciarSSEAdmin() {
+    try {
+        const es = new EventSource('/api/admin/notificaciones/stream', { withCredentials: true });
+
+        es.addEventListener('notification.created', function() {
+            actualizarBadgeNotif();
+            if (tabActivo === 'notificaciones') cargarNotificaciones();
+        });
+
+        es.addEventListener('notification.read', function() {
+            actualizarBadgeNotif();
+            if (tabActivo === 'notificaciones') cargarNotificaciones();
+        });
+
+        es.addEventListener('notification.archived', function() {
+            actualizarBadgeNotif();
+            if (tabActivo === 'notificaciones') cargarNotificaciones();
+        });
+
+        es.addEventListener('count.updated', function(e) {
+            actualizarBadgeNotif();
+        });
+
+        es.onerror = function() {
+            // El EventSource se reconecta solo; solo re-sincronizar el badge
+            actualizarBadgeNotif();
+        };
+    } catch (err) {
+        console.error('Error SSE admin:', err);
     }
 }
 

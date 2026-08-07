@@ -116,14 +116,16 @@ function crearPanelNotificaciones() {
 // ============================================================================
 // ABRIR / CERRAR PANEL
 // ============================================================================
-function abrirPanelNotificaciones() {
+function abrirPanelNotificacionesWidget() {
     const panel = document.getElementById('notif-panel');
     const overlay = document.getElementById('notif-panel-overlay');
     if (panel && overlay) {
         panel.classList.add('open');
         overlay.classList.add('open');
         notifState.isPanelOpen = true;
-        cambiarTabNotificaciones('activas', false);
+        notifState._isMarkingRead = false;
+        // Cargar el contenido cada vez que se abre el panel
+        cambiarTabNotificaciones('activas', true);
         document.body.style.overflow = 'hidden';
     }
 }
@@ -217,19 +219,18 @@ function iniciarSSE() {
 
         // Notificación leída
         es.addEventListener('notification.read', function(e) {
-            // Solo actualizar badge si NO estamos en medio de marcar como leída
-            // (para evitar duplicación con actualizarBadgeNotifUsuario() en marcarLeidaUsuario)
-            if (!notifState._isMarkingRead) {
-                actualizarBadgeNotifUsuario();
-                // Solo recargar si NO estamos en medio de marcar como leída
-                if (notifState.isPanelOpen) {
-                    cargarNotificacionesUsuario();
-                }
+            // Ignorar eventos generados por la propia acción (dedupe)
+            if (notifState._isMarkingRead) return;
+            actualizarBadgeNotifUsuario();
+            if (notifState.isPanelOpen) {
+                cargarNotificacionesUsuario();
             }
         });
 
-        // Notificación archivada
+        // Notificación archivada (incluye leer+archivar)
         es.addEventListener('notification.archived', function(e) {
+            if (notifState._isMarkingRead) return;
+            actualizarBadgeNotifUsuario();
             if (notifState.isPanelOpen) {
                 cargarNotificacionesUsuario();
             }
@@ -237,7 +238,7 @@ function iniciarSSE() {
 
         // Actualización de contador
         es.addEventListener('count.updated', function(e) {
-            if (notifState._isMarkingRead) return; // Evitar duplicación con marcarLeidaUsuario
+            if (notifState._isMarkingRead) return; // Evitar duplicación con la propia acción
             try {
                 const data = JSON.parse(e.data);
                 if (data.no_leidas !== null) {
@@ -364,7 +365,7 @@ function mostrarToastNotificacion(notif) {
 
     toast.innerHTML = `
         <div class="notif-toast-icon">${tipoIcono}</div>
-        <div class="notif-toast-content" onclick="abrirPanelNotificaciones()">
+        <div class="notif-toast-content" onclick="abrirPanelNotificacionesWidget()">
             <div class="notif-toast-title">${escapeHtmlNotif(notif.titulo)} ${esNovedad ? '<span class="notif-nuevo-badge">🆕 NUEVO</span>' : ''}</div>
             <div class="notif-toast-msg">${escapeHtmlNotif(notif.mensaje ? notif.mensaje.substring(0, 80) : '')}</div>
         </div>
@@ -540,15 +541,14 @@ function renderizarNotificacion(n, index, esNovedad) {
     // Fecha formateada
     const fechaHTML = formatearFechaNotif(n.created_at);
 
-    // ¿Tiene acción? - Botón de acción rápida
+    // ¿Tiene acción? - Botón de acción rápida (navega; la card click solo consume)
     // 🆕 Deep Link Router: si tiene accion_modulo, usarlo; si no, usar accion_url (legacy)
     const tieneAccion = (n.accion_modulo || n.accion_url) && n.accion_texto;
-    const dataAttrs = n.accion_modulo ? `data-notif-accion-modulo="${escapeHtmlNotif(n.accion_modulo)}"` : '';
     const accionHTML = tieneAccion ? `
         <button class="notif-item-action-btn"
            data-notif-action-url="${escapeHtmlNotif(n.accion_url || '')}"
            ${n.accion_modulo ? `data-notif-accion-modulo="${escapeHtmlNotif(n.accion_modulo)}"` : ''}
-           onclick="event.stopPropagation(); marcarLeidaUsuario(${n.id}, this.dataset.notifActionUrl, this.dataset.notifAccionModulo);">
+           onclick="event.stopPropagation(); abrirNotificacionAccion(${n.id}, this.dataset.notifActionUrl, this.dataset.notifAccionModulo);">
             ${escapeHtmlNotif(n.accion_texto)} →
         </button>
     ` : '';
@@ -572,16 +572,12 @@ function renderizarNotificacion(n, index, esNovedad) {
         `;
     }
 
-    const dataAccionUrl = n.accion_url ? ` data-accion-url="${escapeHtmlNotif(n.accion_url)}"` : '';
-    const dataAccionModulo = n.accion_modulo ? ` data-accion-modulo="${escapeHtmlNotif(n.accion_modulo)}"` : '';
-    const cardOnClick = `marcarLeidaUsuario(${n.id}${n.accion_url ? `, this.dataset.accionUrl` : ''}${n.accion_modulo ? `, this.dataset.accionModulo` : ''})`;
+    const cardOnClick = `consumirNotificacion(${n.id})`;
 
     return `
         <div class="notif-item ${claseNoLeida} ${clasePrioridad} ${claseNew} ${claseExpirada} ${claseNovedad}"
              data-id="${n.id}"
              data-leida="${n.leida ? 'true' : 'false'}"
-             ${dataAccionUrl}
-             ${dataAccionModulo}
              onclick="${cardOnClick}">
             <div class="notif-item-icon-wrapper" style="background:${tipoColor}20">
                 <span>${tipoIcono}</span>
@@ -624,6 +620,31 @@ function renderizarNotificacionArchivada(n, esAdmin) {
     const fechaHTML = formatearFechaNotif(n.created_at);
     const esRecordatorio = n.recordatorio_id != null;
 
+    // Botón "Abrir →": navega al destino (ya leído y archivado)
+    const tieneAccion = (n.accion_modulo || n.accion_url) && n.accion_texto;
+    const accionHTML = tieneAccion ? `
+        <button class="notif-item-action-btn"
+           data-notif-action-url="${escapeHtmlNotif(n.accion_url || '')}"
+           ${n.accion_modulo ? `data-notif-accion-modulo="${escapeHtmlNotif(n.accion_modulo)}"` : ''}
+           onclick="abrirNotificacionAccion(${n.id}, this.dataset.notifActionUrl, this.dataset.notifAccionModulo)">
+            ${escapeHtmlNotif(n.accion_texto)} →
+        </button>
+    ` : '';
+
+    // Acciones de recordatorio: siguen disponibles aunque la notificación esté
+    // archivada (para no perder un recordatorio pendiente al consumir la card)
+    let recordatorioHTML = '';
+    if (esRecordatorio) {
+        const campanaId = extraerCampanaId(n.accion_url);
+        recordatorioHTML = `
+            <div class="notif-recordatorio-acciones">
+                <button class="notif-recordatorio-btn hecho" onclick="marcarRecordatorioHecho(${n.id}, ${n.recordatorio_id}, ${campanaId})" title="Marcar como hecho">✅ Hecho</button>
+                <button class="notif-recordatorio-btn posponer" onclick="abrirModalPosponer(${n.id}, ${n.recordatorio_id}, ${campanaId})" title="Reprogramar para otra fecha">⏰ Posponer</button>
+                <button class="notif-recordatorio-btn eliminar" onclick="cancelarRecordatorioNotificacion(${n.id}, ${n.recordatorio_id}, ${campanaId})" title="Cancelar el recordatorio">❌ Eliminar</button>
+            </div>
+        `;
+    }
+
     return `
         <div class="notif-item notif-item-archivada" data-id="${n.id}">
             <div class="notif-item-icon-wrapper" style="background:${tipoColor}20">
@@ -635,10 +656,12 @@ function renderizarNotificacionArchivada(n, esAdmin) {
                     <span class="notif-item-tipo-badge ${claseTipo}">${tipoIcono} ${n.tipo || 'info'}</span>
                 </div>
                 <div class="notif-item-msg">${escapeHtmlNotif(n.mensaje)}</div>
+                ${recordatorioHTML}
                 <div class="notif-item-footer">
                     <div class="notif-item-date"><i>🕐</i> ${fechaHTML}</div>
-                    <div style="display:flex;align-items:center;gap:4px">
-                        <button class="notif-item-action-btn" onclick="restaurarNotificacion(${n.id})" title="Restaurar">
+                    <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end">
+                        ${accionHTML}
+                        <button class="notif-item-action-btn" onclick="restaurarNotificacion(${n.id})" title="Restaurar a Activas">
                             ↩ Restaurar
                         </button>
                         ${esAdmin ? `
@@ -660,37 +683,58 @@ function extraerCampanaId(accionUrl) {
 }
 
 // ============================================================================
-// MARCAR COMO LEÍDA (individual) - con navegación a acción si existe
+// CONSUMIR NOTIFICACIÓN (click en la card): leer + archivar, SIN navegar
 // ============================================================================
-// Versión corregida: elimina race conditions con SSE y asegura estado consistente.
-// 🆕 Deep Link Router: ahora acepta accionModulo para resolver URLs por plataforma.
+// El enlace al destino queda disponible en el botón de acción "→" de la card.
 // ============================================================================
-async function marcarLeidaUsuario(id, accionUrl, accionModulo) {
-    // Flag para evitar doble recarga por SSE
+async function consumirNotificacion(id) {
+    if (notifState._isMarkingRead) return;
     notifState._isMarkingRead = true;
-    const panelWasOpen = notifState.isPanelOpen;
 
     try {
-        await fetch(`/api/admin/notificaciones/${id}/leer`, { method: 'PUT' });
+        await fetch(`/api/admin/notificaciones/${id}/leer?archivar=1`, { method: 'PUT' });
     } catch (e) {
-        console.warn('[Notificaciones] Error marcando leída:', e);
+        console.warn('[Notificaciones] Error consumiendo notificación:', e);
     }
 
-    // Actualizar visualmente sin recargar todo
+    // Animar salida de la card
     const item = document.querySelector(`.notif-item[data-id="${id}"]`);
     if (item) {
-        item.classList.remove('notif-item-no-leida', 'notif-item-new', 'notif-item-highlight');
-        item.dataset.leida = 'true';
-        const dot = item.querySelector('.notif-item-dot');
-        if (dot) dot.remove();
+        item.style.transition = 'all 0.3s ease';
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(30px)';
+        item.style.maxHeight = '0';
+        item.style.padding = '0';
+        setTimeout(() => item.remove(), 300);
     }
 
-    // Esperar respuesta de contar no leídas desde el servidor
     await actualizarBadgeNotifUsuario();
     actualizarContadorPanel();
 
-    // Liberar flag después de un breve momento
-    setTimeout(() => { notifState._isMarkingRead = false; }, 500);
+    // Si no quedan items en la pestaña, recargar para mostrar el estado vacío
+    setTimeout(() => {
+        const body = document.getElementById('notif-panel-body');
+        if (notifState.isPanelOpen && body && body.querySelectorAll('.notif-item').length === 0) {
+            cargarNotificacionesUsuario();
+        }
+    }, 400);
+
+    setTimeout(() => { notifState._isMarkingRead = false; }, 600);
+}
+
+// ============================================================================
+// ABRIR ACCIÓN (botón "→"): leer + archivar + navegar vía DeepLinkRouter
+// ============================================================================
+async function abrirNotificacionAccion(id, accionUrl, accionModulo) {
+    notifState._isMarkingRead = true;
+
+    try {
+        await fetch(`/api/admin/notificaciones/${id}/leer?archivar=1`, { method: 'PUT' });
+    } catch (e) {
+        console.warn('[Notificaciones] Error marcando leída al navegar:', e);
+    }
+
+    await actualizarBadgeNotifUsuario();
 
     // ====================================================================
     // 🆕 RESOLVER URL DE NAVEGACIÓN USANDO DEEP LINK ROUTER
@@ -719,18 +763,12 @@ async function marcarLeidaUsuario(id, accionUrl, accionModulo) {
         setTimeout(() => {
             window.location.href = urlNavegacion;
         }, 400); // Esperar que cierre la animación del panel
+        setTimeout(() => { notifState._isMarkingRead = false; }, 800);
         return;
     }
 
-    // Recargar el panel suavemente para reflejar cambios del servidor
-    // (el SSE no recarga cuando _isMarkingRead = true, así que lo hacemos aquí)
-    if (panelWasOpen) {
-        setTimeout(() => {
-            if (!notifState._isMarkingRead && notifState.isPanelOpen) {
-                cargarNotificacionesUsuario();
-            }
-        }, 800);
-    }
+    setTimeout(() => { notifState._isMarkingRead = false; }, 500);
+    if (notifState.isPanelOpen) cargarNotificacionesUsuario();
 }
 
 // ============================================================================
@@ -740,26 +778,19 @@ async function marcarTodasLeidasUsuario() {
     try {
         const res = await fetch('/api/admin/notificaciones/marcar-todas-leidas', { method: 'PUT' });
         if (res.ok) {
-            // Actualizar visualmente
-            const items = document.querySelectorAll('.notif-item[data-leida="false"]');
-            items.forEach(item => {
-                item.classList.remove('notif-item-no-leida', 'notif-item-new');
-                item.dataset.leida = 'true';
-                const dot = item.querySelector('.notif-item-dot');
-                if (dot) dot.remove();
-            });
-
-            actualizarBadgeNotifUsuario();
-
-            // Ocultar botón
+            // Ocultar botón y contador del panel
             const btn = document.getElementById('notifBtnMarkAll');
             if (btn) btn.style.display = 'none';
-
-            // Ocultar contador del panel
             const panelCount = document.getElementById('notifPanelCount');
             if (panelCount) panelCount.style.display = 'none';
 
-            mostrarToastSimple('✅ Todas marcadas como leídas');
+            await actualizarBadgeNotifUsuario();
+            mostrarToastSimple('✅ Todas marcadas como leídas y archivadas');
+
+            // Recargar la pestaña (todo lo activo desaparece de Activas)
+            if (notifState.isPanelOpen) {
+                setTimeout(() => cargarNotificacionesUsuario(), 350);
+            }
         }
     } catch (e) {
         console.error('[Notificaciones] Error marcar todas:', e);

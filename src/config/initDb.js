@@ -442,6 +442,19 @@ try {
     console.log('[DB] Migración accion_modulo legacy:', e.message);
 }
 
+// Migración de limpieza: las notificaciones ya leídas pasan a Archivadas
+// (modelo coherente: Activas = no leídas; Archivadas = consumidas). Idempotente.
+try {
+    const limpio = db.prepare(
+        'UPDATE notificaciones SET archivada = 1 WHERE leida = 1 AND (archivada = 0 OR archivada IS NULL)'
+    ).run();
+    if (limpio.changes > 0) {
+        console.log('[DB] Limpieza: ' + limpio.changes + ' notificaciones leídas movidas a Archivadas');
+    }
+} catch (e) {
+    console.log('[DB] Limpieza de notificaciones no aplicable:', e.message);
+}
+
 // ================================================================
 // ASIGNAR SUPERADMIN: Si existe el usuario daviddlaa, asignarlo como superadmin
 // ================================================================

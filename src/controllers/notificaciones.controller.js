@@ -15,9 +15,10 @@ const notificationBus = require('../services/notificationBus.js');
 // GET /api/admin/notificaciones
 exports.listar = async (req, res) => {
     try {
-        const { pagina = 1, limite = 20, tipo, leida, archivada } = req.query;
+        const { pagina = 1, limite = 20, tipo, leida, archivada, q } = req.query;
         const usuario = req.session.usuario;
-        const offset = (parseInt(pagina) - 1) * parseInt(limite);
+        const limiteInt = Math.min(parseInt(limite) || 20, 200);
+        const offset = (parseInt(pagina) - 1) * limiteInt;
         const esAdmin = usuario.rol === 'admin' || usuario.rol === 'superadmin' || usuario.is_superadmin;
 
         let sql = `SELECT n.*, u.username as creador_username
@@ -44,11 +45,22 @@ exports.listar = async (req, res) => {
         if (archivada !== undefined && archivada !== '') {
             // ?archivada=1 → solo archivadas ; ?archivada=0 → solo activas
             const val = archivada === '1' || archivada === 'true' ? 1 : 0;
-            sql += ` AND (n.archivada = $${paramIndex++} OR n.archivada IS NULL)`;
+            if (val === 1) {
+                // Solo archivadas: NULL (legacy) se trata como NO archivada
+                sql += ` AND n.archivada = $${paramIndex++}`;
+            } else {
+                sql += ` AND (n.archivada = $${paramIndex++} OR n.archivada IS NULL)`;
+            }
             params.push(val);
         } else {
             // Por defecto: ocultar las archivadas (dejan de reaparecer en el menú)
             sql += ` AND (n.archivada = 0 OR n.archivada IS NULL)`;
+        }
+
+        if (q) {
+            const termino = `%${String(q).trim()}%`;
+            sql += ` AND (UPPER(n.titulo) LIKE UPPER($${paramIndex++}) OR UPPER(n.mensaje) LIKE UPPER($${paramIndex++}))`;
+            params.push(termino, termino);
         }
 
         // Contar y obtener datos
@@ -56,7 +68,7 @@ exports.listar = async (req, res) => {
             pool.query(`SELECT COUNT(*) as total FROM (${sql}) as filtrados`, params),
             pool.query(
                 sql + ` ORDER BY n.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
-                [...params, parseInt(limite), offset]
+                [...params, limiteInt, offset]
             )
         ]);
 
@@ -64,14 +76,17 @@ exports.listar = async (req, res) => {
             data: dataResult.rows,
             total: parseInt(countResult.rows[0]?.total) || 0,
             pagina: parseInt(pagina),
-            limite: parseInt(limite)
+            limite: limiteInt
         });
     } catch (err) {
         console.error('[Notificaciones] Error listar:', err);
         console.warn('[Notificaciones] Usando fallback - verificar migración de columnas en PostgreSQL');
-        // Fallback seguro: respeta filtro de destinatario para usuarios no-admin
+        // Fallback seguro: misma semántica de filtros que la consulta principal
         try {
-            let fallbackSql = `SELECT n.id, n.titulo, n.mensaje, n.tipo, n.leida, n.es_novedad, n.archivada, n.created_at, u.username as creador_username
+            let fallbackSql = `SELECT n.id, n.titulo, n.mensaje, n.tipo, n.prioridad, n.leida, n.es_novedad,
+                                      n.archivada, n.created_at, n.destinatario_id, n.creador_id,
+                                      n.accion_url, n.accion_texto, n.accion_modulo, n.fecha_expiracion,
+                                      n.recordatorio_id, u.username as creador_username
                                FROM notificaciones n
                                LEFT JOIN usuarios u ON n.creador_id = u.id WHERE 1=1`;
             const fallbackParams = [];
@@ -81,17 +96,41 @@ exports.listar = async (req, res) => {
                 fallbackSql += ` AND (n.destinatario_id IS NULL OR n.destinatario_id = $${fbParamIndex++})`;
                 fallbackParams.push(usuario.id);
             }
-            fallbackSql += ` AND (n.archivada = 0 OR n.archivada IS NULL)`;
+            if (tipo) {
+                fallbackSql += ` AND n.tipo = $${fbParamIndex++}`;
+                fallbackParams.push(tipo);
+            }
+            if (leida !== undefined && leida !== '') {
+                fallbackSql += ` AND n.leida = $${fbParamIndex++}`;
+                fallbackParams.push(leida === '1' || leida === 'true' ? 1 : 0);
+            }
+            if (archivada !== undefined && archivada !== '') {
+                const val = archivada === '1' || archivada === 'true' ? 1 : 0;
+                if (val === 1) {
+                    fallbackSql += ` AND n.archivada = $${fbParamIndex++}`;
+                } else {
+                    fallbackSql += ` AND (n.archivada = $${fbParamIndex++} OR n.archivada IS NULL)`;
+                }
+                fallbackParams.push(val);
+            } else {
+                fallbackSql += ` AND (n.archivada = 0 OR n.archivada IS NULL)`;
+            }
+            if (q) {
+                const termino = `%${String(q).trim()}%`;
+                fallbackSql += ` AND (UPPER(n.titulo) LIKE UPPER($${fbParamIndex++}) OR UPPER(n.mensaje) LIKE UPPER($${fbParamIndex++}))`;
+                fallbackParams.push(termino, termino);
+            }
 
+            const totalRes = await pool.query(`SELECT COUNT(*) as total FROM (${fallbackSql}) as filtrados`, fallbackParams);
             fallbackSql += ` ORDER BY n.created_at DESC LIMIT $${fbParamIndex++} OFFSET $${fbParamIndex++}`;
-            fallbackParams.push(parseInt(limite), offset);
+            fallbackParams.push(limiteInt, offset);
 
             const fallback = await pool.query(fallbackSql, fallbackParams);
             res.json({
                 data: fallback.rows,
-                total: fallback.rows.length,
+                total: parseInt(totalRes.rows[0]?.total) || 0,
                 pagina: parseInt(pagina),
-                limite: parseInt(limite),
+                limite: limiteInt,
                 fallback: true
             });
         } catch (fallbackErr) {
@@ -193,20 +232,44 @@ exports.marcarLeida = async (req, res) => {
     try {
         const { id } = req.params;
         const usuario = req.session.usuario;
+        const esAdmin = usuario.rol === 'admin' || usuario.rol === 'superadmin' || usuario.is_superadmin;
+        // ?archivar=1 → leer y archivar en una sola operación (consumir)
+        const archivarTambien = req.query.archivar === '1' || req.query.archivar === 'true';
 
-        // Las novedades (es_novedad = 1) se ocultan automáticamente al leerlas:
-        // se archivan para no acumularse en el panel. El resto solo se marca leída.
-        await pool.query(
-            `UPDATE notificaciones SET leida = 1, leida_at = CURRENT_TIMESTAMP,
-             archivada = CASE WHEN es_novedad = 1 THEN 1 ELSE archivada END
-             WHERE id = $1`,
+        const existe = await pool.query(
+            `SELECT id, destinatario_id FROM notificaciones WHERE id = $1`,
             [id]
         );
+        const notif = existe.rows?.[0];
+        if (!notif) {
+            return res.status(404).json({ error: 'Notificación no encontrada' });
+        }
+        // Scoping: un no-admin solo puede leer notificaciones suyas o globales
+        if (!esAdmin && notif.destinatario_id != null && Number(notif.destinatario_id) !== usuario.id) {
+            return res.status(403).json({ error: 'No tienes permiso para esta notificación' });
+        }
 
-        // Emitir a todos que una notificación fue leída
-        notificationBus.emitir('notification.read', { id, usuarioId: usuario.id });
+        await pool.query(
+            `UPDATE notificaciones SET leida = 1, leida_at = CURRENT_TIMESTAMP,
+             archivada = CASE WHEN $2 = 1 THEN 1 WHEN es_novedad = 1 THEN 1 ELSE archivada END
+             WHERE id = $1`,
+            [id, archivarTambien ? 1 : 0]
+        );
 
-        res.json({ mensaje: 'Notificación marcada como leída' });
+        // Emitir solo al destinatario (o a todos si es global)
+        const evento = archivarTambien ? 'notification.archived' : 'notification.read';
+        const payload = { id, usuarioId: usuario.id, leida: 1, archivada: archivarTambien ? 1 : 0 };
+        if (notif.destinatario_id != null) {
+            notificationBus.emitirAUsuario(evento, payload, Number(notif.destinatario_id));
+        } else {
+            notificationBus.emitir(evento, payload);
+        }
+
+        res.json({
+            mensaje: archivarTambien
+                ? 'Notificación marcada como leída y archivada'
+                : 'Notificación marcada como leída'
+        });
     } catch (err) {
         console.error('[Notificaciones] Error marcar leída:', err);
         res.status(500).json({ error: err.message });
@@ -222,10 +285,9 @@ exports.marcarTodasLeidas = async (req, res) => {
         const usuario = req.session.usuario;
         const esAdmin = usuario.rol === 'admin' || usuario.rol === 'superadmin' || usuario.is_superadmin;
 
-        // Las novedades se archivan al marcarlas leídas (mismo criterio que marcarLeida)
-        let sql = `UPDATE notificaciones SET leida = 1, leida_at = CURRENT_TIMESTAMP,
-             archivada = CASE WHEN es_novedad = 1 THEN 1 ELSE archivada END
-             WHERE leida = 0`;
+        // "Marcar todas" consume: marca leídas Y archiva todo lo activo del usuario
+        let sql = `UPDATE notificaciones SET leida = 1, leida_at = CURRENT_TIMESTAMP, archivada = 1
+                   WHERE leida = 0 AND (archivada = 0 OR archivada IS NULL)`;
         const params = [];
 
         // Si no es admin, solo marcar sus notificaciones
@@ -236,10 +298,14 @@ exports.marcarTodasLeidas = async (req, res) => {
 
         await pool.query(sql, params);
 
-        // Emitir actualización de contador
-        notificationBus.emitir('count.updated', { no_leidas: 0 });
+        // Emitir actualización de contador (null = el cliente recalcula su propio conteo)
+        if (esAdmin) {
+            notificationBus.emitir('count.updated', { no_leidas: null });
+        } else {
+            notificationBus.emitirAUsuario('count.updated', { no_leidas: null }, usuario.id);
+        }
 
-        res.json({ mensaje: 'Todas las notificaciones marcadas como leídas' });
+        res.json({ mensaje: 'Todas las notificaciones marcadas como leídas y archivadas' });
     } catch (err) {
         console.error('[Notificaciones] Error marcar todas:', err);
         res.status(500).json({ error: err.message });
@@ -254,13 +320,32 @@ exports.archivar = async (req, res) => {
     try {
         const { id } = req.params;
         const usuario = req.session.usuario;
+        const esAdmin = usuario.rol === 'admin' || usuario.rol === 'superadmin' || usuario.is_superadmin;
+
+        const existe = await pool.query(
+            `SELECT id, destinatario_id FROM notificaciones WHERE id = $1`,
+            [id]
+        );
+        const notif = existe.rows?.[0];
+        if (!notif) {
+            return res.status(404).json({ error: 'Notificación no encontrada' });
+        }
+        // Scoping: un no-admin solo puede archivar notificaciones suyas o globales
+        if (!esAdmin && notif.destinatario_id != null && Number(notif.destinatario_id) !== usuario.id) {
+            return res.status(403).json({ error: 'No tienes permiso para esta notificación' });
+        }
 
         await pool.query(
             `UPDATE notificaciones SET archivada = 1 WHERE id = $1`,
             [id]
         );
 
-        notificationBus.emitir('notification.archived', { id, usuarioId: usuario.id, archivada: 1 });
+        const payload = { id, usuarioId: usuario.id, archivada: 1 };
+        if (notif.destinatario_id != null) {
+            notificationBus.emitirAUsuario('notification.archived', payload, Number(notif.destinatario_id));
+        } else {
+            notificationBus.emitir('notification.archived', payload);
+        }
 
         res.json({ mensaje: 'Notificación archivada' });
     } catch (err) {
@@ -277,13 +362,32 @@ exports.restaurar = async (req, res) => {
     try {
         const { id } = req.params;
         const usuario = req.session.usuario;
+        const esAdmin = usuario.rol === 'admin' || usuario.rol === 'superadmin' || usuario.is_superadmin;
+
+        const existe = await pool.query(
+            `SELECT id, destinatario_id FROM notificaciones WHERE id = $1`,
+            [id]
+        );
+        const notif = existe.rows?.[0];
+        if (!notif) {
+            return res.status(404).json({ error: 'Notificación no encontrada' });
+        }
+        // Scoping: un no-admin solo puede restaurar notificaciones suyas o globales
+        if (!esAdmin && notif.destinatario_id != null && Number(notif.destinatario_id) !== usuario.id) {
+            return res.status(403).json({ error: 'No tienes permiso para esta notificación' });
+        }
 
         await pool.query(
-            `UPDATE notificaciones SET archivada = 0 WHERE id = $1`,
+            `UPDATE notificaciones SET archivada = 0, leida = 0 WHERE id = $1`,
             [id]
         );
 
-        notificationBus.emitir('notification.archived', { id, usuarioId: usuario.id, archivada: 0 });
+        const payload = { id, usuarioId: usuario.id, archivada: 0 };
+        if (notif.destinatario_id != null) {
+            notificationBus.emitirAUsuario('notification.archived', payload, Number(notif.destinatario_id));
+        } else {
+            notificationBus.emitir('notification.archived', payload);
+        }
 
         res.json({ mensaje: 'Notificación restaurada' });
     } catch (err) {

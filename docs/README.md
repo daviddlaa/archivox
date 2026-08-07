@@ -953,6 +953,47 @@ Las notificaciones pueden incluir un `accion_modulo` que permite navegar directa
 | `perfil-config` | `/perfil?tab=config` |
 | `perfil-ayuda` | `/perfil?tab=ayuda` |
 
+### 10.6 Modelo coherente del menú (Activas / Archivadas)
+
+El centro de notificaciones sigue un modelo único y predecible:
+
+- **Activas = no leídas.** **Archivadas = consumidas** (leídas y/o archivadas).
+- **Click en la card = leer + archivar** (`PUT /leer?archivar=1`). La notificación
+  desaparece de Activas y pasa a Archivadas. **No navega.**
+- **La navegación al destino solo ocurre por el botón de acción "→"** de la card
+  (`abrirNotificacionAccion`), que primero consume y luego resuelve la URL con el
+  `DeepLinkRouter` (correcto por plataforma).
+- **Recordatorios:** los botones ✅ Hecho / ⏰ Posponer / ❌ Eliminar están disponibles
+  tanto en Activas como en **Archivadas**, de modo que un recordatorio nunca se pierde
+  aunque su notificación ya se haya consumido.
+- **"✓ Marcar todas"** consume todo lo activo del usuario (leer + archivar).
+- **Restaurar** (`PUT /:id/restaurar`) devuelve la notificación a Activas como no leída.
+- El **badge** del header equivale al nº de Activas (no leídas).
+
+#### Eventos SSE por usuario
+
+- `notification.created`, `notification.read`, `notification.archived` y `count.updated`
+  se emiten **solo al usuario destinatario** (`emitirAUsuario`) cuando la notificación
+  es específica (`destinatario_id`). Para notificaciones globales (`destinatario_id NULL`)
+  se emiten a todos (modelo de fila compartida).
+- El cliente ignora los eventos generados por su propia acción (dedupe con `_isMarkingRead`).
+
+#### Seguridad (scoping)
+
+`marcarLeida`, `archivar` y `restaurar` validan el destinatario: un usuario no-admin solo
+puede actuar sobre notificaciones suyas o globales (403 en otro caso).
+
+#### API
+
+- `GET /api/admin/notificaciones` admite `q` (búsqueda ILIKE título/mensaje) y `archivada`
+  (`1` = solo archivadas, `0` = solo activas, ausente = activas).
+- `PUT /api/admin/notificaciones/:id/leer?archivar=1` → consume en una sola operación.
+
+#### Migración de limpieza (idempotente)
+
+Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
+(`UPDATE ... SET archivada = 1 WHERE leida = 1`), limpiando el menú de las operativas.
+
 ---
 
 ## 11. 📦 Módulos del Sistema
