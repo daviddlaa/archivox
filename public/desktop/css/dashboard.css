@@ -449,6 +449,11 @@
     gap: 8px;
 }
 
+#campanas-activas-lista {
+    max-height: 440px;
+    overflow-y: auto;
+}
+
 .campana-widget-item {
     display: flex;
     align-items: center;
