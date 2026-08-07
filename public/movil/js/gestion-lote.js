@@ -937,7 +937,7 @@ function abrirGestion(solicitudId, tipo) {
         console.warn('Error marcando campaña activa:', e);
     }
 
-    var opciones = ['Llamada', 'WhatsApp', 'Seguimiento', 'Cobranza', 'Cita', 'Completada', 'Otro', 'Recordatorio'];
+    var opciones = ['Seguimiento', 'Cobranza', 'Completada', 'Recordatorio'];
     var opcionesDropdown = '';
     for (var i = 0; i < opciones.length; i++) {
         var selected = opciones[i] === tipo ? 'selected' : '';

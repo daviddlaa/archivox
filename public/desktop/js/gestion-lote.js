@@ -1307,7 +1307,7 @@ function abrirGestion(solicitudId, tipo) {
     }
     
     var opcionesDropdown = '';
-    var opciones = ['Llamada', 'WhatsApp', 'Seguimiento', 'Cobranza', 'Cita', 'Completada', 'Otro', 'Recordatorio'];
+    var opciones = ['Seguimiento', 'Cobranza', 'Completada', 'Recordatorio'];
     
     for (var i = 0; i < opciones.length; i++) {
         var selected = opciones[i] === tipo ? 'selected' : '';
