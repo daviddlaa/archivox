@@ -52,8 +52,15 @@ async function procesarRecordatoriosVencidos() {
 
         for (const rec of rows) {
             try {
-                // Convertir "YYYY-MM-DD HH:MM:SS" naive a Date comparable
-                const fecha = new Date(String(rec.fecha_recordatorio || '').replace(' ', 'T'));
+                // Convertir "YYYY-MM-DD HH:MM:SS" naive a Date comparable.
+                // En PostgreSQL la columna TIMESTAMP llega como objeto Date (ya en hora
+                // local del servidor, equivalente al naive almacenado): usarlo directo.
+                let fecha;
+                if (rec.fecha_recordatorio instanceof Date) {
+                    fecha = rec.fecha_recordatorio;
+                } else {
+                    fecha = new Date(String(rec.fecha_recordatorio || '').replace(' ', 'T'));
+                }
                 if (isNaN(fecha.getTime()) || fecha.getTime() > ahora.getTime()) {
                     continue;
                 }

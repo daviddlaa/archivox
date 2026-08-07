@@ -13,6 +13,21 @@ function getFirstRow(result) {
     return null;
 }
 
+// Normalizar un datetime NAIVE a string "YYYY-MM-DD HH:MM:SS" en hora de reloj local.
+// En PostgreSQL las columnas TIMESTAMP se devuelven como objetos Date que
+// res.json() serializa a UTC (toISOString), desplazando la hora en el navegador
+// (p.ej. 09:30 → 04:30). Reconstruir con getters locales recupera la hora
+// original sin importar la zona horaria del servidor. En SQLite ya es texto.
+function naiveDateString(v) {
+    if (!v) return v;
+    if (v instanceof Date && !isNaN(v.getTime())) {
+        var p = function(n) { return (n < 10 ? '0' : '') + n; };
+        return v.getFullYear() + '-' + p(v.getMonth() + 1) + '-' + p(v.getDate())
+            + ' ' + p(v.getHours()) + ':' + p(v.getMinutes()) + ':' + p(v.getSeconds());
+    }
+    return String(v).slice(0, 19);
+}
+
 // Obtener usuario actual (del middleware de auth)
 function getUsuarioId(req) {
     return req.session && req.session.usuario ? req.session.usuario.id : null;
@@ -297,6 +312,12 @@ async function getGestionMaestroById(req, res) {
         `, [id, id, id].concat(solicitudesIds));
         
         const Solicitudes = getRows(resultSol);
+        
+        // Normalizar el datetime naive del recordatorio (Postgres lo devuelve como Date y
+        // res.json lo serializaría a UTC, desplazando la hora en el navegador)
+        Solicitudes.forEach(function(s) {
+            if (s.recordatorio_fecha) s.recordatorio_fecha = naiveDateString(s.recordatorio_fecha);
+        });
         
         console.log('[getGestionMaestroById] Total solicitudes devueltas:', Solicitudes.length);
         if (Solicitudes.length > 0) {

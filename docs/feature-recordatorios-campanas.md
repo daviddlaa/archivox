@@ -102,6 +102,13 @@ Servicio nuevo que corre **cada 60 segundos**:
 (igual que `CURRENT_TIMESTAMP` y el resto de la app). El frontend envía `datetime-local` y el
 backend normaliza `'T'`→`' '` (`.slice(0,19)`).
 
+> **Gotcha de zona horaria (Postgres):** las columnas `TIMESTAMP` se devuelven como objetos
+> `Date` y `res.json` las serializa a UTC (`toISOString`), lo que desplaza la hora en el
+> navegador (p.ej. `09:30` → `04:30` con servidor en UTC y navegador en UTC-5). Por eso
+> `getGestionMaestroById` normaliza `recordatorio_fecha` con `naiveDateString()` (getters
+> locales) antes de responder. En SQLite el valor ya viaja como texto y no aplica. El
+> scheduler usa el `Date` directo cuando llega desde PostgreSQL.
+
 **Arranque:** `iniciarRecordatorioScheduler()` se llama en `app.js` al final (tras
 `app.listen`), envuelto en try/catch para no tumbar el servidor.
 
