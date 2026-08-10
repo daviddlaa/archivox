@@ -48,6 +48,7 @@ const queryCache = new Map();
 
 // Variables legacy
 let campanaSeleccionadaId = null;
+let campanaSeleccionadaNombre = '';
 
 // ============================================================================
 // UTILIDADES
@@ -713,14 +714,20 @@ async function abrirModalAgregarCampana() {
         return;
     }
 
+    campanaSeleccionadaId = null;
+    campanaSeleccionadaNombre = '';
+
     var contenido = '';
-    contenido += '<div style="padding: 24px; max-width: 600px; margin: 0 auto;">';
-    contenido += '<h2 style="margin: 0 0 12px 0; color: #1f2937; font-size: 20px;">➕ Agregar a Campaña</h2>';
-    contenido += '<div style="background: #e0e7ff; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #3730a3; margin-bottom: 15px;">' + filasSeleccionadas.length + ' solicitudes seleccionadas</div>';
-    contenido += '<div id="campanas-list-desktop" style="text-align: center; padding: 40px; color: #6b7280;">⏳ Cargando campañas...</div>';
-    contenido += '<div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">';
+    contenido += '<div style="display: flex; flex-direction: column; max-height: 80vh; overflow: hidden; padding: 24px; max-width: 600px; margin: 0 auto;">';
+    contenido += '<div style="flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px;">';
+    contenido += '<h2 style="margin: 0; color: #1f2937; font-size: 20px;">➕ Agregar a Campaña</h2>';
+    contenido += '<button id="btn-confirmar-agregar" onclick="confirmarAgregarCampanaDesktop()" disabled style="padding: 10px 18px; background: #9ca3af; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: not-allowed; transition: all 0.2s ease; white-space: nowrap;">Selecciona una campaña</button>';
+    contenido += '</div>';
+    contenido += '<div style="flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px;">';
+    contenido += '<div style="background: #e0e7ff; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #3730a3;">' + filasSeleccionadas.length + ' solicitudes seleccionadas</div>';
     contenido += '<button onclick="cerrarModal()" class="btn-modal-cancelar">Cancelar</button>';
     contenido += '</div>';
+    contenido += '<div id="campanas-list-desktop" style="flex: 1; min-height: 0; overflow-y: auto; text-align: center; padding: 40px; color: #6b7280;">⏳ Cargando campañas...</div>';
     contenido += '</div>';
 
     crearModal(contenido);
@@ -759,7 +766,8 @@ function renderizarListaCampanasDesktop(campanas) {
         else if (c.estado === 'completada') { estadoColor = '#1e40af'; estadoBg = '#dbeafe'; }
         else if (c.estado === 'pausada') { estadoColor = '#92400e'; estadoBg = '#fef3c7'; }
 
-        html += '<div class="campana-item-select" data-id="' + c.id + '" style="background: #f8fafc; border: 2px solid #e5e7eb; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s ease;" onclick="seleccionarCampanaDesktop(this, \'' + c.id + '\')" onmouseenter="this.style.borderColor=\x27#93c5fd\x27;this.style.background=\x27#f0f5ff\x27" onmouseleave="var isSel=this.classList.contains(\x27seleccionada\x27);if(!isSel){this.style.borderColor=\x27#e5e7eb\x27;this.style.background=\x27#f8fafc\x27}">';
+        var nombreAttr = String(c.nombre || 'Sin nombre').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        html += '<div class="campana-item-select" data-id="' + c.id + '" data-nombre="' + nombreAttr + '" style="background: #f8fafc; border: 2px solid #e5e7eb; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s ease;" onclick="seleccionarCampanaDesktop(this, \'' + c.id + '\')" onmouseenter="this.style.borderColor=\x27#93c5fd\x27;this.style.background=\x27#f0f5ff\x27" onmouseleave="var isSel=this.classList.contains(\x27seleccionada\x27);if(!isSel){this.style.borderColor=\x27#e5e7eb\x27;this.style.background=\x27#f8fafc\x27}">';
         html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">';
         html += '<span style="font-weight: 600; font-size: 14px; color: #1f2937;">' + (c.nombre || 'Sin nombre') + '</span>';
         html += '<span style="background: ' + estadoBg + '; color: ' + estadoColor + '; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">' + (c.estado || '—') + '</span>';
@@ -771,9 +779,6 @@ function renderizarListaCampanasDesktop(campanas) {
         html += '</div>';
         html += '</div>';
     }
-    html += '</div>';
-    html += '<div style="margin-top: 12px; text-align: center;">';
-    html += '<button id="btn-confirmar-agregar" onclick="confirmarAgregarCampanaDesktop()" disabled style="width: 100%; padding: 14px; background: #9ca3af; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: not-allowed; transition: all 0.2s ease;">Selecciona una campaña</button>';
     html += '</div>';
 
     container.innerHTML = html;
@@ -789,6 +794,7 @@ function seleccionarCampanaDesktop(elemento, id) {
     elemento.style.borderColor = '#2563eb';
     elemento.style.background = '#eff6ff';
     campanaSeleccionadaId = id;
+    campanaSeleccionadaNombre = (elemento.getAttribute('data-nombre') || '').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 
     var btn = document.getElementById('btn-confirmar-agregar');
     if (btn) {
@@ -821,8 +827,17 @@ async function confirmarAgregarCampanaDesktop() {
         });
         var resultado = await response.json();
         if (response.ok) {
-            alert('✅ ' + (resultado.mensaje || 'Solicitudes agregadas correctamente'));
+            var nombreCampana = campanaSeleccionadaNombre || 'la campaña';
+            var enviadas = (resultado && resultado.agregados) ? resultado.agregados : filasSeleccionadas.length;
             cerrarModal();
+            cancelarSeleccion();
+            queryCache.clear();
+            buscarEnServidor(true);
+            if (typeof mostrarToastSimple === 'function') {
+                mostrarToastSimple('✅ ' + enviadas + ' solicitudes enviadas a la campaña "' + nombreCampana + '"');
+            } else {
+                alert('✅ ' + (resultado.mensaje || 'Solicitudes agregadas correctamente'));
+            }
         } else {
             alert('Error: ' + (resultado.error || 'Error desconocido'));
             if (btn) { btn.textContent = '➕ Agregar a esta campaña'; btn.disabled = false; }

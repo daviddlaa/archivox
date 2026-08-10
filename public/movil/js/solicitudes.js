@@ -1344,6 +1344,7 @@ async function crearGestionLoteMovil() {
 // ================== AGREGAR A CAMPAÑA EXISTENTE (MÓVIL) ==================
 
 var campanaSeleccionadaIdMovil = null;
+var campanaSeleccionadaNombreMovil = '';
 
 // Abrir modal para agregar solicitudes a una campaña existente (móvil)
 async function abrirModalAgregarCampanaMovil() {
@@ -1352,14 +1353,20 @@ async function abrirModalAgregarCampanaMovil() {
         return;
     }
 
+    campanaSeleccionadaIdMovil = null;
+    campanaSeleccionadaNombreMovil = '';
+
     var contenido = '';
-    contenido += '<div style="padding: 20px; background: white; min-height: 100vh;">';
-    contenido += '<h2 style="margin-top:0; color:#1f2937; font-size:18px;">➕ Agregar a Campaña</h2>';
-    contenido += '<div style="background: #e0e7ff; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #3730a3; margin-bottom: 15px; display: inline-block;">' + filasSeleccionadas.length + ' solicitudes seleccionadas</div>';
-    contenido += '<div id="campanas-list-movil" style="text-align: center; padding: 40px; color: #6b7280;">⏳ Cargando campañas...</div>';
-    contenido += '<div style="margin-top: 20px; display: flex; gap: 10px;">';
-    contenido += '<button onclick="cerrarModal()" style="flex:1; padding: 12px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">Cancelar</button>';
+    contenido += '<div style="padding: 20px; background: white; height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden;">';
+    contenido += '<div style="flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px;">';
+    contenido += '<h2 style="margin:0; color:#1f2937; font-size:18px;">➕ Agregar a Campaña</h2>';
+    contenido += '<button id="btn-confirmar-agregar-movil" onclick="confirmarAgregarCampanaMovil()" disabled style="padding: 10px 16px; background: #9ca3af; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: not-allowed; transition: all 0.2s ease; white-space: nowrap;">Selecciona una campaña</button>';
     contenido += '</div>';
+    contenido += '<div style="flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px;">';
+    contenido += '<div style="background: #e0e7ff; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #3730a3;">' + filasSeleccionadas.length + ' solicitudes seleccionadas</div>';
+    contenido += '<button onclick="cerrarModal()" style="padding: 10px 16px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">Cancelar</button>';
+    contenido += '</div>';
+    contenido += '<div id="campanas-list-movil" style="flex: 1; min-height: 0; overflow-y: auto; text-align: center; padding: 40px; color: #6b7280;">⏳ Cargando campañas...</div>';
     contenido += '</div>';
 
     crearModalMovil(contenido);
@@ -1405,7 +1412,8 @@ function renderizarListaCampanasMovil(campanas) {
         else if (c.estado === 'completada') { estadoColor = '#1e40af'; estadoBg = '#dbeafe'; }
         else if (c.estado === 'pausada') { estadoColor = '#92400e'; estadoBg = '#fef3c7'; }
 
-        html += '<div class="campana-item-select-movil" data-id="' + c.id + '" style="background: #f8fafc; border: 2px solid #e5e7eb; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s ease;" onclick="seleccionarCampanaMovil(this, \'' + c.id + '\')">';
+        var nombreAttr = String(c.nombre || 'Sin nombre').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        html += '<div class="campana-item-select-movil" data-id="' + c.id + '" data-nombre="' + nombreAttr + '" style="background: #f8fafc; border: 2px solid #e5e7eb; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s ease;" onclick="seleccionarCampanaMovil(this, \'' + c.id + '\')">';
         html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">';
         html += '<span style="font-weight: 600; font-size: 14px; color: #1f2937;">' + (c.nombre || 'Sin nombre') + '</span>';
         html += '<span style="background: ' + estadoBg + '; color: ' + estadoColor + '; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">' + (c.estado || '—') + '</span>';
@@ -1418,9 +1426,6 @@ function renderizarListaCampanasMovil(campanas) {
         html += '</div>';
     }
 
-    html += '</div>';
-    html += '<div style="margin-top: 12px; text-align: center;">';
-    html += '<button id="btn-confirmar-agregar-movil" onclick="confirmarAgregarCampanaMovil()" disabled style="width: 100%; padding: 14px; background: #9ca3af; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: not-allowed; transition: all 0.2s ease;">Selecciona una campaña</button>';
     html += '</div>';
 
     container.innerHTML = html;
@@ -1457,6 +1462,7 @@ function seleccionarCampanaMovil(elemento, id) {
     elemento.style.background = '#eff6ff';
 
     campanaSeleccionadaIdMovil = id;
+    campanaSeleccionadaNombreMovil = (elemento.getAttribute('data-nombre') || '').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 
     var btn = document.getElementById('btn-confirmar-agregar-movil');
     if (btn) {
@@ -1498,10 +1504,17 @@ async function confirmarAgregarCampanaMovil() {
         var resultado = await response.json();
 
         if (response.ok) {
-            alert('✅ ' + (resultado.mensaje || 'Solicitudes agregadas correctamente'));
+            var nombreCampana = campanaSeleccionadaNombreMovil || 'la campaña';
+            var enviadas = (resultado && resultado.agregados) ? resultado.agregados : filasSeleccionadas.length;
             cerrarModal();
-            // Ir a la campaña
-            try { window.location.href = '/m/gestion-lote?id=' + campanaSeleccionadaIdMovil; } catch (e) { window.location.href = '/gestion-lote?id=' + campanaSeleccionadaIdMovil; }
+            cancelarSeleccionMovil();
+            queryCache.clear();
+            buscarEnServidor(true);
+            if (typeof mostrarToastSimple === 'function') {
+                mostrarToastSimple('✅ ' + enviadas + ' solicitudes enviadas a la campaña "' + nombreCampana + '"');
+            } else {
+                alert('✅ ' + (resultado.mensaje || 'Solicitudes agregadas correctamente'));
+            }
         } else {
             alert('Error: ' + (resultado.error || 'Error desconocido'));
             if (btn) {

@@ -214,6 +214,7 @@ ARCHIVOX/
 │   ├── feature-recordatorios-campanas.md             # Recordatorios ⏰ de llamada/mensaje en campañas + notificación in-app (Agosto 2026)
 │   ├── fix-semaforo-movil-orden-fijo.md              # Semáforo móvil en orden fijo: Sin clasificar · Seguimiento · Encaminadas · En espera (Agosto 2026)
 │   ├── feature-widget-ultimas-gestiones-dashboard.md # Widget "🕘 Últimas gestiones" en dashboard + pasarela de widgets en escritorio (Agosto 2026)
+│   ├── feature-ux-agregar-campana-solicitudes.md     # Modal "Agregar a Campaña": botón arriba, toast de éxito y refresco en vivo (Agosto 2026)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
 │       ├── informe-auditoria-flujo-multi-equipo.md
@@ -1164,6 +1165,17 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
   vendedor con debounce 400 ms). `limpiarFiltrosLider()` resetea todo
   (estado + segmento + fechas + vendedor + buscador) y cancela timers
   pendientes. Ver `docs/feature-filtros-movil-solicitudes.md`.
+- **UX "Agregar a Campaña" (escritorio + móvil):** el modal de agregar
+  solicitudes seleccionadas a una campaña existente tiene ahora el botón
+  confirmar **arriba, junto al título** (misma posición en ambas
+  plataformas) y la lista de campañas pasa por debajo con scroll propio.
+  Tras enviar: toast `mostrarToastSimple` ("✅ N solicitudes enviadas a la
+  campaña 'X'"), la selección se limpia y la lista de solicitudes se
+  refresca en vivo (invalida la caché `queryCache` y vuelve a llamar a
+  `buscarEnServidor(true)`), de modo que el badge de campaña en las cards
+  se actualiza sin recargar la página. En móvil ya **no** redirige a
+  `/m/gestion-lote`; se queda en Solicitudes con el mismo flujo que
+  escritorio. Ver `docs/feature-ux-agregar-campana-solicitudes.md`.
 
 ### 11.3 Importación Excel
 
