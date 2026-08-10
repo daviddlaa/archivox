@@ -216,6 +216,9 @@ ARCHIVOX/
 │   ├── feature-widget-ultimas-gestiones-dashboard.md # Widget "🕘 Últimas gestiones" en dashboard + pasarela de widgets en escritorio (Agosto 2026)
 │   ├── feature-ux-agregar-campana-solicitudes.md     # Modal "Agregar a Campaña": botón arriba, toast de éxito y refresco en vivo (Agosto 2026)
 │   ├── feature-semaforo-campana-completada.md        # Campaña Completada: oculta semáforo + nota (gestion-lote desktop/móvil) (Agosto 2026)
+│   ├── fix-importacion-proteccion-datos-usuarios.md  # Importación Excel: nunca modifica/reasigna registros de otros usuarios + reporte omitidos (Agosto 2026)
+│   ├── feature-excel-demo-video.md                   # Excel de datos demo (ficticios) para el video: docs/demo/archivox-datos-demo.xlsx (Agosto 2026)
+│   ├── demo/                                        # Archivos de ejemplo (Excel demo para video)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
 │       ├── informe-auditoria-flujo-multi-equipo.md
@@ -1197,6 +1200,21 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
   celda (`result` o `text` de ExcelJS) en lugar del objeto crudo de la
   fórmula. Esto evita que se guarde en la base un JSON de fórmula
   (`{"formula":"C211&...","result":"..."}`) como contenido del registro.
+- **Protección de datos entre usuarios (Agosto 2026):** al importar con
+  `IDSOLICITUD` explícito, la búsqueda de existencia ahora incluye
+  `usuario_id`; si la solicitud pertenece a **otro usuario**, la fila se
+  **omite** (no se modifica ni se reasigna) y se reporta en la respuesta de
+  `POST /api/excel/upload` como `omitidos`/`omisiones`, con aviso ⚠️ en la
+  pantalla de importación (desktop y móvil). El `UPDATE` ya no escribe
+  `usuario_id` y el dedupe por cédula sigue filtrando por el usuario actual.
+  Ver `docs/fix-importacion-proteccion-datos-usuarios.md`.
+- **Excel de datos demo (Agosto 2026):** `docs/demo/archivox-datos-demo.xlsx`
+  contiene **28 solicitudes ficticias** (nombres, cédulas y celulares
+  inventados) para grabar videos de demostración de la app. La columna
+  `IDSOLICITUD` va **vacía** (IDs auto-generados al importar), los estados
+  usan el catálogo del sistema (ACTIVADA, PENDIENTE, RECHAZADA, DEVUELTA,
+  APROBADA PARA LIBERACIÓN) y los segmentos/vendedores son ficticios y
+  variados. Ver `docs/feature-excel-demo-video.md`.
 
 ### 11.4 Gestiones
 
