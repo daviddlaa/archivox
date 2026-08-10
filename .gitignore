@@ -23,3 +23,6 @@ documentacion/
 Thumbs.db
 # Nombre reservado de Windows que causa error en Git
 nul
+
+# VisualGit
+.env.*
