@@ -756,8 +756,9 @@ function renderizarCards(datos) {
         var html = '';
         html += '<div class="solicitud-card ' + seleccionado + (noAplica ? ' no-aplica-credito' : '') + '" id="card-' + id + '" onclick="toggleCard(\'' + id + '\')">';
 
-        // FILA 1: Segmento + Estado (el control "No aplica" vive en la fila 4)
+        // FILA 1: Checkbox de selección + Segmento + Estado (siempre una sola fila)
         html += '  <div class="card-fila-1">';
+        html += '    <button type="button" class="card-check-movil" onclick="event.stopPropagation(); toggleCard(\'' + id + '\')" aria-label="Seleccionar tarjeta" title="Seleccionar"></button>';
         html += '    <span class="card-badge badge-segmento">' + (item.segmento || 'Sin segmento') + '</span>';
         html += '    <span class="card-badge badge-estado ' + estadoClase + '" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
         html += '  </div>';

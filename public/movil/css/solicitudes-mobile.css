@@ -83,12 +83,54 @@
     .card-fila-1 {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 6px;
         margin-bottom: 8px;
         min-width: 0;
-        min-height: 28px;
-        flex-wrap: nowrap;
+        min-height: 32px;
+        /* Garantía de UNA SOLA FILA: checkbox + segmento + estado nunca se parten */
+        flex-wrap: nowrap !important;
         overflow: hidden;
+    }
+
+    /* Checkbox circular de selección (fila 1) - opción B del plan */
+    .card-fila-1 .card-check-movil {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        border: 2px solid #d1d5db;
+        background: #ffffff;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        transition: all 0.15s ease;
+    }
+    .card-fila-1 .card-check-movil::after {
+        content: '✓';
+        font-size: 15px;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1;
+        opacity: 0;
+        transform: scale(0.4);
+        transition: all 0.15s ease;
+    }
+    .card-fila-1 .card-check-movil:active {
+        transform: scale(0.92);
+        background: #eef2ff;
+    }
+    /* Estado marcado: lo dispara la clase .seleccionada de la card */
+    .solicitud-card.seleccionada .card-check-movil {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        border-color: #6366f1;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+    }
+    .solicitud-card.seleccionada .card-check-movil::after {
+        opacity: 1;
+        transform: scale(1);
     }
 
     /* Badges: tipo chip, redondeado, legible - altura fija */
@@ -115,7 +157,7 @@
         border: 1.5px solid #c7d2fe;
         flex-shrink: 1;
         min-width: 0;
-        max-width: 40vw;
+        max-width: 34vw;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -1206,11 +1248,18 @@
         .action-bar-left {
             gap: 4px;
         }
-        /* Pantallas muy angostas: badge de estado más compacto para no cortarse */
+        /* Pantallas muy angostas: checkbox y badges más compactos (una sola fila) */
+        .card-fila-1 .card-check-movil {
+            width: 26px;
+            height: 26px;
+        }
         .card-fila-1 .card-badge.badge-estado {
             max-width: 42%;
             font-size: 9px;
             padding: 3px 6px;
+        }
+        .card-fila-1 .card-badge.badge-segmento {
+            max-width: 26vw;
         }
     }
 

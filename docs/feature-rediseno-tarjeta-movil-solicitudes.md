@@ -72,7 +72,7 @@ compacta** que muestra solo información general, donde:
 
 ```
 ┌────────────────────────────────────────┐
-│ [SEGMENTO] [ESTADO]                     │  fila 1 (ligera: sin "no aplica")
+│ [○] [SEGMENTO] [ESTADO]                │  fila 1: checkbox selección (siempre 1 fila)
 │ Nombre del cliente 📋                   │  fila 2
 │ [📞][📋Gestiones][✏️Completar]         │  fila 3: 5 botones compactos (40 px)
 │ [💬WhatsApp][🗑️Eliminar]              │
@@ -90,9 +90,14 @@ y con acceso directo a la campaña donde está indexada la solicitud.
 
 ### 3.1 `public/movil/js/solicitudes.js` — `renderizarCards`
 
-- **Fila 1:** solo segmento + estado (se aligeró: el control "No aplica" se mudó
-  a la fila 4). Todos los controles de la card hacen `event.stopPropagation()`
-  para no disparar `toggleCard`.
+- **Fila 1:** **checkbox circular de selección `[○]`** + segmento + estado,
+  siempre en **una sola fila** (`flex-wrap: nowrap !important`; el segmento trunca
+  con ellipsis y el badge de estado queda fijo a la derecha). El checkbox
+  (30 px, 26 px en pantallas ≤340 px) llama a `toggleCard(id)` con
+  `stopPropagation`; su estado visual (relleno morado + ✓) lo maneja el CSS
+  mediante la clase `.seleccionada` de la card, sin tocar la lógica de
+  `toggleCard`. Todos los demás controles de la card hacen
+  `event.stopPropagation()` para no disparar la selección.
 - **Fila 3:** 5 botones en orden **📞 Llamar · 📋 Gestiones · ✏️ Completar ·
   💬 WhatsApp · 🗑️ Eliminar**. El botón Eliminar llama a
   `confirmarEliminarSolicitudMovil(id)` (confirmación nativa + `DELETE`).
@@ -173,6 +178,8 @@ Nuevos estilos:
 - `.noaplica-icon-btn` (y `.noaplica-icon-btn.activo` resaltado en rojo) en la
   fila 4 junto al link de campaña; `.card-fila-4` pasa a `display: flex` con el
   link `flex: 1` y el botón `flex-shrink: 0`.
+- `.card-check-movil` (checkbox circular de selección en fila 1): el ✓ blanco y el
+  relleno morado en degradado los dispara la clase `.seleccionada` de la card.
 - `.btn-eliminar` (rojo suave: fondo `#fef2f2`, borde `#fecaca`).
 - `.campana-link` (chip azul índigo con `<span>` interno con ellipsis).
 - Breakpoint `≤340 px`: chip y badge de estado aún más compactos para no cortarse.
@@ -225,11 +232,12 @@ vuelva a saltar a la tarjeta.
 - ✅ Revisión de código: se aplicaron los hallazgos (eliminar código muerto,
   escapado XSS, limpiar el parámetro `card` tras el deep link, ellipsis real en el
   link con `<span>`, chip/badge más compactos en pantallas ≤340 px).
-- ⏳ Prueba manual (móvil, tras refresh forzado): card compacta; tap en 🗑️ →
+- ⏳ Prueba manual (móvil, tras refresh forzado): card compacta; tocar el ○ de la
+  fila 1 (o una zona neutra) selecciona la tarjeta con ✓ morado; tap en 🗑️ →
   confirmación y eliminación; 📋 Gestiones → timeline del cliente; ✏️ Completar →
   Estado/Segmento + info + referencias; 📢 {campaña} → salta a la tarjeta con
   destello; botón 👎 No aplica (junto al link de campaña) → confirmación (o
-  reversión directa).
+  reversión directa); fila 1 siempre en una sola línea en pantallas angostas.
 
 ---
 

@@ -51,7 +51,7 @@ Body: `{ "no_aplica_credito": 0 | 1 }`.
 | Campañas desktop (`gestion-lote.js`) | Botón **👎/👍** en `sol-acciones` + modal de confirmación ("será quitada de esta campaña") |
 | Campañas móvil (`gestion-lote.js`) | Botón **👎/👍** en `sol-acciones-secundarias` + bottom-sheet de confirmación |
 | Solicitudes desktop (`solicitudes.js`) | Botón **👎/👍** en `card-fila-3`; confirmación solo si está en campaña |
-| Solicitudes móvil (`solicitudes.js`) | Ítem en menú **⋮** ("👎 Ya no aplica para crédito" / "👍 Aplica para crédito") |
+| Solicitudes móvil (`solicitudes.js`) | Botón **👎** de solo icono en `card-fila-4` (junto al link de campaña): si está marcada revierte directo; si no, modal de confirmación. El menú ⋮ fue eliminado (Agosto 2026) |
 
 - Estado visual **sin texto**: `filter: grayscale(.75)` + `opacity: .78` en las tarjetas marcadas (`.no-aplica-credito`).
 - CSS compartido: `public/css/no-aplica-credito.css` (incluido en las 4 páginas).
@@ -65,7 +65,8 @@ Body: `{ "no_aplica_credito": 0 | 1 }`.
 
 ## Badge pequeño en tarjetas marcadas
 
-- Las tarjetas marcadas (flag = 0) muestran el badge **"👎 No aplica"** en pequeño (clase `noaplica-mini-badge`, 11px) en: solicitudes desktop (fila 1), solicitudes móvil (fila 1), campañas desktop (header) y campañas móvil (header).
+- Las tarjetas marcadas (flag = 0) muestran el badge **"👎 No aplica"** en pequeño (clase `noaplica-mini-badge`, 11px) en: solicitudes **desktop** (fila 1), campañas desktop (header) y campañas móvil (header).
+- **Excepción móvil Solicitudes (Agosto 2026):** con el rediseño de la tarjeta se eliminó el mini-badge de la fila 1; el estado se representa con `filter: grayscale` en la card y el control es el botón 👎 de solo icono en `card-fila-4` (ver `docs/feature-rediseno-tarjeta-movil-solicitudes.md`).
 - CSS en `public/css/no-aplica-credito.css` (incluido en las 4 páginas) + `flex-wrap` para que la fila de badges no se recorte en pantallas angostas.
 
 ## Fuera de alcance (fase 2 si se desea)
