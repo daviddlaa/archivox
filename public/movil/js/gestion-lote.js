@@ -66,6 +66,20 @@ async function init() {
             await cargarDatosGestionMovil();
             marcarCampañaActiva(gestionId);
             console.log('[movil-init] Carga completa');
+            // Deep link: saltar a la tarjeta de la solicitud (desde Solicitudes)
+            var urlParams = new URLSearchParams(window.location.search);
+            var cardTarget = urlParams.get('card');
+            if (cardTarget) {
+                setTimeout(function() {
+                    navegarACardMovil(cardTarget);
+                }, 300);
+                // Limpiar el parámetro card: si el usuario recarga, que no vuelva a saltar
+                try {
+                    urlParams.delete('card');
+                    var nuevaBusqueda = urlParams.toString();
+                    history.replaceState(null, '', window.location.pathname + (nuevaBusqueda ? '?' + nuevaBusqueda : ''));
+                } catch (e) {}
+            }
         }
     } catch (error) {
         console.error('[movil-init] Error:', error);

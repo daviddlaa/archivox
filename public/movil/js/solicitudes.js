@@ -726,10 +726,6 @@ async function marcarNoAplicaCreditoMovil(id, valor) {
 
 // Renderizar cards de clientes (estructura unificada 5 filas)
 function renderizarCards(datos) {
-    // Cerrar cualquier menú ⋮ abierto (puede estar viviendo en <body> con
-    // position:fixed) antes de reconstruir el HTML, para no dejar huérfanos.
-    cerrarTodosLosMenusMovil();
-
     const container = document.getElementById('cards-container');
     idsVisibles = Array.isArray(datos) ? datos.map(function(d) {
         return d.id_solicitud;
@@ -749,35 +745,22 @@ function renderizarCards(datos) {
         'DEVUELTA': '#fef3c7',
         'APROBADA PARA LIBERACIÓN': '#d1fae5'
     };
-    var coloresGestion = {
-        'Seguimiento': '#dbeafe',
-        'Cobranza': '#fee2e2',
-        'Llamada': '#d1fae5',
-        'WhatsApp': '#dcfce7',
-        'Reclamo': '#fef3c7',
-        'Cita': '#e0e7ff',
-        'Completada': '#bbf7d0',
-        'Otro': '#f3f4f6'
-    };
-
     container.innerHTML = datos.map(function(item) {
         datosFilas[item.id_solicitud] = item;
         var id = item.id_solicitud || '';
         var seleccionado = filasSeleccionadas.indexOf(id) > -1 ? 'seleccionada' : '';
         var estadoClase = 'estado-' + (item.estado || '').replace(/\s+/g, '').toUpperCase();
         var colorEstado = coloresEstado[item.estado] || '#f3f4f6';
-        var colorGestion = coloresGestion[item.ultima_gestion_tipo] || '#f3f4f6';
-        var fechaGestion = item.ultima_gestion_fecha ? new Date(item.ultima_gestion_fecha).toLocaleString('es-ES') : '';
         var noAplica = item.no_aplica_credito == 0;
 
         var html = '';
         html += '<div class="solicitud-card ' + seleccionado + (noAplica ? ' no-aplica-credito' : '') + '" id="card-' + id + '" onclick="toggleCard(\'' + id + '\')">';
 
-        // FILA 1: Segmento + Estado (sin ID para evitar desbordamiento)
+        // FILA 1: Segmento + Estado + chip "No aplica" tappable (opción 1)
         html += '  <div class="card-fila-1">';
         html += '    <span class="card-badge badge-segmento">' + (item.segmento || 'Sin segmento') + '</span>';
         html += '    <span class="card-badge badge-estado ' + estadoClase + '" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
-        if (noAplica) html += '    <span class="noaplica-mini-badge">👎 No aplica</span>';
+        html += '    <button type="button" class="noaplica-chip' + (noAplica ? ' activo' : '') + '" onclick="event.stopPropagation(); confirmarNoAplicaCreditoMovil(\'' + id + '\', ' + (noAplica ? 1 : 0) + ', ' + (item.campana_id ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '">👎 No aplica</button>';
         html += '  </div>';
 
         // FILA 2: Nombre
@@ -785,50 +768,28 @@ function renderizarCards(datos) {
         html +=      (item.nombre || 'Sin nombre') + ' 📋';
         html += '  </div>';
 
-        // FILA 3: Botones (4 en móvil: Gestiones, Llamar, Completar, WhatsApp)
-        // Diseñado con icono + label para touch targets grandes tipo app nativa
+        // FILA 3: Botones compactos (Llamar · Gestiones · Completar · WhatsApp · Eliminar)
         html += '  <div class="card-fila-3">';
-        html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesMovil(\'' + id + '\')"><span class="btn-icon">📋</span><span class="btn-label">Gestiones</span></button>';
         html += '    <button class="card-btn btn-llamar" onclick="event.stopPropagation(); llamarCliente(\'' + escaparParaAtributo(item.celular || '') + '\')"><span class="btn-icon">📞</span><span class="btn-label">Llamar</span></button>';
+        html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesMovil(\'' + id + '\')"><span class="btn-icon">📋</span><span class="btn-label">Gestiones</span></button>';
         html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletarInfoMovil(\'' + id + '\')"><span class="btn-icon">✏️</span><span class="btn-label">Completar</span></button>';
         html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); abrirWhatsAppChatMovil(\'' + escaparParaAtributo(item.celular || '') + '\')"><span class="btn-icon">💬</span><span class="btn-label">WhatsApp</span></button>';
-        html += '    <div class="card-actions-more-movil" onclick="event.stopPropagation();">';
-        html += '      <button class="card-btn btn-more-movil" onclick="toggleCardMenuMovil(event, \'' + id + '\', this)" title="Más acciones">⋮</button>';
-        html += '      <div class="card-dropdown-menu-movil" id="card-menu-movil-' + id + '">';
-        html += '        <button class="dropdown-item" onclick="event.stopPropagation(); abrirEditarSolicitudMovil(\'' + id + '\'); cerrarTodosLosMenusMovil()">✏️ Editar</button>';
-        html += '        <button class="dropdown-item' + (noAplica ? ' dropdown-item-warning' : '') + '" onclick="event.stopPropagation(); confirmarNoAplicaCreditoMovil(\'' + id + '\', ' + (noAplica ? 1 : 0) + ', ' + (item.campana_id ? 1 : 0) + '); cerrarTodosLosMenusMovil()">' + (noAplica ? '👍 Aplica para crédito' : '👎 Ya no aplica para crédito') + '</button>';
-        html += '        <div class="dropdown-divider"></div>';
-        html += '        <button class="dropdown-item dropdown-item-danger" onclick="event.stopPropagation(); confirmarEliminarSolicitudMovil(\'' + id + '\'); cerrarTodosLosMenusMovil()">🗑️ Eliminar</button>';
-        html += '      </div>';
-        html += '    </div>';
+        html += '    <button class="card-btn btn-eliminar" onclick="event.stopPropagation(); confirmarEliminarSolicitudMovil(\'' + id + '\')"><span class="btn-icon">🗑️</span><span class="btn-label">Eliminar</span></button>';
         html += '  </div>';
 
-        // FILA 4: Seguimiento
-        if (item.ultima_gestion_tipo) {
+        // FILA 4: Link a la campaña donde está indexada la solicitud
+        if (item.campana_id && item.nombre_campana) {
             html += '  <div class="card-fila-4">';
-            html += '    <div class="seguimiento-header">';
-            html += '      <span class="seguimiento-badge" style="background:' + colorGestion + ';">📋 ' + item.ultima_gestion_tipo + '</span>';
-            if (fechaGestion) {
-                html += '      <span class="seguimiento-fecha">' + fechaGestion + '</span>';
-            }
-            html += '    </div>';
-            if (item.ultima_gestion_obs) {
-                html += '    <div class="seguimiento-obs" title="' + escaparParaAtributo(item.ultima_gestion_obs) + '">' + item.ultima_gestion_obs + '</div>';
-            }
+            html += '    <a class="campana-link" href="/m/gestion-lote?id=' + encodeURIComponent(item.campana_id) + '&card=' + encodeURIComponent(id) + '" onclick="event.stopPropagation()"><span>📢 ' + escaparParaHTMLMovil(item.nombre_campana) + ' →</span></a>';
             html += '  </div>';
-        } else {
-            html += '  <div class="card-fila-4 vacia">Sin gestiones</div>';
         }
 
-        // FILA 5: Producto + Fecha + Vendedor + Campaña
+        // FILA 5: Producto + Fecha + Vendedor
         html += '  <div class="card-fila-5">';
         html += '    <span class="card-tag">📦 <span>' + (item.producto || '—') + '</span></span>';
         html += '    <span class="card-tag">📅 <span>' + (item.fecha_solicitud || '—') + '</span></span>';
         if (_esLider && item.vendedor) {
             html += '    <span class="card-tag vendedor-badge">👤 <span>' + item.vendedor + '</span></span>';
-        }
-        if (item.nombre_campana) {
-            html += '    <span class="card-tag campana-badge">📢 <span>' + item.nombre_campana + '</span></span>';
         }
         html += '  </div>';
 
@@ -917,17 +878,6 @@ function whatsAppCliente(celular, nombre) {
 
 // ================== GESTIONES Y COMPLETAR EN MÓVIL ==================
 
-// Opciones de tipo de gestión
-let opcionesTipoGestion = [
-    'Seguimiento',
-    'Cobranza',
-    'Llamada',
-    'WhatsApp',
-    'Reclamo',
-    'Cita',
-    'Otro'
-];
-
 // Función para escapar texto para usar en atributos HTML onclick
 function escaparParaAtributo(texto) {
     return String(texto || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
@@ -996,73 +946,31 @@ function formatFechaGestion(fecha) {
 }
 
 // Función para abrir modal de Gestiones en móvil
+// Ahora es SOLO historial del cliente (timeline), sin formulario de nueva gestión.
 function abrirGestionesMovil(id) {
     var datos = datosFilas[id];
     if (!datos) {
         alert('No se encontraron datos para esta solicitud');
         return;
     }
-    
-    // Crear opciones del dropdown
-    let opcionesDropdown = '';
-    for (let i = 0; i < opcionesTipoGestion.length; i++) {
-        opcionesDropdown += '<option value="' + opcionesTipoGestion[i] + '">' + opcionesTipoGestion[i] + '</option>';
-    }
-    
-let contenido = '';
+
+    var contenido = '';
     contenido += '<div style="padding: 20px; background: white; min-height: 100vh;">';
-    contenido += '<h2 style="margin-top: 0; color: #1f2937; font-size: 18px;">📋 Gestiones - Solicitud #' + id + '</h2>';
+    contenido += '<h2 style="margin-top: 0; color: #1f2937; font-size: 18px;">📋 Historial · ' + escaparParaHTMLMovil(datos.nombre || 'Cliente') + '</h2>';
     contenido += '<div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px;">';
-    contenido += '<p><strong>Nombre:</strong> ' + (datos.nombre || 'N/A') + '</p>';
-    contenido += '<p><strong>Cédula:</strong> ' + (datos.cedula || 'N/A') + '</p>';
-contenido += '<p><strong>Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
-    // Botones de Llamar y WhatsApp en el modal de Gestiones
-    contenido += '<div style="display: flex; gap: 8px; margin: 10px 0;">';
-    contenido += '<button onclick="llamarCliente(\'' + (datos.celular || '') + '\')" style="flex:1; padding: 10px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;">📞 Llamar</button>';
-    contenido += '<button onclick="whatsAppCliente(\'' + (datos.celular || '') + '\', \'' + (datos.nombre || '') + '\')" style="flex:1; padding: 10px; background: #25D366; color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;">💬 WhatsApp</button>';
+    contenido += '<p style="margin:0 0 4px;"><strong>Solicitud:</strong> #' + id + '</p>';
+    contenido += '<p style="margin:0;"><strong>🆔 Cédula:</strong> ' + (datos.cedula || 'N/A') + ' · <strong>📱 Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
     contenido += '</div>';
-    contenido += '<p><strong>Estado:</strong> <span style="background:#dcfce7;padding:2px 8px;border-radius:10px;font-size:12px;">' + (datos.estado || 'N/A') + '</span></p>';
-    contenido += '<p><strong>Segmento:</strong> ' + (datos.segmento || 'N/A') + '</p>';
-    contenido += '<p><strong>Fecha Ingreso:</strong> ' + (datos.fecha_solicitud || 'N/A') + '</p>';
-    contenido += '</div>';
-    
-    // Sección de nueva gestión
-    contenido += '<div style="border: 2px solid #2563eb; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #eff6ff;">';
-    contenido += '<h3 style="margin-top: 0; color: #1f2937; font-size: 16px;">➕ Nueva Gestión</h3>';
-    
-    // Fecha y hora (automático)
-    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">📅 Fecha y Hora:</label>';
-    contenido += '<input type="text" id="fecha-gestion" value="' + getFechaHoraActual() + '" readonly style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: #f3f4f6; color: #6b7280; margin-bottom: 12px;">';
-    
-    // Tipo de gestión (dropdown)
-    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">📋 Tipo de Gestión:</label>';
-    contenido += '<select id="tipo-gestion" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 12px; background: white;">';
-    contenido += opcionesDropdown;
-    contenido += '</select>';
-    
-    // Observación
-    contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">📝 Observación:</label>';
-    contenido += '<textarea id="observacion-gestion" rows="4" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical; margin-bottom: 12px; box-sizing: border-box;" placeholder="Escriba su observación aquí..."></textarea>';
-    
-    // Botón guardar
-    contenido += '<button onclick="guardarGestionMovil(\'' + id + '\')" style="width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;">💾 Guardar Gestión</button>';
-    contenido += '</div>';
-    
-    // Historial de gestiones
-    contenido += '<div id="historial-gestiones" style="margin-top: 15px;">';
-    contenido += '<h3 style="color: #1f2937; font-size: 16px;">📜 Historial de Gestiones</h3>';
+    contenido += '<div style="margin-bottom: 8px; color: #6b7280; font-size: 12px;">🕘 Últimas gestiones de este cliente</div>';
     contenido += '<div id="lista-historial" style="text-align: center; padding: 20px; color: #6b7280;">Cargando...</div>';
-    contenido += '</div>';
-    
-    // Botón cerrar
     contenido += '<div style="margin-top: 20px;">';
     contenido += '<button onclick="cerrarModal()" style="width: 100%; padding: 12px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">✕ Cerrar</button>';
     contenido += '</div>';
     contenido += '</div>';
-    
+
     crearModalMovil(contenido);
-    
-    // Cargar historial de gestines
+
+    // Cargar historial de gestiones del cliente
     cargarHistorialGestionesMovil(id);
 }
 
@@ -1117,26 +1025,36 @@ function cerrarModal() {
     }
 }
 
-// Función para cargar historial de gestines en móvil
+// Escapar texto para HTML (historial del cliente)
+function escaparParaHTMLMovil(texto) {
+    return String(texto == null ? '' : texto)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+// Función para cargar historial de gestiones en móvil
+// Timeline tipo "últimas actividades" de campaña (solo lectura) + vendedor si existe
 async function cargarHistorialGestionesMovil(id) {
     var container = document.getElementById('lista-historial');
     if (!container) return;
-    
+
     try {
         var response = await fetch('/api/excel/gestiones/' + id);
-        
+
         if (!response.ok) {
             container.innerHTML = '<div style="color: red;">Error al cargar historial</div>';
             return;
         }
-        
+
         var gestines = await response.json();
-        
+
         if (!gestines || gestines.length === 0) {
-            container.innerHTML = '<div style="padding: 15px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 8px;">No hay gestines registradas</div>';
+            container.innerHTML = '<div style="padding: 15px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 8px;">📭 Sin gestiones registradas para este cliente</div>';
             return;
         }
-        
+
         var html = '';
         var coloresTipo = {
             'Seguimiento': '#dbeafe',
@@ -1145,34 +1063,35 @@ async function cargarHistorialGestionesMovil(id) {
             'WhatsApp': '#dcfce7',
             'Reclamo': '#fef3c7',
             'Cita': '#e0e7ff',
+            'Completada': '#bbf7d0',
+            'Recordatorio': '#ffedd5',
             'Otro': '#f3f4f6'
         };
-        
+
         for (var i = 0; i < gestines.length; i++) {
             var g = gestines[i];
             var color = coloresTipo[g.tipo_gestion] || '#f3f4f6';
             var fechaFormateada = formatFechaGestion(g.fecha_gestion);
-            
-            html += '<div style="background: ' + color + '; padding: 12px; border-radius: 8px; margin-bottom: 10px;">';
-            html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">';
-            html += '<span style="font-weight: 600; font-size: 13px; color: #1f2937;">📋 ' + (g.tipo_gestion || '') + '</span>';
-            html += '<span style="font-size: 11px; color: #6b7280;">' + fechaFormateada + '</span>';
+            var isLast = i === gestines.length - 1;
+
+            html += '<div style="display:flex;gap:12px;position:relative;">';
+            html += '<div style="display:flex;flex-direction:column;align-items:center;">';
+            html += '<div style="width:12px;height:12px;border-radius:50%;background:' + color + ';border:2px solid #9ca3af;flex-shrink:0;"></div>';
+            if (!isLast) html += '<div style="width:2px;flex:1;background:#e5e7eb;margin:4px 0;"></div>';
             html += '</div>';
-            
-            if (g.observacion) {
-                html += '<div style="font-size: 13px; color: #374151; line-height: 1.4; margin-bottom: 8px;">' + g.observacion + '</div>';
-            }
-            
-            // Botones de editar y eliminar
-            html += '<div style="display: flex; gap: 8px; justify-content: flex-end;">';
-            html += '<button onclick="editarGestionMovil(\'' + g.id + '\', \'' + id + '\')" style="padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">✏️ Editar</button>';
-            html += '<button onclick="confirmarEliminarGestionMovil(\'' + g.id + '\', \'' + id + '\')" style="padding: 6px 12px; background: #dc2626; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">🗑️ Eliminar</button>';
+            html += '<div style="flex:1;padding-bottom:' + (isLast ? '0' : '14px') + ';">';
+            html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">';
+            html += '<span style="background:' + color + ';padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#374151;">📋 ' + escaparParaHTMLMovil(g.tipo_gestion || '—') + '</span>';
+            if (g.vendedor) html += '<span style="font-size:11px;color:#2563eb;font-weight:600;">🏷️ ' + escaparParaHTMLMovil(g.vendedor) + '</span>';
+            html += '<span style="font-size:11px;color:#9ca3af;">⏱️ ' + fechaFormateada + '</span>';
+            html += '</div>';
+            html += '<div style="background:#f9fafb;padding:8px 10px;border-radius:6px;font-size:12px;color:#374151;line-height:1.4;word-break:break-word;">' + escaparParaHTMLMovil(g.observacion || 'Sin observación') + '</div>';
             html += '</div>';
             html += '</div>';
         }
-        
+
         container.innerHTML = html;
-        
+
     } catch (error) {
         console.error('Error cargando historial:', error);
         container.innerHTML = '<div style="color: red;">Error al cargar historial</div>';
@@ -1588,179 +1507,10 @@ async function confirmarAgregarCampanaMovil() {
     }
 }
 
-// Función para editar una gestión en móvil
-function editarGestionMovil(gestionId, solicitudId) {
-    fetch('/api/excel/gestiones/' + solicitudId)
-        .then(function(res) { return res.json(); })
-        .then(function(gestines) {
-            var gestion = gestines.find(function(g) { return g.id == gestionId; });
-            if (!gestion) {
-                alert('Gestión no encontrada');
-                return;
-            }
-            
-            var opcionesDropdown = '';
-            for (var i = 0; i < opcionesTipoGestion.length; i++) {
-                var selected = opcionesTipoGestion[i] === gestion.tipo_gestion ? 'selected' : '';
-                opcionesDropdown += '<option value="' + opcionesTipoGestion[i] + '" ' + selected + '>' + opcionesTipoGestion[i] + '</option>';
-            }
-            
-            var contenido = '';
-            contenido += '<div style="padding: 20px; background: white; min-height: 100vh;">';
-            contenido += '<h2 style="margin-top: 0; color: #1f2937; font-size: 18px;">✏️ Editar Gestión</h2>';
-            
-            contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">📋 Tipo de Gestión:</label>';
-            contenido += '<select id="tipo-gestion-editar" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 12px; background: white;">';
-            contenido += opcionesDropdown;
-            contenido += '</select>';
-            
-            contenido += '<label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">📝 Observación:</label>';
-            contenido += '<textarea id="observacion-editar" rows="4" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical; margin-bottom: 12px; box-sizing: border-box;">' + (gestion.observacion || '') + '</textarea>';
-            
-            contenido += '<div style="display: flex; gap: 10px;">';
-            contenido += '<button onclick="cerrarModal()" style="flex:1; padding: 12px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">Cancelar</button>';
-            contenido += '<button onclick="guardarEdicionGestionMovil(\'' + gestionId + '\', \'' + solicitudId + '\')" style="flex:1; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">💾 Guardar</button>';
-            contenido += '</div>';
-            contenido += '</div>';
-            
-            crearModalMovil(contenido);
-        })
-        .catch(function(err) {
-            console.error('Error:', err);
-            alert('Error al cargar gestión');
-        });
-}
-
-// Función para guardar la edición en móvil
-function guardarEdicionGestionMovil(gestionId, solicitudId) {
-    var tipo = document.getElementById('tipo-gestion-editar').value;
-    var observacion = document.getElementById('observacion-editar').value.trim();
-    
-    if (!tipo) {
-        alert('Por favor seleccione un tipo de gestión');
-        return;
-    }
-    
-    fetch('/api/excel/gestiones/' + gestionId, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipo_gestion: tipo, observacion: observacion })
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(resultado) {
-        if (resultado && !resultado.error) {
-            alert('Gestión actualizada correctamente');
-            cerrarModal();
-            cargarHistorialGestionesMovil(solicitudId);
-        } else {
-            alert('Error: ' + (resultado.error || 'Error desconocidos'));
-        }
-    })
-    .catch(function(err) {
-        console.error('Error:', err);
-        alert('Error al guardar');
-    });
-}
-
-// Función para confirmar y eliminar en móvil
-function confirmarEliminarGestionMovil(gestionId, solicitudId) {
-    if (!confirm('¿Está seguro de eliminar esta gestión?')) {
-        return;
-    }
-    
-    fetch('/api/excel/gestiones/' + gestionId, {
-        method: 'DELETE'
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(resultado) {
-        if (resultado && !resultado.error) {
-            alert('Gestión eliminada correctamente');
-            cargarHistorialGestionesMovil(solicitudId);
-        } else {
-            alert('Error: ' + (resultado.error || 'Error desconocido'));
-        }
-    })
-    .catch(function(err) {
-        console.error('Error:', err);
-        alert('Error al eliminar');
-    });
-}
-
-// Función para guardar gestión en móvil
-function guardarGestionMovil(id) {
-    var tipo = document.getElementById('tipo-gestion');
-    var observacion = document.getElementById('observacion-gestion');
-    
-    if (!tipo || !observacion) {
-        alert('Error: No se encontraron los campos del formulario');
-        return;
-    }
-    
-    var tipo_gestion = tipo.value;
-    var obs = observacion.value.trim();
-    
-    if (!tipo_gestion) {
-        alert('Por favor seleccione un tipo de gestión');
-        return;
-    }
-    
-    if (!obs) {
-        alert('Por favor escriba una observación');
-        return;
-    }
-    
-    // Mostrar indicador de guardado
-    var btn = document.querySelector('button[onclick="guardarGestionMovil(\'' + id + '\')"]');
-    if (btn) {
-        btn.textContent = '💾 Guardando...';
-        btn.disabled = true;
-    }
-    
-    fetch('/api/excel/gestiones', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            solicitud_id: id,
-            tipo_gestion: tipo_gestion,
-            observacion: obs
-        })
-})
-    .then(function(res) {
-        return res.json();
-    })
-    .then(function(resultado) {
-        if (resultado && !resultado.error) {
-            // Recargar historial
-            cargarHistorialGestionesMovil(id);
-            
-            // Limpiar campos
-            document.getElementById('observacion-gestion').value = '';
-            document.getElementById('tipo-gestion').selectedIndex = 0;
-            
-            // Actualizar fecha/hora
-            var fechaInput = document.getElementById('fecha-gestion');
-            if (fechaInput) {
-                fechaInput.value = getFechaHoraActual();
-            }
-            
-            alert('Gestión guardada correctamente');
-        } else {
-            alert('Error: ' + (resultado.error || 'Error desconocido'));
-        }
-    })
-    .catch(function(err) {
-        console.error('Error guardando gestión:', err);
-        alert('Error al guardar la gestión');
-    })
-    .finally(function() {
-        if (btn) {
-            btn.textContent = '💾 Guardar Gestión';
-            btn.disabled = false;
-        }
-    });
-}
+// El formulario ➕ Nueva Gestión, el ✏️ Editar y el 🗑️ Eliminar de gestión
+// (editarGestionMovil, guardarEdicionGestionMovil, confirmarEliminarGestionMovil,
+// guardarGestionMovil y opcionesTipoGestion) fueron eliminados: el modal de
+// Gestiones ahora es SOLO historial del cliente (timeline read-only).
 
 // Función para guardar completar en móvil
 function guardarCompletarMovil(id) {
@@ -1830,6 +1580,32 @@ async function abrirCompletarInfoMovil(id) {
         referencias.push({ nombre: '', telefono: '', relacion: '' });
     }
     
+    // Cargar estados y segmentos disponibles (selector fusionado de Editar)
+    var estadosOptions = '<option value="">Seleccionar...</option>';
+    var segmentosOptions = '<option value="">Seleccionar...</option>';
+    try {
+        var resEstados = await fetch('/api/excel/dashboard/estados', { credentials: 'include' });
+        if (resEstados.ok) {
+            var estadosData = await resEstados.json();
+            estadosOptions = '<option value="">Seleccionar...</option>';
+            for (var e = 0; e < estadosData.length; e++) {
+                var selEstado = estadosData[e].estado === datos.estado ? 'selected' : '';
+                estadosOptions += '<option value="' + estadosData[e].estado + '" ' + selEstado + '>' + estadosData[e].estado + '</option>';
+            }
+        }
+    } catch (err) { console.error('Error cargando estados:', err); }
+    try {
+        var resSegmentos = await fetch('/api/excel/dashboard/segmentos', { credentials: 'include' });
+        if (resSegmentos.ok) {
+            var segmentosData = await resSegmentos.json();
+            segmentosOptions = '<option value="">Seleccionar...</option>';
+            for (var s = 0; s < segmentosData.length; s++) {
+                var selSegmento = segmentosData[s].segmento === datos.segmento ? 'selected' : '';
+                segmentosOptions += '<option value="' + segmentosData[s].segmento + '" ' + selSegmento + '>' + segmentosData[s].segmento + '</option>';
+            }
+        }
+    } catch (err) { console.error('Error cargando segmentos:', err); }
+    
     // Generar HTML de referencias
     var htmlReferencias = '';
     for (var i = 0; i < 3; i++) {
@@ -1858,13 +1634,21 @@ async function abrirCompletarInfoMovil(id) {
     
     var contenido = '';
     contenido += '<div style="padding: 20px; background: white; min-height: 100vh;">';
-    contenido += '<h2 style="margin-top: 0; color: #1f2937; font-size: 18px;">✏️ Completar Información</h2>';
+    contenido += '<h2 style="margin-top: 0; color: #1f2937; font-size: 18px;">✏️ Completar / Editar - #' + id + '</h2>';
     
     // Datos del cliente (solo lectura)
     contenido += '<div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px;">';
-    contenido += '<p><strong>👤 Cliente:</strong> ' + (datos.nombre || 'N/A') + '</p>';
-    contenido += '<p><strong>🆔 Cédula:</strong> ' + (datos.cedula || 'N/A') + '</p>';
-    contenido += '<p><strong>📱 Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
+    contenido += '<p style="margin:0 0 4px;"><strong>👤 Cliente:</strong> ' + (datos.nombre || 'N/A') + '</p>';
+    contenido += '<p style="margin:0;"><strong>🆔 Cédula:</strong> ' + (datos.cedula || 'N/A') + ' · <strong>📱 Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
+    contenido += '</div>';
+    
+    // Estado y Segmento (antes modal Editar, ahora fusionado aquí)
+    contenido += '<div style="border: 2px solid #c7d2fe; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #eef2ff;">';
+    contenido += '<h3 style="margin-top:0; color:#4338ca; font-size:15px;">📝 Estado y Segmento</h3>';
+    contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">📌 Estado:</label>';
+    contenido += '<select id="editar-estado-movil" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:10px;background:white;box-sizing:border-box;">' + estadosOptions + '</select>';
+    contenido += '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">🏷️ Segmento:</label>';
+    contenido += '<select id="editar-segmento-movil" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;background:white;box-sizing:border-box;">' + segmentosOptions + '</select>';
     contenido += '</div>';
     
     // Información Adicional
@@ -1900,8 +1684,8 @@ async function abrirCompletarInfoMovil(id) {
     contenido += htmlReferencias;
     contenido += '</div>';
     
-    // Botón guardar
-    contenido += '<button onclick="guardarCompletarInfoMovil(\'' + id + '\')" style="width:100%;padding:14px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">💾 Guardar Información</button>';
+    // Botón guardar (estado/segmento + información completa)
+    contenido += '<button onclick="guardarCompletarInfoMovil(\'' + id + '\')" style="width:100%;padding:14px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">💾 Guardar</button>';
     
     // Botón cerrar
     contenido += '<button onclick="cerrarModal()" style="width:100%;padding:12px;background:#f3f4f6;border:none;border-radius:8px;cursor:pointer;font-size:14px;margin-top:10px;">✕ Cerrar</button>';
@@ -1911,8 +1695,10 @@ async function abrirCompletarInfoMovil(id) {
     crearModalMovil(contenido);
 }
 
-// Guardar información completa (código plus, dirección, referencias, etc.)
+// Guardar información completa (estado/segmento + código plus, dirección, referencias, etc.)
 function guardarCompletarInfoMovil(id) {
+    var estado = document.getElementById('editar-estado-movil').value;
+    var segmento = document.getElementById('editar-segmento-movil').value;
     var codigo_plus = document.getElementById('codigo-plus-completar').value.trim();
     var correo_electronico = document.getElementById('correo-completar').value.trim();
     var direccion = document.getElementById('direccion-completar').value.trim();
@@ -1943,25 +1729,43 @@ function guardarCompletarInfoMovil(id) {
         btn.disabled = true;
     }
     
-    fetch('/api/excel/solicitudes/' + id + '/completar-info', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            codigo_plus: codigo_plus,
-            correo_electronico: correo_electronico,
-            direccion: direccion,
-            direccion_trabajo: direccion_trabajo,
-            ocupacion: ocupacion,
-            ingreso_mensual: ingreso_mensual,
-            observaciones: observaciones,
-            referencias: referencias
-        })
+    // 1) Actualizar estado/segmento (antes modal Editar)
+    var bodyEditar = {};
+    if (estado) bodyEditar.estado = estado;
+    if (segmento) bodyEditar.segmento = segmento;
+    var actualizarEstado = (bodyEditar.estado || bodyEditar.segmento)
+        ? fetch('/api/excel/solicitudes/' + id + '/editar', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(bodyEditar)
+          }).then(function(response) { return response.json(); })
+        : Promise.resolve({});
+    
+    // 2) Guardar la información adicional + referencias
+    actualizarEstado
+    .then(function(resEditar) {
+        if (resEditar && resEditar.error) throw new Error(resEditar.error);
+        return fetch('/api/excel/solicitudes/' + id + '/completar-info', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                codigo_plus: codigo_plus,
+                correo_electronico: correo_electronico,
+                direccion: direccion,
+                direccion_trabajo: direccion_trabajo,
+                ocupacion: ocupacion,
+                ingreso_mensual: ingreso_mensual,
+                observaciones: observaciones,
+                referencias: referencias
+            })
+        }).then(function(response) { return response.json(); });
     })
-    .then(function(response) { return response.json(); })
     .then(function(resultado) {
         if (!resultado.error) {
-            alert('Información guardada correctamente');
+            alert('✅ Información guardada correctamente');
             cerrarModal();
+            if (typeof init === 'function') init();
         } else {
             alert('Error: ' + (resultado.error || 'Error desconocido'));
         }
@@ -1972,7 +1776,7 @@ function guardarCompletarInfoMovil(id) {
     })
     .finally(function() {
         if (btn) {
-            btn.textContent = '💾 Guardar Información';
+            btn.textContent = '💾 Guardar';
             btn.disabled = false;
         }
     });
@@ -2380,224 +2184,13 @@ async function guardarNuevaSolicitudMovil() {
 }
 
 // ============================================================================
-// MENÚ CONTEXTUAL MÓVIL (⋮) - Editar / Eliminar en Cards
+// MENÚ CONTEXTUAL MÓVIL ELIMINADO (⋮)
 // ============================================================================
+// El botón ⋮ fue reemplazado por la fila de 5 botones (Llamar · Gestiones ·
+// Completar · WhatsApp · Eliminar). Eliminar abre la confirmación directa.
+// El estado "No aplica" se controla desde el chip tappable de la fila 1 y el
+// modal Completar/Editar fusiona lo que antes hacía "Editar".
 
-// ============================================================================
-// MENÚ ⋮ — SOLUCIÓN DEFINITIVA
-// ============================================================================
-// Al abrir, el menú se mueve a <body> y se posiciona con `position: fixed`
-// contra el viewport real. <body> no tiene ancestros con transform ni filter,
-// por lo que el menú NUNCA queda atrapado por un containing block.
-// (Las iteraciones previas fallaban porque la card tiene transform en `:hover`
-// y en la animación, y `filter: grayscale()` en cards "no aplica" — cualquier
-// transform/filter en un ancestro convierte a ese ancestro en el containing
-// block del menú y las coordenadas de viewport se interpretan relativas a él,
-// dejando el menú fuera de pantalla.)
-function toggleCardMenuMovil(event, id, btn) {
-    event.stopPropagation();
-    cerrarTodosLosMenusMovil(id);
-    var menu = document.getElementById('card-menu-movil-' + id);
-    if (!menu) return;
-
-    // Si ya estaba abierto, cerrarlo y devolverlo a la card
-    if (menu.classList.contains('visible')) {
-        devolverMenuMovil(menu);
-        return;
-    }
-
-    // Mover a <body> y posicionar FIXED contra el viewport
-    menu._parentMovil = menu.parentNode;
-    document.body.appendChild(menu);
-
-    var rect = (btn && btn.getBoundingClientRect) ? btn.getBoundingClientRect() : null;
-    menu.style.position = 'fixed';
-    menu.style.top = 'auto';
-    menu.style.left = 'auto';
-    menu.style.bottom = 'auto';
-    menu.style.right = (rect ? Math.max(8, Math.round(window.innerWidth - rect.right)) : 8) + 'px';
-
-    if (rect) {
-        var altoEstimado = 160; // 3 opciones aprox.
-        var espacioAbajo = window.innerHeight - rect.bottom - 8;
-        if (espacioAbajo >= altoEstimado) {
-            menu.style.top = (rect.bottom + 6) + 'px'; // abre hacia abajo
-        } else {
-            menu.style.top = Math.max(8, rect.top - 6 - altoEstimado) + 'px'; // hacia arriba con clamp
-        }
-    } else {
-        menu.style.top = '8px';
-    }
-
-    menu.classList.add('visible');
-}
-
-function devolverMenuMovil(menu) {
-    var padre = menu._parentMovil;
-    delete menu._parentMovil;
-    menu.classList.remove('visible');
-    menu.style.position = '';
-    menu.style.top = '';
-    menu.style.left = '';
-    menu.style.right = '';
-    menu.style.bottom = '';
-    if (padre && padre.isConnected) {
-        padre.appendChild(menu); // vuelve a su lugar en la card
-    } else if (menu.parentNode === document.body) {
-        menu.remove(); // el padre fue re-renderizado: eliminar huérfano
-    }
-}
-
-function cerrarTodosLosMenusMovil(excludeId) {
-    document.querySelectorAll('.card-dropdown-menu-movil').forEach(function(m) {
-        if (excludeId && m.id === 'card-menu-movil-' + excludeId) return;
-        if (m.classList.contains('visible')) devolverMenuMovil(m);
-    });
-}
-
-if (!window._cardMenuMovilListenerAttached) {
-    window._cardMenuMovilListenerAttached = true;
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.card-actions-more-movil')) {
-            cerrarTodosLosMenusMovil();
-        }
-    });
-}
-
-// Abrir modal de edición de solicitud en móvil
-async function abrirEditarSolicitudMovil(id) {
-    var datos = datosFilas[id];
-    if (!datos) {
-        // Intentar cargar desde el servidor
-        try {
-            var res = await fetch('/api/excel/solicitudes/' + id, { credentials: 'include' });
-            if (!res.ok) {
-                alert('No se encontraron datos para esta solicitud');
-                return;
-            }
-            datos = await res.json();
-            datosFilas[id] = datos;
-        } catch (e) {
-            console.error('Error cargando solicitud:', e);
-            alert('No se encontraron datos para esta solicitud');
-            return;
-        }
-    }
-    
-    // Cargar estados y segmentos disponibles
-    var estadosOptions = '<option value="">Seleccionar...</option>';
-    var segmentosOptions = '<option value="">Seleccionar...</option>';
-    
-    try {
-        var resEstados = await fetch('/api/excel/dashboard/estados', { credentials: 'include' });
-        if (resEstados.ok) {
-            var estadosData = await resEstados.json();
-            estadosOptions = '<option value="">Seleccionar...</option>';
-            for (var e = 0; e < estadosData.length; e++) {
-                var selected = estadosData[e].estado === datos.estado ? 'selected' : '';
-                estadosOptions += '<option value="' + estadosData[e].estado + '" ' + selected + '>' + estadosData[e].estado + '</option>';
-            }
-        }
-    } catch (err) { console.error('Error cargando estados:', err); }
-    
-    try {
-        var resSegmentos = await fetch('/api/excel/dashboard/segmentos', { credentials: 'include' });
-        if (resSegmentos.ok) {
-            var segmentosData = await resSegmentos.json();
-            segmentosOptions = '<option value="">Seleccionar...</option>';
-            for (var s = 0; s < segmentosData.length; s++) {
-                var selected = segmentosData[s].segmento === datos.segmento ? 'selected' : '';
-                segmentosOptions += '<option value="' + segmentosData[s].segmento + '" ' + selected + '>' + segmentosData[s].segmento + '</option>';
-            }
-        }
-    } catch (err) { console.error('Error cargando segmentos:', err); }
-    
-    // Construir contenido del modal móvil
-    var contenido = '';
-    contenido += '<div class="editar-movil-container" style="padding: 0; background: white; min-height: 100vh; display: flex; flex-direction: column;">';
-    contenido += '  <div class="editar-movil-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; position: sticky; top: 0; z-index: 10;">';
-    contenido += '    <h2 style="margin: 0; font-size: 17px; color: #1f2937; font-weight: 700;">✏️ Editar Solicitud #' + id + '</h2>';
-    contenido += '    <button onclick="cerrarModal()" style="background: transparent; border: none; font-size: 22px; cursor: pointer; color: #6b7280; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">✕</button>';
-    contenido += '  </div>';
-    
-    contenido += '  <div style="padding: 16px 20px; flex: 1; overflow-y: auto;">';
-    
-    // Información del cliente
-    contenido += '    <div style="background: #f3f4f6; border-radius: 10px; padding: 14px; margin-bottom: 16px; font-size: 13px;">';
-    contenido += '      <p style="margin: 0 0 6px 0;"><strong>👤 Cliente:</strong> ' + (datos.nombre || 'N/A') + '</p>';
-    contenido += '      <p style="margin: 0 0 6px 0;"><strong>🆔 Cédula:</strong> ' + (datos.cedula || 'N/A') + '</p>';
-    contenido += '      <p style="margin: 0;"><strong>📱 Celular:</strong> ' + (datos.celular || 'N/A') + '</p>';
-    contenido += '    </div>';
-    
-    // Campos editables
-    contenido += '    <div style="border: 2px solid #818cf8; border-radius: 10px; padding: 16px; background: #eef2ff; margin-bottom: 16px;">';
-    contenido += '      <h3 style="margin: 0 0 14px 0; color: #4338ca; font-size: 15px; font-weight: 700;">📝 Campos Editables</h3>';
-    
-    contenido += '      <div style="margin-bottom: 14px;">';
-    contenido += '        <label for="editar-estado-movil" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #374151;">📌 Estado</label>';
-    contenido += '        <select id="editar-estado-movil" style="width: 100%; padding: 12px 14px; border: 2px solid #c7d2fe; border-radius: 8px; font-size: 15px; background: white; color: #1f2937; appearance: auto;">' + estadosOptions + '</select>';
-    contenido += '      </div>';
-    
-    contenido += '      <div style="margin-bottom: 4px;">';
-    contenido += '        <label for="editar-segmento-movil" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #374151;">🏷️ Segmento</label>';
-    contenido += '        <select id="editar-segmento-movil" style="width: 100%; padding: 12px 14px; border: 2px solid #c7d2fe; border-radius: 8px; font-size: 15px; background: white; color: #1f2937; appearance: auto;">' + segmentosOptions + '</select>';
-    contenido += '      </div>';
-    
-    contenido += '    </div>';
-    contenido += '  </div>';
-    
-    // Footer con botones
-    contenido += '  <div style="padding: 16px 20px; border-top: 1px solid #e5e7eb; background: white; display: flex; gap: 10px;">';
-    contenido += '    <button onclick="cerrarModal()" style="flex: 1; padding: 14px; background: #f3f4f6; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; color: #374151; cursor: pointer;">Cancelar</button>';
-    contenido += '    <button id="editar-btn-save-movil" onclick="guardarEditarSolicitudMovil(\'' + id + '\')" style="flex: 1; padding: 14px; background: #6366f1; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;">💾 Guardar Cambios</button>';
-    contenido += '  </div>';
-    contenido += '</div>';
-    
-    crearModalMovil(contenido);
-}
-
-// Guardar cambios de edición en móvil
-async function guardarEditarSolicitudMovil(id) {
-    var estado = document.getElementById('editar-estado-movil').value;
-    var segmento = document.getElementById('editar-segmento-movil').value;
-    
-    var btn = document.getElementById('editar-btn-save-movil');
-    if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
-    
-    try {
-        var body = {};
-        if (estado) body.estado = estado;
-        if (segmento) body.segmento = segmento;
-        
-        if (!body.estado && !body.segmento) {
-            alert('Selecciona al menos un campo para actualizar');
-            if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Cambios'; }
-            return;
-        }
-        
-        var response = await fetch('/api/excel/solicitudes/' + id + '/editar', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(body)
-        });
-        
-        var resultado = await response.json();
-        
-        if (response.ok) {
-            alert('✅ Solicitud #' + id + ' actualizada correctamente');
-            cerrarModal();
-            if (typeof init === 'function') init();
-        } else {
-            alert('❌ Error: ' + (resultado.error || 'Error desconocido'));
-        }
-    } catch (error) {
-        console.error('Error guardando edición:', error);
-        alert('❌ Error al guardar: ' + error.message);
-    } finally {
-        if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Cambios'; }
-    }
-}
 
 function confirmarEliminarSolicitudMovil(id) {
     var datos = datosFilas[id];
