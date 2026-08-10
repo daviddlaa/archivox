@@ -44,8 +44,9 @@
         </div>
     </div>
 
-    <!-- Filtros unificados: selects compactos con auto-aplicar -->
+    <!-- Filtros unificados: leyenda + selects compactos con auto-aplicar -->
     <div class="filtros-unificado">
+        <div class="filtros-leyenda">🔍 Filtros de búsqueda</div>
         <div class="filtros-row">
             <div class="filtro-grupo">
                 <span class="filtro-label">📌 Estado</span>
@@ -64,7 +65,11 @@
                 <button type="button" class="filtro-btn btn-limpiar-movil" onclick="limpiarFiltrosLider()">✕ Limpiar</button>
             </div>
         </div>
-        <!-- Filtros solo para Lider+ -->
+        <!-- Filtros de fecha (y vendedor para Lider+): colapsables -->
+        <button type="button" class="filtros-mas-toggle" id="filtrosMasToggle" onclick="toggleFiltrosMasMovil()" aria-expanded="false" aria-controls="filtrosLider">
+            <span class="filtros-mas-texto" id="filtrosMasTexto">📅 Más filtros (fecha)</span>
+            <span class="filtros-chevron" id="filtrosMasChevron">▾</span>
+        </button>
         <div id="filtrosLider" class="filtros-lider" style="display:none;">
             <div class="filtro-grupo">
                 <span class="filtro-label">📅 Desde</span>
@@ -74,7 +79,7 @@
                 <span class="filtro-label">📅 Hasta</span>
                 <input type="date" id="fechaHasta" class="filtro-input-date">
             </div>
-            <div class="filtro-grupo filtro-grupo-vendedor">
+            <div class="filtro-grupo filtro-grupo-vendedor" id="filtroGrupoVendedor">
                 <span class="filtro-label">👤 Vendedor</span>
                 <input type="text" id="filtroVendedor" placeholder="Buscar..." class="filtro-input-text" list="vendedoresList">
                 <datalist id="vendedoresList"></datalist>
@@ -85,7 +90,10 @@
     <!-- Search -->
     <div class="buscador-unificado">
         <div class="buscador-search-row">
-            <input type="text" id="cedula" placeholder="🔍 Buscar por id, cédula, nombre o teléfono...">
+            <div class="buscador-search-input-wrap">
+                <input type="text" id="cedula" placeholder="🔍 Buscar por id, cédula, nombre o teléfono...">
+                <button type="button" class="buscador-clear-btn" id="btn-limpiar-busqueda" onclick="limpiarBusquedaMovil()" title="Limpiar búsqueda" aria-label="Limpiar búsqueda">✕</button>
+            </div>
             <button type="button" class="filtro-btn active btn-select-all" id="btn-seleccionar-todo" onclick="toggleSeleccionarTodasVisibles()">
                 Seleccionar todo
             </button>

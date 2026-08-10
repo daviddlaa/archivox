@@ -246,10 +246,11 @@
         border-radius: 12px;
         box-shadow: 0 8px 24px rgba(0,0,0,0.15);
         border: 1px solid #e5e7eb;
-        min-width: 150px;
-        z-index: 100;
+        min-width: 170px;
+        z-index: 300;
         display: none;
-        overflow: hidden;
+        overflow-y: auto;
+        max-height: 55vh;
     }
 
     .card-dropdown-menu-movil.visible {
@@ -460,24 +461,24 @@
     }
 
     /* ========================================================================
-       ESTADÍSTICAS COMPACTAS - Tipo app
+       ESTADÍSTICAS COMPACTAS - Tipo app (20% más compactas)
        ======================================================================== */
     .stats-grid-unificado {
         display: flex;
-        gap: 10px;
-        padding: 14px 16px 10px !important;
+        gap: 8px;
+        padding: 10px 16px 8px !important;
         margin: 0;
     }
 
     .stat-card-compacto {
         background: white;
-        padding: 10px 16px;
-        border-radius: 14px;
+        padding: 8px 10px;
+        border-radius: 12px;
         text-align: center;
         flex: 1;
         border: 1px solid #e5e7eb;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        min-height: 60px;
+        min-height: 48px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -485,7 +486,7 @@
     }
 
     .stat-card-compacto .stat-valor {
-        font-size: 22px;
+        font-size: 18px;
         font-weight: 800;
         color: #1f2937;
         display: block;
@@ -493,12 +494,12 @@
     }
 
     .stat-card-compacto .stat-etiqueta {
-        font-size: 10px;
+        font-size: 9px;
         color: #6b7280;
         text-transform: uppercase;
         font-weight: 700;
         letter-spacing: 0.3px;
-        margin-top: 2px;
+        margin-top: 1px;
     }
 
     .stat-total-unif {
@@ -520,10 +521,59 @@
     .filtros-unificado {
         background: white;
         border-radius: 16px;
-        padding: 14px 16px;
+        padding: 12px 16px;
         margin: 0 16px 12px !important;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         border: 1px solid #f0f0f0;
+    }
+
+    /* Leyenda "Filtros de búsqueda" encima de la fila de filtros */
+    .filtros-leyenda {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 10px;
+        font-weight: 800;
+        color: #4f46e5;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        padding: 0 2px 8px;
+        margin-bottom: 10px;
+        border-bottom: 1.5px dashed #e5e7eb;
+    }
+
+    /* Toggle colapsable de filtros de fecha / vendedor */
+    .filtros-mas-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        margin-top: 10px;
+        padding: 8px 10px;
+        background: #f8fafc;
+        border: 1.5px dashed #cbd5e1;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #475569;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+        transition: all 0.2s ease;
+    }
+
+    .filtros-mas-toggle:active {
+        background: #eef2ff;
+        border-color: #a5b4fc;
+        color: #4338ca;
+    }
+
+    .filtros-chevron {
+        font-size: 10px;
+        color: #94a3b8;
+        transition: transform 0.2s ease;
     }
 
     .filtros-row {
@@ -618,13 +668,13 @@
         border-color: #6366f1;
     }
 
-    /* Selects desplegables de filtro (Estado / Segmento) */
+    /* Selects desplegables de filtro (Estado / Segmento) - compactos */
     .filtros-unificado .filtro-select {
         width: 100%;
         border: 1.5px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 9px 12px;
-        font-size: 13px;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
         font-weight: 700;
         color: #374151;
         background: white;
@@ -633,9 +683,9 @@
         appearance: none;
         background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
-        background-position: right 12px center;
+        background-position: right 10px center;
         background-size: 10px 6px;
-        min-height: 38px;
+        min-height: 32px;
         cursor: pointer;
         transition: border-color 0.2s;
     }
@@ -661,8 +711,8 @@
         flex: 0 0 auto !important;
     }
     .filtros-unificado .btn-limpiar-movil {
-        min-height: 38px;
-        padding: 6px 12px;
+        min-height: 32px;
+        padding: 5px 10px;
         white-space: nowrap;
         background: #fef2f2;
         border-color: #fecaca;
@@ -692,7 +742,7 @@
     }
 
     /* ========================================================================
-       BUSCADOR - Tipo app nativa
+       BUSCADOR - Tipo app nativa (compacto, con botón ✕)
        ======================================================================== */
     .buscador-unificado {
         padding: 0 16px !important;
@@ -705,12 +755,18 @@
         align-items: center;
     }
 
+    .buscador-search-input-wrap {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+    }
+
     .buscador-unificado input {
         width: 100%;
-        padding: 14px 18px;
+        padding: 10px 36px 10px 14px;
         border: 2px solid #e5e7eb;
-        border-radius: 14px;
-        font-size: 16px;
+        border-radius: 12px;
+        font-size: 14px;
         background: white;
         transition: all 0.2s ease;
         box-sizing: border-box;
@@ -728,15 +784,49 @@
 
     .buscador-unificado input::placeholder {
         color: #9ca3af;
-        font-size: 15px;
+        font-size: 13px;
     }
 
-    /* Botón "Seleccionar todo" junto al buscador */
+    /* Botón ✕ para limpiar la búsqueda */
+    .buscador-clear-btn {
+        position: absolute;
+        top: 50%;
+        right: 8px;
+        transform: translateY(-50%);
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: none;
+        background: #e5e7eb;
+        color: #6b7280;
+        font-size: 11px;
+        font-weight: 700;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        transition: all 0.15s ease;
+    }
+
+    .buscador-clear-btn.visible {
+        display: flex;
+    }
+
+    .buscador-clear-btn:active {
+        background: #d1d5db;
+        transform: translateY(-50%) scale(0.9);
+    }
+
+    /* Botón "Seleccionar todo" armónico con el buscador compacto */
     .buscador-unificado #btn-seleccionar-todo {
-        padding: 14px 16px !important;
-        border-radius: 14px !important;
-        font-size: 13px !important;
-        min-height: 48px;
+        padding: 0 14px !important;
+        border-radius: 12px !important;
+        font-size: 12px !important;
+        min-height: 38px;
         white-space: nowrap;
         flex-shrink: 0;
     }
@@ -1190,13 +1280,13 @@
     }
 
     /* ========================================================================
-       BOTÓN SELECCIONAR TODO - Integrado con buscador
+       BOTÓN SELECCIONAR TODO - Integrado con buscador (compacto y armónico)
        ======================================================================== */
     .btn-select-all {
-        padding: 14px 16px !important;
-        border-radius: 14px !important;
+        padding: 0 14px !important;
+        border-radius: 12px !important;
         font-size: 12px !important;
-        min-height: 48px;
+        min-height: 38px;
         white-space: nowrap;
         flex-shrink: 0;
     }

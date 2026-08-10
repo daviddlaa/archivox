@@ -238,7 +238,7 @@ async function init() {
                 var nivelMap = { superadmin: 100, admin: 50, lider: 30, agente: 20, user: 10 };
                 _nivelRol = nivelMap[rol] || 0;
                 _esLider = _nivelRol >= 30;
-                if (_esLider) mostrarFiltrosLider();
+                mostrarFiltrosLider();
             }
         } catch (e) { console.error('[Solicitudes Móvil] Error cargando sesión:', e); }
 
@@ -380,20 +380,45 @@ function renderizarFiltros() {
 }
 
 // ============================================================================
-// FILTROS LIDER+ (Fecha y Vendedor)
+// FILTROS EXTRA (Fecha y Vendedor) - colapsables
+// Las fechas están disponibles para todos los usuarios; el vendedor solo para Lider+.
 // ============================================================================
 function mostrarFiltrosLider() {
     var filtrosLider = document.getElementById('filtrosLider');
-    if (filtrosLider) {
-        filtrosLider.style.display = 'grid';
-        var fd = document.getElementById('fechaDesde');
-        var fh = document.getElementById('fechaHasta');
-        var fv = document.getElementById('filtroVendedor');
-        if (fd && fechaDesdeActual) fd.value = fechaDesdeActual;
-        if (fh && fechaHastaActual) fh.value = fechaHastaActual;
-        if (fv && vendedorActual) fv.value = vendedorActual;
-        cargarVendedores();
-    }
+    if (!filtrosLider) return;
+
+    // El filtro de Vendedor solo aplica para Lider+
+    var grupoVendedor = document.getElementById('filtroGrupoVendedor');
+    if (grupoVendedor) grupoVendedor.style.display = _esLider ? 'flex' : 'none';
+
+    var fd = document.getElementById('fechaDesde');
+    var fh = document.getElementById('fechaHasta');
+    var fv = document.getElementById('filtroVendedor');
+    if (fd && fechaDesdeActual) fd.value = fechaDesdeActual;
+    if (fh && fechaHastaActual) fh.value = fechaHastaActual;
+    if (fv && vendedorActual) fv.value = vendedorActual;
+
+    // Auto-expandir si hay filtros de fecha/vendedor persistidos de una sesión anterior
+    setFiltrosMasAbierto(!!(fechaDesdeActual || fechaHastaActual || vendedorActual));
+
+    if (_esLider) cargarVendedores();
+}
+
+function setFiltrosMasAbierto(abierto) {
+    var cont = document.getElementById('filtrosLider');
+    var chevron = document.getElementById('filtrosMasChevron');
+    var texto = document.getElementById('filtrosMasTexto');
+    var toggle = document.getElementById('filtrosMasToggle');
+    if (cont) cont.style.display = abierto ? 'grid' : 'none';
+    if (chevron) chevron.textContent = abierto ? '▴' : '▾';
+    if (texto) texto.textContent = abierto ? '📅 Ocultar filtros de fecha' : '📅 Más filtros (fecha)';
+    if (toggle) toggle.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+}
+
+function toggleFiltrosMasMovil() {
+    var cont = document.getElementById('filtrosLider');
+    if (!cont) return;
+    setFiltrosMasAbierto(cont.style.display !== 'grid');
 }
 
 async function cargarVendedores() {
@@ -461,7 +486,33 @@ function limpiarFiltrosLider() {
     if (inputBusqueda) inputBusqueda.value = '';
     busquedaActiva = false;
     filtros.busqueda = '';
+    actualizarBotonLimpiarBusqueda();
 
+    // Colapsar los filtros extra al limpiar
+    setFiltrosMasAbierto(false);
+
+    buscarEnServidor(true);
+}
+
+// ============================================================================
+// BÚSQUEDA - Botón ✕ para limpiar el texto
+// ============================================================================
+function actualizarBotonLimpiarBusqueda() {
+    var input = document.getElementById('cedula');
+    var btn = document.getElementById('btn-limpiar-busqueda');
+    if (!input || !btn) return;
+    btn.classList.toggle('visible', input.value.trim().length > 0);
+}
+
+function limpiarBusquedaMovil() {
+    var input = document.getElementById('cedula');
+    if (input) {
+        input.value = '';
+        input.focus();
+    }
+    actualizarBotonLimpiarBusqueda();
+    busquedaActiva = false;
+    filtros.busqueda = '';
     buscarEnServidor(true);
 }
 
@@ -501,11 +552,11 @@ async function buscarEnServidor(resetOffset = false, extraOffset = null) {
             var url = '/api/excel/solicitudes/buscar?q=' + encodeURIComponent(termino || '%') + '&limite=' + TAMANO_LOTE + '&offset=' + nuevoOffset;
             if (filtros.estado) url += '&estado=' + encodeURIComponent(filtros.estado);
             if (filtros.segmento) url += '&segmento=' + encodeURIComponent(filtros.segmento);
-            if (_esLider) {
-                if (fechaDesdeActual) url += '&fecha_desde=' + encodeURIComponent(fechaDesdeActual);
-                if (fechaHastaActual) url += '&fecha_hasta=' + encodeURIComponent(fechaHastaActual);
-                if (vendedorActual) url += '&vendedor=' + encodeURIComponent(vendedorActual);
-            }
+            // Fechas: disponibles para todos los usuarios (el backend las aplica)
+            if (fechaDesdeActual) url += '&fecha_desde=' + encodeURIComponent(fechaDesdeActual);
+            if (fechaHastaActual) url += '&fecha_hasta=' + encodeURIComponent(fechaHastaActual);
+            // Vendedor: solo Lider+ (el grupo no se muestra a otros roles)
+            if (vendedorActual) url += '&vendedor=' + encodeURIComponent(vendedorActual);
             
             var response = await fetch(url, { signal: signal });
             var result = await response.json();
@@ -588,6 +639,7 @@ function adjuntarEventos() {
     // Buscador en tiempo real - buscar en servidor
     const input = document.getElementById('cedula');
     input.oninput = function() {
+        actualizarBotonLimpiarBusqueda();
         buscarConDebounce(); // Busca en servidor con debounce, respeta filtros activos
     };
 }
@@ -2331,9 +2383,36 @@ function toggleCardMenuMovil(event, id) {
     event.stopPropagation();
     cerrarTodosLosMenusMovil(id);
     var menu = document.getElementById('card-menu-movil-' + id);
-    if (menu) {
-        menu.classList.toggle('visible');
+    if (!menu) return;
+
+    // Si ya está visible, solo se cierra
+    if (menu.classList.contains('visible')) {
+        menu.classList.remove('visible');
+        return;
     }
+
+    // Posicionar el menú como FIXED a nivel de viewport para que NUNCA se corte
+    // por el overflow:hidden de la card ni por los bordes de la pantalla.
+    var btn = event.currentTarget;
+    var rect = btn.getBoundingClientRect();
+    var altoEstimado = 160; // 3 opciones aprox.
+
+    menu.style.position = 'fixed';
+    menu.style.left = 'auto';
+    menu.style.top = 'auto';
+    menu.style.bottom = 'auto';
+    menu.style.right = Math.max(8, Math.round(window.innerWidth - rect.right)) + 'px';
+
+    var espacioAbajo = window.innerHeight - rect.bottom - 8;
+    if (espacioAbajo >= altoEstimado) {
+        // Abre hacia abajo (hay espacio)
+        menu.style.top = (rect.bottom + 6) + 'px';
+    } else {
+        // Abre hacia arriba (poco espacio abajo); clamp para no salirse por el borde superior
+        menu.style.top = Math.max(8, rect.top - 6 - altoEstimado) + 'px';
+    }
+
+    menu.classList.add('visible');
 }
 
 function cerrarTodosLosMenusMovil(excludeId) {
