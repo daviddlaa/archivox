@@ -125,7 +125,9 @@ exports.procesarExcel = async (filePath, usuarioId) => {
     let procesados = 0;
     let inserts = 0;
     let updates = 0;
+    let omitidos = 0;
     const detalles = [];
+    const omisiones = [];
 
     // Variable para auto-generar IDs cuando IDSOLICITUD viene vacío
     // Se inicializa bajo demanda (lazy) cuando se encuentra la primera fila sin ID
@@ -181,17 +183,27 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                 if (idFueAutoGenerado && registro.CEDULA && String(registro.CEDULA).trim() !== '') {
                     // Buscar por CÉDULA para evitar duplicados al re-subir el mismo Excel
                     existing = await pool.query(
-                        'SELECT id, id_solicitud, estado, segmento FROM solicitudes WHERE cedula = $1 AND usuario_id = $2',
+                        'SELECT id, id_solicitud, estado, segmento, usuario_id FROM solicitudes WHERE cedula = $1 AND usuario_id = $2',
                         [registro.CEDULA, usuarioId]
                     );
                 } else {
                     existing = await pool.query(
-                        'SELECT id, id_solicitud, estado, segmento FROM solicitudes WHERE id_solicitud = $1',
+                        'SELECT id, id_solicitud, estado, segmento, usuario_id FROM solicitudes WHERE id_solicitud = $1',
                         [registro.IDSOLICITUD]
                     );
                 }
 
                 if (existing.rows.length > 0) {
+                    // SEGURIDAD: si la solicitud pertenece a OTRO usuario, NUNCA modificarla
+                    // ni reasignarla (evita que una importación "robe" registros ajenos).
+                    if (existing.rows[0].usuario_id !== usuarioId) {
+                        omitidos++;
+                        omisiones.push({
+                            id: existing.rows[0].id_solicitud,
+                            motivo: 'pertenece a otro usuario'
+                        });
+                        continue;
+                    }
                     // Update - capturar valores anteriores
                     const oldData = existing.rows[0];
                     const existingIdSol = oldData.id_solicitud;
@@ -205,6 +217,8 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                     }
                     
                     // Ejecutar update
+                    // Nota: NO se actualiza usuario_id; el guard anterior garantiza
+                    // que este registro pertenece al usuario actual.
                     await pool.query(
                         `UPDATE solicitudes SET
                             estado = $1,
@@ -214,10 +228,9 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                             segmento = $5,
                             producto = $6,
                             fecha_solicitud = $7,
-                            usuario_id = $8,
-                            vendedor = $9,
+                            vendedor = $8,
                             fecha_actualizacion = CURRENT_TIMESTAMP
-                        WHERE id_solicitud = $10`,
+                        WHERE id_solicitud = $9`,
                         [
                             registro.ESTADO,
                             registro.CEDULA,
@@ -226,7 +239,6 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                             registro.SEGMENTO,
                             registro.PRODUCTO,
                             registro.FECHASOLICITUD,
-                            usuarioId,
                             vendedorExcel,
                             existingIdSol
                         ]
@@ -282,15 +294,25 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                 let existing;
                 if (idFueAutoGenerado && registro.CEDULA && String(registro.CEDULA).trim() !== '') {
                     existing = dbDirect.prepare(
-                        'SELECT id, id_solicitud, estado, segmento FROM solicitudes WHERE cedula = ? AND usuario_id = ?'
+                        'SELECT id, id_solicitud, estado, segmento, usuario_id FROM solicitudes WHERE cedula = ? AND usuario_id = ?'
                     ).get(registro.CEDULA, usuarioId);
                 } else {
                     existing = dbDirect.prepare(
-                        'SELECT id, id_solicitud, estado, segmento FROM solicitudes WHERE id_solicitud = ?'
+                        'SELECT id, id_solicitud, estado, segmento, usuario_id FROM solicitudes WHERE id_solicitud = ?'
                     ).get(registro.IDSOLICITUD);
                 }
 
                 if (existing) {
+                    // SEGURIDAD: si la solicitud pertenece a OTRO usuario, NUNCA modificarla
+                    // ni reasignarla (evita que una importación "robe" registros ajenos).
+                    if (existing.usuario_id !== usuarioId) {
+                        omitidos++;
+                        omisiones.push({
+                            id: existing.id_solicitud,
+                            motivo: 'pertenece a otro usuario'
+                        });
+                        continue;
+                    }
                     // Update - capturar valores anteriores
                     const existingIdSol = existing.id_solicitud;
                     const oldEstado = existing.estado;
@@ -303,6 +325,8 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                     }
                     
                     // Ejecutar update
+                    // Nota: NO se actualiza usuario_id; el guard anterior garantiza
+                    // que este registro pertenece al usuario actual.
                     dbDirect.prepare(`
                         UPDATE solicitudes SET
                             estado = ?,
@@ -312,7 +336,6 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                             segmento = ?,
                             producto = ?,
                             fecha_solicitud = ?,
-                            usuario_id = ?,
                             vendedor = ?,
                             fecha_actualizacion = datetime('now')
                         WHERE id_solicitud = ?
@@ -324,7 +347,6 @@ exports.procesarExcel = async (filePath, usuarioId) => {
                         registro.SEGMENTO,
                         registro.PRODUCTO,
                         registro.FECHASOLICITUD,
-                        usuarioId,
                         vendedorExcel,
                         existingIdSol
                     );
@@ -387,6 +409,8 @@ exports.procesarExcel = async (filePath, usuarioId) => {
         total: procesados,
         inserts: inserts,
         updates: updates,
+        omitidos: omitidos,
+        omisiones: omisiones,
         detalles: detalles
     };
 };

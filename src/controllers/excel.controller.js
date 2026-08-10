@@ -28,7 +28,9 @@ exports.uploadExcel = async (req, res) => {
         let totalRegistros = 0;
         let totalInserts = 0;
         let totalUpdates = 0;
+        let totalOmitidos = 0;
         const todosDetalles = [];
+        const todasOmisiones = [];
 
         for (const archivo of req.files) {
 
@@ -41,10 +43,16 @@ exports.uploadExcel = async (req, res) => {
             totalRegistros += resultado.total;
             totalInserts += resultado.inserts;
             totalUpdates += resultado.updates;
+            totalOmitidos += resultado.omitidos || 0;
             
             // Agregar detalles de actualizaciones
             if (resultado.detalles && resultado.detalles.length > 0) {
                 todosDetalles.push(...resultado.detalles);
+            }
+
+            // Agregar omisiones (registros de otros usuarios)
+            if (resultado.omisiones && resultado.omisiones.length > 0) {
+                todasOmisiones.push(...resultado.omisiones);
             }
 
         }
@@ -57,6 +65,9 @@ exports.uploadExcel = async (req, res) => {
         if (totalUpdates > 0) {
             mensaje = `Se actualizaron ${totalUpdates} registros`;
         }
+        if (totalOmitidos > 0) {
+            mensaje += ` · ${totalOmitidos} omitido(s) por pertenecer a otro usuario`;
+        }
 
         res.json({
             mensaje: mensaje,
@@ -64,6 +75,8 @@ exports.uploadExcel = async (req, res) => {
             registros: totalRegistros,
             inserts: totalInserts,
             updates: totalUpdates,
+            omitidos: totalOmitidos,
+            omisiones: todasOmisiones,
             detalles: todosDetalles
         });
 

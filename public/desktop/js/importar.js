@@ -102,6 +102,7 @@ form.addEventListener('submit', async (e) => {
                         <strong>${data.updates}</strong> registro(s) actualizado(s)
                         <br>
                         <strong>${data.inserts}</strong> registro(s) nuevo(s)
+                        ${data.omitidos ? `<br><span style="color:#b45309;font-weight:600;">⚠️ ${data.omitidos} omitido(s) por pertenecer a otro usuario</span>` : ''}
                     </p>
                     <div class="table-container">
                         <table class="update-table">
@@ -159,6 +160,7 @@ form.addEventListener('submit', async (e) => {
                         📊 Registros importados:
                         <strong>${data.registros}</strong>
                     </p>
+                    ${data.omitidos ? `<p style="color:#b45309;font-weight:600;margin-top:6px;">⚠️ ${data.omitidos} registro(s) omitido(s) por pertenecer a otro usuario</p>` : ''}
 
 <a
                         href="/solicitudes"
