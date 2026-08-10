@@ -2393,7 +2393,10 @@ function toggleCardMenuMovil(event, id) {
 
     // Posicionar el menú como FIXED a nivel de viewport para que NUNCA se corte
     // por el overflow:hidden de la card ni por los bordes de la pantalla.
+    // Nota: la card no debe retener transform (ver keyframe fadeInUp) o sería
+    // el containing block del menú y las coordenadas de viewport fallarían.
     var btn = event.currentTarget;
+    if (!btn) return;
     var rect = btn.getBoundingClientRect();
     var altoEstimado = 160; // 3 opciones aprox.
 
