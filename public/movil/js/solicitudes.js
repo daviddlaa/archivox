@@ -756,11 +756,10 @@ function renderizarCards(datos) {
         var html = '';
         html += '<div class="solicitud-card ' + seleccionado + (noAplica ? ' no-aplica-credito' : '') + '" id="card-' + id + '" onclick="toggleCard(\'' + id + '\')">';
 
-        // FILA 1: Segmento + Estado + chip "No aplica" tappable (opción 1)
+        // FILA 1: Segmento + Estado (el control "No aplica" vive en la fila 4)
         html += '  <div class="card-fila-1">';
         html += '    <span class="card-badge badge-segmento">' + (item.segmento || 'Sin segmento') + '</span>';
         html += '    <span class="card-badge badge-estado ' + estadoClase + '" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
-        html += '    <button type="button" class="noaplica-chip' + (noAplica ? ' activo' : '') + '" onclick="event.stopPropagation(); confirmarNoAplicaCreditoMovil(\'' + id + '\', ' + (noAplica ? 1 : 0) + ', ' + (item.campana_id ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '">👎 No aplica</button>';
         html += '  </div>';
 
         // FILA 2: Nombre
@@ -777,12 +776,13 @@ function renderizarCards(datos) {
         html += '    <button class="card-btn btn-eliminar" onclick="event.stopPropagation(); confirmarEliminarSolicitudMovil(\'' + id + '\')"><span class="btn-icon">🗑️</span><span class="btn-label">Eliminar</span></button>';
         html += '  </div>';
 
-        // FILA 4: Link a la campaña donde está indexada la solicitud
+        // FILA 4: Link a la campaña (si existe) + botón 👎 "No aplica" (solo icono)
+        html += '  <div class="card-fila-4">';
         if (item.campana_id && item.nombre_campana) {
-            html += '  <div class="card-fila-4">';
             html += '    <a class="campana-link" href="/m/gestion-lote?id=' + encodeURIComponent(item.campana_id) + '&card=' + encodeURIComponent(id) + '" onclick="event.stopPropagation()"><span>📢 ' + escaparParaHTMLMovil(item.nombre_campana) + ' →</span></a>';
-            html += '  </div>';
         }
+        html += '    <button type="button" class="noaplica-icon-btn' + (noAplica ? ' activo' : '') + '" onclick="event.stopPropagation(); confirmarNoAplicaCreditoMovil(\'' + id + '\', ' + (noAplica ? 1 : 0) + ', ' + (item.campana_id ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '" aria-label="No aplica para crédito">👎</button>';
+        html += '  </div>';
 
         // FILA 5: Producto + Fecha + Vendedor
         html += '  <div class="card-fila-5">';

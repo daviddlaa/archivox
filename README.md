@@ -388,6 +388,7 @@ Ver `docs/README.md` para documentacion completa del sistema (1375+ lineas), inc
 
 | Feature | Fecha | Documento |
 |---------|-------|-----------|
+| Rediseño de la tarjeta móvil de Solicitudes: compacta, Gestiones = historial del cliente, Completar/Editar fusionado, ⋮→🗑️ Eliminar y link a la campaña (deep link a la tarjeta) | Agosto 2026 | `docs/feature-rediseno-tarjeta-movil-solicitudes.md` |
 | Rediseño del Indicador de Estado (Semáforo) v6 | Agosto 2026 | `docs/feature-rediseño-semaforo-campañas.md` |
 | Rediseño UX de Campañas: progreso y prioridad | Agosto 2026 | `docs/feature-ux-comportamiento-campanas.md` |
 | Tarjeta de Solicitudes Desktop: sin botón Llamar, cédula + teléfono visibles, fix checkbox duplicado y limpieza CSS | Agosto 2026 | `docs/feature-tarjeta-solicitudes-escritorio.md` |

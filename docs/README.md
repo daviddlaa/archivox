@@ -219,6 +219,7 @@ ARCHIVOX/
 │   ├── fix-importacion-proteccion-datos-usuarios.md  # Importación Excel: nunca modifica/reasigna registros de otros usuarios + reporte omitidos (Agosto 2026)
 │   ├── feature-excel-demo-video.md                   # Excel de datos demo (ficticios) para el video: docs/demo/archivox-datos-demo.xlsx (Agosto 2026)
 │   ├── feature-filtros-buscador-movil-solicitudes.md # Vista móvil Solicitudes (v2): leyenda + filtros en una fila, fechas colapsables para todos, KPIs −20%, buscador + "Seleccionar todo" integrados al panel (32px) y fix crítico del menú ⋮ (transform retenido) (Agosto 2026)
+│   ├── feature-rediseno-tarjeta-movil-solicitudes.md # Tarjeta móvil de Solicitudes rediseñada: compacta, Gestiones = historial del cliente, Completar/Editar fusionado, ⋮→🗑️ y link a la campaña (Agosto 2026)
 │   ├── demo/                                        # Archivos de ejemplo (Excel demo para video)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
@@ -1096,6 +1097,15 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
 - Listado paginado con scroll infinito
 - Búsqueda en servidor con filtros (estado, segmento, cédula, nombre)
 - Vista de tarjetas con información detallada
+- **Tarjeta móvil rediseñada (Agosto 2026):** card compacta (padding 13/14 px,
+  botones 40 px) con 5 botones `📞 Llamar · 📋 Gestiones · ✏️ Completar ·
+  💬 WhatsApp · 🗑️ Eliminar` (sin menú ⋮). Gestiones abre **solo el historial**
+  del cliente (timeline read-only con 🏷️ vendedor, vía `GET /api/excel/gestiones/:id`).
+  Completar fusiona Editar (Estado + Segmento + info adicional + referencias) con
+  guardado encadenado `PUT /editar` → `PUT /completar-info`. El botón `👎 No aplica`
+  (solo icono) vive en la fila 4, junto al link `📢 {campaña}` →
+  `/m/gestion-lote?id=X&card=Y` con salto y destello a la tarjeta (deep link).
+  Ver `docs/feature-rediseno-tarjeta-movil-solicitudes.md`.
 - **Panel lateral de detalle/edición (escritorio):** hacer clic en una
   tarjeta abre un panel deslizante (drawer) desde la derecha con la vista
   de detalle (datos personales, ubicación, laboral/económico, detalles,

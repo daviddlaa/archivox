@@ -25,6 +25,11 @@ Rediseño de la experiencia móvil de Solicitudes en 3 frentes:
 > de posicionamiento) y no en el `position: fixed` en sí. También se **integró el buscador +
 > botón "Seleccionar todo" DENTRO del panel de filtros**, debajo del toggle colapsable, con
 > alturas unificadas de 32 px. Detalles en la **sección 5** (Segunda iteración).
+>
+> **⚠️ Obsoleto (Agosto 2026):** el menú ⋮ descrito en este documento fue **eliminado** por
+> el rediseño de la tarjeta móvil (ver `docs/feature-rediseno-tarjeta-movil-solicitudes.md`):
+> la tarjeta ahora tiene botón directo 🗑️ Eliminar, botón `👎 No aplica` (solo icono) junto al
+> link de campaña y fila 1 más ligera. Las secciones 2–5 se conservan como historial de la evolución de la UX móvil.
 
 ---
 
