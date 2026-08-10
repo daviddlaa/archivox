@@ -10,6 +10,7 @@ var _esLider = false;
 var _equipoActual = null;
 var _agentesEquipo = [];
 var filtroSemaforo = null;
+var campanaCompletada = false;
 var SEMAFORO_ORDEN = ['sin_clasificar', 'verde', 'amarillo', 'rojo'];
 var SEMAFORO_LABELS = {
     sin_clasificar: 'Sin clasificar',
@@ -420,6 +421,7 @@ async function cargarDatosGestion() {
         
         datosGestion = await response.json();
         filtroSemaforo = null;
+        aplicarEstadoSemaforoCompletada();
         
         actualizarTituloCampana(datosGestion.nombre || 'Gestión #' + gestionId);
         
@@ -539,9 +541,30 @@ function contarSemaforoLocal(lista) {
     return conteo;
 }
 
+function aplicarEstadoSemaforoCompletada() {
+    campanaCompletada = /^completad[ao]$/i.test((datosGestion && datosGestion.estado) || '');
+    var barra = document.getElementById('semaforo-barra');
+    var btnTodos = document.getElementById('btn-semaforo-todos');
+    var chip = document.getElementById('btn-filtro-semaforo-chip');
+    var nota = document.getElementById('semaforo-completada-note');
+
+    if (campanaCompletada) {
+        filtroSemaforo = null;
+        if (barra) barra.style.display = 'none';
+        if (btnTodos) btnTodos.style.display = 'none';
+        if (chip) chip.style.display = 'none';
+        if (nota) nota.style.display = 'block';
+    } else {
+        if (barra) barra.style.display = '';
+        if (btnTodos) btnTodos.style.display = filtroSemaforo ? 'inline-flex' : 'none';
+        if (chip) chip.style.display = filtroSemaforo ? 'inline-flex' : 'none';
+        if (nota) nota.style.display = 'none';
+    }
+}
+
 function actualizarBarraSemaforo(conteoExterno) {
     var lista = todasLasSolicitudes.length ? todasLasSolicitudes : solicitudes;
-    var conteo = conteoExterno || contarSemaforoLocal(lista);
+    var conteo = campanaCompletada ? { sin_clasificar: 0, rojo: 0, amarillo: 0, verde: 0 } : (conteoExterno || contarSemaforoLocal(lista));
     var total = 0;
     var k;
     for (k = 0; k < SEMAFORO_ORDEN.length; k++) {
@@ -879,6 +902,10 @@ function mostrarConfirmacionGestion(mensaje) {
 }
 
 function setFiltroSemaforo(valor) {
+    if (campanaCompletada) {
+        filtroSemaforo = null;
+        return;
+    }
     if (valor && filtroSemaforo === valor) {
         filtroSemaforo = null;
     } else {
@@ -1082,7 +1109,7 @@ function renderizarSolicitudes(lista) {
 
         // Filtro por semáforo operativo
         if (filtroSemaforo) {
-            if (sol.tipo_gestion === 'Completada') return false;
+            if (campanaCompletada || sol.tipo_gestion === 'Completada') return false;
             if (normalizarSemaforo(sol.semaforo) !== filtroSemaforo) return false;
         }
         
@@ -2517,8 +2544,14 @@ async function guardarEdicionCampana(id) {
             cerrarModal();
             await cargarListaCampanas();
             if (String(gestionId) === String(id)) {
-                if (datosGestion) datosGestion.nombre = nombre;
+                if (datosGestion) {
+                    datosGestion.nombre = nombre;
+                    datosGestion.estado = estado;
+                }
                 actualizarTituloCampana(nombre);
+                aplicarEstadoSemaforoCompletada();
+                actualizarBarraSemaforo();
+                renderizarSolicitudes(todasLasSolicitudes);
             }
         } else {
             alert('Error: ' + (resultado.error || 'Error al actualizar campaña'));

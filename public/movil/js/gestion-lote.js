@@ -6,6 +6,7 @@ var solicitudes = [];
 var todasLasSolicitudes = [];
 var campañas = [];
 var filtroSemaforoMovil = null;
+var campanaCompletada = false;
 var SEMAFORO_MOVIL = ['sin_clasificar', 'verde', 'amarillo', 'rojo'];
 var _recomendacionMovilIndex = 0;
 var _recomendacionMovilTimer = null;
@@ -194,6 +195,7 @@ async function cargarDatosGestionMovil() {
         if (!response.ok) throw new Error('Error al cargar gestión (status: ' + response.status + ')');
 
         datosGestion = await response.json();
+        filtroSemaforoMovil = null;
         
         var panel = document.getElementById('panel-progreso');
         if (panel) panel.style.display = 'none';
@@ -221,6 +223,7 @@ async function cargarDatosGestionMovil() {
         }
         todasLasSolicitudes = solicitudes.slice();
 
+        aplicarEstadoSemaforoCompletadaMovil();
         renderizarSolicitudes(solicitudes);
         actualizarProgreso();
         mostrarBotonHistorialCampanaMovil();
@@ -264,8 +267,24 @@ function normalizarSemaforoMovil(valor) {
     return SEMAFORO_MOVIL.indexOf(valor) !== -1 ? valor : 'sin_clasificar';
 }
 
+function aplicarEstadoSemaforoCompletadaMovil() {
+    campanaCompletada = /^completad[ao]$/i.test((datosGestion && datosGestion.estado) || '');
+    var scroll = document.getElementById('semaforo-mobile-scroll');
+    var nota = document.getElementById('semaforo-completada-note-movil');
+
+    if (campanaCompletada) {
+        filtroSemaforoMovil = null;
+        if (scroll) scroll.style.display = 'none';
+        if (nota) nota.style.display = 'block';
+    } else {
+        if (scroll) scroll.style.display = '';
+        if (nota) nota.style.display = 'none';
+    }
+}
+
 function obtenerConteoSemaforoMovil() {
     var conteo = { sin_clasificar: 0, verde: 0, amarillo: 0, rojo: 0 };
+    if (campanaCompletada) return conteo;
     var lista = todasLasSolicitudes || [];
     lista.forEach(function(sol) {
         if (sol.tipo_gestion === 'Completada') return;
@@ -428,6 +447,10 @@ function actualizarIndicadorFiltros() {
 }
 
 function setFiltroSemaforoMovil(valor) {
+    if (campanaCompletada) {
+        filtroSemaforoMovil = null;
+        return;
+    }
     filtroSemaforoMovil = valor && filtroSemaforoMovil === valor ? null : (valor || null);
     actualizarSemaforoMovil();
     renderizarSolicitudes(todasLasSolicitudes);
@@ -733,7 +756,7 @@ function renderizarSolicitudes(lista, sinEntrada) {
             if (estadoActual !== filtroEstado) return false;
         }
         if (filtroSemaforoMovil) {
-            if (sol.tipo_gestion === 'Completada') return false;
+            if (campanaCompletada || sol.tipo_gestion === 'Completada') return false;
             if (normalizarSemaforoMovil(sol.semaforo) !== filtroSemaforoMovil) return false;
         }
         return true;
@@ -1899,6 +1922,16 @@ async function guardarEdicionCampanaMovil(id) {
             alert('✅ Campaña actualizada correctamente');
             cerrarModalEditarCampanaMovil();
             await cargarListaCampanas();
+            if (String(gestionId) === String(id)) {
+                if (datosGestion) {
+                    datosGestion.nombre = nombre;
+                    datosGestion.estado = estado;
+                }
+                aplicarEstadoSemaforoCompletadaMovil();
+                actualizarSemaforoMovil();
+                renderizarSolicitudes(todasLasSolicitudes);
+                ajustarStickySemaforo();
+            }
         } else {
             alert('Error: ' + (resultado.error || 'Error al actualizar campaña'));
             if (submitBtn) { submitBtn.textContent = '💾 Guardar'; submitBtn.disabled = false; }
