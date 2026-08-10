@@ -116,7 +116,7 @@ window.addEventListener('DOMContentLoaded', function() {
     initDashCarousel();
     initDashWidgetCarousel();
     igualarAlturaWidgetSlides();
-    Promise.all([cargarCampañasActivas(), cargarUltimasSolicitudes()])
+    Promise.all([cargarCampañasActivas(), cargarUltimasSolicitudes(), cargarUltimasGestiones()])
         .then(igualarAlturaWidgetSlides)
         .catch(function() { igualarAlturaWidgetSlides(); });
 });
@@ -352,6 +352,117 @@ async function cargarUltimasSolicitudes() {
     } catch (e) {
         console.error('Error cargando últimas solicitudes:', e);
         container.innerHTML = '<div class="campanas-widget-empty">No se pudieron cargar las solicitudes.</div>';
+        igualarAlturaWidgetSlides();
+    }
+}
+
+// ============================================================================
+// WIDGET ÚLTIMAS GESTIONES (historial de las últimas 5 gestiones)
+// Líder: últimas gestiones de su equipo (con nombre del agente).
+// Resto de usuarios: sus propias últimas gestiones.
+// Estilo: timeline "últimas actividades" (ver docs/feature-historial-campana.md).
+// ============================================================================
+var coloresTipoGestion = {
+    'Pendiente': '#fef3c7',
+    'Llamada': '#d1fae5',
+    'WhatsApp': '#dcfce7',
+    'Seguimiento': '#dbeafe',
+    'Cobranza': '#fee2e2',
+    'Cita': '#e0e7ff',
+    'Completada': '#bbf7d0',
+    'Recordatorio': '#ffedd5',
+    'Otro': '#f3f4f6'
+};
+
+function formatearFechaWidget(fecha) {
+    if (!fecha) return '—';
+    var d = new Date(fecha);
+    if (isNaN(d.getTime())) return '—';
+    var ahora = new Date();
+    var hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+    var dia = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var diff = Math.round((hoy.getTime() - dia.getTime()) / 86400000);
+    var hora = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    if (diff <= 0) return 'Hoy · ' + hora;
+    if (diff === 1) return 'Ayer · ' + hora;
+    if (diff < 7) return 'El ' + ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][d.getDay()] + ' · ' + hora;
+    var semanas = Math.floor(diff / 7);
+    if (semanas <= 4) return 'Hace ' + (semanas === 1 ? 'una semana' : semanas + ' semanas') + ' · ' + hora;
+    var meses = Math.floor(diff / 30);
+    if (meses <= 11) return 'Hace ' + (meses === 1 ? 'un mes' : meses + ' meses') + ' · ' + hora;
+    return d.toLocaleDateString('es-ES') + ' · ' + hora;
+}
+
+async function cargarUltimasGestiones() {
+    var container = document.getElementById('ultimas-gestiones-lista');
+    if (!container) return;
+    try {
+        var sesRes = await fetch('/api/auth/sesion');
+        var ses = await sesRes.json();
+        var esLider = !!(ses.autenticado && ses.usuario && ses.usuario.es_lider);
+        var equipoId = ses.autenticado && ses.usuario ? ses.usuario.equipo_id : null;
+
+        var linkVerTodas = document.getElementById('ultimas-gestiones-link');
+        if (linkVerTodas) {
+            linkVerTodas.href = (esLider && equipoId) ? '/m/equipo' : '/m/gestiones';
+        }
+
+        var lista;
+        if (esLider && equipoId) {
+            var res = await fetch('/api/equipos/' + equipoId + '/gestiones?limite=5');
+            if (!res.ok) throw new Error('status ' + res.status);
+            var result = await res.json();
+            lista = Array.isArray(result) ? result : (result.data || []);
+        } else {
+            var res2 = await fetch('/api/excel/gestiones/todas?limite=5');
+            if (!res2.ok) throw new Error('status ' + res2.status);
+            var result2 = await res2.json();
+            lista = Array.isArray(result2) ? result2 : (result2.data || []);
+        }
+
+        if (!lista.length) {
+            container.innerHTML = '<div class="campanas-widget-empty">No hay gestiones registradas.<br><a href="/m/gestiones">Ver gestiones</a></div>';
+            igualarAlturaWidgetSlides();
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < lista.length; i++) {
+            var g = lista[i];
+            var isLast = i === lista.length - 1;
+            var color = coloresTipoGestion[g.tipo_gestion] || '#f3f4f6';
+            var fecha = formatearFechaWidget(g.fecha_gestion);
+            var principal = esLider
+                ? (g.agente_nombre || g.agente_username || 'Agente')
+                : (g.nombre || 'Sin nombre');
+            var linea = esLider
+                ? '#' + g.solicitud_id + (g.cliente_nombre ? ' · ' + truncarTexto(g.cliente_nombre, 20) : '')
+                : '#' + g.solicitud_id + (g.cedula ? ' · 🆔 ' + truncarTexto(g.cedula, 15) : '');
+            var obs = g.observacion ? truncarTexto(g.observacion, 80) : '';
+
+            html += '<div class="ges-widget-item">' +
+                '<div class="ges-widget-rail">' +
+                '<span class="ges-widget-dot" style="background:' + color + ';"></span>' +
+                (isLast ? '' : '<span class="ges-widget-line"></span>') +
+                '</div>' +
+                '<div class="ges-widget-body">' +
+                '<div class="ges-widget-top">' +
+                '<span class="ges-widget-name">' + escapeHtmlMovil(truncarTexto(principal, 26)) + '</span>' +
+                '</div>' +
+                '<div class="ges-widget-meta">' + escapeHtmlMovil(linea) + '</div>' +
+                '<div class="ges-widget-badges">' +
+                '<span class="ges-widget-badge" style="background:' + color + ';">' + escapeHtmlMovil(g.tipo_gestion || '—') + '</span>' +
+                '<span class="ges-widget-fecha">⏱️ ' + escapeHtmlMovil(fecha) + '</span>' +
+                '</div>' +
+                (obs ? '<div class="ges-widget-obs">' + escapeHtmlMovil(obs) + '</div>' : '') +
+                '</div>' +
+                '</div>';
+        }
+        container.innerHTML = html;
+        igualarAlturaWidgetSlides();
+    } catch (e) {
+        console.error('Error cargando últimas gestiones:', e);
+        container.innerHTML = '<div class="campanas-widget-empty">No se pudieron cargar las gestiones.</div>';
         igualarAlturaWidgetSlides();
     }
 }

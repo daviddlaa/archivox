@@ -278,9 +278,12 @@ async function iniciarDashboard() {
     await actualizarDashboard();
     ajustarSlideEquipo();
     initDashdCarousel();
+    initDashdWidgetsCarousel();
     personalizarBienvenida();
-    cargarCampañasActivas();
-    cargarUltimasSolicitudes();
+    igualarAlturaDashdWidgetsSlides();
+    Promise.all([cargarCampañasActivas(), cargarUltimasSolicitudes(), cargarUltimasGestiones()])
+        .then(igualarAlturaDashdWidgetsSlides)
+        .catch(function() { igualarAlturaDashdWidgetsSlides(); });
 }
 
 iniciarDashboard();
@@ -349,6 +352,72 @@ function initDashdCarousel() {
         step = slides[1].offsetLeft - slides[0].offsetLeft;
         actualizarDotActivo();
         igualarAlturaDashdSlides();
+    });
+}
+
+// ============================================================================
+// PASARELA DE WIDGETS (campañas / solicitudes / gestiones)
+// Mismo patrón que el carrusel principal: flechas ‹ › con loop + dots.
+// ============================================================================
+function igualarAlturaDashdWidgetsSlides() {
+    var track = document.getElementById('dashdWidgetsTrack');
+    if (!track) return;
+    var cards = track.querySelectorAll('.dashd-widget-card');
+    if (cards.length < 2) return;
+    track.style.height = 'auto';
+    var max = 0;
+    cards.forEach(function(c) { max = Math.max(max, c.offsetHeight); });
+    if (max > 0) track.style.height = max + 'px';
+}
+
+function initDashdWidgetsCarousel() {
+    var track = document.getElementById('dashdWidgetsTrack');
+    if (!track) return;
+    var cards = track.querySelectorAll('.dashd-widget-card');
+    var dots = Array.prototype.slice.call(document.querySelectorAll('.dashd-widgets-dot'));
+    var prev = document.getElementById('dashdWidgetsPrev');
+    var next = document.getElementById('dashdWidgetsNext');
+    if (cards.length < 2 || !dots.length) return;
+    var step = cards[1].offsetLeft - cards[0].offsetLeft;
+
+    function indiceActual() {
+        return Math.max(0, Math.min(dots.length - 1, Math.round(track.scrollLeft / step)));
+    }
+
+    function irA(index) {
+        track.scrollTo({ left: index * step, behavior: 'smooth' });
+    }
+
+    function actualizarDotActivo() {
+        var index = indiceActual();
+        dots.forEach(function(dot, i) {
+            dot.classList.toggle('active', i === index);
+        });
+    }
+
+    track.addEventListener('scroll', actualizarDotActivo, { passive: true });
+
+    dots.forEach(function(dot, i) {
+        dot.addEventListener('click', function() { irA(i); });
+    });
+
+    if (prev) {
+        prev.addEventListener('click', function() {
+            var i = indiceActual() - 1;
+            irA(i < 0 ? cards.length - 1 : i);
+        });
+    }
+    if (next) {
+        next.addEventListener('click', function() {
+            var i = indiceActual() + 1;
+            irA(i >= cards.length ? 0 : i);
+        });
+    }
+
+    window.addEventListener('resize', function() {
+        step = cards[1].offsetLeft - cards[0].offsetLeft;
+        actualizarDotActivo();
+        igualarAlturaDashdWidgetsSlides();
     });
 }
 
@@ -481,6 +550,122 @@ async function cargarUltimasSolicitudes() {
     } catch (e) {
         console.error('Error cargando últimas solicitudes:', e);
         container.innerHTML = '<div class="campanas-widget-empty">No se pudieron cargar las solicitudes.</div>';
+    }
+}
+
+// ============================================================================
+// WIDGET ÚLTIMAS GESTIONES (historial de las últimas 5 gestiones)
+// Líder: últimas gestiones de su equipo (con nombre del agente).
+// Resto de usuarios: sus propias últimas gestiones.
+// Estilo: timeline "últimas actividades" (ver docs/feature-historial-campana.md).
+// ============================================================================
+var coloresTipoGestion = {
+    'Pendiente': '#fef3c7',
+    'Llamada': '#d1fae5',
+    'WhatsApp': '#dcfce7',
+    'Seguimiento': '#dbeafe',
+    'Cobranza': '#fee2e2',
+    'Cita': '#e0e7ff',
+    'Completada': '#bbf7d0',
+    'Recordatorio': '#ffedd5',
+    'Otro': '#f3f4f6'
+};
+
+function truncarTexto(texto, max) {
+    if (!texto) return '';
+    if (String(texto).length <= max) return String(texto);
+    return String(texto).substring(0, max - 3) + '...';
+}
+
+function formatearFechaWidget(fecha) {
+    if (!fecha) return '—';
+    var d = new Date(fecha);
+    if (isNaN(d.getTime())) return '—';
+    var ahora = new Date();
+    var hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+    var dia = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var diff = Math.round((hoy.getTime() - dia.getTime()) / 86400000);
+    var hora = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    if (diff <= 0) return 'Hoy · ' + hora;
+    if (diff === 1) return 'Ayer · ' + hora;
+    if (diff < 7) return 'El ' + ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][d.getDay()] + ' · ' + hora;
+    var semanas = Math.floor(diff / 7);
+    if (semanas <= 4) return 'Hace ' + (semanas === 1 ? 'una semana' : semanas + ' semanas') + ' · ' + hora;
+    var meses = Math.floor(diff / 30);
+    if (meses <= 11) return 'Hace ' + (meses === 1 ? 'un mes' : meses + ' meses') + ' · ' + hora;
+    return d.toLocaleDateString('es-ES') + ' · ' + hora;
+}
+
+async function cargarUltimasGestiones() {
+    var container = document.getElementById('ultimas-gestiones-lista');
+    if (!container) return;
+    try {
+        var sesRes = await fetch('/api/auth/sesion');
+        var ses = await sesRes.json();
+        var esLider = !!(ses.autenticado && ses.usuario && ses.usuario.es_lider);
+        var equipoId = ses.autenticado && ses.usuario ? ses.usuario.equipo_id : null;
+
+        var linkVerTodas = document.getElementById('ultimas-gestiones-link');
+        if (linkVerTodas) {
+            linkVerTodas.href = (esLider && equipoId) ? '/equipo' : '/gestiones';
+        }
+
+        var lista;
+        if (esLider && equipoId) {
+            var res = await fetch('/api/equipos/' + equipoId + '/gestiones?limite=5');
+            if (!res.ok) throw new Error('status ' + res.status);
+            var result = await res.json();
+            lista = Array.isArray(result) ? result : (result.data || []);
+        } else {
+            var res2 = await fetch('/api/excel/gestiones/todas?limite=5');
+            if (!res2.ok) throw new Error('status ' + res2.status);
+            var result2 = await res2.json();
+            lista = Array.isArray(result2) ? result2 : (result2.data || []);
+        }
+
+        if (!lista.length) {
+            container.innerHTML = '<div class="campanas-widget-empty">No hay gestiones registradas.<br><a href="/gestiones">Ver gestiones</a></div>';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < lista.length; i++) {
+            var g = lista[i];
+            var isLast = i === lista.length - 1;
+            var color = coloresTipoGestion[g.tipo_gestion] || '#f3f4f6';
+            var fecha = formatearFechaWidget(g.fecha_gestion);
+            var principal = esLider
+                ? (g.agente_nombre || g.agente_username || 'Agente')
+                : (g.nombre || 'Sin nombre');
+            var linea = esLider
+                ? '#' + g.solicitud_id + (g.cliente_nombre ? ' · ' + truncarTexto(g.cliente_nombre, 24) : '')
+                : '#' + g.solicitud_id + (g.cedula ? ' · 🆔 ' + truncarTexto(g.cedula, 18) : '');
+            var obs = g.observacion ? truncarTexto(g.observacion, 90) : '';
+
+            html += '<div class="ges-widget-item">' +
+                '<div class="ges-widget-rail">' +
+                '<span class="ges-widget-dot" style="background:' + color + ';"></span>' +
+                (isLast ? '' : '<span class="ges-widget-line"></span>') +
+                '</div>' +
+                '<div class="ges-widget-body">' +
+                '<div class="ges-widget-top">' +
+                '<span class="ges-widget-name">' + escapeHtml(truncarTexto(principal, 28)) + '</span>' +
+                '</div>' +
+                '<div class="ges-widget-meta">' + escapeHtml(linea) + '</div>' +
+                '<div class="ges-widget-badges">' +
+                '<span class="ges-widget-badge" style="background:' + color + ';">' + escapeHtml(g.tipo_gestion || '—') + '</span>' +
+                '<span class="ges-widget-fecha">⏱️ ' + escapeHtml(fecha) + '</span>' +
+                '</div>' +
+                (obs ? '<div class="ges-widget-obs">' + escapeHtml(obs) + '</div>' : '') +
+                '</div>' +
+                '</div>';
+        }
+        container.innerHTML = html;
+        igualarAlturaDashdWidgetsSlides();
+    } catch (e) {
+        console.error('Error cargando últimas gestiones:', e);
+        container.innerHTML = '<div class="campanas-widget-empty">No se pudieron cargar las gestiones.</div>';
+        igualarAlturaDashdWidgetsSlides();
     }
 }
 

@@ -136,7 +136,7 @@
         <button type="button" class="dash-dot" data-dot="3" role="tab" aria-label="Segmentos"></button>
     </div>
 
-    <!-- Widgets: Campañas activas / Últimas solicitudes -->
+    <!-- Widgets: Campañas activas / Últimas solicitudes / Últimas gestiones -->
     <div class="dash-widget-carousel" id="dashWidgetCarousel">
         <section class="dash-widget-slide" data-wslide="0" aria-label="Campañas activas">
             <div class="panel campanas-widget" id="campanasActivasWidget">
@@ -161,11 +161,24 @@
                 </div>
             </div>
         </section>
+
+        <section class="dash-widget-slide" data-wslide="2" aria-label="Últimas gestiones">
+            <div class="panel campanas-widget">
+                <div class="panel-title campanas-widget-head">
+                    <h3>🕘 Últimas gestiones</h3>
+                    <a href="/m/gestiones" class="campanas-widget-link" id="ultimas-gestiones-link">Ver todas</a>
+                </div>
+                <div class="campanas-widget-list" id="ultimas-gestiones-lista">
+                    <div class="campanas-widget-empty">Cargando...</div>
+                </div>
+            </div>
+        </section>
     </div>
 
     <div class="dash-widget-dots" id="dashWidgetDots" role="tablist" aria-label="Widgets del dashboard">
         <button type="button" class="dash-widget-dot active" data-wdot="0" role="tab" aria-label="Campañas activas"></button>
         <button type="button" class="dash-widget-dot" data-wdot="1" role="tab" aria-label="Últimas solicitudes"></button>
+        <button type="button" class="dash-widget-dot" data-wdot="2" role="tab" aria-label="Últimas gestiones"></button>
     </div>
 
     <nav class="nav-bottom">

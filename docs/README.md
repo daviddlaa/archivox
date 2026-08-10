@@ -213,6 +213,7 @@ ARCHIVOX/
 │   ├── feature-historial-campana.md                  # Historial general de campaña: botón "🕘 Últimas gestiones" (Agosto 2026)
 │   ├── feature-recordatorios-campanas.md             # Recordatorios ⏰ de llamada/mensaje en campañas + notificación in-app (Agosto 2026)
 │   ├── fix-semaforo-movil-orden-fijo.md              # Semáforo móvil en orden fijo: Sin clasificar · Seguimiento · Encaminadas · En espera (Agosto 2026)
+│   ├── feature-widget-ultimas-gestiones-dashboard.md # Widget "🕘 Últimas gestiones" en dashboard + pasarela de widgets en escritorio (Agosto 2026)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
 │       ├── informe-auditoria-flujo-multi-equipo.md
@@ -1021,10 +1022,11 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
   primero, y un swipe hacia atrás desde el primero va al último. El retorno no se dispara por
   el simple hecho de llegar al final ni al tocar un dot.
 - **Widgets en mini-carrusel (móvil):** debajo del carrusel principal, un segundo carrusel
-  (`.dash-widget-carousel`, `.dash-widget-slide`, full-width sin "peek") con 2 slides y dots
-  `.dash-widget-dots` sincronizados (`initDashWidgetCarousel`). Ambos slides comparten la misma
-  altura (igualador `igualarAlturaWidgetSlides()`, toma la del slide más alto tras renderizar,
-  al cargar con `Promise.all` de ambas cargas y en `resize`; `min-height: 190px` como piso) y su
+  (`.dash-widget-carousel`, `.dash-widget-slide`, full-width sin "peek") con **3 slides**
+  (campañas / solicitudes / gestiones) y dots `.dash-widget-dots` sincronizados
+  (`initDashWidgetCarousel`). Los slides comparten la misma altura (igualador
+  `igualarAlturaWidgetSlides()`, toma la del slide más alto tras renderizar, al cargar con
+  `Promise.all` de las tres cargas y en `resize`; `min-height: 190px` como piso) y su
   contenido queda centrado verticalmente (`.dash-widget-slide .campanas-widget`
   usa `flex:1; justify-content:center`), replicando el comportamiento del carrusel principal:
   - **Nombres truncados (Agosto 2026):** nombre de campaña a 30 caracteres, nombre de cliente a
@@ -1039,6 +1041,13 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
     (`cargarUltimasSolicitudes()` → `GET /api/excel/solicitudes?limite=3`), cada fila con nombre,
     badge de estado coloreado (`.sol-widget-badge`, colores del mapa de `solicitudes.js`) y cédula;
     enlace "Ver todas" y tarjetas → `/m/solicitudes`. Vacío: "No hay solicitudes".
+  - **Últimas gestiones (Agosto 2026):** las últimas 5 gestiones en timeline "últimas
+    actividades" (`.ges-widget-*`: punto + línea, nombre, `#solicitud`, badge de tipo coloreado,
+    fecha relativa `Hoy/Ayer/El día/Hace N semanas/meses`, observación truncada). Líder: gestiones
+    de su equipo con nombre del agente (`cargarUltimasGestiones()` → `GET /api/equipos/:id/gestiones?limite=5`)
+    y "Ver todas" → `/m/equipo`; resto de usuarios: sus propias gestiones
+    (`GET /api/excel/gestiones/todas?limite=5`) y "Ver todas" → `/m/gestiones`.
+    (Ver `docs/feature-widget-ultimas-gestiones-dashboard.md`.)
 - **Dashboard escritorio en carrusel (Agosto 2026):** mismo patrón que el móvil. El bloque de
   bienvenida con los botones ⚙️ Gestiones / 🔄 Historial se eliminó (las rutas siguen
   accesibles desde el menú lateral). El contenido se organiza en un carrusel de 4 slides
@@ -1054,14 +1063,24 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
   (`igualarAlturaDashdSlides`). Los accesos rápidos
   (Importar/Solicitudes/Ventas/Campañas/Relaciones/Nueva Solicitud/Gestión Equipo) siguen
   como fila fija encima del carrusel.
-- **Widgets lado a lado (escritorio):** debajo del carrusel, grid de 2 columnas
-  (`.dashd-widgets-grid`, 1 columna bajo 768px):
+- **Pasarela de widgets (escritorio, Agosto 2026):** debajo del carrusel, los widgets se
+  muestran en una **pasarela deslizable** (`.dashd-widgets-carousel`, grid `40px 1fr 40px` +
+  fila de dots, idéntica al patrón del carrusel principal) con **3 tarjetas full-width**
+  navegadas con flechas ‹ › con **loop** y dots (`.dashd-widgets-dot`,
+  `initDashdWidgetsCarousel`); las tarjetas comparten altura
+  (`igualarAlturaDashdWidgetsSlides()` tras cargar con `Promise.all` de las tres cargas y en
+  `resize`). Reemplaza al antiguo grid de 2 columnas `.dashd-widgets-grid`:
   - **Últimas Campañas:** 3 campañas activas más recientes (`cargarCampañasActivas()` →
     `GET /api/gestiones-maestro`) con nombre, barra de progreso `completadas/total · %` y
     "Ver todas" → `/gestion-lote`; cada tarjeta → `/gestion-lote?id=ID`.
   - **Últimas Solicitudes:** 3 solicitudes más recientes del usuario (`cargarUltimasSolicitudes()`
     → `GET /api/excel/solicitudes?limite=3`), cada fila con nombre, badge de estado coloreado
     (`.sol-widget-badge`) y cédula; "Ver todas" y tarjetas → `/solicitudes`.
+  - **Últimas Gestiones:** mismo timeline `.ges-widget-*` que el móvil (`cargarUltimasGestiones()`).
+    Líder: gestiones de su equipo con nombre del agente
+    (`GET /api/equipos/:id/gestiones?limite=5`) y "Ver todas" → `/equipo`; resto de usuarios:
+    sus propias gestiones (`GET /api/excel/gestiones/todas?limite=5`) y "Ver todas" →
+    `/gestiones`. (Ver `docs/feature-widget-ultimas-gestiones-dashboard.md`.)
 
 ### 11.2 Solicitudes
 
