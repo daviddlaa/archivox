@@ -218,7 +218,7 @@ ARCHIVOX/
 │   ├── feature-semaforo-campana-completada.md        # Campaña Completada: oculta semáforo + nota (gestion-lote desktop/móvil) (Agosto 2026)
 │   ├── fix-importacion-proteccion-datos-usuarios.md  # Importación Excel: nunca modifica/reasigna registros de otros usuarios + reporte omitidos (Agosto 2026)
 │   ├── feature-excel-demo-video.md                   # Excel de datos demo (ficticios) para el video: docs/demo/archivox-datos-demo.xlsx (Agosto 2026)
-│   ├── feature-filtros-buscador-movil-solicitudes.md # Vista móvil Solicitudes: leyenda + filtros en una fila, fechas colapsables para todos, KPIs −20%, buscador con ✕ y fix menú ⋮ (Agosto 2026)
+│   ├── feature-filtros-buscador-movil-solicitudes.md # Vista móvil Solicitudes (v2): leyenda + filtros en una fila, fechas colapsables para todos, KPIs −20%, buscador + "Seleccionar todo" integrados al panel (32px) y fix crítico del menú ⋮ (transform retenido) (Agosto 2026)
 │   ├── demo/                                        # Archivos de ejemplo (Excel demo para video)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
@@ -1178,11 +1178,16 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
   el filtro Vendedor sigue siendo solo Lider+ y se oculta para otros
   roles). KPIs **20% más compactos** (min-height 60→48 px), selects y
   buscador más pequeños; el buscador tiene **botón ✕** para limpiar y
-  re-enfocar; "Seleccionar todo" quedó armónico (38 px, mismo radio del
-  input). **Fix del menú ⋮ de las tarjetas** (se recortaba por el
-  `overflow:hidden` de la card): ahora se posiciona `position: fixed`
-  calculado desde el botón, abre hacia abajo si hay espacio o hacia
-  arriba con clamp, y nunca se corta. Ver
+  re-enfocar; "Seleccionar todo" quedó armónico. **Segunda iteración:**
+  el **buscador + "Seleccionar todo" se integraron DENTRO del panel de
+  filtros**, debajo del toggle colapsable, con alturas unificadas de
+  32 px (misma altura que los selects). **Fix crítico del menú ⋮ de las
+  tarjetas:** el `position: fixed` no se desplegaba porque la card
+  retenía un `transform` (keyframe `fadeInUp` con `fill-mode: both` y el
+  `:active`) que la convertía en **containing block** de los hijos
+  fixed — se eliminó el `transform` del keyframe final y del `:active`;
+  el menú abre hacia abajo si hay espacio o hacia arriba con clamp, y
+  nunca se corta ni se desposiciona. Ver
   `docs/feature-filtros-buscador-movil-solicitudes.md`.
 - **UX "Agregar a Campaña" (escritorio + móvil):** el modal de agregar
   solicitudes seleccionadas a una campaña existente tiene ahora el botón

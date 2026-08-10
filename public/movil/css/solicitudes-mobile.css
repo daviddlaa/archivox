@@ -60,11 +60,15 @@
         box-shadow: 0 4px 24px rgba(99, 102, 241, 0.15);
     }
 
-    /* NOTA: sin `transform` aquí (ni en :active ni en transiciones) para que la
-       card NUNCA sea containing block del menú ⋮ (position: fixed) y este
-       siempre se posicione contra el viewport real. */
+    /* Feedback táctil al presionar (sin transform: evita creating blocks) */
     .solicitud-card:active {
         background: #fafafa;
+    }
+
+    /* En móvil no hay hover real: se anula el transform del CSS compartido
+       (evita el "hover pegajoso" al tocar y cualquier transform en ancestros) */
+    .solicitud-card:hover {
+        transform: none;
     }
 
     /* ========================================================================

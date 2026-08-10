@@ -1,6 +1,6 @@
-# Feature: Vista móvil de Solicitudes — filtros colapsables, KPIs compactos, buscador con ✕ y fix del menú ⋮
+# Feature: Vista móvil de Solicitudes (v2) — filtros colapsables, KPIs compactos, buscador integrado al panel con ✕ y fix del menú ⋮
 
-**Fecha:** Agosto 2026
+**Fecha:** Agosto 2026 (2 iteraciones)
 **Ámbito:** `public/movil/solicitudes.html`, `public/movil/css/solicitudes-mobile.css`,
 `public/movil/js/solicitudes.js` (solo versión móvil; escritorio sin cambios)
 
@@ -17,8 +17,14 @@ Rediseño de la experiencia móvil de Solicitudes en 3 frentes:
 2. **Densidad:** KPIs **20% más compactos** (60→48 px de alto), selects de Estado/Segmento y
    buscador más pequeños, botón "Seleccionar todo" armónico con el buscador.
 3. **Bug fix:** el **menú contextual ⋮ de las tarjetas se recortaba** (no dejaba ver las
-   opciones Editar / No aplica / Eliminar). Se mitiga posicionándolo como `position: fixed`
-   calculado desde el botón, para que nunca lo recorte el `overflow: hidden` de la card.
+   opciones Editar / No aplica / Eliminar). Se posiciona como `position: fixed` calculado
+   desde el botón, para que nunca lo recorte el `overflow: hidden` de la card.
+
+> **Segunda iteración (fix crítico):** tras probar en dispositivo se reportó que el menú ⋮
+> "no se desplegaba". La causa raíz estaba en un `transform` retenido en la card (contenedor
+> de posicionamiento) y no en el `position: fixed` en sí. También se **integró el buscador +
+> botón "Seleccionar todo" DENTRO del panel de filtros**, debajo del toggle colapsable, con
+> alturas unificadas de 32 px. Detalles en la **sección 5** (Segunda iteración).
 
 ---
 
@@ -47,8 +53,8 @@ Rediseño de la experiencia móvil de Solicitudes en 3 frentes:
 | `.filtros-unificado` | padding 14/16 | padding 12/16 |
 | `.filtro-select` | min-height 38px, padding 9/12, fuente 13px, radio 10px | min-height **32px**, padding 6/10, fuente 12px, radio 8px |
 | `.btn-limpiar-movil` | min-height 38px | min-height **32px** |
-| Buscador `input` | padding 14/18, fuente 16px, radio 14px | padding 10px 36px 10px 14px (espacio para ✕), fuente 14px, radio 12px |
-| `#btn-seleccionar-todo` / `.btn-select-all` | min-height 48px, padding 14/16, radio 14px | min-height **38px**, padding 0 14px, radio 12px (armónico con el input) |
+| Buscador `input` | padding 14/18, fuente 16px, radio 14px | padding 6px 34px 6px 12px (espacio para ✕), fuente 13px, **min-height 32px**, radio 10px |
+| `#btn-seleccionar-todo` / `.btn-select-all` | min-height 48px, padding 14/16, radio 14px | min-height **32px**, padding 0 12px, radio 10px (misma altura que el input y los selects) |
 | `.card-dropdown-menu-movil` (menú ⋮) | z-index 100, min-width 150px, `overflow:hidden` | z-index **300**, min-width 170px, `overflow-y:auto`, `max-height:55vh` |
 
 - Nuevos estilos: `.filtros-leyenda`, `.filtros-mas-toggle` (+ `:active`), `.filtros-chevron`,
@@ -109,15 +115,79 @@ Rediseño de la experiencia móvil de Solicitudes en 3 frentes:
 
 ---
 
+## 5. Segunda iteración — fix crítico del menú ⋮ y buscador integrado al panel
+
+### 5.1 Por qué el menú ⋮ "no se desplegaba" (causa raíz)
+
+El `position: fixed` se posiciona contra el **viewport**… salvo que algún ancestro tenga un
+`transform` (o `filter`/`perspective`/`will-change`) no `none`: en ese caso ese ancestro se
+convierte en el **containing block** y las coordenadas de viewport se interpretan relativas a él.
+
+En `.solicitud-card` había **dos fuentes de transform**:
+
+| Fuente | Detalle |
+|--------|---------|
+| Animación `fadeInUp` | `animation: fadeInUp 0.35s ... both` con keyframe final `to { transform: translateY(0) }`. Por `fill-mode: both` el estado final se retiene **para siempre**, así que la card quedaba con `transform: translateY(0)` permanente → containing block. |
+| `:active` | `.solicitud-card:active { transform: scale(0.985) }` — al tocar el botón ⋮ la card (ancestro del botón presionado) entraba en `:active` y volvía a ser containing block en el instante del toque (riesgo en táctil). |
+
+**Síntoma:** `top: rect.bottom + 6` (coordenadas de viewport, p. ej. 500 px) se interpretaba
+relativo a la card → el menú se dibujaba cientos de px más abajo, fuera de la zona visible →
+"no se despliega".
+
+### 5.2 Cambios del fix
+
+**`public/movil/css/solicitudes-mobile.css`**
+
+- `@keyframes fadeInUp`: el keyframe `to` ya **no retiene `transform`** (solo `opacity: 1`).
+  La interpolación `translateY(16px) → 0` es visualmente idéntica; lo que cambia es que la
+  card ya no es containing block.
+- `.solicitud-card:active`: se eliminó `transform: scale(0.985)`; se conserva el
+  `background: #fafafa` como feedback táctil.
+- Resultado: **ningún ancestro del menú puede tener transform** → `position: fixed` siempre
+  usa el viewport real.
+
+**`public/movil/js/solicitudes.js`**
+
+- Guard defensivo en `toggleCardMenuMovil()`: `if (!btn) return;` antes de
+  `getBoundingClientRect()`.
+
+### 5.3 Buscador + "Seleccionar todo" integrados al panel de filtros
+
+**Antes:** el buscador era un bloque suelto fuera del panel de filtros (38 px, desalineado con
+los selects de 32 px).
+
+**Ahora:**
+
+- **`public/movil/solicitudes.html`:** el bloque `.buscador-unificado` se movió **dentro** de
+  `.filtros-unificado`, justo después de `#filtrosLider` (es decir, **debajo del toggle
+  colapsable** "📅 Más filtros (fecha)"). Queda siempre visible dentro del panel.
+- **`public/movil/css/solicitudes-mobile.css`:** `.buscador-unificado` pasó a
+  `padding: 12px 0 0; margin: 12px 0 0; border-top: 1.5px dashed #e5e7eb;` (sección propia
+  dentro del panel). El input de búsqueda y el botón "Seleccionar todo" se unificaron a
+  **32 px de alto** (mismo tamaño que los selects de Estado/Segmento) → panel totalmente
+  armónico. El botón ✕ sigue dentro del input (22 px, `right: 6px`).
+- El CSS compartido `public/css/solicitudes.css` (`.buscador-unificado`, `input`) queda
+  correctamente sobreescrito: el móvil se carga después y usa `!important` donde importa.
+
+### 5.4 Comportamiento resultante (segunda iteración)
+
+| Caso | Antes | Ahora |
+|------|-------|-------|
+| Tocar ⋮ en una tarjeta | "No se desplegaba" (containing block por transform retenido) | Abre **completo** hacia abajo (o arriba con clamp), contra el viewport real |
+| Buscador | Fuera del panel, 38 px | **Dentro del panel**, bajo el toggle de filtros, 32 px |
+| Botón "Seleccionar todo" | Fuera del panel, 38 px | **Dentro del panel** junto al buscador, 32 px (armónico) |
+
+---
+
 ## Verificación
 
 - ✅ `node --check public/movil/js/solicitudes.js` — sin errores de sintaxis.
-- ✅ Revisión de código: el menú ⋮ no tiene ruta de recorte (fixed + cálculo de espacio), el
-  toggle colapsable no rompe `mostrarFiltrosLider`/`limpiarFiltrosLider`, y no hay regresiones
-  para usuarios no líderes (el vendedor se oculta y nunca se envía; las fechas sí funcionan).
-- ⏳ Prueba manual: abrir `/m/solicitudes` en móvil con un usuario normal (ver toggle de
-  fechas y botón ✕) y con un líder (ver vendedor dentro del toggle); tocar ⋮ en la primera
-  tarjeta visible y confirmar que el menú se ve completo.
+- ✅ Revisión de código (2 iteraciones): el menú ⋮ no tiene ruta de recorte ni de
+  desposicionamiento (fixed + sin transform en ancestros), el toggle colapsable no rompe
+  `mostrarFiltrosLider`/`limpiarFiltrosLider`, y no hay regresiones para usuarios no líderes.
+- ⏳ Prueba manual: abrir `/m/solicitudes` en móvil; tocar ⋮ en una tarjeta (debe abrir
+  completo hacia abajo) y confirmar que el buscador + "Seleccionar todo" quedaron integrados
+  bajo el toggle de filtros con la misma altura que los selects.
 
 ## Documentación relacionada
 

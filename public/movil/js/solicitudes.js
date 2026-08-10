@@ -726,6 +726,10 @@ async function marcarNoAplicaCreditoMovil(id, valor) {
 
 // Renderizar cards de clientes (estructura unificada 5 filas)
 function renderizarCards(datos) {
+    // Cerrar cualquier menú ⋮ abierto (puede estar viviendo en <body> con
+    // position:fixed) antes de reconstruir el HTML, para no dejar huérfanos.
+    cerrarTodosLosMenusMovil();
+
     const container = document.getElementById('cards-container');
     idsVisibles = Array.isArray(datos) ? datos.map(function(d) {
         return d.id_solicitud;
@@ -789,7 +793,7 @@ function renderizarCards(datos) {
         html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletarInfoMovil(\'' + id + '\')"><span class="btn-icon">✏️</span><span class="btn-label">Completar</span></button>';
         html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); abrirWhatsAppChatMovil(\'' + escaparParaAtributo(item.celular || '') + '\')"><span class="btn-icon">💬</span><span class="btn-label">WhatsApp</span></button>';
         html += '    <div class="card-actions-more-movil" onclick="event.stopPropagation();">';
-        html += '      <button class="card-btn btn-more-movil" onclick="toggleCardMenuMovil(event, \'' + id + '\')" title="Más acciones">⋮</button>';
+        html += '      <button class="card-btn btn-more-movil" onclick="toggleCardMenuMovil(event, \'' + id + '\', this)" title="Más acciones">⋮</button>';
         html += '      <div class="card-dropdown-menu-movil" id="card-menu-movil-' + id + '">';
         html += '        <button class="dropdown-item" onclick="event.stopPropagation(); abrirEditarSolicitudMovil(\'' + id + '\'); cerrarTodosLosMenusMovil()">✏️ Editar</button>';
         html += '        <button class="dropdown-item' + (noAplica ? ' dropdown-item-warning' : '') + '" onclick="event.stopPropagation(); confirmarNoAplicaCreditoMovil(\'' + id + '\', ' + (noAplica ? 1 : 0) + ', ' + (item.campana_id ? 1 : 0) + '); cerrarTodosLosMenusMovil()">' + (noAplica ? '👍 Aplica para crédito' : '👎 Ya no aplica para crédito') + '</button>';
@@ -2379,49 +2383,75 @@ async function guardarNuevaSolicitudMovil() {
 // MENÚ CONTEXTUAL MÓVIL (⋮) - Editar / Eliminar en Cards
 // ============================================================================
 
-function toggleCardMenuMovil(event, id) {
+// ============================================================================
+// MENÚ ⋮ — SOLUCIÓN DEFINITIVA
+// ============================================================================
+// Al abrir, el menú se mueve a <body> y se posiciona con `position: fixed`
+// contra el viewport real. <body> no tiene ancestros con transform ni filter,
+// por lo que el menú NUNCA queda atrapado por un containing block.
+// (Las iteraciones previas fallaban porque la card tiene transform en `:hover`
+// y en la animación, y `filter: grayscale()` en cards "no aplica" — cualquier
+// transform/filter en un ancestro convierte a ese ancestro en el containing
+// block del menú y las coordenadas de viewport se interpretan relativas a él,
+// dejando el menú fuera de pantalla.)
+function toggleCardMenuMovil(event, id, btn) {
     event.stopPropagation();
     cerrarTodosLosMenusMovil(id);
     var menu = document.getElementById('card-menu-movil-' + id);
     if (!menu) return;
 
-    // Si ya está visible, solo se cierra
+    // Si ya estaba abierto, cerrarlo y devolverlo a la card
     if (menu.classList.contains('visible')) {
-        menu.classList.remove('visible');
+        devolverMenuMovil(menu);
         return;
     }
 
-    // Posicionar el menú como FIXED a nivel de viewport para que NUNCA se corte
-    // por el overflow:hidden de la card ni por los bordes de la pantalla.
-    // Nota: la card no debe retener transform (ver keyframe fadeInUp) o sería
-    // el containing block del menú y las coordenadas de viewport fallarían.
-    var btn = event.currentTarget;
-    if (!btn) return;
-    var rect = btn.getBoundingClientRect();
-    var altoEstimado = 160; // 3 opciones aprox.
+    // Mover a <body> y posicionar FIXED contra el viewport
+    menu._parentMovil = menu.parentNode;
+    document.body.appendChild(menu);
 
+    var rect = (btn && btn.getBoundingClientRect) ? btn.getBoundingClientRect() : null;
     menu.style.position = 'fixed';
-    menu.style.left = 'auto';
     menu.style.top = 'auto';
+    menu.style.left = 'auto';
     menu.style.bottom = 'auto';
-    menu.style.right = Math.max(8, Math.round(window.innerWidth - rect.right)) + 'px';
+    menu.style.right = (rect ? Math.max(8, Math.round(window.innerWidth - rect.right)) : 8) + 'px';
 
-    var espacioAbajo = window.innerHeight - rect.bottom - 8;
-    if (espacioAbajo >= altoEstimado) {
-        // Abre hacia abajo (hay espacio)
-        menu.style.top = (rect.bottom + 6) + 'px';
+    if (rect) {
+        var altoEstimado = 160; // 3 opciones aprox.
+        var espacioAbajo = window.innerHeight - rect.bottom - 8;
+        if (espacioAbajo >= altoEstimado) {
+            menu.style.top = (rect.bottom + 6) + 'px'; // abre hacia abajo
+        } else {
+            menu.style.top = Math.max(8, rect.top - 6 - altoEstimado) + 'px'; // hacia arriba con clamp
+        }
     } else {
-        // Abre hacia arriba (poco espacio abajo); clamp para no salirse por el borde superior
-        menu.style.top = Math.max(8, rect.top - 6 - altoEstimado) + 'px';
+        menu.style.top = '8px';
     }
 
     menu.classList.add('visible');
 }
 
+function devolverMenuMovil(menu) {
+    var padre = menu._parentMovil;
+    delete menu._parentMovil;
+    menu.classList.remove('visible');
+    menu.style.position = '';
+    menu.style.top = '';
+    menu.style.left = '';
+    menu.style.right = '';
+    menu.style.bottom = '';
+    if (padre && padre.isConnected) {
+        padre.appendChild(menu); // vuelve a su lugar en la card
+    } else if (menu.parentNode === document.body) {
+        menu.remove(); // el padre fue re-renderizado: eliminar huérfano
+    }
+}
+
 function cerrarTodosLosMenusMovil(excludeId) {
     document.querySelectorAll('.card-dropdown-menu-movil').forEach(function(m) {
         if (excludeId && m.id === 'card-menu-movil-' + excludeId) return;
-        m.classList.remove('visible');
+        if (m.classList.contains('visible')) devolverMenuMovil(m);
     });
 }
 
