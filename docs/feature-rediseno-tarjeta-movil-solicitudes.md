@@ -180,6 +180,10 @@ Nuevos estilos:
   link `flex: 1` y el botón `flex-shrink: 0`.
 - `.card-check-movil` (checkbox circular de selección en fila 1): el ✓ blanco y el
   relleno morado en degradado los dispara la clase `.seleccionada` de la card.
+- Se oculta en móvil el ✓ morado de la esquina del CSS compartido
+  (`body .solicitud-card.seleccionada::after { display: none !important }`) para
+  no duplicar el indicador de selección (igual que hace escritorio). El único
+  ✓ visible al seleccionar es el del checkbox circular de la fila 1.
 - `.btn-eliminar` (rojo suave: fondo `#fef2f2`, borde `#fecaca`).
 - `.campana-link` (chip azul índigo con `<span>` interno con ellipsis).
 - Breakpoint `≤340 px`: chip y badge de estado aún más compactos para no cortarse.

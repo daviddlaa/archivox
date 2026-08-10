@@ -178,7 +178,7 @@ El CSS **compartido** `public/css/solicitudes.css` define un pseudo-elemento que
 
 En **escritorio** esto se veía como "otro checkbox al otro lado de la tarjeta", redundante con el checkbox real (izquierda) y el borde azul.
 
-⚠️ **Importante:** en **móvil no existe checkbox** — la selección se hace tocando la tarjeta, por lo que ese ✓ es el **único indicador visual de selección**. No se puede borrar del CSS compartido sin romper móvil.
+⚠️ **Importante (actualizado Agosto 2026):** el móvil **ya tiene su propio checkbox circular** en la fila 1 de la tarjeta (`.card-check-movil`, con ✓ morado al seleccionar — ver `docs/feature-rediseno-tarjeta-movil-solicitudes.md`). Ese ✓ de la esquina del CSS compartido se **oculta también en móvil** (`solicitudes-mobile.css`) para no duplicar el indicador; la selección táctil (tocar el ○ de la fila 1 o una zona neutra de la tarjeta) sigue intacta.
 
 ### Solución
 
@@ -187,7 +187,8 @@ Override **solo en escritorio** (`public/desktop/css/solicitudes.css`), con espe
 ```css
 /* FIX: Ocultar el checkmark superpuesto (::after) solo en escritorio.
    El checkbox real a la izquierda + el borde azul ya indican la selección.
-   En móvil se mantiene porque ahí la selección es tocando la tarjeta (sin checkbox). */
+   En móvil también se oculta (solicitudes-mobile.css): su indicador de selección
+   es el checkbox circular de la fila 1 (.card-check-movil). */
 body .solicitud-card.seleccionada::after {
     display: none;
 }

@@ -133,6 +133,13 @@
         transform: scale(1);
     }
 
+    /* Ocultar el ✓ morado de la esquina (CSS compartido): en móvil el ÚNICO
+       indicador de selección es el checkbox circular de la fila 1. Mayor
+       especificidad + !important para ganarle siempre al CSS compartido. */
+    body .solicitud-card.seleccionada::after {
+        display: none !important;
+    }
+
     /* Badges: tipo chip, redondeado, legible - altura fija */
     .card-fila-1 .card-badge {
         display: inline-flex;

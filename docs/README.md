@@ -1105,6 +1105,8 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
   guardado encadenado `PUT /editar` → `PUT /completar-info`. El botón `👎 No aplica`
   (solo icono) vive en la fila 4, junto al link `📢 {campaña}` →
   `/m/gestion-lote?id=X&card=Y` con salto y destello a la tarjeta (deep link).
+  La fila 1 incluye un **checkbox circular de selección** (`[○]`, ✓ morado al
+  seleccionar) y siempre se mantiene en una sola línea.
   Ver `docs/feature-rediseno-tarjeta-movil-solicitudes.md`.
 - **Panel lateral de detalle/edición (escritorio):** hacer clic en una
   tarjeta abre un panel deslizante (drawer) desde la derecha con la vista
