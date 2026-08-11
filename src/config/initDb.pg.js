@@ -8,7 +8,7 @@
 // ~100 queries a 2. Subir SCHEMA_VERSION solo cuando se agregue/mofici un DDL
 // o seed nuevo en este archivo.
 // ============================================================================
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 const initTables = async () => {
     const client = await pool.connect();
