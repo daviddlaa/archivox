@@ -59,6 +59,10 @@ exports.uploadExcel = async (req, res) => {
 
         // Invalidar caché del dashboard del usuario
         try { cache.invalidateDashboard(usuarioId); } catch(e) { /* silencioso */ }
+        try { cache.invalidateCatalogosUsuario(usuarioId); } catch(e) { /* silencioso */ }
+
+        // Invalidar caché de catálogos del usuario (pueden aparecer estados/segmentos nuevos)
+        try { cache.invalidateCatalogosUsuario(usuarioId); } catch(e) { /* silencioso */ }
 
         // Preparar mensaje según tipo de carga
         let mensaje = 'Importación exitosa';
@@ -763,6 +767,7 @@ exports.actualizarSolicitudEditar = async (req, res) => {
                 }
             }            // Invalidar caché del dashboard
             try { cache.invalidateDashboard(usuarioId); } catch(e) { /* silencioso */ }
+        try { cache.invalidateCatalogosUsuario(usuarioId); } catch(e) { /* silencioso */ }
 
             res.json({ mensaje: 'Solicitud actualizada correctamente',
                 data: updateResult.rows[0]
@@ -1115,6 +1120,7 @@ exports.eliminarSolicitud = async (req, res) => {
         
         // Invalidar caché del dashboard
         try { cache.invalidateDashboard(usuarioId); } catch(e) { /* silencioso */ }
+        try { cache.invalidateCatalogosUsuario(usuarioId); } catch(e) { /* silencioso */ }
 
         res.json({ mensaje: 'Solicitud eliminada correctamente', id_solicitud: id });
     } catch (err) {
@@ -1219,6 +1225,7 @@ exports.crearSolicitudManual = async (req, res) => {
             
         // Invalidar caché del dashboard
         try { cache.invalidateDashboard(usuarioId); } catch(e) { /* silencioso */ }
+        try { cache.invalidateCatalogosUsuario(usuarioId); } catch(e) { /* silencioso */ }
 
         res.status(201).json({
             id_solicitud: result.rows[0].id_solicitud,
@@ -1247,6 +1254,7 @@ exports.crearSolicitudManual = async (req, res) => {
 
         // Invalidar caché del dashboard
         try { cache.invalidateDashboard(usuarioId); } catch(e) { /* silencioso */ }
+        try { cache.invalidateCatalogosUsuario(usuarioId); } catch(e) { /* silencioso */ }
 
         res.status(201).json({
             id_solicitud: nextId,
@@ -1307,6 +1315,7 @@ exports.limpiarSolicitudes = async (req, res) => {
 
         // Invalidar caché del dashboard
         try { cache.invalidateDashboard(usuarioId); } catch(e) { /* silencioso */ }
+        try { cache.invalidateCatalogosUsuario(usuarioId); } catch(e) { /* silencioso */ }
 
         res.json({
             mensaje: 'Solicitudes eliminadas correctamente',

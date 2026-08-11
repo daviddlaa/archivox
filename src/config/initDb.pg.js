@@ -1,9 +1,36 @@
-﻿const pool = require('./database.pg.js');
+﻿const pool = require('./db.js');
+
+// ============================================================================
+// VERSIÓN DEL ESQUEMA
+// ============================================================================
+// Guard para arranques rápidos: si _schema.versione == SCHEMA_VERSION, se
+// saltan todas las sentencias DDL/seed (idempotentes) y el arranque pasa de
+// ~100 queries a 2. Subir SCHEMA_VERSION solo cuando se agregue/mofici un DDL
+// o seed nuevo en este archivo.
+// ============================================================================
+const SCHEMA_VERSION = 4;
 
 const initTables = async () => {
     const client = await pool.connect();
     
     try {
+        // Tabla ligera de control de versión (crear siempre, es 1 query barata)
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS _schema (
+                id INTEGER PRIMARY KEY,
+                version INTEGER NOT NULL,
+                aplicada_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        const verRes = await client.query('SELECT version FROM _schema WHERE id = 1');
+        const versionActual = verRes.rows[0] ? Number(verRes.rows[0].version) : 0;
+        if (versionActual >= SCHEMA_VERSION) {
+            console.log(`   ✅ Esquema actualizado (v${versionActual} >= v${SCHEMA_VERSION}) — arranque rápido, DDL omitido`);
+            return;
+        }
+        console.log(`   ⏳ Aplicando esquema v${versionActual} → v${SCHEMA_VERSION}...`);
+
         // ================================================================
         // TABLA: usuarios (versión mejorada con Panel de Administración)
         // ================================================================
@@ -503,6 +530,12 @@ const initTables = async () => {
             ON gestiones(gestion_maestro_id, solicitud_id)
         `);
 
+        // Gestiones: "última gestión por solicitud" (ventanas ROW_NUMBER en campañas)
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_gestiones_campana_solicitud_id
+            ON gestiones(gestion_maestro_id, solicitud_id, id)
+        `);
+
         await client.query(`
             CREATE INDEX IF NOT EXISTS idx_gms_maestro_semaforo
             ON gestiones_maestro_solicitudes(gestion_maestro_id, semaforo)
@@ -768,6 +801,13 @@ const initTables = async () => {
         }
 
         console.log('✅ Todas las tablas e índices creados en PostgreSQL');
+
+        // Registrar versión del esquema (solo si todo el bloque terminó OK)
+        await client.query(`
+            INSERT INTO _schema (id, version, aplicada_en)
+            VALUES (1, $1, CURRENT_TIMESTAMP)
+            ON CONFLICT (id) DO UPDATE SET version = EXCLUDED.version, aplicada_en = CURRENT_TIMESTAMP
+        `, [SCHEMA_VERSION]);
     } catch (err) {
         console.error('Error creando tablas:', err.message);
     } finally {

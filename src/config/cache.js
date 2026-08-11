@@ -138,6 +138,73 @@ function invalidateAdminEstadisticas() {
 }
 
 // ============================================================================
+// CATÁLOGOS (estados, segmentos) — por usuario con TTL corto (60s)
+// ============================================================================
+// Los filtros de Solicitudes consultan SELECT DISTINCT sobre solicitudes en
+// cada carga. Se cachean 60s por usuario (la staleness es aceptable para
+// dropdowns) y se invalidan al importar/crear/editar solicitudes.
+// ============================================================================
+
+function getCatalogosKey(usuarioId, tipo) {
+    return `catalogos_${tipo}_${usuarioId}`;
+}
+
+function getEstadosUsuario(usuarioId) {
+    return cache.get(getCatalogosKey(usuarioId, 'estados'));
+}
+
+function setEstadosUsuario(usuarioId, data) {
+    cache.set(getCatalogosKey(usuarioId, 'estados'), data, 60);
+}
+
+function getSegmentosUsuario(usuarioId) {
+    return cache.get(getCatalogosKey(usuarioId, 'segmentos'));
+}
+
+function setSegmentosUsuario(usuarioId, data) {
+    cache.set(getCatalogosKey(usuarioId, 'segmentos'), data, 60);
+}
+
+function invalidateCatalogosUsuario(usuarioId) {
+    cache.del(getCatalogosKey(usuarioId, 'estados'));
+    cache.del(getCatalogosKey(usuarioId, 'segmentos'));
+}
+
+function invalidateAllCatalogos() {
+    const keys = cache.keys().filter(k => k.startsWith('catalogos_'));
+    keys.forEach(k => cache.del(k));
+}
+
+// ============================================================================
+// CAMPAÑAS / GESTIONES MAESTRO — por usuario con TTL corto (15s)
+// ============================================================================
+// GET /api/gestiones-maestro es la llamada más repetida (landing desktop,
+// landing móvil, gestion-lote, solicitudes) y corre subconsultas correlacionadas
+// por campaña. Se cachea 15s por usuario y se invalida en cada mutación de campaña.
+// ============================================================================
+
+function getCampanasKey(usuarioId) {
+    return `campanas_${usuarioId}`;
+}
+
+function getCampanas(usuarioId) {
+    return cache.get(getCampanasKey(usuarioId));
+}
+
+function setCampanas(usuarioId, data) {
+    cache.set(getCampanasKey(usuarioId), data, 15);
+}
+
+function invalidateCampanas(usuarioId) {
+    cache.del(getCampanasKey(usuarioId));
+}
+
+function invalidateAllCampanas() {
+    const keys = cache.keys().filter(k => k.startsWith('campanas_'));
+    keys.forEach(k => cache.del(k));
+}
+
+// ============================================================================
 // ESTADÍSTICAS DE CACHÉ
 // ============================================================================
 
@@ -176,6 +243,18 @@ module.exports = {
     getAdminEstadisticas,
     setAdminEstadisticas,
     invalidateAdminEstadisticas,
+    // Catálogos por usuario
+    getEstadosUsuario,
+    setEstadosUsuario,
+    getSegmentosUsuario,
+    setSegmentosUsuario,
+    invalidateCatalogosUsuario,
+    invalidateAllCatalogos,
+    // Campañas por usuario
+    getCampanas,
+    setCampanas,
+    invalidateCampanas,
+    invalidateAllCampanas,
     // Stats
     getCacheStats,
 };

@@ -7,10 +7,14 @@ let pool;
 if (process.env.DATABASE_URL) {
     console.log('Using PostgreSQL database (production)');
     const { Pool } = require('pg');
+    // Presupuesto de conexiones conservador: Render PG free soporta un número
+    // limitado de conexiones directas. Un pool grande aquí lo agota y produce
+    // "too many clients already" con pocos usuarios. Configurable vía PG_POOL_MAX.
+    const poolMax = Math.min(parseInt(process.env.PG_POOL_MAX, 10) || 6, 10);
     pool = new Pool({
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
-        max: 20,                    // Máximo 20 conexiones concurrentes
+        max: poolMax,               // Máximo de conexiones concurrentes (6 por defecto)
         idleTimeoutMillis: 30000,   // Cerrar conexiones inactivas después de 30s
         connectionTimeoutMillis: 5000, // Timeout de conexión: 5s
     });
@@ -33,7 +37,6 @@ if (process.env.DATABASE_URL) {
         if (sql.includes('?')) {
             let paramIndex = 1;
             pgSql = sql.replace(/\?/g, () => '$' + paramIndex++);
-            console.log('[DB] Converting SQL placeholders:', sql.substring(0, 50).replace(/\s+/g, ' '), '->', pgSql.substring(0, 50).replace(/\s+/g, ' '));
         }
         
         // Auto-add RETURNING id for INSERT queries so we can return lastInsertRowid
@@ -41,7 +44,6 @@ if (process.env.DATABASE_URL) {
         const trimmed = pgSql.trim().toUpperCase();
         if (trimmed.startsWith('INSERT') && !trimmed.includes('RETURNING')) {
             pgSql += ' RETURNING id';
-            console.log('[DB] Added RETURNING id to INSERT:', pgSql.substring(0, 80).replace(/\s+/g, ' '));
         }
         
         return originalQuery(pgSql, queryParams).then(function(result) {
@@ -125,11 +127,6 @@ if (process.env.DATABASE_URL) {
             // Convert COALESCE to IFNULL for SQLite
             sqliteSql = sqliteSql.replace(/COALESCE\(([^,]+),\s*'([^']*)'\)/gi, 
                 "IFNULL($1, '')");
-            
-            // DEBUG logging
-            if (sql.includes('SELECT') || sql.includes('FROM')) {
-                console.log('DEBUG: Converting SQL:', sql.substring(0, 60), '->', sqliteSql.substring(0, 60));
-            }
             
             if (sql.trim().toUpperCase().startsWith('SELECT')) {
                 try {

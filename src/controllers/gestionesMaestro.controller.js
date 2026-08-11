@@ -1,5 +1,6 @@
 // Dynamic database - SQLite for local, PostgreSQL for production
 const pool = require('../config/db');
+const cache = require('../config/cache.js');
 
 // Helper para obtener resultado de queries (compatible con SQLite y PostgreSQL)
 function getRows(result) {
@@ -137,24 +138,37 @@ function conteoSemaforoVacio() {
 
 async function insertarSemaforoSinClasificar(gestionMaestroId, solicitudIds, usuarioId) {
     var ids = normalizarIdsSolicitud(solicitudIds);
+    if (ids.length === 0) return 0;
     var insertados = 0;
-    for (var i = 0; i < ids.length; i++) {
-        var sid = ids[i];
-        try {
-            var exists = await pool.query(
-                'SELECT id FROM gestiones_maestro_solicitudes WHERE gestion_maestro_id = ? AND id_solicitud = ?',
-                [gestionMaestroId, sid]
-            );
-            if (getFirstRow(exists)) continue;
-            await pool.query(
-                `INSERT INTO gestiones_maestro_solicitudes (gestion_maestro_id, id_solicitud, semaforo, updated_by)
-                 VALUES (?, ?, 'sin_clasificar', ?)`,
-                [gestionMaestroId, sid, usuarioId || null]
-            );
-            insertados++;
-        } catch (e) {
-            console.error('[insertarSemaforoSinClasificar] Error id_solicitud=' + sid + ':', e.message);
+
+    try {
+        // 1) Una sola query para detectar cuáles ya tienen fila puente
+        //    (antes: 1 SELECT por solicitud → N consultas por cada apertura de campaña)
+        var placeholders = ids.map(function() { return '?'; }).join(',');
+        var exists = await pool.query(
+            'SELECT id_solicitud FROM gestiones_maestro_solicitudes WHERE gestion_maestro_id = ? AND id_solicitud IN (' + placeholders + ')',
+            [gestionMaestroId].concat(ids)
+        );
+        var existentes = {};
+        getRows(exists).forEach(function(r) { existentes[Number(r.id_solicitud)] = true; });
+
+        // 2) Insertar solo las faltantes (normalmente 0 tras la primera vez)
+        for (var i = 0; i < ids.length; i++) {
+            var sid = ids[i];
+            if (existentes[sid]) continue;
+            try {
+                await pool.query(
+                    `INSERT INTO gestiones_maestro_solicitudes (gestion_maestro_id, id_solicitud, semaforo, updated_by)
+                     VALUES (?, ?, 'sin_clasificar', ?)`,
+                    [gestionMaestroId, sid, usuarioId || null]
+                );
+                insertados++;
+            } catch (e) {
+                console.error('[insertarSemaforoSinClasificar] Error id_solicitud=' + sid + ':', e.message);
+            }
         }
+    } catch (e) {
+        console.error('[insertarSemaforoSinClasificar] Error detectando existentes:', e.message);
     }
     return insertados;
 }
@@ -176,17 +190,25 @@ async function eliminarSemaforoSolicitudes(gestionMaestroId, solicitudIds) {
 async function obtenerConteoSemaforo(gestionMaestroId) {
     var conteo = conteoSemaforoVacio();
     try {
+        // "Última gestión" por solicitud vía ventana ROW_NUMBER (compatible SQLite/PG),
+        // luego GROUP BY semáforo del puente. Antes: subquery MAX(id) por fila.
         var result = await pool.query(
-            `SELECT gms.semaforo, COUNT(*) as count
-             FROM gestiones_maestro_solicitudes gms
-             LEFT JOIN gestiones g ON g.id = (
-                 SELECT MAX(g2.id) FROM gestiones g2
-                 WHERE g2.solicitud_id = gms.id_solicitud
-                   AND (g2.gestion_maestro_id = ? OR g2.gestion_maestro_id IS NULL)
-             )
-             WHERE gms.gestion_maestro_id = ?
-               AND COALESCE(g.tipo_gestion, 'Pendiente') <> 'Completada'
-             GROUP BY gms.semaforo`,
+            `WITH ultima AS (
+                SELECT g2.solicitud_id, g2.tipo_gestion
+                FROM (
+                    SELECT g3.solicitud_id, g3.tipo_gestion,
+                           ROW_NUMBER() OVER (PARTITION BY g3.solicitud_id ORDER BY g3.id DESC) AS rn
+                    FROM gestiones g3
+                    WHERE (g3.gestion_maestro_id = ? OR g3.gestion_maestro_id IS NULL)
+                ) g2
+                WHERE g2.rn = 1
+            )
+            SELECT gms.semaforo, COUNT(*) as count
+            FROM gestiones_maestro_solicitudes gms
+            LEFT JOIN ultima u ON u.solicitud_id = gms.id_solicitud
+            WHERE gms.gestion_maestro_id = ?
+              AND COALESCE(u.tipo_gestion, 'Pendiente') <> 'Completada'
+            GROUP BY gms.semaforo`,
             [gestionMaestroId, gestionMaestroId]
         );
         var rows = getRows(result);
@@ -208,6 +230,13 @@ async function getGestionesMaestro(req, res) {
         const usuario_id = getUsuarioId(req);
         if (!usuario_id) {
             return res.status(401).json({ error: 'No autenticado' });
+        }
+
+        // Caché por usuario (15s): esta query corre en landing desktop, landing móvil,
+        // gestion-lote y solicitudes con 5 subconsultas correlacionadas por campaña.
+        const cached = cache.getCampanas(usuario_id);
+        if (cached) {
+            return res.json(cached);
         }
         
         const access = buildGestionAccessWhere(req, null);
@@ -250,8 +279,9 @@ async function getGestionesMaestro(req, res) {
                      AND (g4.gestion_maestro_id = gm.id OR g4.gestion_maestro_id IS NULL))), 'Pendiente') <> 'Completada') AS semaforo_sin_clasificar
             FROM gestiones_maestro gm WHERE ` + buildGestionSQL(access) + ` ORDER BY gm.created_at DESC`;
         const result = await pool.query(sql, access.params);
-        
-        res.json(getRows(result));
+        const rows = getRows(result);
+        cache.setCampanas(usuario_id, rows);
+        res.json(rows);
     } catch (error) {
         console.error('Error en getGestionesMaestro:', error);
         res.status(500).json({ error: 'Error al buscar gestiones' });
@@ -307,39 +337,105 @@ async function getGestionMaestroById(req, res) {
         
         // Construir placeholders para la cláusula IN
         const placeholders = solicitudesIds.map(function() { return '?'; }).join(',');
-        
-        // Obtener solicitudes con su última gestión real + semáforo del puente
-        const resultSol = await pool.query(`
-            SELECT s.*, 
-                   COALESCE(g.tipo_gestion, 'Pendiente') as tipo_gestion,
-                   COALESCE(g.observacion, 'Por gestionar') as gestion_obs,
-                   g.id as gestion_id,
-                   g.fecha_gestion,
-                   COALESCE(gms.semaforo, 'sin_clasificar') as semaforo,
-                   rec.id as recordatorio_id,
-                   rec.canal as recordatorio_canal,
-                   rec.fecha_recordatorio as recordatorio_fecha,
-                   rec.nota as recordatorio_nota,
-                   rec.estado as recordatorio_estado
-            FROM solicitudes s
-            LEFT JOIN gestiones g ON g.id = (
-                SELECT MAX(g2.id) FROM gestiones g2 
-                WHERE g2.solicitud_id = s.id_solicitud
-                AND (g2.gestion_maestro_id = ? OR g2.gestion_maestro_id IS NULL)
+
+        // ============================================================
+        // CARGA OPTIMIZADA (antes: 2 subconsultas correlacionadas por
+        // fila + N inserts de puente por apertura). Ahora:
+        //   1) SELECT plano de solicitudes
+        //   2) Ventana ROW_NUMBER → última gestión por solicitud
+        //   3) Ventana ROW_NUMBER → último recordatorio pendiente
+        //   4) SELECT del semáforo puente
+        // Se fusionan en JS manteniendo el mismo contrato de respuesta.
+        // ============================================================
+
+        // 1) Solicitudes base (todas las columnas, sin subconsultas por fila)
+        const resultSol = await pool.query(
+            'SELECT s.* FROM solicitudes s WHERE s.id_solicitud IN (' + placeholders + ')',
+            solicitudesIds
+        );
+
+        // 2) Última gestión, último recordatorio y semáforo en paralelo
+        const [resultUltGestion, resultUltRecordatorio, resultSemaforo] = await Promise.all([
+            pool.query(`
+                SELECT g2.solicitud_id, g2.id AS gestion_id, g2.tipo_gestion, g2.observacion AS gestion_obs, g2.fecha_gestion
+                FROM (
+                    SELECT g3.id, g3.solicitud_id, g3.tipo_gestion, g3.observacion, g3.fecha_gestion,
+                           ROW_NUMBER() OVER (PARTITION BY g3.solicitud_id ORDER BY g3.id DESC) AS rn
+                    FROM gestiones g3
+                    WHERE (g3.gestion_maestro_id = ? OR g3.gestion_maestro_id IS NULL)
+                      AND g3.solicitud_id IN (${placeholders})
+                ) g2
+                WHERE g2.rn = 1`,
+                [id].concat(solicitudesIds)
+            ),
+            pool.query(`
+                SELECT r2.solicitud_id,
+                       r2.id AS recordatorio_id,
+                       r2.canal AS recordatorio_canal,
+                       r2.fecha_recordatorio AS recordatorio_fecha,
+                       r2.nota AS recordatorio_nota,
+                       r2.estado AS recordatorio_estado
+                FROM (
+                    SELECT r3.id, r3.solicitud_id, r3.canal, r3.fecha_recordatorio, r3.nota, r3.estado,
+                           ROW_NUMBER() OVER (PARTITION BY r3.solicitud_id ORDER BY r3.id DESC) AS rn
+                    FROM recordatorios r3
+                    WHERE r3.gestion_maestro_id = ?
+                      AND r3.estado = 'pendiente'
+                      AND r3.solicitud_id IN (${placeholders})
+                ) r2
+                WHERE r2.rn = 1`,
+                [id].concat(solicitudesIds)
+            ),
+            pool.query(
+                'SELECT gms.id_solicitud, gms.semaforo FROM gestiones_maestro_solicitudes gms WHERE gms.gestion_maestro_id = ? AND gms.id_solicitud IN (' + placeholders + ')',
+                [id].concat(solicitudesIds)
             )
-            LEFT JOIN gestiones_maestro_solicitudes gms
-                ON gms.gestion_maestro_id = ? AND gms.id_solicitud = s.id_solicitud
-            LEFT JOIN recordatorios rec ON rec.id = (
-                SELECT MAX(r2.id) FROM recordatorios r2
-                WHERE r2.solicitud_id = s.id_solicitud
-                AND r2.gestion_maestro_id = ?
-                AND r2.estado = 'pendiente'
-            )
-            WHERE s.id_solicitud IN (${placeholders})
-            ORDER BY CASE WHEN g.fecha_gestion IS NULL THEN 0 ELSE 1 END DESC, g.fecha_gestion DESC
-        `, [id, id, id].concat(solicitudesIds));
-        
-        const Solicitudes = getRows(resultSol);
+        ]);
+
+        // 3) Fusionar en JS (mismo contrato que la query original)
+        const gestionPorSolicitud = new Map();
+        getRows(resultUltGestion).forEach(function(r) {
+            gestionPorSolicitud.set(Number(r.solicitud_id), r);
+        });
+        const recordatorioPorSolicitud = new Map();
+        getRows(resultUltRecordatorio).forEach(function(r) {
+            recordatorioPorSolicitud.set(Number(r.solicitud_id), r);
+        });
+        const semaforoPorSolicitud = new Map();
+        getRows(resultSemaforo).forEach(function(r) {
+            semaforoPorSolicitud.set(Number(r.id_solicitud), r.semaforo);
+        });
+
+        const Solicitudes = getRows(resultSol).map(function(s) {
+            const g = gestionPorSolicitud.get(Number(s.id_solicitud));
+            const rec = recordatorioPorSolicitud.get(Number(s.id_solicitud));
+            return {
+                ...s,
+                tipo_gestion: (g && g.tipo_gestion) || 'Pendiente',
+                gestion_obs: g ? (g.gestion_obs != null ? g.gestion_obs : 'Por gestionar') : 'Por gestionar',
+                gestion_id: g ? g.gestion_id : null,
+                fecha_gestion: g ? g.fecha_gestion : null,
+                semaforo: semaforoPorSolicitud.get(Number(s.id_solicitud)) || 'sin_clasificar',
+                recordatorio_id: rec ? rec.recordatorio_id : null,
+                recordatorio_canal: rec ? rec.recordatorio_canal : null,
+                recordatorio_fecha: rec ? rec.recordatorio_fecha : null,
+                recordatorio_nota: rec ? rec.recordatorio_nota : null,
+                recordatorio_estado: rec ? rec.recordatorio_estado : null
+            };
+        });
+
+        // Mantener el orden de la query original: con gestión primero, luego las
+        // pendientes; dentro de cada grupo por fecha_gestion DESC.
+        function fechaValor(f) {
+            if (!f) return 0;
+            return new Date(String(f).replace(' ', 'T')).getTime();
+        }
+        Solicitudes.sort(function(a, b) {
+            const aNoG = a.gestion_id == null;
+            const bNoG = b.gestion_id == null;
+            if (aNoG !== bNoG) return aNoG ? 1 : -1;
+            return fechaValor(b.fecha_gestion) - fechaValor(a.fecha_gestion);
+        });
         
         // Normalizar el datetime naive del recordatorio (Postgres lo devuelve como Date y
         // res.json lo serializaría a UTC, desplazando la hora en el navegador)
@@ -596,6 +692,8 @@ async function createGestionMaestro(req, res) {
         }
         
         console.log('[gestiones-maestro] Gestion creada exitosamente, ID:', gestion_id);
+
+        cache.invalidateAllCampanas();
         
         res.json({ 
             id: gestion_id, 
@@ -651,6 +749,7 @@ async function updateGestionMaestro(req, res) {
             `, params);
         }
         
+        cache.invalidateAllCampanas();
         res.json({ mensaje: 'Gestión actualizada correctamente' });
     } catch (error) {
         console.error('Error en updateGestionMaestro:', error);
@@ -722,6 +821,7 @@ async function deleteGestionMaestro(req, res) {
             DELETE FROM gestiones_maestro WHERE id = ?
         `, [id]);
         
+        cache.invalidateAllCampanas();
         res.json({ mensaje: 'Campaña eliminada correctamente. El historial de gestiones de las solicitudes se conserva.' });
     } catch (error) {
         console.error('Error en deleteGestionMaestro:', error);
@@ -1107,6 +1207,8 @@ async function agregarSolicitudesACampana(req, res) {
 
         console.log('[agregarSolicitudesACampana] Agregados', agregados, 'solicitudes a campaña', id, 'Total:', idsActualizados.length, 'Gestionadas:', nuevasGestionadas);
 
+        cache.invalidateAllCampanas();
+
         res.json({
             mensaje: agregados + ' solicitude(s) agregada(s) correctamente',
             agregados: agregados,
@@ -1224,6 +1326,8 @@ async function quitarSolicitudDeCampana(req, res) {
         }
 
         console.log('[quitarSolicitudDeCampana] Quitada solicitud', solicitud_id, 'de campaña', id, 'Total:', resultado.total);
+
+        cache.invalidateAllCampanas();
 
         res.json({
             mensaje: 'Solicitud quitada correctamente',
@@ -1386,6 +1490,8 @@ async function asignarAgenteACampana(req, res) {
         );
         
         console.log('[asignarAgenteACampana] Campaña', id, 'asignada al agente', agente_id);
+
+        cache.invalidateAllCampanas();
         
         res.json({ 
             mensaje: 'Campaña asignada al agente correctamente',
@@ -1433,6 +1539,7 @@ async function quitarAsignacionAgente(req, res) {
             [id]
         );
         
+        cache.invalidateAllCampanas();
         res.json({ mensaje: 'Asignación de agente removida correctamente', campaña_id: parseInt(id) });
     } catch (error) {
         console.error('Error en quitarAsignacionAgente:', error);
@@ -1508,6 +1615,8 @@ async function actualizarSemaforoSolicitud(req, res) {
         }
 
         const semaforo_conteos = await obtenerConteoSemaforo(id);
+
+        cache.invalidateAllCampanas();
 
         res.json({
             mensaje: 'Semáforo actualizado',

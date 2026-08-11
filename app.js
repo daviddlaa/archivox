@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const session = require('express-session');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const compression = require('compression');
 const monitor = require('./src/services/monitor.js');
 const { requireAuthPage } = require('./src/middleware/auth.middleware');
 
@@ -31,6 +32,14 @@ app.use(helmet({
 // Middlewares globales
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Compresión gzip/brotli de respuestas (JSON grandes de campañas/listados)
+app.use(compression());
+
+// Healthcheck para keep-alive externo (UptimeRobot) y verificación de despliegue
+app.get('/healthz', (req, res) => {
+    res.json({ ok: true, uptime: Math.floor(process.uptime()) });
+});
 
 // Configuración de sesión SEGURA
 // NOTA: La sesión va ANTES del rate limiter para poder contar por usuario
