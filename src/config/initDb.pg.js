@@ -80,6 +80,7 @@ const initTables = async () => {
                 no_aplica_credito INTEGER DEFAULT 1,
                 fecha_importacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
             )
         `);
@@ -103,6 +104,17 @@ const initTables = async () => {
         } catch (e) {
             try {
                 await client.query(`ALTER TABLE solicitudes ADD COLUMN no_aplica_credito INTEGER NOT NULL DEFAULT 1`);
+            } catch (e2) {
+                // Columna ya existe, ignorar
+            }
+        }
+
+        // Migración: agregar columna created_at a solicitudes si no existe
+        try {
+            await client.query(`ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+        } catch (e) {
+            try {
+                await client.query(`ALTER TABLE solicitudes ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
             } catch (e2) {
                 // Columna ya existe, ignorar
             }

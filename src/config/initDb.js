@@ -105,6 +105,7 @@ db.exec(`
         no_aplica_credito INTEGER DEFAULT 1,
         fecha_importacion DATETIME DEFAULT CURRENT_TIMESTAMP,
         fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     )
 `);
@@ -124,6 +125,21 @@ try {
     console.log('[DB] Columna solicitudes.no_aplica_credito agregada');
 } catch (err) {
     // Columna ya existe, ignorar
+}
+
+// Migración: agregar columna created_at a solicitudes si no existe
+// NOTA: SQLite no permite DEFAULT no-constante en ADD COLUMN, así que la
+// columna se crea sin default y se rellena con la fecha real de importación.
+try {
+    db.exec(`ALTER TABLE solicitudes ADD COLUMN created_at DATETIME`);
+    console.log('[DB] Columna solicitudes.created_at agregada');
+} catch (err) {
+    // Columna ya existe, ignorar
+}
+try {
+    db.exec(`UPDATE solicitudes SET created_at = COALESCE(fecha_importacion, datetime('now')) WHERE created_at IS NULL`);
+} catch (err) {
+    // Columna ausente, ignorar
 }
 
 db.exec(`
