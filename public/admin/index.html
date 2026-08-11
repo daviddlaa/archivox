@@ -249,7 +249,9 @@
                     <input type="date" id="filterSolDesde" onchange="cargarSolicitudesGlobales(1)" title="Fecha desde">
                     <input type="date" id="filterSolHasta" onchange="cargarSolicitudesGlobales(1)" title="Fecha hasta">
                     <input type="text" id="filterSolVendedor" placeholder="Vendedor" style="width:120px;padding:8px;border:1px solid #d1d5db;border-radius:8px;" onchange="cargarSolicitudesGlobales(1)">
-                    <button class="admin-btn admin-btn-primary" onclick="exportarSolicitudesGlobales()">📥 Exportar CSV</button>
+                    <button class="admin-btn admin-btn-primary" onclick="exportarSolicitudesGlobales()">📥 Exportar Excel</button>
+                    <button class="admin-btn admin-btn-primary" id="btnCrearCampanaSistema" onclick="abrirModalCrearCampana()" disabled>🚀 Crear campaña</button>
+                    <span id="contadorSeleccionSol" class="contador-seleccion-sol"></span>
                 </div>
             </div>
             <div id="solicitudesGlobalMobileCards" class="mobile-cards"></div>
@@ -257,6 +259,7 @@
                 <table class="admin-table">
                     <thead>
                         <tr>
+                            <th><input type="checkbox" id="seleccionarTodasSol" onchange="toggleSeleccionarTodasSol(this)" title="Seleccionar todas (página actual)"></th>
                             <th>ID</th>
                             <th>Cédula</th>
                             <th>Nombre</th>
@@ -270,7 +273,7 @@
                         </tr>
                     </thead>
                     <tbody id="solicitudesGlobalTableBody">
-                        <tr><td colspan="10" class="admin-loading">Selecciona la pestaña para cargar...</td></tr>
+                        <tr><td colspan="11" class="admin-loading">Selecciona la pestaña para cargar...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -769,6 +772,47 @@
             <div class="admin-modal-footer">
                 <button class="admin-btn" onclick="cerrarModalEliminarEquipo()">Cancelar</button>
                 <button class="admin-btn admin-btn-danger" onclick="confirmarEliminarEquipo()">🗑️ Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL CREAR CAMPAÑA (ASIGNADA POR EL SISTEMA) ==================== -->
+    <div id="crearCampanaModal" class="admin-modal">
+        <div class="admin-modal-content" style="max-width: 520px;">
+            <div class="admin-modal-header">
+                <h2>🚀 Crear Campaña (Asignada por el Sistema)</h2>
+                <button class="admin-modal-close" onclick="cerrarModalCrearCampana()">✕</button>
+            </div>
+            <div class="admin-modal-body">
+                <div style="background:#eef2ff;padding:12px;border-radius:10px;margin-bottom:16px;font-size:13px;color:#4338ca;line-height:1.5;">
+                    La campaña se creará <b>sin equipo</b>, por lo que el líder del usuario
+                    destino no la verá. El usuario sí la tendrá en su listado con la etiqueta
+                    <b>“Asignada por el sistema”</b>.
+                </div>
+                <div class="form-group">
+                    <label>Usuario destino *</label>
+                    <select id="campanaUsuario"></select>
+                </div>
+                <div class="form-group">
+                    <label>Nombre de la campaña *</label>
+                    <input type="text" id="campanaNombre" placeholder="Ej: Campaña crédito Julio">
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="campanaDescripcion" rows="2" placeholder="Descripción opcional"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Fecha límite</label>
+                    <input type="date" id="campanaFechaLimite">
+                </div>
+                <div class="form-group">
+                    <label>Solicitudes incluidas</label>
+                    <div id="campanaSeleccionadas" style="font-size:14px;font-weight:600;color:#6366f1;"></div>
+                </div>
+            </div>
+            <div class="admin-modal-footer">
+                <button class="admin-btn" onclick="cerrarModalCrearCampana()">Cancelar</button>
+                <button class="admin-btn admin-btn-primary" id="btnGuardarCampanaSistema" onclick="crearCampanaSistema()">Crear Campaña</button>
             </div>
         </div>
     </div>

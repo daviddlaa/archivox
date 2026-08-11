@@ -200,6 +200,25 @@ body {
 
 .admin-btn-sm { padding: 6px 12px; font-size: 12px; }
 
+.contador-seleccion-sol {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6366f1;
+    white-space: nowrap;
+}
+
+.sol-global-check {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #6366f1;
+}
+
+.admin-user-card-header .sol-global-check {
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
 /* ============================================================================
    TABLE
    ============================================================================ */

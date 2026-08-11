@@ -223,6 +223,14 @@ db.exec(`
     )
 `);
 
+// Migración: columna es_sistema en gestiones_maestro (campaña "asignada por el sistema")
+try {
+    db.exec(`ALTER TABLE gestiones_maestro ADD COLUMN es_sistema INTEGER DEFAULT 0`);
+    console.log('[DB] Columna gestiones_maestro.es_sistema agregada');
+} catch (e) {
+    // Columna ya existe, ignorar
+}
+
 // Recordatorios de llamadas/mensajes programados desde el modal de gestión
 db.exec(`
     CREATE TABLE IF NOT EXISTS recordatorios (

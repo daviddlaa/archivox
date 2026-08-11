@@ -222,7 +222,10 @@ ARCHIVOX/
 │   ├── feature-rediseno-tarjeta-movil-solicitudes.md # Tarjeta móvil de Solicitudes rediseñada: compacta, Gestiones = historial del cliente, Completar/Editar fusionado, ⋮→🗑️ y link a la campaña (Agosto 2026)
 │   ├── feature-login-movil-compacto.md               # Login móvil más pequeño y centrado (Agosto 2026)
 │   ├── feature-grid-campanas-landing.md              # Landing de campañas: grid de tarjetas + selector hero (Agosto 2026)
-│   ├── feature-admin-solicitudes-globales.md         # Superadmin: tab Solicitudes globales solo lectura + export CSV (Agosto 2026)
+│   ├── feature-admin-solicitudes-globales.md         # Superadmin: tab Solicitudes globales solo lectura + export CSV + filtros dinámicos desde la BD (Agosto 2026)
+│   ├── fix-500-solicitudes-created_at.md             # Fix 500 en /api/admin/solicitudes: columna created_at + mecanismo SCHEMA_VERSION (Agosto 2026)
+│   ├── feature-backup-dump-superadmin.md             # Superadmin: backup de BD con un clic (dump SQL portable PG/SQLite) (Agosto 2026)
+│   ├── feature-admin-campanas-sistema.md             # Superadmin: campañas "Asignadas por el sistema" (checkbox + modal + badge es_sistema) (Agosto 2026)
 │   ├── feature-calendario-recordatorios.md           # Calendario mes + lista del día de recordatorios (Agosto 2026)
 │   ├── demo/                                        # Archivos de ejemplo (Excel demo para video)
 │   └── anteriores/                 # Documentación histórica

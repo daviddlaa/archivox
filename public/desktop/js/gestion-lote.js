@@ -288,6 +288,10 @@ function renderizarGridCampanasLanding() {
         html += '<span>' + escaparParaHTML(g.nombre || 'Sin nombre') + '</span>';
         html += '</div>';
 
+        if (g.es_sistema) {
+            html += '<div class="campaña-badge-sistema">🤖 Asignada por el sistema</div>';
+        }
+
         if (g.asignado_a) {
             var agenteNombre = g.asignado_username || 'Agente #' + g.asignado_a;
             html += '<div class="campaña-asignacion">👤 ' + escaparParaHTML(agenteNombre) + '</div>';
@@ -402,6 +406,10 @@ async function cargarListaCampanas() {
             html += '<span class="campaña-id">#' + g.id + '</span>';
             html += '<span>' + escaparParaHTML(g.nombre || 'Sin nombre') + '</span>';
             html += '</div>';
+
+            if (g.es_sistema) {
+                html += '<div class="campaña-badge-sistema" style="margin-top:2px;">🤖 Asignada por el sistema</div>';
+            }
             
             if (g.asignado_a) {
                 var agenteNombre = g.asignado_username || 'Agente #' + g.asignado_a;
@@ -495,6 +503,8 @@ async function cargarDatosGestion() {
         aplicarEstadoSemaforoCompletada();
         
         actualizarTituloCampana(datosGestion.nombre || 'Gestión #' + gestionId);
+        var badgeSistema = document.getElementById('gestion-badge-sistema');
+        if (badgeSistema) badgeSistema.hidden = !datosGestion.es_sistema;
         
         // Mostrar workspace: lista + rail + filtros
         var filtrosRow = document.getElementById('filtros-row');

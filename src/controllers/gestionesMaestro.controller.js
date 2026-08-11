@@ -1691,6 +1691,80 @@ async function listarRecordatorios(req, res) {
     }
 }
 
+// ============================================================================
+// CREAR CAMPAÑA "ASIGNADA POR EL SISTEMA" (superadmin vía /api/admin/campanas)
+// ============================================================================
+// Crea una campaña para un usuario destino con equipo_id = NULL para que el
+// líder de su equipo NO la vea (todos los listados de equipo filtran por
+// equipo_id). es_sistema = 1 permite mostrarla como "Asignada por el sistema".
+async function crearCampanaSistema(req, res) {
+    try {
+        const { usuario_id, nombre, descripcion, fecha_limite, solicitudes_ids } = req.body;
+
+        if (!usuario_id) {
+            return res.status(400).json({ error: 'El usuario destino es requerido' });
+        }
+        if (!nombre || !String(nombre).trim()) {
+            return res.status(400).json({ error: 'El nombre es requerido' });
+        }
+        const ids = normalizarIdsSolicitud(solicitudes_ids);
+        if (ids.length === 0) {
+            return res.status(400).json({ error: 'Se requiere al menos una solicitud' });
+        }
+
+        // Verificar que el usuario destino existe y está activo
+        const checkUser = await pool.query(
+            'SELECT id, username, is_active FROM usuarios WHERE id = ?',
+            [parseInt(usuario_id)]
+        );
+        const destino = getFirstRow(checkUser);
+        if (!destino) {
+            return res.status(404).json({ error: 'El usuario destino no existe' });
+        }
+        if (!destino.is_active) {
+            return res.status(400).json({ error: 'El usuario destino está inactivo' });
+        }
+
+        const solicitudesIdsJson = JSON.stringify(ids);
+
+        const resultGM = await pool.query(`
+            INSERT INTO gestiones_maestro (nombre, descripcion, usuario_id, equipo_id, es_sistema, total_solicitudes, gestionadas, fecha_limite, solicitudes_ids, asignado_a)
+            VALUES (?, ?, ?, NULL, 1, ?, 0, ?, ?, NULL)
+        `, [String(nombre).trim(), descripcion || '', destino.id, ids.length, fecha_limite || null, solicitudesIdsJson]);
+
+        const gestion_id = resultGM.lastInsertRowid;
+
+        // Puente semáforo (todas entran como sin_clasificar)
+        try {
+            await insertarSemaforoSinClasificar(gestion_id, ids, req.session.usuario.id);
+        } catch (e) {
+            console.error('[crearCampanaSistema] Error insertando semáforo:', e.message);
+        }
+
+        // Vincular solicitudes a la campaña (consistencia con el listado admin)
+        try {
+            const placeholders = ids.map(function() { return '?'; }).join(',');
+            await pool.query(
+                `UPDATE solicitudes SET campana_id = ? WHERE id_solicitud IN (` + placeholders + `)`,
+                [gestion_id].concat(ids)
+            );
+        } catch (e) {
+            console.error('[crearCampanaSistema] Error actualizando campana_id:', e.message);
+        }
+
+        cache.invalidateAllCampanas();
+
+        res.json({
+            id: gestion_id,
+            mensaje: 'Campaña asignada por el sistema creada correctamente',
+            total_solicitudes: ids.length
+        });
+    } catch (error) {
+        console.error('[crearCampanaSistema] Error:', error);
+        res.status(500).json({ error: 'Error al crear la campaña del sistema', detalle: error.message });
+    }
+}
+
 module.exports = {
     // Aliases en español para compatibilidad con las rutas
     crearGestionMaestro: createGestionMaestro,
@@ -1721,5 +1795,7 @@ module.exports = {
     getGestionMaestroById: getGestionMaestroById,
     createGestionMaestro: createGestionMaestro,
     updateGestionMaestro: updateGestionMaestro,
-    deleteGestionMaestro: deleteGestionMaestro
+    deleteGestionMaestro: deleteGestionMaestro,
+    // Campaña asignada por el sistema (superadmin)
+    crearCampanaSistema: crearCampanaSistema
 };

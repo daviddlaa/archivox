@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const adminController = require('../controllers/admin.controller');
+const gestionesMaestroController = require('../controllers/gestionesMaestro.controller');
 const notificacionesController = require('../controllers/notificaciones.controller');
 const estadisticasController = require('../controllers/estadisticas.controller');
 const { requiresAuth, requiresRole } = require('../middleware/auth.middleware');
@@ -119,6 +120,11 @@ router.get('/auditoria', adminController.auditoria);
 router.get('/solicitudes', adminController.listarSolicitudesGlobales);
 router.get('/solicitudes/filtros', adminController.obtenerFiltrosSolicitudesGlobales);
 router.get('/solicitudes/export', adminController.exportarSolicitudesGlobales);
+
+// ============================================================================
+// CAMPAÑAS "ASIGNADAS POR EL SISTEMA" (solo superadmin)
+// ============================================================================
+router.post('/campanas', gestionesMaestroController.crearCampanaSistema);
 
 // ============================================================================
 // BACKUP / DUMP DE BASE DE DATOS (solo superadmin)

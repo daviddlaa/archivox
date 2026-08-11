@@ -253,6 +253,11 @@ Optimizados para las consultas mas frecuentes: listado por usuario, dashboard po
 | GET | `/api/admin/auditoria` | Logs de auditoria |
 | GET | `/api/admin/notificaciones/stream` | SSE Stream |
 | POST | `/api/admin/notificaciones` | Crear notificacion |
+| GET | `/api/admin/solicitudes` | Listar solicitudes globales (filtros + paginacion) |
+| GET | `/api/admin/solicitudes/filtros` | Catalogos reales para filtros (estados/segmentos/productos) |
+| GET | `/api/admin/solicitudes/export` | Exportar CSV filtrado |
+| GET | `/api/admin/dump/info` | Informacion del motor de BD (backup) |
+| GET | `/api/admin/dump` | Descargar backup SQL completo (dump) |
 
 ### Relaciones (`/api/relaciones`)
 

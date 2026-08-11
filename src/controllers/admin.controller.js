@@ -6,6 +6,7 @@
 // ============================================================================
 
 const bcrypt = require('bcryptjs');
+const ExcelJS = require('exceljs');
 const pool = require('../config/db.js');
 const notificationBus = require('../services/notificationBus.js');
 const monitor = require('../services/monitor.js');
@@ -922,13 +923,9 @@ exports.exportarSolicitudesGlobales = async (req, res) => {
         }
 
         const sql = `
-            SELECT s.id_solicitud, s.cedula, s.nombre, s.celular, s.estado, s.segmento,
-                   s.producto, s.vendedor, s.fecha_solicitud, s.usuario_id,
-                   u.username AS dueno_username, u.nombre AS dueno_nombre,
-                   s.campana_id, gm.nombre AS nombre_campana
+            SELECT s.cedula, s.nombre, s.celular, s.estado, s.segmento,
+                   s.producto, s.vendedor, s.fecha_solicitud
             FROM solicitudes s
-            LEFT JOIN usuarios u ON u.id = s.usuario_id
-            LEFT JOIN gestiones_maestro gm ON gm.id = s.campana_id
             ${where}
             ORDER BY s.id DESC
             LIMIT 10000
@@ -936,26 +933,36 @@ exports.exportarSolicitudesGlobales = async (req, res) => {
         const result = await pool.query(sql, params);
         const rows = result.rows || [];
 
-        const esc = (v) => {
-            if (v === null || v === undefined) return '';
-            const s = String(v);
-            if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
-            return s;
-        };
-
-        const headers = [
-            'id_solicitud', 'cedula', 'nombre', 'celular', 'estado', 'segmento',
-            'producto', 'vendedor', 'fecha_solicitud', 'usuario_id', 'dueno_username',
-            'dueno_nombre', 'campana_id', 'nombre_campana'
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Solicitudes');
+        sheet.columns = [
+            { header: 'ESTADO', key: 'estado', width: 26 },
+            { header: 'CEDULA', key: 'cedula', width: 16 },
+            { header: 'NOMBRE', key: 'nombre', width: 32 },
+            { header: 'CELULAR', key: 'celular', width: 16 },
+            { header: 'SEGMENTO', key: 'segmento', width: 18 },
+            { header: 'PRODUCTO', key: 'producto', width: 26 },
+            { header: 'FECHASOLICITUD', key: 'fecha_solicitud', width: 14 },
+            { header: 'VENDEDOR', key: 'vendedor', width: 18 }
         ];
-        let csv = headers.join(',') + '\n';
+        sheet.getRow(1).font = { bold: true };
         for (const r of rows) {
-            csv += headers.map(h => esc(r[h])).join(',') + '\n';
+            sheet.addRow({
+                estado: r.estado || '',
+                cedula: r.cedula || '',
+                nombre: r.nombre || '',
+                celular: r.celular || '',
+                segmento: r.segmento || '',
+                producto: r.producto || '',
+                fecha_solicitud: r.fecha_solicitud ? String(r.fecha_solicitud).substring(0, 10) : '',
+                vendedor: r.vendedor || ''
+            });
         }
 
-        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-        res.setHeader('Content-Disposition', 'attachment; filename="solicitudes_globales.csv"');
-        res.send('\uFEFF' + csv);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="solicitudes_globales.xlsx"');
+        await workbook.xlsx.write(res);
+        res.end();
     } catch (err) {
         console.error('[Admin] Error exportarSolicitudesGlobales:', err);
         res.status(500).json({ error: err.message });

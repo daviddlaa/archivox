@@ -1878,6 +1878,27 @@
     color: #0f172a;
     margin-bottom: 4px;
 }
+.campaña-badge-sistema {
+    display: inline-block;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    margin: 0 0 6px;
+}
+.campana-sheet-item-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 999px;
+    vertical-align: middle;
+    margin-left: 4px;
+}
 .campana-landing-stats {
     font-size: 12px;
     color: #64748b;

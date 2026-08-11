@@ -121,6 +121,9 @@ function renderizarGridCampanasLandingMovil() {
         html += '    <span class="campana-landing-estado ' + estadoClase + '">' + (g.estado || 'Activa') + '</span>';
         html += '  </div>';
         html += '  <div class="campana-landing-name">' + escaparParaHTML(g.nombre || 'Sin nombre') + '</div>';
+        if (g.es_sistema) {
+            html += '  <div class="campaña-badge-sistema">🤖 Asignada por el sistema</div>';
+        }
         html += '  <div class="campana-landing-stats">' + (g.total_solicitudes || 0) + ' solicitudes · ' + completadas + ' completadas · ' + pct + '%</div>';
         html += '  <div class="campana-landing-bar"><span style="width:' + pct + '%"></span></div>';
         html += '  <button type="button" class="campana-landing-more" onclick="event.stopPropagation(); abrirBottomSheetCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Acciones">⋯</button>';
@@ -169,7 +172,7 @@ async function cargarListaCampanas() {
             html += '<div class="campana-sheet-item ' + isActive + '" onclick="seleccionarCampaña(' + g.id + ')">';
             html += '  <div class="campana-sheet-item-icon">📋</div>';
             html += '  <div class="campana-sheet-item-info">';
-            html += '    <div class="campana-sheet-item-name">' + (g.nombre || 'Sin nombre') + '</div>';
+            html += '    <div class="campana-sheet-item-name">' + (g.nombre || 'Sin nombre') + (g.es_sistema ? ' <span class="campana-sheet-item-badge">🤖 Sistema</span>' : '') + '</div>';
             html += '    <div class="campana-sheet-item-stats">' + (g.total_solicitudes || 0) + ' solicitudes · ' + completadas + ' completadas · ' + pct + '%</div>';
             html += '  </div>';
             html += '  <button class="campana-sheet-item-more" onclick="event.stopPropagation(); closeCampanasSheet(); abrirBottomSheetCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Acciones">⋯</button>';

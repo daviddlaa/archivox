@@ -854,6 +854,17 @@ body {
     font-weight: 700;
 }
 
+.campaña-badge-sistema {
+    display: inline-block;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    margin: 2px 0 6px;
+}
+
 .campaña-card .campaña-stats {
     display: flex;
     gap: 12px;

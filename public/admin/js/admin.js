@@ -24,7 +24,8 @@ const _MODALES = {
     asignarLider: 'asignarLiderModal',
     createAgente: 'createAgenteModal',
     moverUsuario: 'moverUsuarioModal',
-    eliminarEquipo: 'eliminarEquipoModal'
+    eliminarEquipo: 'eliminarEquipoModal',
+    crearCampana: 'crearCampanaModal'
 };
 
 /**
@@ -2203,6 +2204,7 @@ let paginaSolGlobal = 1;
 let totalSolGlobal = 0;
 let limiteSolGlobal = 50;
 let _debounceSolGlobal = null;
+const solicitudesSeleccionadas = new Set();
 
 function debounceBuscarSolicitudesGlobales() {
     clearTimeout(_debounceSolGlobal);
@@ -2246,7 +2248,7 @@ async function cargarSolicitudesGlobales(pagina) {
     const tbody = document.getElementById('solicitudesGlobalTableBody');
     const cardsDiv = document.getElementById('solicitudesGlobalMobileCards');
     if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="10" class="admin-loading">Cargando solicitudes...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="admin-loading">Cargando solicitudes...</td></tr>';
     if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading">Cargando solicitudes...</div>';
 
     try {
@@ -2272,7 +2274,7 @@ async function cargarSolicitudesGlobales(pagina) {
         const res = await fetch(url);
         if (!res.ok) {
             const errData = await res.json().catch(() => ({ error: res.statusText }));
-            tbody.innerHTML = '<tr><td colspan="10" class="admin-loading" style="color:#dc2626">Error ' + res.status + ': ' + escapeHtml(errData.error || '') + '</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="admin-loading" style="color:#dc2626">Error ' + res.status + ': ' + escapeHtml(errData.error || '') + '</td></tr>';
             if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading" style="color:#dc2626">Error ' + res.status + '</div>';
             return;
         }
@@ -2281,13 +2283,16 @@ async function cargarSolicitudesGlobales(pagina) {
         const rows = data.data || [];
 
         if (rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="admin-loading">No se encontraron solicitudes</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="admin-loading">No se encontraron solicitudes</td></tr>';
             if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading">No se encontraron solicitudes</div>';
         } else {
             tbody.innerHTML = rows.map(function(s) {
                 const dueno = s.dueno_username || s.dueno_nombre || ('#' + (s.usuario_id || '-'));
+                const solId = s.id_solicitud || s.id;
+                const sel = solicitudesSeleccionadas.has(solId);
                 return '<tr>' +
-                    '<td>' + escapeHtml(s.id_solicitud || s.id || '') + '</td>' +
+                    '<td><input type="checkbox" class="sol-global-check" data-id="' + solId + '" onchange="toggleSolicitudGlobal(this)"' + (sel ? ' checked' : '') + '></td>' +
+                    '<td>' + escapeHtml(solId) + '</td>' +
                     '<td>' + escapeHtml(s.cedula || '-') + '</td>' +
                     '<td>' + escapeHtml(s.nombre || '-') + '</td>' +
                     '<td>' + escapeHtml(s.celular || '-') + '</td>' +
@@ -2303,10 +2308,13 @@ async function cargarSolicitudesGlobales(pagina) {
             if (cardsDiv) {
                 cardsDiv.innerHTML = rows.map(function(s) {
                     const dueno = s.dueno_username || s.dueno_nombre || ('#' + (s.usuario_id || '-'));
+                    const solId = s.id_solicitud || s.id;
+                    const sel = solicitudesSeleccionadas.has(solId);
                     return '<div class="user-card">' +
                         '<div class="admin-user-card-header">' +
+                        '<input type="checkbox" class="sol-global-check" data-id="' + solId + '" onchange="toggleSolicitudGlobal(this)"' + (sel ? ' checked' : '') + '>' +
                         '<div class="admin-user-card-info">' +
-                        '<div class="admin-user-card-name">#' + escapeHtml(s.id_solicitud || s.id || '') + ' · ' + escapeHtml(s.nombre || '-') + '</div>' +
+                        '<div class="admin-user-card-name">#' + escapeHtml(solId) + ' · ' + escapeHtml(s.nombre || '-') + '</div>' +
                         '<div class="admin-user-card-username">' + escapeHtml(s.cedula || '-') + ' · ' + escapeHtml(s.celular || '-') + '</div>' +
                         '</div>' +
                         '<span class="role-badge">' + escapeHtml(s.estado || '-') + '</span>' +
@@ -2331,8 +2339,10 @@ async function cargarSolicitudesGlobales(pagina) {
         if (next) next.disabled = paginaSolGlobal >= totalPaginas;
     } catch (err) {
         console.error('[Admin] Error solicitudes globales:', err);
-        tbody.innerHTML = '<tr><td colspan="10" class="admin-loading" style="color:#dc2626">' + escapeHtml(err.message) + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="admin-loading" style="color:#dc2626">' + escapeHtml(err.message) + '</td></tr>';
     }
+    sincronizarSeleccionTodasSol();
+    actualizarContadorSeleccion();
 }
 
 function cambiarPaginaSolicitudesGlobales(dir) {
@@ -2363,6 +2373,137 @@ function exportarSolicitudesGlobales() {
     if (fecha_hasta) parts.push('fecha_hasta=' + encodeURIComponent(fecha_hasta));
     if (vendedor) parts.push('vendedor=' + encodeURIComponent(vendedor));
     window.location.href = url + parts.join('&');
+}
+
+// ============================================================================
+// SELECCIÓN MULTIPLE DE SOLICITUDES → CREAR CAMPAÑA ASIGNADA POR EL SISTEMA
+// ============================================================================
+function toggleSolicitudGlobal(el) {
+    const id = Number(el.getAttribute('data-id'));
+    if (el.checked) {
+        solicitudesSeleccionadas.add(id);
+    } else {
+        solicitudesSeleccionadas.delete(id);
+    }
+    sincronizarSeleccionTodasSol();
+    actualizarContadorSeleccion();
+}
+
+function toggleSeleccionarTodasSol(el) {
+    const checks = document.querySelectorAll('.sol-global-check');
+    checks.forEach(function(c) {
+        c.checked = el.checked;
+        const id = Number(c.getAttribute('data-id'));
+        if (el.checked) {
+            solicitudesSeleccionadas.add(id);
+        } else {
+            solicitudesSeleccionadas.delete(id);
+        }
+    });
+    actualizarContadorSeleccion();
+}
+
+function sincronizarSeleccionTodasSol() {
+    const todas = document.getElementById('seleccionarTodasSol');
+    if (!todas) return;
+    const checks = document.querySelectorAll('.sol-global-check');
+    todas.checked = checks.length > 0 && Array.prototype.every.call(checks, function(c) { return c.checked; });
+}
+
+function actualizarContadorSeleccion() {
+    const n = solicitudesSeleccionadas.size;
+    const btn = document.getElementById('btnCrearCampanaSistema');
+    const contador = document.getElementById('contadorSeleccionSol');
+    if (btn) btn.disabled = n === 0;
+    if (contador) contador.textContent = n > 0 ? n + ' solicitud' + (n > 1 ? 'es' : '') + ' seleccionada' + (n > 1 ? 's' : '') : '';
+}
+
+function abrirModalCrearCampana() {
+    if (solicitudesSeleccionadas.size === 0) {
+        mostrarToast('⚠️ Selecciona al menos una solicitud');
+        return;
+    }
+    document.getElementById('campanaNombre').value = '';
+    document.getElementById('campanaDescripcion').value = '';
+    document.getElementById('campanaFechaLimite').value = '';
+    document.getElementById('campanaUsuario').value = '';
+    document.getElementById('campanaSeleccionadas').textContent =
+        solicitudesSeleccionadas.size + ' solicitud' + (solicitudesSeleccionadas.size > 1 ? 'es' : '') + ' seleccionada' + (solicitudesSeleccionadas.size > 1 ? 's' : '');
+    cargarUsuariosParaCampana();
+    _abrirModal(_MODALES.crearCampana);
+}
+
+function cerrarModalCrearCampana() {
+    _cerrarModal(_MODALES.crearCampana);
+}
+
+async function cargarUsuariosParaCampana() {
+    const sel = document.getElementById('campanaUsuario');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Cargando usuarios...</option>';
+    try {
+        const res = await fetch('/api/admin/usuarios?limite=1000');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const usuarios = (data.data || []).filter(function(u) {
+            return !u.is_superadmin && u.rol !== 'superadmin' && u.is_active;
+        }).sort(function(a, b) {
+            return (a.nombre || a.username || '').localeCompare(b.nombre || b.username || '');
+        });
+        let html = '<option value="">Selecciona el usuario destino...</option>';
+        usuarios.forEach(function(u) {
+            html += '<option value="' + u.id + '">' + escapeHtml(u.nombre || u.username) + ' (@' + escapeHtml(u.username) + ')</option>';
+        });
+        sel.innerHTML = html;
+    } catch (err) {
+        console.error('[Admin] Error cargando usuarios para campaña:', err);
+        sel.innerHTML = '<option value="">Error cargando usuarios</option>';
+    }
+}
+
+async function crearCampanaSistema() {
+    const usuario_id = document.getElementById('campanaUsuario').value;
+    const nombre = document.getElementById('campanaNombre').value;
+    const descripcion = document.getElementById('campanaDescripcion').value;
+    const fecha_limite = document.getElementById('campanaFechaLimite').value || null;
+
+    if (!usuario_id) return alert('Selecciona el usuario destino');
+    if (!nombre.trim()) return alert('El nombre de la campaña es requerido');
+
+    const btn = document.getElementById('btnGuardarCampanaSistema');
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Creando...';
+
+    try {
+        const res = await fetch('/api/admin/campanas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                usuario_id: Number(usuario_id),
+                nombre: nombre.trim(),
+                descripcion: descripcion,
+                fecha_limite: fecha_limite,
+                solicitudes_ids: Array.from(solicitudesSeleccionadas)
+            })
+        });
+        const result = await res.json();
+        if (!res.ok) {
+            throw new Error(result.error || result.detalle || 'HTTP ' + res.status);
+        }
+        cerrarModalCrearCampana();
+        solicitudesSeleccionadas.clear();
+        actualizarContadorSeleccion();
+        sincronizarSeleccionTodasSol();
+        cargarSolicitudesGlobales(1);
+        mostrarToast('✅ ' + result.mensaje);
+    } catch (err) {
+        console.error('[Admin] Error creando campaña sistema:', err);
+        alert('Error al crear la campaña: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+    }
 }
 
 // Toast notifications

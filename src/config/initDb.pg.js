@@ -8,7 +8,7 @@
 // ~100 queries a 2. Subir SCHEMA_VERSION solo cuando se agregue/mofici un DDL
 // o seed nuevo en este archivo.
 // ============================================================================
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 const initTables = async () => {
     const client = await pool.connect();
@@ -658,6 +658,14 @@ const initTables = async () => {
         } catch (e) {
             // fallback para PG < 9.6
             try { await client.query(`ALTER TABLE gestiones_maestro ADD COLUMN equipo_id INTEGER`); } catch (e2) { /* ya existe */ }
+        }
+
+        // Columna es_sistema en gestiones_maestro (campaña "asignada por el sistema",
+        // creada por superadmin para un usuario; el líder NO la ve porque equipo_id es NULL)
+        try {
+            await client.query(`ALTER TABLE gestiones_maestro ADD COLUMN IF NOT EXISTS es_sistema INTEGER DEFAULT 0`);
+        } catch (e) {
+            try { await client.query(`ALTER TABLE gestiones_maestro ADD COLUMN es_sistema INTEGER DEFAULT 0`); } catch (e2) { /* ya existe */ }
         }
 
         // Índices multi-equipo
