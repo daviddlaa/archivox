@@ -117,6 +117,7 @@ router.get('/auditoria', adminController.auditoria);
 // SOLICITUDES GLOBALES (solo lectura + export)
 // ============================================================================
 router.get('/solicitudes', adminController.listarSolicitudesGlobales);
+router.get('/solicitudes/filtros', adminController.obtenerFiltrosSolicitudesGlobales);
 router.get('/solicitudes/export', adminController.exportarSolicitudesGlobales);
 
 // ============================================================================

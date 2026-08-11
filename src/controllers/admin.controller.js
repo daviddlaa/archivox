@@ -766,6 +766,7 @@ exports.listarSolicitudesGlobales = async (req, res) => {
             q = '',
             estado = '',
             segmento = '',
+            producto = '',
             usuario_id = '',
             fecha_desde = '',
             fecha_hasta = '',
@@ -809,12 +810,20 @@ exports.listarSolicitudesGlobales = async (req, res) => {
             idx++;
         }
         if (estado) {
-            where += ` AND s.estado = $${idx++}`;
-            params.push(estado);
+            if (estado === '__no_aplica_credito__') {
+                where += ` AND s.no_aplica_credito = 0`;
+            } else {
+                where += ` AND s.estado = $${idx++}`;
+                params.push(estado);
+            }
         }
         if (segmento) {
             where += ` AND s.segmento = $${idx++}`;
             params.push(segmento);
+        }
+        if (producto) {
+            where += ` AND s.producto = $${idx++}`;
+            params.push(producto);
         }
         if (usuario_id) {
             where += ` AND s.usuario_id = $${idx++}`;
@@ -872,6 +881,7 @@ exports.exportarSolicitudesGlobales = async (req, res) => {
             q = '',
             estado = '',
             segmento = '',
+            producto = '',
             usuario_id = '',
             fecha_desde = '',
             fecha_hasta = '',
@@ -893,8 +903,16 @@ exports.exportarSolicitudesGlobales = async (req, res) => {
             params.push(term);
             idx++;
         }
-        if (estado) { where += ` AND s.estado = $${idx++}`; params.push(estado); }
+        if (estado) {
+            if (estado === '__no_aplica_credito__') {
+                where += ` AND s.no_aplica_credito = 0`;
+            } else {
+                where += ` AND s.estado = $${idx++}`;
+                params.push(estado);
+            }
+        }
         if (segmento) { where += ` AND s.segmento = $${idx++}`; params.push(segmento); }
+        if (producto) { where += ` AND s.producto = $${idx++}`; params.push(producto); }
         if (usuario_id) { where += ` AND s.usuario_id = $${idx++}`; params.push(parseInt(usuario_id)); }
         if (fecha_desde) { where += ` AND s.fecha_solicitud >= $${idx++}`; params.push(fecha_desde); }
         if (fecha_hasta) { where += ` AND s.fecha_solicitud <= $${idx++}`; params.push(fecha_hasta + ' 23:59:59'); }
@@ -940,6 +958,35 @@ exports.exportarSolicitudesGlobales = async (req, res) => {
         res.send('\uFEFF' + csv);
     } catch (err) {
         console.error('[Admin] Error exportarSolicitudesGlobales:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// GET /api/admin/solicitudes/filtros — catálogos reales para los filtros (global, sin filtro por usuario)
+exports.obtenerFiltrosSolicitudesGlobales = async (req, res) => {
+    try {
+        const campos = [
+            { nombre: 'estados', columna: 'estado' },
+            { nombre: 'segmentos', columna: 'segmento' },
+            { nombre: 'productos', columna: 'producto' }
+        ];
+        const resultado = {};
+
+        for (const campo of campos) {
+            const { rows } = await pool.query(`
+                SELECT ${campo.columna} AS valor, COUNT(*) AS total
+                FROM solicitudes
+                WHERE ${campo.columna} IS NOT NULL AND ${campo.columna} != ''
+                GROUP BY ${campo.columna}
+                ORDER BY total DESC, ${campo.columna} ASC
+                LIMIT 100
+            `);
+            resultado[campo.nombre] = rows.map(r => r.valor);
+        }
+
+        res.json(resultado);
+    } catch (err) {
+        console.error('[Admin] Error obtenerFiltrosSolicitudesGlobales:', err);
         res.status(500).json({ error: err.message });
     }
 };

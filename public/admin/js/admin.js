@@ -226,7 +226,7 @@ function cambiarTab(tab) {
     }
     if (tab === 'auditoria') cargarAuditoria();
     if (tab === 'notificaciones') { cargarNotificaciones(); actualizarBadgeNotif(); }
-    if (tab === 'solicitudes') cargarSolicitudesGlobales();
+    if (tab === 'solicitudes') { cargarFiltrosSolicitudesGlobales(); cargarSolicitudesGlobales(); }
     if (tab === 'basedatos') cargarEstadoBD();
 }
 
@@ -2209,6 +2209,38 @@ function debounceBuscarSolicitudesGlobales() {
     _debounceSolGlobal = setTimeout(function() { cargarSolicitudesGlobales(1); }, 350);
 }
 
+async function cargarFiltrosSolicitudesGlobales() {
+    try {
+        const res = await fetch('/api/admin/solicitudes/filtros');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const llenar = function(selectId, valores, placeholder, fijas) {
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+            const previo = sel.value;
+            let html = '<option value="">' + placeholder + '</option>';
+            (fijas || []).forEach(function(o) {
+                html += '<option value="' + o[0] + '">' + o[1] + '</option>';
+            });
+            (valores || []).forEach(function(v) {
+                const val = String(v).replace(/"/g, '&quot;');
+                html += '<option value="' + val + '">' + val + '</option>';
+            });
+            sel.innerHTML = html;
+            if (previo && Array.prototype.some.call(sel.options, function(o) { return o.value === previo; })) {
+                sel.value = previo;
+            }
+        };
+
+        llenar('filterSolEstado', data.estados, 'Todos los estados', [['__no_aplica_credito__', '👎 No aplica para crédito']]);
+        llenar('filterSolSegmento', data.segmentos, 'Todos los segmentos');
+        llenar('filterSolProducto', data.productos, 'Todos los productos');
+    } catch (err) {
+        console.error('[Admin] Error cargando filtros solicitudes:', err);
+    }
+}
+
 async function cargarSolicitudesGlobales(pagina) {
     if (pagina) paginaSolGlobal = pagina;
     const tbody = document.getElementById('solicitudesGlobalTableBody');
@@ -2221,6 +2253,7 @@ async function cargarSolicitudesGlobales(pagina) {
         const q = (document.getElementById('searchSolicitudGlobal') || {}).value || '';
         const estado = (document.getElementById('filterSolEstado') || {}).value || '';
         const segmento = (document.getElementById('filterSolSegmento') || {}).value || '';
+        const producto = (document.getElementById('filterSolProducto') || {}).value || '';
         const usuario_id = (document.getElementById('filterSolUsuario') || {}).value || '';
         const fecha_desde = (document.getElementById('filterSolDesde') || {}).value || '';
         const fecha_hasta = (document.getElementById('filterSolHasta') || {}).value || '';
@@ -2230,6 +2263,7 @@ async function cargarSolicitudesGlobales(pagina) {
         if (q) url += '&q=' + encodeURIComponent(q);
         if (estado) url += '&estado=' + encodeURIComponent(estado);
         if (segmento) url += '&segmento=' + encodeURIComponent(segmento);
+        if (producto) url += '&producto=' + encodeURIComponent(producto);
         if (usuario_id) url += '&usuario_id=' + encodeURIComponent(usuario_id);
         if (fecha_desde) url += '&fecha_desde=' + encodeURIComponent(fecha_desde);
         if (fecha_hasta) url += '&fecha_hasta=' + encodeURIComponent(fecha_hasta);
@@ -2313,6 +2347,7 @@ function exportarSolicitudesGlobales() {
     const q = (document.getElementById('searchSolicitudGlobal') || {}).value || '';
     const estado = (document.getElementById('filterSolEstado') || {}).value || '';
     const segmento = (document.getElementById('filterSolSegmento') || {}).value || '';
+    const producto = (document.getElementById('filterSolProducto') || {}).value || '';
     const usuario_id = (document.getElementById('filterSolUsuario') || {}).value || '';
     const fecha_desde = (document.getElementById('filterSolDesde') || {}).value || '';
     const fecha_hasta = (document.getElementById('filterSolHasta') || {}).value || '';
@@ -2322,6 +2357,7 @@ function exportarSolicitudesGlobales() {
     if (q) parts.push('q=' + encodeURIComponent(q));
     if (estado) parts.push('estado=' + encodeURIComponent(estado));
     if (segmento) parts.push('segmento=' + encodeURIComponent(segmento));
+    if (producto) parts.push('producto=' + encodeURIComponent(producto));
     if (usuario_id) parts.push('usuario_id=' + encodeURIComponent(usuario_id));
     if (fecha_desde) parts.push('fecha_desde=' + encodeURIComponent(fecha_desde));
     if (fecha_hasta) parts.push('fecha_hasta=' + encodeURIComponent(fecha_hasta));
