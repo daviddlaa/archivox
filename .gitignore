@@ -26,3 +26,9 @@ nul
 
 # VisualGit
 .env.*
+
+# Rescate one-shot (Excel + logs locales, no subir)
+_rescate_import/
+scripts/rescate-lista-blanca-cedulas.js
+_rescate_import_report.*
+
