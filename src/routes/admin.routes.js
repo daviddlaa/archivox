@@ -120,6 +120,12 @@ router.get('/solicitudes', adminController.listarSolicitudesGlobales);
 router.get('/solicitudes/export', adminController.exportarSolicitudesGlobales);
 
 // ============================================================================
+// BACKUP / DUMP DE BASE DE DATOS (solo superadmin)
+// ============================================================================
+router.get('/dump/info', adminController.infoDump);
+router.get('/dump', adminController.descargarDump);
+
+// ============================================================================
 // NOTIFICACIONES (solo admin/superadmin)
 // ============================================================================
 

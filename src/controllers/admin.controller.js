@@ -9,6 +9,7 @@ const bcrypt = require('bcryptjs');
 const pool = require('../config/db.js');
 const notificationBus = require('../services/notificationBus.js');
 const monitor = require('../services/monitor.js');
+const dumpService = require('../services/dump.service.js');
 
 // ============================================================================
 // HELPERS
@@ -940,5 +941,50 @@ exports.exportarSolicitudesGlobales = async (req, res) => {
     } catch (err) {
         console.error('[Admin] Error exportarSolicitudesGlobales:', err);
         res.status(500).json({ error: err.message });
+    }
+};
+
+// ============================================================================
+// BACKUP / DUMP DE BASE DE DATOS (solo superadmin)
+// ============================================================================
+
+// GET /api/admin/dump/info — metadatos del motor (para la UI).
+exports.infoDump = async (req, res) => {
+    try {
+        const motor = dumpService.motorBD();
+        const result = await pool.query(
+            motor === 'postgres'
+                ? `SELECT COUNT(*) AS total FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
+                : `SELECT COUNT(*) AS total FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`
+        );
+        res.json({ motor: motor, tablas: parseInt(result.rows[0]?.total) || 0 });
+    } catch (err) {
+        console.error('[Admin] Error infoDump:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// GET /api/admin/dump — descarga un archivo SQL con esquema + datos.
+exports.descargarDump = async (req, res) => {
+    try {
+        const dump = await dumpService.generarDump();
+        const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19);
+        const nombre = 'archivox_dump_' + stamp + '.sql';
+
+        res.setHeader('Content-Type', 'application/sql; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="' + nombre + '"');
+        res.send(dump);
+
+        auditar(
+            req.session.usuario.id,
+            'DUMP_BD_DESCARGADO',
+            null,
+            null,
+            { motor: dumpService.motorBD(), tamano: Buffer.byteLength(dump) },
+            req
+        );
+    } catch (err) {
+        console.error('[Admin] Error generando dump:', err);
+        res.status(500).json({ error: 'Error al generar el dump: ' + err.message });
     }
 };

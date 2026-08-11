@@ -227,6 +227,73 @@ function cambiarTab(tab) {
     if (tab === 'auditoria') cargarAuditoria();
     if (tab === 'notificaciones') { cargarNotificaciones(); actualizarBadgeNotif(); }
     if (tab === 'solicitudes') cargarSolicitudesGlobales();
+    if (tab === 'basedatos') cargarEstadoBD();
+}
+
+// ============================================================================
+// BACKUP / DUMP DE BASE DE DATOS
+// ============================================================================
+// GET /api/admin/dump/info — muestra el motor activo.
+// GET /api/admin/dump — descarga el respaldo SQL en un solo clic (superadmin).
+// ============================================================================
+async function cargarEstadoBD() {
+    const el = document.getElementById('dbMotor');
+    if (!el) return;
+    el.textContent = 'Consultando motor...';
+    try {
+        const res = await fetch('/api/admin/dump/info');
+        if (!res.ok) {
+            el.textContent = '';
+            return;
+        }
+        const info = await res.json();
+        const nombre = info.motor === 'postgres' ? 'PostgreSQL (producción)' : 'SQLite (local)';
+        el.textContent = 'Motor: ' + nombre + ' · ' + (info.tablas || 0) + ' tablas';
+    } catch (err) {
+        console.error('Error cargarEstadoBD:', err);
+        el.textContent = '';
+    }
+}
+
+async function descargarDumpBD() {
+    const btn = document.querySelector('#tab-basedatos .admin-btn-primary');
+    const status = document.getElementById('dumpStatus');
+    const textoOriginal = btn ? btn.textContent : '';
+
+    try {
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando dump...'; }
+        if (status) status.style.color = '#6b7280';
+
+        const res = await fetch('/api/admin/dump');
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || ('Error ' + res.status));
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const match = (res.headers.get('Content-Disposition') || '').match(/filename="?([^";]+)"?/i);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = match ? match[1] : 'archivox_dump.sql';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+
+        if (status) {
+            status.textContent = '✅ Dump generado correctamente. Revisa tu carpeta de descargas.';
+            status.style.color = '#16a34a';
+        }
+    } catch (err) {
+        console.error('Error descargarDumpBD:', err);
+        if (status) {
+            status.textContent = '❌ ' + err.message;
+            status.style.color = '#dc2626';
+        }
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = textoOriginal; }
+    }
 }
 
 // ============================================================================

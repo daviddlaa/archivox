@@ -38,6 +38,7 @@
             <button class="admin-tab" data-tab="notificaciones" onclick="cambiarTab('notificaciones')">🔔 Notificaciones</button>
             <button class="admin-tab" data-tab="solicitudes" onclick="cambiarTab('solicitudes')">📋 Solicitudes</button>
             <button class="admin-tab" data-tab="equipos" onclick="cambiarTab('equipos')">🏢 Equipos</button>
+            <button class="admin-tab" data-tab="basedatos" onclick="cambiarTab('basedatos')">🗄️ Base de Datos</button>
         </div>
 
         <!-- ==================== TAB USUARIOS ==================== -->
@@ -416,9 +417,27 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- ==================== MODAL USUARIO ==================== -->
+        <!-- ==================== TAB BASE DE DATOS ==================== -->
+        <div id="tab-basedatos" class="admin-tab-content">
+            <div class="conexiones-section">
+                <div class="conexiones-header">
+                    <h3>🗄️ Respaldo de Base de Datos</h3>
+                    <span class="conexiones-updated" id="dbMotor"></span>
+                </div>
+
+                <div class="admin-toolbar" style="margin-top:16px;flex-wrap:wrap;gap:12px;">
+                    <button class="admin-btn admin-btn-primary" onclick="descargarDumpBD()">⬇️ Descargar Dump (Backup)</button>
+                </div>
+
+                <p id="dumpStatus" style="margin:14px 0 0;font-size:14px;color:#6b7280;line-height:1.5;">
+                    Genera un archivo <b>.sql</b> con el esquema y todos los datos de la base de datos actual
+                    (PostgreSQL en producción o SQLite en local). Con un clic descargas un respaldo completo que
+                    puedes restaurar en cualquier momento. Guarda el archivo en un lugar seguro.
+                </p>
+            </div>
+        </div>
+    </div>
     <div id="userModal" class="admin-modal">
         <div class="admin-modal-content">
             <div class="admin-modal-header">
