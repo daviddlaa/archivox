@@ -1521,6 +1521,67 @@ async function actualizarSemaforoSolicitud(req, res) {
     }
 }
 
+
+// GET /api/gestiones-maestro/recordatorios?desde=&hasta=&estado=
+// Lista recordatorios de campañas accesibles en un rango de fechas (calendario).
+async function listarRecordatorios(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+
+        const { desde = '', hasta = '', estado = 'pendiente' } = req.query;
+        if (!desde || !hasta) {
+            return res.status(400).json({ error: 'desde y hasta son requeridos (YYYY-MM-DD)' });
+        }
+
+        const access = buildGestionAccessWhere(req, null);
+        const accessSql = buildGestionSQL(access);
+
+        let estadoSql = '';
+        const params = access.params.slice();
+        // fechas naive: inclusive day range
+        params.push(String(desde).slice(0, 10) + ' 00:00:00');
+        params.push(String(hasta).slice(0, 10) + ' 23:59:59');
+
+        if (estado && estado !== 'todos') {
+            estadoSql = ' AND r.estado = ?';
+            params.push(estado);
+        }
+
+        const sql = `
+            SELECT r.id, r.solicitud_id, r.gestion_maestro_id, r.usuario_id, r.canal,
+                   r.fecha_recordatorio, r.nota, r.estado, r.notificado, r.created_at, r.completed_at,
+                   s.nombre AS cliente_nombre, s.cedula AS cliente_cedula, s.celular AS cliente_celular,
+                   gm.nombre AS nombre_campana,
+                   u.username AS creador_username
+            FROM recordatorios r
+            INNER JOIN gestiones_maestro gm ON gm.id = r.gestion_maestro_id
+            LEFT JOIN solicitudes s ON s.id_solicitud = r.solicitud_id
+            LEFT JOIN usuarios u ON u.id = r.usuario_id
+            WHERE (${accessSql})
+              AND r.fecha_recordatorio >= ?
+              AND r.fecha_recordatorio <= ?
+              ${estadoSql}
+            ORDER BY r.fecha_recordatorio ASC, r.id ASC
+        `;
+
+        const result = await pool.query(sql, params);
+        const rows = result.rows || [];
+        // Normalizar fechas naive (Postgres Date objects)
+        for (let i = 0; i < rows.length; i++) {
+            if (rows[i].fecha_recordatorio && typeof naiveDateString === 'function') {
+                rows[i].fecha_recordatorio = naiveDateString(rows[i].fecha_recordatorio);
+            }
+        }
+        res.json({ data: rows, total: rows.length });
+    } catch (error) {
+        console.error('Error en listarRecordatorios:', error);
+        res.status(500).json({ error: 'Error al listar recordatorios' });
+    }
+}
+
 module.exports = {
     // Aliases en español para compatibilidad con las rutas
     crearGestionMaestro: createGestionMaestro,
@@ -1542,6 +1603,7 @@ module.exports = {
     crearRecordatorio: crearRecordatorio,
     actualizarEstadoRecordatorio: actualizarEstadoRecordatorio,
     posponerRecordatorio: posponerRecordatorio,
+    listarRecordatorios: listarRecordatorios,
     // Flag "ya no aplica para crédito"
     marcarNoAplicaCreditoSolicitud: marcarNoAplicaCreditoSolicitud,
     quitarSolicitudDeCampanaDb: quitarSolicitudDeCampanaDb,

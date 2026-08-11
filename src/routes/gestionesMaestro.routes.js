@@ -15,6 +15,9 @@ router.post('/', controller.crearGestionMaestro);
 // GET /api/gestiones-maestro - Listar todas las gestione
 router.get('/', controller.listarGestionesMaestro);
 
+// GET /api/gestiones-maestro/recordatorios - Calendario (ANTES de /:id)
+router.get('/recordatorios', controller.listarRecordatorios);
+
 // Rutas específicas ANTES de /:id para no capturar subpaths
 router.get('/:id/progreso', controller.obtenerProgresoGestion);
 router.get('/:id/historial', controller.historialGeneralCampana);

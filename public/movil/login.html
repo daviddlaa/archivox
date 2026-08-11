@@ -6,10 +6,66 @@
     <title>Iniciar Sesión - Archivox</title>
 <link rel="stylesheet" href="/css/login.css">
     <style>
+        html, body {
+            min-height: 100%;
+            min-height: 100dvh;
+        }
+        body {
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+        }
         .login-container {
-            max-width: 100%;
-            margin: 10px;
-            padding: 30px 20px;
+            max-width: 300px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 22px 18px;
+            border-radius: 16px;
+            box-sizing: border-box;
+        }
+        .login-logo {
+            margin-bottom: 16px;
+        }
+        .login-logo-img {
+            max-width: 160px;
+        }
+        .login-form {
+            gap: 12px;
+        }
+        .form-group {
+            gap: 5px;
+        }
+        .form-group label {
+            font-size: 0.8rem;
+        }
+        .form-group input {
+            padding: 11px 12px;
+            font-size: 0.95rem;
+            border-radius: 8px;
+        }
+        .btn-login {
+            padding: 12px;
+            margin-top: 4px;
+            font-size: 0.95rem;
+            border-radius: 8px;
+        }
+        .toggle-form {
+            margin-top: 14px;
+            padding-top: 14px;
+        }
+        .toggle-form p,
+        .toggle-form button {
+            font-size: 0.85rem;
+        }
+        .btn-switch {
+            font-size: 0.85rem;
+            margin-top: 6px;
+        }
+        .error-message,
+        .success-message {
+            padding: 10px;
+            font-size: 0.85rem;
         }
     </style>
 </head>
@@ -25,11 +81,11 @@
         <form id="loginForm" class="login-form">
             <div class="form-group">
                 <label for="username">Usuario</label>
-                <input type="text" id="username" name="username" required placeholder="Usuario">
+                <input type="text" id="username" name="username" required placeholder="Usuario" autocomplete="username">
             </div>
             <div class="form-group">
                 <label for="password">Contraseña</label>
-                <input type="password" id="password" name="password" required placeholder="Contraseña">
+                <input type="password" id="password" name="password" required placeholder="Contraseña" autocomplete="current-password">
             </div>
             <button type="submit" class="btn-login">Entrar</button>
         </form>
@@ -42,19 +98,19 @@
         <form id="registroForm" class="login-form" style="display: none;">
             <div class="form-group">
                 <label for="regUsername">Usuario</label>
-                <input type="text" id="regUsername" name="username" required placeholder="Usuario">
+                <input type="text" id="regUsername" name="username" required placeholder="Usuario" autocomplete="username">
             </div>
             <div class="form-group">
                 <label for="regPassword">Contraseña</label>
-                <input type="password" id="regPassword" name="password" required placeholder="Contraseña">
+                <input type="password" id="regPassword" name="password" required placeholder="Contraseña" autocomplete="new-password">
             </div>
             <div class="form-group">
                 <label for="regEmail">Email</label>
-                <input type="email" id="regEmail" name="email" placeholder="tu@correo.com">
+                <input type="email" id="regEmail" name="email" placeholder="tu@correo.com" autocomplete="email">
             </div>
             <div class="form-group">
                 <label for="regNombre">Nombre (opcional)</label>
-                <input type="text" id="regNombre" name="nombre" placeholder="Nombre">
+                <input type="text" id="regNombre" name="nombre" placeholder="Nombre" autocomplete="name">
             </div>
             <button type="submit" class="btn-login">Crear Cuenta</button>
             <button type="button" class="btn-switch" onclick="mostrarLogin()">← Volver</button>

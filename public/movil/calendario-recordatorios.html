@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recordatorios - Archivox</title>
+    <link rel="stylesheet" href="/movil/css/estilos.css">
+    <link rel="stylesheet" href="/css/drawer.css">
+    <link rel="stylesheet" href="/css/notificaciones.css">
+    <link rel="stylesheet" href="/css/modal.css">
+    <link rel="stylesheet" href="/css/calendario-recordatorios.css">
+    <link rel="stylesheet" href="/movil/css/calendario-recordatorios.css">
+</head>
+<body>
+    <div class="app-container cal-app">
+        <div class="header cal-header-movil">
+            <div class="header-title">
+                <h1>⏰ Recordatorios</h1>
+            </div>
+            <div class="cal-kpis cal-kpis-movil" id="cal-kpis">
+                <span class="cal-kpi cal-kpi-vencidos">⚠ <strong id="kpi-vencidos">0</strong></span>
+                <span class="cal-kpi cal-kpi-hoy">📅 <strong id="kpi-hoy">0</strong></span>
+                <span class="cal-kpi cal-kpi-prox">⏭ <strong id="kpi-prox">0</strong></span>
+            </div>
+        </div>
+
+        <div class="cal-toolbar cal-toolbar-movil">
+            <div class="cal-nav">
+                <button type="button" class="cal-nav-btn" onclick="cambiarMes(-1)" aria-label="Mes anterior">‹</button>
+                <h2 id="cal-mes-titulo">—</h2>
+                <button type="button" class="cal-nav-btn" onclick="cambiarMes(1)" aria-label="Mes siguiente">›</button>
+                <button type="button" class="cal-hoy-btn" onclick="irHoy()">Hoy</button>
+            </div>
+            <select id="filtro-estado-cal" onchange="recargarMes()" class="cal-filtro-select">
+                <option value="pendiente">Pendientes</option>
+                <option value="hecho">Hechos</option>
+                <option value="cancelado">Cancelados</option>
+                <option value="todos">Todos</option>
+            </select>
+        </div>
+
+        <section class="cal-mes-panel cal-mes-panel-movil">
+            <div class="cal-weekdays">
+                <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+            </div>
+            <div class="cal-grid" id="cal-grid"></div>
+        </section>
+
+        <aside class="cal-dia-panel cal-dia-panel-movil">
+            <div class="cal-dia-header">
+                <h3 id="cal-dia-titulo">Hoy</h3>
+                <span id="cal-dia-count" class="cal-dia-count"></span>
+            </div>
+            <div class="cal-dia-lista" id="cal-dia-lista">
+                <div class="cal-empty">Cargando...</div>
+            </div>
+        </aside>
+    </div>
+
+    <nav class="nav-bottom">
+        <a href="/m" class="nav-item">
+            <img src="/img/logo/logo-icon.svg" alt="Inicio" class="nav-bottom-logo">
+            <span class="nav-bottom-label">Inicio</span>
+        </a>
+        <a href="/m/solicitudes" class="nav-item">
+            <span class="nav-bottom-icon">📋</span>
+            <span class="nav-bottom-label">Solicitudes</span>
+        </a>
+        <a href="#" onclick="Drawer.toggle(); return false;" class="nav-item active">
+            <span class="nav-bottom-icon">☰</span>
+            <span class="nav-bottom-label">Menú</span>
+        </a>
+    </nav>
+
+    <script src="/js/notificaciones-dashboard.js"></script>
+    <script src="/js/modal.js"></script>
+    <script src="/js/drawer.js"></script>
+    <script src="/desktop/js/calendario-recordatorios.js"></script>
+</body>
+</html>

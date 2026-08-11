@@ -220,6 +220,18 @@ app.get('/m/gestion-lote', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/movil/gestion-lote.html'));
 });
 
+// Calendario de recordatorios
+app.get('/calendario-recordatorios', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
+    res.sendFile(path.join(__dirname, 'public/desktop/calendario-recordatorios.html'));
+});
+app.get('/m/calendario-recordatorios', requireAuthPage, (req, res) => {
+    const redir = redirectSuperAdmin(req, res);
+    if (redir) return;
+    res.sendFile(path.join(__dirname, 'public/movil/calendario-recordatorios.html'));
+});
+
 // Rutas de Relaciones
 app.get('/relaciones', requireAuthPage, (req, res) => {
     const redir = redirectSuperAdmin(req, res);

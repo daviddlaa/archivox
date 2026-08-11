@@ -36,6 +36,7 @@
             <button class="admin-tab" data-tab="estadisticas" onclick="cambiarTab('estadisticas')">📊 Estadísticas</button>
             <button class="admin-tab" data-tab="auditoria" onclick="cambiarTab('auditoria')">📋 Auditoría</button>
             <button class="admin-tab" data-tab="notificaciones" onclick="cambiarTab('notificaciones')">🔔 Notificaciones</button>
+            <button class="admin-tab" data-tab="solicitudes" onclick="cambiarTab('solicitudes')">📋 Solicitudes</button>
             <button class="admin-tab" data-tab="equipos" onclick="cambiarTab('equipos')">🏢 Equipos</button>
         </div>
 
@@ -222,6 +223,65 @@
                 <button class="admin-btn" onclick="cambiarPaginaNotif('prev')" id="prevPageNotif">← Anterior</button>
                 <span id="pageInfoNotif">Página 1</span>
                 <button class="admin-btn" onclick="cambiarPaginaNotif('next')" id="nextPageNotif">Siguiente →</button>
+            </div>
+        </div>
+
+
+        <!-- ==================== TAB SOLICITUDES GLOBALES ==================== -->
+        <div id="tab-solicitudes" class="admin-tab-content">
+            <div class="admin-toolbar">
+                <div class="admin-search">
+                    <input type="text" id="searchSolicitudGlobal" placeholder="Buscar cédula, nombre, teléfono, ID..." oninput="debounceBuscarSolicitudesGlobales()">
+                </div>
+                <div class="admin-filters">
+                    <select id="filterSolEstado" onchange="cargarSolicitudesGlobales(1)">
+                        <option value="">Todos los estados</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Seguimiento">Seguimiento</option>
+                        <option value="Cobranza">Cobranza</option>
+                        <option value="Completada">Completada</option>
+                        <option value="Recordatorio">Recordatorio</option>
+                    </select>
+                    <select id="filterSolSegmento" onchange="cargarSolicitudesGlobales(1)">
+                        <option value="">Todos los segmentos</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                    </select>
+                    <input type="number" id="filterSolUsuario" placeholder="ID usuario dueño" style="width:120px;padding:8px;border:1px solid #d1d5db;border-radius:8px;" onchange="cargarSolicitudesGlobales(1)">
+                    <input type="date" id="filterSolDesde" onchange="cargarSolicitudesGlobales(1)" title="Fecha desde">
+                    <input type="date" id="filterSolHasta" onchange="cargarSolicitudesGlobales(1)" title="Fecha hasta">
+                    <input type="text" id="filterSolVendedor" placeholder="Vendedor" style="width:120px;padding:8px;border:1px solid #d1d5db;border-radius:8px;" onchange="cargarSolicitudesGlobales(1)">
+                    <button class="admin-btn admin-btn-primary" onclick="exportarSolicitudesGlobales()">📥 Exportar CSV</button>
+                </div>
+            </div>
+            <div id="solicitudesGlobalMobileCards" class="mobile-cards"></div>
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cédula</th>
+                            <th>Nombre</th>
+                            <th>Teléfono</th>
+                            <th>Estado</th>
+                            <th>Segmento</th>
+                            <th>Dueño</th>
+                            <th>Vendedor</th>
+                            <th>Campaña</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody id="solicitudesGlobalTableBody">
+                        <tr><td colspan="10" class="admin-loading">Selecciona la pestaña para cargar...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="admin-pagination" id="solicitudesGlobalPagination">
+                <button class="admin-btn" onclick="cambiarPaginaSolicitudesGlobales('prev')" id="prevPageSolGlobal">← Anterior</button>
+                <span id="pageInfoSolGlobal">Página 1</span>
+                <button class="admin-btn" onclick="cambiarPaginaSolicitudesGlobales('next')" id="nextPageSolGlobal">Siguiente →</button>
             </div>
         </div>
 

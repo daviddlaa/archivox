@@ -80,10 +80,54 @@ async function init() {
                     history.replaceState(null, '', window.location.pathname + (nuevaBusqueda ? '?' + nuevaBusqueda : ''));
                 } catch (e) {}
             }
+        } else {
+            renderizarGridCampanasLandingMovil();
         }
     } catch (error) {
         console.error('[movil-init] Error:', error);
     }
+}
+
+function renderizarGridCampanasLandingMovil() {
+    var container = document.getElementById('lista-solicitudes');
+    if (!container) return;
+
+    var semaforo = document.getElementById('semaforo-mobile');
+    if (semaforo) semaforo.style.display = 'none';
+    var kpi = document.getElementById('header-kpi-mobile');
+    if (kpi) kpi.hidden = true;
+    var histBtn = document.getElementById('btn-historial-campana-movil');
+    if (histBtn) histBtn.style.display = 'none';
+
+    if (!campañas || campañas.length === 0) {
+        container.innerHTML = '<div class="sin-campana">' +
+            '<div class="sin-campana-icon">📋</div>' +
+            '<p>No hay campañas.</p>' +
+            '<p>Ve a <a href="/m/solicitudes">Solicitudes</a> para crear una.</p>' +
+            '</div>';
+        return;
+    }
+
+    var html = '<div class="campanas-landing-grid-movil">';
+    for (var i = 0; i < campañas.length; i++) {
+        var g = campañas[i];
+        var completadas = parseInt(g.completadas || 0, 10);
+        var pct = g.total_solicitudes > 0 ? Math.round((completadas / g.total_solicitudes) * 100) : 0;
+        var estadoClase = (g.estado === 'Completada' || pct === 100) ? 'completada' : 'activa';
+
+        html += '<div class="campana-landing-card" onclick="seleccionarCampaña(' + g.id + ')">';
+        html += '  <div class="campana-landing-card-top">';
+        html += '    <span class="campana-landing-id">#' + g.id + '</span>';
+        html += '    <span class="campana-landing-estado ' + estadoClase + '">' + (g.estado || 'Activa') + '</span>';
+        html += '  </div>';
+        html += '  <div class="campana-landing-name">' + escaparParaHTML(g.nombre || 'Sin nombre') + '</div>';
+        html += '  <div class="campana-landing-stats">' + (g.total_solicitudes || 0) + ' solicitudes · ' + completadas + ' completadas · ' + pct + '%</div>';
+        html += '  <div class="campana-landing-bar"><span style="width:' + pct + '%"></span></div>';
+        html += '  <button type="button" class="campana-landing-more" onclick="event.stopPropagation(); abrirBottomSheetCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Acciones">⋯</button>';
+        html += '</div>';
+    }
+    html += '</div>';
+    container.innerHTML = html;
 }
 
 async function cargarListaCampanas() {

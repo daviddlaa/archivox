@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         var urlParams = new URLSearchParams(window.location.search);
         var tabParam = urlParams.get('tab');
         if (tabParam) {
-            var tabValido = ['usuarios', 'estadisticas', 'auditoria', 'notificaciones', 'equipos'];
+            var tabValido = ['usuarios', 'estadisticas', 'auditoria', 'notificaciones', 'solicitudes', 'equipos'];
             if (tabValido.indexOf(tabParam) !== -1) {
                 cambiarTab(tabParam);
             }
@@ -226,6 +226,7 @@ function cambiarTab(tab) {
     }
     if (tab === 'auditoria') cargarAuditoria();
     if (tab === 'notificaciones') { cargarNotificaciones(); actualizarBadgeNotif(); }
+    if (tab === 'solicitudes') cargarSolicitudesGlobales();
 }
 
 // ============================================================================
@@ -2125,6 +2126,140 @@ function cerrarTodosLosModales() {
     var overlay = document.getElementById(_MODALES.overlay);
     if (overlay) overlay.classList.remove('active');
     _modalAbiertoId = null;
+}
+
+
+// ============================================================================
+// SOLICITUDES GLOBALES (superadmin, solo lectura)
+// ============================================================================
+let paginaSolGlobal = 1;
+let totalSolGlobal = 0;
+let limiteSolGlobal = 50;
+let _debounceSolGlobal = null;
+
+function debounceBuscarSolicitudesGlobales() {
+    clearTimeout(_debounceSolGlobal);
+    _debounceSolGlobal = setTimeout(function() { cargarSolicitudesGlobales(1); }, 350);
+}
+
+async function cargarSolicitudesGlobales(pagina) {
+    if (pagina) paginaSolGlobal = pagina;
+    const tbody = document.getElementById('solicitudesGlobalTableBody');
+    const cardsDiv = document.getElementById('solicitudesGlobalMobileCards');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="10" class="admin-loading">Cargando solicitudes...</td></tr>';
+    if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading">Cargando solicitudes...</div>';
+
+    try {
+        const q = (document.getElementById('searchSolicitudGlobal') || {}).value || '';
+        const estado = (document.getElementById('filterSolEstado') || {}).value || '';
+        const segmento = (document.getElementById('filterSolSegmento') || {}).value || '';
+        const usuario_id = (document.getElementById('filterSolUsuario') || {}).value || '';
+        const fecha_desde = (document.getElementById('filterSolDesde') || {}).value || '';
+        const fecha_hasta = (document.getElementById('filterSolHasta') || {}).value || '';
+        const vendedor = (document.getElementById('filterSolVendedor') || {}).value || '';
+
+        let url = '/api/admin/solicitudes?pagina=' + paginaSolGlobal + '&limite=' + limiteSolGlobal;
+        if (q) url += '&q=' + encodeURIComponent(q);
+        if (estado) url += '&estado=' + encodeURIComponent(estado);
+        if (segmento) url += '&segmento=' + encodeURIComponent(segmento);
+        if (usuario_id) url += '&usuario_id=' + encodeURIComponent(usuario_id);
+        if (fecha_desde) url += '&fecha_desde=' + encodeURIComponent(fecha_desde);
+        if (fecha_hasta) url += '&fecha_hasta=' + encodeURIComponent(fecha_hasta);
+        if (vendedor) url += '&vendedor=' + encodeURIComponent(vendedor);
+
+        const res = await fetch(url);
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({ error: res.statusText }));
+            tbody.innerHTML = '<tr><td colspan="10" class="admin-loading" style="color:#dc2626">Error ' + res.status + ': ' + escapeHtml(errData.error || '') + '</td></tr>';
+            if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading" style="color:#dc2626">Error ' + res.status + '</div>';
+            return;
+        }
+        const data = await res.json();
+        totalSolGlobal = data.total || 0;
+        const rows = data.data || [];
+
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="admin-loading">No se encontraron solicitudes</td></tr>';
+            if (cardsDiv) cardsDiv.innerHTML = '<div class="admin-loading">No se encontraron solicitudes</div>';
+        } else {
+            tbody.innerHTML = rows.map(function(s) {
+                const dueno = s.dueno_username || s.dueno_nombre || ('#' + (s.usuario_id || '-'));
+                return '<tr>' +
+                    '<td>' + escapeHtml(s.id_solicitud || s.id || '') + '</td>' +
+                    '<td>' + escapeHtml(s.cedula || '-') + '</td>' +
+                    '<td>' + escapeHtml(s.nombre || '-') + '</td>' +
+                    '<td>' + escapeHtml(s.celular || '-') + '</td>' +
+                    '<td>' + escapeHtml(s.estado || '-') + '</td>' +
+                    '<td>' + escapeHtml(s.segmento || '-') + '</td>' +
+                    '<td>' + escapeHtml(dueno) + '</td>' +
+                    '<td>' + escapeHtml(s.vendedor || '-') + '</td>' +
+                    '<td>' + escapeHtml(s.nombre_campana || (s.campana_id ? '#' + s.campana_id : '-')) + '</td>' +
+                    '<td>' + formatearFecha(s.fecha_solicitud || s.created_at) + '</td>' +
+                    '</tr>';
+            }).join('');
+
+            if (cardsDiv) {
+                cardsDiv.innerHTML = rows.map(function(s) {
+                    const dueno = s.dueno_username || s.dueno_nombre || ('#' + (s.usuario_id || '-'));
+                    return '<div class="user-card">' +
+                        '<div class="admin-user-card-header">' +
+                        '<div class="admin-user-card-info">' +
+                        '<div class="admin-user-card-name">#' + escapeHtml(s.id_solicitud || s.id || '') + ' · ' + escapeHtml(s.nombre || '-') + '</div>' +
+                        '<div class="admin-user-card-username">' + escapeHtml(s.cedula || '-') + ' · ' + escapeHtml(s.celular || '-') + '</div>' +
+                        '</div>' +
+                        '<span class="role-badge">' + escapeHtml(s.estado || '-') + '</span>' +
+                        '</div>' +
+                        '<div class="admin-user-card-body">' +
+                        '<div class="admin-user-card-row"><span class="admin-user-card-label">Dueño</span><span class="admin-user-card-value">' + escapeHtml(dueno) + '</span></div>' +
+                        '<div class="admin-user-card-row"><span class="admin-user-card-label">Segmento</span><span class="admin-user-card-value">' + escapeHtml(s.segmento || '-') + '</span></div>' +
+                        '<div class="admin-user-card-row"><span class="admin-user-card-label">Vendedor</span><span class="admin-user-card-value">' + escapeHtml(s.vendedor || '-') + '</span></div>' +
+                        '<div class="admin-user-card-row"><span class="admin-user-card-label">Campaña</span><span class="admin-user-card-value">' + escapeHtml(s.nombre_campana || '-') + '</span></div>' +
+                        '<div class="admin-user-card-row"><span class="admin-user-card-label">Fecha</span><span class="admin-user-card-value">' + formatearFecha(s.fecha_solicitud || s.created_at) + '</span></div>' +
+                        '</div></div>';
+                }).join('');
+            }
+        }
+
+        const totalPaginas = Math.max(1, Math.ceil(totalSolGlobal / limiteSolGlobal));
+        const info = document.getElementById('pageInfoSolGlobal');
+        if (info) info.textContent = 'Página ' + paginaSolGlobal + ' de ' + totalPaginas + ' · ' + totalSolGlobal + ' total';
+        const prev = document.getElementById('prevPageSolGlobal');
+        const next = document.getElementById('nextPageSolGlobal');
+        if (prev) prev.disabled = paginaSolGlobal <= 1;
+        if (next) next.disabled = paginaSolGlobal >= totalPaginas;
+    } catch (err) {
+        console.error('[Admin] Error solicitudes globales:', err);
+        tbody.innerHTML = '<tr><td colspan="10" class="admin-loading" style="color:#dc2626">' + escapeHtml(err.message) + '</td></tr>';
+    }
+}
+
+function cambiarPaginaSolicitudesGlobales(dir) {
+    if (dir === 'prev' && paginaSolGlobal > 1) {
+        cargarSolicitudesGlobales(paginaSolGlobal - 1);
+    } else if (dir === 'next') {
+        cargarSolicitudesGlobales(paginaSolGlobal + 1);
+    }
+}
+
+function exportarSolicitudesGlobales() {
+    const q = (document.getElementById('searchSolicitudGlobal') || {}).value || '';
+    const estado = (document.getElementById('filterSolEstado') || {}).value || '';
+    const segmento = (document.getElementById('filterSolSegmento') || {}).value || '';
+    const usuario_id = (document.getElementById('filterSolUsuario') || {}).value || '';
+    const fecha_desde = (document.getElementById('filterSolDesde') || {}).value || '';
+    const fecha_hasta = (document.getElementById('filterSolHasta') || {}).value || '';
+    const vendedor = (document.getElementById('filterSolVendedor') || {}).value || '';
+    let url = '/api/admin/solicitudes/export?';
+    const parts = [];
+    if (q) parts.push('q=' + encodeURIComponent(q));
+    if (estado) parts.push('estado=' + encodeURIComponent(estado));
+    if (segmento) parts.push('segmento=' + encodeURIComponent(segmento));
+    if (usuario_id) parts.push('usuario_id=' + encodeURIComponent(usuario_id));
+    if (fecha_desde) parts.push('fecha_desde=' + encodeURIComponent(fecha_desde));
+    if (fecha_hasta) parts.push('fecha_hasta=' + encodeURIComponent(fecha_hasta));
+    if (vendedor) parts.push('vendedor=' + encodeURIComponent(vendedor));
+    window.location.href = url + parts.join('&');
 }
 
 // Toast notifications

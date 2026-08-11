@@ -48,6 +48,7 @@
                     { icon: '📊', label: 'Estadísticas', action: 'tab:estadisticas' },
                     { icon: '📋', label: 'Auditoría', action: 'tab:auditoria' },
                     { icon: '🔔', label: 'Notificaciones', action: 'tab:notificaciones' },
+                    { icon: '📋', label: 'Solicitudes', action: 'tab:solicitudes' },
                     { icon: '🏢', label: 'Equipos', action: 'tab:equipos' },
                     null, // separator
                     { icon: '🚪', label: 'Cerrar Sesión', action: 'cerrarSesion', danger: true },
@@ -66,6 +67,7 @@
                 { icon: '📋', label: 'Solicitudes', href: '/m/solicitudes' },
                 { icon: '📝', label: 'Gestiones', href: '/m/gestiones' },
                 { icon: '🚀', label: 'Campañas', href: '/m/gestion-lote' },
+                { icon: '⏰', label: 'Recordatorios', href: '/m/calendario-recordatorios' },
                 { icon: '📋', label: 'Relaciones', href: '/m/relaciones' },
                 { icon: '💬', label: 'Plantillas', href: '/m/plantillas' },
                 { icon: '🔄', label: 'Historial', href: '/m/historial' },
@@ -283,6 +285,7 @@
                         '<li><a href="/solicitudes" class="drawer-link"><span class="drawer-menu-icon">📋</span>Solicitudes</a></li>' +
                         '<li><a href="/gestiones" class="drawer-link"><span class="drawer-menu-icon">📝</span>Gestiones</a></li>' +
                         '<li><a href="/gestion-lote" class="drawer-link"><span class="drawer-menu-icon">🚀</span>Campañas</a></li>' +
+                        '<li><a href="/calendario-recordatorios" class="drawer-link"><span class="drawer-menu-icon">⏰</span>Recordatorios</a></li>' +
                         '<li><a href="/relaciones" class="drawer-link"><span class="drawer-menu-icon">📋</span>Relaciones</a></li>' +
                         '<li><a href="/plantillas" class="drawer-link"><span class="drawer-menu-icon">💬</span>Plantillas</a></li>' +
                         '<li><a href="/historial" class="drawer-link"><span class="drawer-menu-icon">🔄</span>Historial</a></li>' +

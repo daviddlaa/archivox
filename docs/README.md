@@ -220,6 +220,10 @@ ARCHIVOX/
 │   ├── feature-excel-demo-video.md                   # Excel de datos demo (ficticios) para el video: docs/demo/archivox-datos-demo.xlsx (Agosto 2026)
 │   ├── feature-filtros-buscador-movil-solicitudes.md # Vista móvil Solicitudes (v2): leyenda + filtros en una fila, fechas colapsables para todos, KPIs −20%, buscador + "Seleccionar todo" integrados al panel (32px) y fix crítico del menú ⋮ (transform retenido) (Agosto 2026)
 │   ├── feature-rediseno-tarjeta-movil-solicitudes.md # Tarjeta móvil de Solicitudes rediseñada: compacta, Gestiones = historial del cliente, Completar/Editar fusionado, ⋮→🗑️ y link a la campaña (Agosto 2026)
+│   ├── feature-login-movil-compacto.md               # Login móvil más pequeño y centrado (Agosto 2026)
+│   ├── feature-grid-campanas-landing.md              # Landing de campañas: grid de tarjetas + selector hero (Agosto 2026)
+│   ├── feature-admin-solicitudes-globales.md         # Superadmin: tab Solicitudes globales solo lectura + export CSV (Agosto 2026)
+│   ├── feature-calendario-recordatorios.md           # Calendario mes + lista del día de recordatorios (Agosto 2026)
 │   ├── demo/                                        # Archivos de ejemplo (Excel demo para video)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md

@@ -2634,3 +2634,28 @@ body {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+
+/* ===== LANDING GRID DE CAMPAÑAS (sin ?id=) ===== */
+.campana-workspace.landing-campanas .campana-rail {
+    display: none !important;
+}
+.campanas-landing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    padding: 4px 0 24px;
+}
+.campaña-card-landing {
+    margin-bottom: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+.campaña-card-landing .campaña-acciones-grid {
+    margin-top: auto;
+}
+.campanas-landing-empty a {
+    color: var(--primary, #6366f1);
+    font-weight: 600;
+}

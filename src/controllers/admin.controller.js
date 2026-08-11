@@ -754,3 +754,191 @@ exports.auditoria = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+// ============================================================================
+// SOLICITUDES GLOBALES (solo lectura + export) — superadmin
+// ============================================================================
+// GET /api/admin/solicitudes?q=&estado=&segmento=&usuario_id=&fecha_desde=&fecha_hasta=&vendedor=&pagina=1&limite=50
+exports.listarSolicitudesGlobales = async (req, res) => {
+    try {
+        const {
+            q = '',
+            estado = '',
+            segmento = '',
+            usuario_id = '',
+            fecha_desde = '',
+            fecha_hasta = '',
+            vendedor = '',
+            pagina = 1,
+            limite = 50,
+            orden = 'id_solicitud',
+            direccion = 'DESC'
+        } = req.query;
+
+        const limit = Math.min(Math.max(parseInt(limite) || 50, 1), 200);
+        const page = Math.max(parseInt(pagina) || 1, 1);
+        const offset = (page - 1) * limit;
+
+        const columnasPermitidas = {
+            id_solicitud: 's.id',
+            estado: 's.estado',
+            cedula: 's.cedula',
+            nombre: 's.nombre',
+            segmento: 's.segmento',
+            producto: 's.producto',
+            fecha_solicitud: 's.fecha_solicitud',
+            vendedor: 's.vendedor'
+        };
+        const colOrden = columnasPermitidas[orden] || 's.id';
+        const dirOrden = String(direccion).toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+        let where = 'WHERE 1=1';
+        const params = [];
+        let idx = 1;
+
+        if (q && String(q).trim()) {
+            const term = '%' + String(q).trim() + '%';
+            where += ` AND (
+                LOWER(COALESCE(s.nombre, '')) LIKE LOWER($${idx})
+                OR LOWER(COALESCE(s.cedula, '')) LIKE LOWER($${idx})
+                OR CAST(s.celular AS TEXT) LIKE $${idx}
+                OR CAST(s.id_solicitud AS TEXT) LIKE $${idx}
+            )`;
+            params.push(term);
+            idx++;
+        }
+        if (estado) {
+            where += ` AND s.estado = $${idx++}`;
+            params.push(estado);
+        }
+        if (segmento) {
+            where += ` AND s.segmento = $${idx++}`;
+            params.push(segmento);
+        }
+        if (usuario_id) {
+            where += ` AND s.usuario_id = $${idx++}`;
+            params.push(parseInt(usuario_id));
+        }
+        if (fecha_desde) {
+            where += ` AND s.fecha_solicitud >= $${idx++}`;
+            params.push(fecha_desde);
+        }
+        if (fecha_hasta) {
+            where += ` AND s.fecha_solicitud <= $${idx++}`;
+            params.push(fecha_hasta + ' 23:59:59');
+        }
+        if (vendedor && String(vendedor).trim()) {
+            where += ` AND LOWER(COALESCE(s.vendedor, '')) LIKE LOWER($${idx++})`;
+            params.push('%' + String(vendedor).trim() + '%');
+        }
+
+        const selectSql = `
+            SELECT s.id, s.id_solicitud, s.cedula, s.nombre, s.celular, s.estado, s.segmento,
+                   s.producto, s.vendedor, s.fecha_solicitud, s.usuario_id, s.campana_id,
+                   s.no_aplica_credito, s.created_at,
+                   u.username AS dueno_username, u.nombre AS dueno_nombre,
+                   gm.nombre AS nombre_campana
+            FROM solicitudes s
+            LEFT JOIN usuarios u ON u.id = s.usuario_id
+            LEFT JOIN gestiones_maestro gm ON gm.id = s.campana_id
+            ${where}
+            ORDER BY ${colOrden} ${dirOrden}
+            LIMIT $${idx} OFFSET $${idx + 1}
+        `;
+        const countSql = `SELECT COUNT(*) AS total FROM solicitudes s ${where}`;
+
+        const [dataResult, countResult] = await Promise.all([
+            pool.query(selectSql, [...params, limit, offset]),
+            pool.query(countSql, params)
+        ]);
+
+        res.json({
+            data: dataResult.rows,
+            total: parseInt(countResult.rows[0]?.total) || 0,
+            pagina: page,
+            limite: limit
+        });
+    } catch (err) {
+        console.error('[Admin] Error listarSolicitudesGlobales:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// GET /api/admin/solicitudes/export — CSV de filtrados (tope 10000)
+exports.exportarSolicitudesGlobales = async (req, res) => {
+    try {
+        const {
+            q = '',
+            estado = '',
+            segmento = '',
+            usuario_id = '',
+            fecha_desde = '',
+            fecha_hasta = '',
+            vendedor = ''
+        } = req.query;
+
+        let where = 'WHERE 1=1';
+        const params = [];
+        let idx = 1;
+
+        if (q && String(q).trim()) {
+            const term = '%' + String(q).trim() + '%';
+            where += ` AND (
+                LOWER(COALESCE(s.nombre, '')) LIKE LOWER($${idx})
+                OR LOWER(COALESCE(s.cedula, '')) LIKE LOWER($${idx})
+                OR CAST(s.celular AS TEXT) LIKE $${idx}
+                OR CAST(s.id_solicitud AS TEXT) LIKE $${idx}
+            )`;
+            params.push(term);
+            idx++;
+        }
+        if (estado) { where += ` AND s.estado = $${idx++}`; params.push(estado); }
+        if (segmento) { where += ` AND s.segmento = $${idx++}`; params.push(segmento); }
+        if (usuario_id) { where += ` AND s.usuario_id = $${idx++}`; params.push(parseInt(usuario_id)); }
+        if (fecha_desde) { where += ` AND s.fecha_solicitud >= $${idx++}`; params.push(fecha_desde); }
+        if (fecha_hasta) { where += ` AND s.fecha_solicitud <= $${idx++}`; params.push(fecha_hasta + ' 23:59:59'); }
+        if (vendedor && String(vendedor).trim()) {
+            where += ` AND LOWER(COALESCE(s.vendedor, '')) LIKE LOWER($${idx++})`;
+            params.push('%' + String(vendedor).trim() + '%');
+        }
+
+        const sql = `
+            SELECT s.id_solicitud, s.cedula, s.nombre, s.celular, s.estado, s.segmento,
+                   s.producto, s.vendedor, s.fecha_solicitud, s.usuario_id,
+                   u.username AS dueno_username, u.nombre AS dueno_nombre,
+                   s.campana_id, gm.nombre AS nombre_campana
+            FROM solicitudes s
+            LEFT JOIN usuarios u ON u.id = s.usuario_id
+            LEFT JOIN gestiones_maestro gm ON gm.id = s.campana_id
+            ${where}
+            ORDER BY s.id DESC
+            LIMIT 10000
+        `;
+        const result = await pool.query(sql, params);
+        const rows = result.rows || [];
+
+        const esc = (v) => {
+            if (v === null || v === undefined) return '';
+            const s = String(v);
+            if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+            return s;
+        };
+
+        const headers = [
+            'id_solicitud', 'cedula', 'nombre', 'celular', 'estado', 'segmento',
+            'producto', 'vendedor', 'fecha_solicitud', 'usuario_id', 'dueno_username',
+            'dueno_nombre', 'campana_id', 'nombre_campana'
+        ];
+        let csv = headers.join(',') + '\n';
+        for (const r of rows) {
+            csv += headers.map(h => esc(r[h])).join(',') + '\n';
+        }
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="solicitudes_globales.csv"');
+        res.send('\uFEFF' + csv);
+    } catch (err) {
+        console.error('[Admin] Error exportarSolicitudesGlobales:', err);
+        res.status(500).json({ error: err.message });
+    }
+};

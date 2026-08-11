@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario de Recordatorios - Archivox</title>
+    <link rel="stylesheet" href="/desktop/css/base.css">
+    <link rel="stylesheet" href="/css/drawer.css">
+    <link rel="stylesheet" href="/css/notificaciones.css">
+    <link rel="stylesheet" href="/css/modal.css">
+    <link rel="stylesheet" href="/css/calendario-recordatorios.css">
+</head>
+<body>
+    <div id="drawer-wrapper"></div>
+    <div class="layout">
+        <main class="contenido">
+            <div class="container cal-container">
+                <div class="page-header cal-header">
+                    <div class="page-header-left">
+                        <h1>⏰ Recordatorios</h1>
+                        <p class="subtitulo">Calendario de llamadas y mensajes programados</p>
+                    </div>
+                    <div class="page-header-right">
+                        <div class="cal-kpis" id="cal-kpis">
+                            <span class="cal-kpi cal-kpi-vencidos" title="Vencidos pendientes">⚠ <strong id="kpi-vencidos">0</strong></span>
+                            <span class="cal-kpi cal-kpi-hoy" title="Hoy">📅 <strong id="kpi-hoy">0</strong></span>
+                            <span class="cal-kpi cal-kpi-prox" title="Próximos en el mes">⏭ <strong id="kpi-prox">0</strong></span>
+                        </div>
+                        <button class="notif-bell-usuario" onclick="abrirPanelNotificacionesWidget()" title="Notificaciones">
+                            🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="cal-toolbar">
+                    <div class="cal-nav">
+                        <button type="button" class="cal-nav-btn" onclick="cambiarMes(-1)" aria-label="Mes anterior">‹</button>
+                        <h2 id="cal-mes-titulo">—</h2>
+                        <button type="button" class="cal-nav-btn" onclick="cambiarMes(1)" aria-label="Mes siguiente">›</button>
+                        <button type="button" class="cal-hoy-btn" onclick="irHoy()">Hoy</button>
+                    </div>
+                    <div class="cal-filtros">
+                        <select id="filtro-estado-cal" onchange="recargarMes()">
+                            <option value="pendiente">Pendientes</option>
+                            <option value="hecho">Hechos</option>
+                            <option value="cancelado">Cancelados</option>
+                            <option value="todos">Todos</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="cal-layout">
+                    <section class="cal-mes-panel">
+                        <div class="cal-weekdays">
+                            <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+                        </div>
+                        <div class="cal-grid" id="cal-grid"></div>
+                    </section>
+                    <aside class="cal-dia-panel">
+                        <div class="cal-dia-header">
+                            <h3 id="cal-dia-titulo">Selecciona un día</h3>
+                            <span id="cal-dia-count" class="cal-dia-count"></span>
+                        </div>
+                        <div class="cal-dia-lista" id="cal-dia-lista">
+                            <div class="cal-empty">Toca un día del mes para ver sus recordatorios.</div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/notificaciones-dashboard.js"></script>
+    <script src="/js/modal.js"></script>
+    <script src="/js/drawer.js"></script>
+    <script src="/desktop/js/calendario-recordatorios.js"></script>
+</body>
+</html>

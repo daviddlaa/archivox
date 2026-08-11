@@ -45,6 +45,7 @@
         { id: 'historial',      label: 'Historial',          icon: '🔄', rutas: { desktop: '/historial',    mobile: '/m/historial' } },
         { id: 'gestiones',      label: 'Gestiones',          icon: '📝', rutas: { desktop: '/gestiones',    mobile: '/m/gestiones' } },
         { id: 'gestion-lote',   label: 'Gestión por Lotes',  icon: '🚀', rutas: { desktop: '/gestion-lote', mobile: '/m/gestion-lote' } },
+        { id: 'calendario-recordatorios', label: 'Recordatorios', icon: '⏰', rutas: { desktop: '/calendario-recordatorios', mobile: '/m/calendario-recordatorios' } },
         { id: 'relaciones',     label: 'Relaciones',         icon: '📋', rutas: { desktop: '/relaciones',   mobile: '/m/relaciones' } },
         { id: 'plantillas',     label: 'Plantillas',         icon: '💬', rutas: { desktop: '/plantillas',   mobile: '/m/plantillas' } },
         { id: 'ventas',         label: 'Control de Ventas',  icon: '💰', rutas: { desktop: '/equipo-ventas', mobile: '/m/ventas' } },

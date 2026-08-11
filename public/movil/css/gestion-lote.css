@@ -1820,3 +1820,94 @@
     background: #dcfce7;
     transform: scale(0.96);
 }
+
+
+/* ===== LANDING GRID DE CAMPAÑAS MÓVIL (sin ?id=) ===== */
+.campanas-landing-grid-movil {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 8px 12px 90px;
+}
+.campana-landing-card {
+    position: relative;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px 44px 14px 14px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.campana-landing-card:active {
+    transform: scale(0.99);
+    background: #f8fafc;
+}
+.campana-landing-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.campana-landing-id {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6366f1;
+    background: #eef2ff;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.campana-landing-estado {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+}
+.campana-landing-estado.activa {
+    background: #dcfce7;
+    color: #15803d;
+}
+.campana-landing-estado.completada {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+.campana-landing-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+.campana-landing-stats {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+.campana-landing-bar {
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+}
+.campana-landing-bar span {
+    display: block;
+    height: 100%;
+    background: #22c55e;
+    border-radius: 999px;
+}
+.campana-landing-more {
+    position: absolute;
+    top: 10px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: #f1f5f9;
+    border-radius: 10px;
+    font-size: 18px;
+    color: #475569;
+    cursor: pointer;
+}
+.campana-landing-more:active {
+    background: #e2e8f0;
+}
