@@ -407,16 +407,23 @@ function antiguedadSinSeguimientoMovil(sol) {
 }
 
 // Texto del badge de tiempo sin seguimiento (⏱️ en la tarjeta móvil)
+// Sistema psicológico: rangos de urgencia escalonada en vez de conteo exacto.
 function textoTiempoSinSeguimientoMovil(sol) {
     var timestamp = parseFechaGestionMovil(sol);
     if (timestamp === null) return 'Sin gestiones';
     var minutos = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
     if (minutos < 1) return 'Recién gestionada';
-    if (minutos < 60) return minutos + ' min sin seguimiento';
+    if (minutos < 60) return 'Menos de una hora sin seguimiento';
     var horas = Math.floor(minutos / 60);
-    if (horas < 24) return horas + ' h sin seguimiento';
+    if (horas < 24) return 'Hoy mismo';
     var dias = Math.floor(horas / 24);
-    return dias + ' día' + (dias === 1 ? '' : 's') + ' sin seguimiento';
+    if (dias < 2) return 'Desde ayer';
+    if (dias < 3) return 'Anteayer';
+    if (dias < 7) return 'Menos de una semana sin seguimiento';
+    if (dias < 15) return 'Más de una semana sin seguimiento';
+    if (dias < 30) return 'Más de quince días sin seguimiento';
+    if (dias < 60) return 'Más de un mes sin seguimiento';
+    return 'Más de dos meses sin seguimiento';
 }
 
 function actualizarActividadMovil() {
@@ -919,7 +926,6 @@ function renderizarSolicitudes(lista, sinEntrada) {
         } else {
             html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1, event)" title="Destacar tarjeta">🔥 Destacar</span>';
         }
-        html += '<div class="sol-badge estado-' + estado.replace(/\s+/g,'') + '">' + estado + '</div>';
         html += '<span class="sol-segmento-badge" title="Segmento">' + (sol.segmento ? escaparParaHTML(sol.segmento) : '—') + '</span>';
         html += '<span class="sol-tiempo-badge' + (!sol.fecha_gestion ? ' sin-gestion' : '') + '" title="Tiempo sin última gestión">⏱️ ' + textoTiempoSinSeguimientoMovil(sol) + '</span>';
         html += '</div>';

@@ -28,9 +28,10 @@ Además:
 
 - **Toast informativo** al aplicar el filtro: *"✓ ⏱️ Priorizadas: las solicitudes con más
   tiempo sin seguimiento"* (reutiliza los toasts existentes `.campana-toast` / `.campana-toast-mobile`).
-- **Badge de tiempo** en cada tarjeta activa: muestra `⏱️ X días sin seguimiento`
-  (o `⏱️ Sin gestiones` en rojo para las que nunca se gestionaron), visible siempre para
-  identificar la prioridad de un vistazo.
+- **Badge de tiempo** en cada tarjeta activa: muestra `⏱️ Sin gestiones` en rojo para las
+  que nunca se gestionaron, y para el resto un **rango psicológico de urgencia escalonada**
+  en vez del conteo exacto (ver §2.4), visible siempre para identificar la prioridad de un
+  vistazo.
 
 ---
 
@@ -58,7 +59,8 @@ Helpers nuevos (duplicados por plataforma con sufijo `Movil`):
 
 - `antiguedadSinSeguimiento(sol)` → `0` si no hay `fecha_gestion` (prioridad máxima); en caso
   contrario el timestamp de la fecha de la última gestión (menor = más antiguo = primero).
-- `textoTiempoSinSeguimiento(sol)` → `"Sin gestiones"` o `"X min/h/día(s) sin seguimiento"`.
+- `textoTiempoSinSeguimiento(sol)` → `"Sin gestiones"` o uno de los rangos psicológicos
+  de §2.4 (mismo sistema que móvil, solo cambia el parser de fecha).
 
 ### 2.2 Toast al filtrar
 
@@ -73,13 +75,32 @@ Helpers nuevos (duplicados por plataforma con sufijo `Movil`):
 - Móvil: dentro de `.sol-header-badges`, después del badge de segmento.
 - Clase extra `sin-gestion` cuando `fecha_gestion` es nula (fondo rojo suave).
 
-### 2.4 CSS
+### 2.4 Badge psicológico — rangos de urgencia escalonada
+
+El badge ya no muestra el conteo exacto; usa **rangos psicológicos** para generar sensación
+de urgencia sin abrumar con números (misma tabla en móvil y escritorio):
+
+| Tiempo real | Texto del badge |
+|-------------|-----------------|
+| Sin `fecha_gestion` | `Sin gestiones` (rojo) |
+| Menos de 1 minuto | `Recién gestionada` |
+| Menos de 1 hora | `Menos de una hora sin seguimiento` |
+| Menos de 24 h | `Hoy mismo` |
+| 1 día | `Desde ayer` |
+| 2 días | `Anteayer` |
+| 3–6 días | `Menos de una semana sin seguimiento` |
+| 7–14 días | `Más de una semana sin seguimiento` |
+| 15–29 días | `Más de quince días sin seguimiento` |
+| 30–59 días | `Más de un mes sin seguimiento` |
+| 60+ días | `Más de dos meses sin seguimiento` |
+
+### 2.5 CSS
 
 | Archivo | Selector | Estilo |
 |---------|----------|--------|
 | `public/css/gestion-lote.css` | `.sol-tiempo-badge` | píldora ámbar (`#fef9c3` / `#854d0e`, borde `#fde68a`) |
 | `public/css/gestion-lote.css` | `.sol-tiempo-badge.sin-gestion` | rojo suave (`#fee2e2` / `#991b1b`, borde `#fecaca`), mayor peso |
-| `public/movil/css/gestion-lote.css` | `.sol-tiempo-badge` | igual pero compacto (max-width 150px, elipsis) |
+| `public/movil/css/gestion-lote.css` | `.sol-tiempo-badge` | igual pero compacto (max-width 240px, elipsis) |
 | `public/movil/css/gestion-lote.css` | `.sol-tiempo-badge.sin-gestion` | rojo suave, peso 800 |
 
 ---
