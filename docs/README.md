@@ -230,6 +230,7 @@ ARCHIVOX/
 │   ├── feature-backup-dump-superadmin.md             # Superadmin: backup de BD con un clic (dump SQL portable PG/SQLite) (Agosto 2026)
 │   ├── feature-admin-campanas-sistema.md             # Superadmin: campañas "Asignadas por el sistema" (checkbox + modal + badge es_sistema) (Agosto 2026)
 │   ├── feature-calendario-recordatorios.md           # Calendario mes + lista del día de recordatorios v2: modal posponer, toast, swipe (Agosto 2026)
+│   ├── feature-prioridad-tiempo-sin-seguimiento.md   # Prioridad por tiempo sin seguimiento en campañas: orden + toast + badge ⏱️ (Agosto 2026)
 │   ├── demo/                                        # Archivos de ejemplo (Excel demo para video)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
@@ -1297,6 +1298,7 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
 - **Historial general de campaña "🕘 Últimas gestiones":** botón único en móvil (header) y escritorio (píldora en el rail) que abre el historial completo de gestiones de la campaña vía `GET /api/gestiones-maestro/:id/historial`; cada gestión navega a su tarjeta. En escritorio reemplazó el widget "Prioridad / Seguimiento (N) / Ver" (`actualizarSiguienteAccion` eliminado). Ver `docs/feature-historial-campana.md`.
 - **Jerarquía de tarjetas desktop:** El selector semafórico segmentado, el segmento junto al nombre y la última gestión clicable hacen más visible el contexto operativo; el historial se consulta con control de acceso contextual por campaña.
 - **Orden de lista por prioridad (D3/M3):** La lista se ordena amarillo → sin clasificar → verde → rojo, con destacadas primero, en desktop y móvil; el carrusel móvil conserva su orden fijo (Sin clasificar → Seguimiento → Encaminadas → En espera).
+- **Prioridad por tiempo sin seguimiento (Agosto 2026):** Al filtrar por semáforo (Encaminadas · Seguimiento · En espera) en gestion-lote, la lista prioriza las solicitudes con más tiempo sin una gestión: sin gestión primero, luego por fecha de última gestión más antigua; toast informativo y badge ⏱️ por tarjeta (móvil + escritorio). Sin filtro se conserva el orden por prioridad de semáforo. Ver `docs/feature-prioridad-tiempo-sin-seguimiento.md`.
 - **Atajos de teclado desktop (D3):** `/` busca, `j`/`k` navegan tarjetas, `Enter` abre la última gestión, `1-4` filtran semáforo, `0` limpia, `Esc` cierra; foco visual `.card-focused`.
 - **Rail/workspace (D2):** Panel lateral de campañas colapsable con transición de `grid-template-columns` (0.28s) y fade-in de tarjetas (`railFadeIn`); el estado persiste en `localStorage`.
 - **WhatsApp Directo con plantillas:** el envío de mensajes (botón "💬 Directo" en desktop e icono 💬 en las tarjetas móviles) usa las **plantillas del usuario** (ver §11.12); todos los modales de Campañas (WhatsApp, Gestionar, Ver gestión, Historial) escapan sus datos para evitar inyección HTML.

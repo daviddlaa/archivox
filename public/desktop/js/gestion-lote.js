@@ -786,6 +786,32 @@ function formatearTiempoRelativo(fecha) {
     return 'Hace ' + dias + ' día' + (dias === 1 ? '' : 's');
 }
 
+// Timestamp de la última gestión (null si no tiene o no es parseable)
+function parseFechaGestion(sol) {
+    if (!sol || !sol.fecha_gestion) return null;
+    var t = new Date(String(sol.fecha_gestion).replace(' ', 'T')).getTime();
+    return isNaN(t) ? null : t;
+}
+
+// Tiempo sin seguimiento: antigüedad para ordenar por prioridad (0 = nunca gestionada)
+function antiguedadSinSeguimiento(sol) {
+    var t = parseFechaGestion(sol);
+    return t === null ? 0 : t;
+}
+
+// Texto del badge de tiempo sin seguimiento (⏱️ en la tarjeta)
+function textoTiempoSinSeguimiento(sol) {
+    var timestamp = parseFechaGestion(sol);
+    if (timestamp === null) return 'Sin gestiones';
+    var minutos = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+    if (minutos < 1) return 'Recién gestionada';
+    if (minutos < 60) return minutos + ' min sin seguimiento';
+    var horas = Math.floor(minutos / 60);
+    if (horas < 24) return horas + ' h sin seguimiento';
+    var dias = Math.floor(horas / 24);
+    return dias + ' día' + (dias === 1 ? '' : 's') + ' sin seguimiento';
+}
+
 function actualizarResumenCampana(total, gestionadas, porcentaje) {
     var porcentajeEl = document.getElementById('avance-porcentaje');
     var resumenEl = document.getElementById('avance-resumen');
@@ -994,6 +1020,9 @@ function setFiltroSemaforo(valor) {
     }
     actualizarBarraSemaforo();
     renderizarSolicitudes(todasLasSolicitudes);
+    if (filtroSemaforo) {
+        mostrarConfirmacionGestion('⏱️ Priorizadas: las solicitudes con más tiempo sin seguimiento');
+    }
 }
 
 function animarSemaforoHaciaBarra(originEl, valorSemaforo) {
@@ -1205,11 +1234,16 @@ function renderizarSolicitudes(lista) {
         return;
     }
     
-    // Ordenar: destacadas primero (🔥 al inicio), luego por prioridad de semáforo
+    // Ordenar: destacadas primero (🔥 al inicio). Con filtro de semáforo activo se
+    // priorizan las solicitudes con más tiempo sin seguimiento (sin gestión primero,
+    // luego por fecha de gestión más antigua). Sin filtro: prioridad de semáforo.
     var PRIORIDAD_SEMAFORO = { amarillo: 0, sin_clasificar: 1, verde: 2, rojo: 3 };
     activas.sort(function(a, b) {
         if (a.destacado == 1 && b.destacado != 1) return -1;
         if (a.destacado != 1 && b.destacado == 1) return 1;
+        if (filtroSemaforo) {
+            return antiguedadSinSeguimiento(a) - antiguedadSinSeguimiento(b);
+        }
         var pa = PRIORIDAD_SEMAFORO[normalizarSemaforo(a.semaforo)] || 4;
         var pb = PRIORIDAD_SEMAFORO[normalizarSemaforo(b.semaforo)] || 4;
         return pa - pb;
@@ -1253,6 +1287,7 @@ function renderizarSolicitudes(lista) {
             html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1, event)" title="Destacar tarjeta">🔥 Destacar</span>';
         }
         html += '<span class="sol-estado" style="background:' + colorFondo + ';">' + estado + '</span>';
+        html += '<span class="sol-tiempo-badge' + (!sol.fecha_gestion ? ' sin-gestion' : '') + '" title="Tiempo sin última gestión">⏱️ ' + textoTiempoSinSeguimiento(sol) + '</span>';
         if (sol.recordatorio_id) {
             html += '<span class="sol-recordatorio-badge" title="Recordatorio ' + escaparParaHTML(sol.recordatorio_canal || 'Llamada') + '">⏰ ' + formatearHoraRecordatorio(sol.recordatorio_fecha) + '</span>';
         }

@@ -367,6 +367,32 @@ function formatearTiempoRelativoMovil(fecha) {
     return 'Hace ' + dias + ' día' + (dias === 1 ? '' : 's');
 }
 
+// Timestamp de la última gestión (null si no tiene o no es parseable)
+function parseFechaGestionMovil(sol) {
+    if (!sol || !sol.fecha_gestion) return null;
+    var t = new Date(String(sol.fecha_gestion).replace(' ', 'T')).getTime();
+    return isNaN(t) ? null : t;
+}
+
+// Tiempo sin seguimiento: antigüedad para ordenar por prioridad (0 = nunca gestionada)
+function antiguedadSinSeguimientoMovil(sol) {
+    var t = parseFechaGestionMovil(sol);
+    return t === null ? 0 : t;
+}
+
+// Texto del badge de tiempo sin seguimiento (⏱️ en la tarjeta móvil)
+function textoTiempoSinSeguimientoMovil(sol) {
+    var timestamp = parseFechaGestionMovil(sol);
+    if (timestamp === null) return 'Sin gestiones';
+    var minutos = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+    if (minutos < 1) return 'Recién gestionada';
+    if (minutos < 60) return minutos + ' min sin seguimiento';
+    var horas = Math.floor(minutos / 60);
+    if (horas < 24) return horas + ' h sin seguimiento';
+    var dias = Math.floor(horas / 24);
+    return dias + ' día' + (dias === 1 ? '' : 's') + ' sin seguimiento';
+}
+
 function actualizarActividadMovil() {
     var ultima = null;
     (todasLasSolicitudes || []).forEach(function(sol) {
@@ -515,6 +541,9 @@ function setFiltroSemaforoMovil(valor) {
     filtroSemaforoMovil = valor && filtroSemaforoMovil === valor ? null : (valor || null);
     actualizarSemaforoMovil();
     renderizarSolicitudes(todasLasSolicitudes);
+    if (filtroSemaforoMovil) {
+        mostrarConfirmacionGestionMovil('⏱️ Priorizadas: las solicitudes con más tiempo sin seguimiento');
+    }
 }
 
 // ===== HISTORIAL GENERAL DE LA CAMPAÑA (móvil) =====
@@ -830,11 +859,16 @@ function renderizarSolicitudes(lista, sinEntrada) {
     var completadas = filtradas.filter(function(sol) { return sol.tipo_gestion === 'Completada'; });
     var activasFiltradas = filtradas.filter(function(sol) { return sol.tipo_gestion !== 'Completada'; });
 
-    // Ordenar: destacadas primero (🔥 al inicio), luego por prioridad de semáforo
+    // Ordenar: destacadas primero (🔥 al inicio). Con filtro de semáforo activo se
+    // priorizan las solicitudes con más tiempo sin seguimiento (sin gestión primero,
+    // luego por fecha de gestión más antigua). Sin filtro: prioridad de semáforo.
     var PRIORIDAD_SEMAFORO_MOVIL = { amarillo: 0, sin_clasificar: 1, verde: 2, rojo: 3 };
     activasFiltradas.sort(function(a, b) {
         if (a.destacado == 1 && b.destacado != 1) return -1;
         if (a.destacado != 1 && b.destacado == 1) return 1;
+        if (filtroSemaforoMovil) {
+            return antiguedadSinSeguimientoMovil(a) - antiguedadSinSeguimientoMovil(b);
+        }
         var pa = PRIORIDAD_SEMAFORO_MOVIL[normalizarSemaforoMovil(a.semaforo)] || 4;
         var pb = PRIORIDAD_SEMAFORO_MOVIL[normalizarSemaforoMovil(b.semaforo)] || 4;
         return pa - pb;
@@ -861,6 +895,7 @@ function renderizarSolicitudes(lista, sinEntrada) {
         }
         html += '<div class="sol-badge estado-' + estado.replace(/\s+/g,'') + '">' + estado + '</div>';
         html += '<span class="sol-segmento-badge" title="Segmento">' + (sol.segmento ? escaparParaHTML(sol.segmento) : '—') + '</span>';
+        html += '<span class="sol-tiempo-badge' + (!sol.fecha_gestion ? ' sin-gestion' : '') + '" title="Tiempo sin última gestión">⏱️ ' + textoTiempoSinSeguimientoMovil(sol) + '</span>';
         html += '</div>';
         html += '</div>';
 
