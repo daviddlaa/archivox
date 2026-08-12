@@ -7,8 +7,9 @@
 // ¿Qué se cachea?
 // - Dashboard totals (usuario): TTL 30s → se invalida al importar/crear solicitudes
 // - Dashboard segmentos/estados (usuario): TTL 30s
-// - Estados disponibles (global): TTL 300s (cambian muy rara vez)
-// - Segmentos disponibles (global): TTL 300s
+// - Catálogos Nueva Solicitud (estados/segmentos globales): TTL 60s por usuario
+//   (los valores son de TODA la aplicación; la clave es por usuario para poder
+//   invalidarla al importar/crear/editar/eliminar solicitudes)
 // - Estadísticas admin: TTL 60s
 //
 // Invalidación: llamar a invalidateDashboard(usuarioId) después de:
@@ -27,7 +28,7 @@ const cache = new NodeCache({
     useClones: false,     // No clonar objetos (mejor rendimiento)
 });
 
-// Cache para datos que cambian poco (estados, segmentos)
+// Cache para estadísticas admin (datos que cambian poco)
 const cacheGlobal = new NodeCache({
     stdTTL: 300,          // 5 minutos
     checkperiod: 120,
@@ -94,31 +95,6 @@ function invalidateDashboard(usuarioId) {
  */
 function invalidateAllDashboards() {
     cache.flushAll();
-}
-
-// ============================================================================
-// DATOS GLOBALES (estados, segmentos disponibles)
-// ============================================================================
-
-function getEstadosDisponibles() {
-    return cacheGlobal.get('estados_disponibles');
-}
-
-function setEstadosDisponibles(data) {
-    cacheGlobal.set('estados_disponibles', data);
-}
-
-function getSegmentosDisponibles() {
-    return cacheGlobal.get('segmentos_disponibles');
-}
-
-function setSegmentosDisponibles(data) {
-    cacheGlobal.set('segmentos_disponibles', data);
-}
-
-function invalidateGlobales() {
-    cacheGlobal.del('estados_disponibles');
-    cacheGlobal.del('segmentos_disponibles');
 }
 
 // ============================================================================
@@ -233,12 +209,6 @@ module.exports = {
     setDashboardEstados,
     invalidateDashboard,
     invalidateAllDashboards,
-    // Globales
-    getEstadosDisponibles,
-    setEstadosDisponibles,
-    getSegmentosDisponibles,
-    setSegmentosDisponibles,
-    invalidateGlobales,
     // Admin
     getAdminEstadisticas,
     setAdminEstadisticas,

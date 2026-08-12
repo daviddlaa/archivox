@@ -217,6 +217,7 @@ ARCHIVOX/
 │   ├── feature-ux-agregar-campana-solicitudes.md     # Modal "Agregar a Campaña": botón arriba, toast de éxito y refresco en vivo (Agosto 2026)
 │   ├── feature-semaforo-campana-completada.md        # Campaña Completada: oculta semáforo + nota (gestion-lote desktop/móvil) (Agosto 2026)
 │   ├── fix-importacion-proteccion-datos-usuarios.md  # Importación Excel: nunca modifica/reasigna registros de otros usuarios + reporte omitidos (Agosto 2026)
+│   ├── feature-catalogos-globales-nueva-solicitud.md  # Catálogos globales en Nueva Solicitud: estados/segmentos de toda la aplicación (Agosto 2026)
 │   ├── feature-excel-demo-video.md                   # Excel de datos demo (ficticios) para el video: docs/demo/archivox-datos-demo.xlsx (Agosto 2026)
 │   ├── feature-filtros-buscador-movil-solicitudes.md # Vista móvil Solicitudes (v2): leyenda + filtros en una fila, fechas colapsables para todos, KPIs −20%, buscador + "Seleccionar todo" integrados al panel (32px) y fix crítico del menú ⋮ (transform retenido) (Agosto 2026)
 │   ├── feature-rediseno-tarjeta-movil-solicitudes.md # Tarjeta móvil de Solicitudes rediseñada: compacta, Gestiones = historial del cliente, Completar/Editar fusionado, ⋮→🗑️ y link a la campaña (Agosto 2026)
@@ -674,8 +675,7 @@ Estrategia **cache-aside** con invalidación explícita:
 |-------|-----|-------------|
 | Dashboard totals (por usuario) | 30s | Importación, creación, edición, eliminación |
 | Dashboard segmentos/estados | 30s | Mismo que arriba |
-| Estados disponibles (global) | 300s | Manual (rara vez cambia) |
-| Segmentos disponibles (global) | 300s | Manual |
+| Catalogos Nueva Solicitud (estados/segmentos globales) | 60s | Importación, creación, edición, eliminación de solicitudes |
 | Estadísticas admin | 60s | Creación/modificación de usuarios |
 
 ### 6.5 Configuración de Permisos (`permissions.js`)
@@ -1140,6 +1140,10 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
 - Creación manual (Nueva Solicitud): incluye el campo opcional
   "Observaciones" (textarea) en la sección Información Principal, tanto
   en escritorio como en móvil; se guarda vía `POST /api/excel/solicitudes`.
+  Los listados de **Estado** y **Segmento** del formulario muestran valores
+  **globales de toda la aplicación** (todos los usuarios) vía
+  `GET /api/catalogos/estados` y `GET /api/catalogos/segmentos` (Agosto
+  2026). Ver `docs/feature-catalogos-globales-nueva-solicitud.md`.
 - **Búsqueda por palabras sin orden:** la búsqueda por nombre/segmento
   separa el término en palabras y las combina con AND, de modo que
   "julia yepez" encuentra registros aunque en la DB estén como
@@ -1758,8 +1762,7 @@ El sistema utiliza **node-cache** con estrategia **cache-aside**:
 | Dashboard totals | 30s | Datos semi-dinámicos que cambian con frecuencia |
 | Dashboard segmentos | 30s | Misma sesión de usuario, datos estánticos |
 | Dashboard estados | 30s | Misma sesión de usuario, datos estánticos |
-| Estados disponibles | 300s | Catálogo que cambia muy rara vez |
-| Segmentos disponibles | 300s | Catálogo que cambia muy rara vez |
+| Catálogos Nueva Solicitud (estados/segmentos globales) | 60s | Importación/creación/edición/eliminación de solicitudes (caché por usuario) |
 | Estadísticas admin | 60s | Consulta pesada que no necesita ser precisa al segundo |
 
 ---

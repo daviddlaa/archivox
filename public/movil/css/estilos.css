@@ -743,25 +743,91 @@ body {
     text-decoration: none;
 }
 
-/* ===== CARRUSEL DE WIDGETS (campañas activas / últimas solicitudes) ===== */
-.dash-widget-carousel {
+/* ===== ESTADO VACÍO POTENTE (CTA) ===== */
+.campanas-widget-cta {
     display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scroll-behavior: smooth;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+    padding: 28px 16px;
+    border: 1px dashed #c7d2fe;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f5f7ff 0%, #eef2ff 100%);
+    flex: 1;
+    min-height: 170px;
+    box-sizing: border-box;
 }
 
-.dash-widget-carousel::-webkit-scrollbar {
-    display: none;
+.campanas-widget-cta-icon {
+    font-size: 38px;
+    line-height: 1;
+}
+
+.campanas-widget-cta-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f2937;
+    line-height: 1.4;
+}
+
+.campanas-widget-cta-sub {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.5;
+    max-width: 260px;
+}
+
+.campanas-widget-cta-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 220px;
+    margin-top: 4px;
+}
+
+.campanas-widget-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 11px 16px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.campanas-widget-cta-btn:active {
+    transform: scale(0.96);
+}
+
+.campanas-widget-cta-btn-secondary {
+    background: white;
+    color: #4f46e5;
+    border: 1px solid #c7d2fe;
+}
+
+.campanas-widget-cta-btn-secondary:active {
+    background: #eef2ff;
+}
+
+/* ===== WIDGETS APILADOS (campañas activas / últimas solicitudes / gestiones) ===== */
+/* Los 3 widgets se muestran uno debajo del otro, todos visibles, con el mismo alto. */
+.dash-widget-carousel {
+    display: flex;
+    flex-direction: column;
 }
 
 .dash-widget-slide {
-    flex: 0 0 100%;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-    height: 100%;
+    width: 100%;
     min-height: 190px;
     padding: 0 15px;
     box-sizing: border-box;
@@ -776,30 +842,6 @@ body {
     justify-content: center;
     box-sizing: border-box;
     margin: 14px 0 0;
-}
-
-.dash-widget-dots {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px 0 4px;
-}
-
-.dash-widget-dot {
-    width: 8px;
-    height: 8px;
-    padding: 0;
-    border: none;
-    border-radius: 50%;
-    background: #cbd5e1;
-    cursor: pointer;
-    transition: width .25s ease, background .25s ease;
-}
-
-.dash-widget-dot.active {
-    width: 22px;
-    border-radius: 5px;
-    background: #4f46e5;
 }
 
 .sol-widget-meta {

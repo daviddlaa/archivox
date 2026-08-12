@@ -127,10 +127,10 @@ function igualarAlturaWidgetSlides() {
     if (!carousel) return;
     var slides = carousel.querySelectorAll('.dash-widget-slide');
     if (slides.length < 2) return;
-    carousel.style.height = 'auto';
     var max = 0;
+    slides.forEach(function(s) { s.style.height = 'auto'; });
     slides.forEach(function(s) { max = Math.max(max, s.offsetHeight); });
-    if (max > 0) carousel.style.height = max + 'px';
+    if (max > 0) slides.forEach(function(s) { s.style.height = max + 'px'; });
 }
 
 window.addEventListener('resize', igualarAlturaWidgetSlides);
@@ -207,29 +207,10 @@ function initDashCarousel() {
 function initDashWidgetCarousel() {
     var carousel = document.getElementById('dashWidgetCarousel');
     if (!carousel) return;
-    var slides = carousel.querySelectorAll('.dash-widget-slide');
-    var dots = Array.prototype.slice.call(document.querySelectorAll('.dash-widget-dot'));
-    if (slides.length < 2 || !dots.length) return;
-    var step = slides[1].offsetLeft - slides[0].offsetLeft;
-
-    function actualizarDotActivo() {
-        var index = Math.max(0, Math.min(dots.length - 1, Math.round(carousel.scrollLeft / step)));
-        dots.forEach(function(dot, i) {
-            dot.classList.toggle('active', i === index);
-        });
-    }
-
-    carousel.addEventListener('scroll', actualizarDotActivo, { passive: true });
-    dots.forEach(function(dot, i) {
-        dot.addEventListener('click', function() {
-            carousel.scrollTo({ left: i * step, behavior: 'smooth' });
-        });
-    });
-    configurarLoopTouch(carousel, function() { return (slides.length - 1) * step; });
-    window.addEventListener('resize', function() {
-        step = slides[1].offsetLeft - slides[0].offsetLeft;
-        actualizarDotActivo();
-    });
+    // Los 3 widgets se muestran apilados verticalmente (todos visibles),
+    // con el mismo alto. Ya no hay scroll horizontal ni dots.
+    igualarAlturaWidgetSlides();
+    window.addEventListener('resize', igualarAlturaWidgetSlides);
 }
 
 // ============================================================================
@@ -267,7 +248,12 @@ async function cargarCampañasActivas() {
         });
 
         if (!activas.length) {
-            container.innerHTML = '<div class="campanas-widget-empty">No hay campañas activas.<br><a href="/m/gestion-lote">Crear o ver campañas</a></div>';
+            container.innerHTML = '<div class="campanas-widget-cta">' +
+                '<span class="campanas-widget-cta-icon">🚀</span>' +
+                '<span class="campanas-widget-cta-title">Todavía no tienes campañas activas</span>' +
+                '<span class="campanas-widget-cta-sub">Crea una campaña para gestionar tus solicitudes en lote</span>' +
+                '<a class="campanas-widget-cta-btn" href="/m/gestion-lote">➕ Crear campaña</a>' +
+                '</div>';
             igualarAlturaWidgetSlides();
             return;
         }
@@ -325,7 +311,15 @@ async function cargarUltimasSolicitudes() {
         var lista = Array.isArray(result) ? result : (result.data || []);
 
         if (!lista.length) {
-            container.innerHTML = '<div class="campanas-widget-empty">No hay solicitudes.<br><a href="/m/solicitudes">Ver solicitudes</a></div>';
+            container.innerHTML = '<div class="campanas-widget-cta">' +
+                '<span class="campanas-widget-cta-icon">📋</span>' +
+                '<span class="campanas-widget-cta-title">Aún no tienes solicitudes</span>' +
+                '<span class="campanas-widget-cta-sub">Importa tu base de clientes o crea una solicitud manual</span>' +
+                '<span class="campanas-widget-cta-btns">' +
+                '<a class="campanas-widget-cta-btn" href="/m/importar">📤 Importar solicitudes</a>' +
+                '<a class="campanas-widget-cta-btn campanas-widget-cta-btn-secondary" href="/m/solicitudes">➕ Nueva solicitud</a>' +
+                '</span>' +
+                '</div>';
             igualarAlturaWidgetSlides();
             return;
         }
@@ -421,7 +415,15 @@ async function cargarUltimasGestiones() {
         }
 
         if (!lista.length) {
-            container.innerHTML = '<div class="campanas-widget-empty">No hay gestiones registradas.<br><a href="/m/gestiones">Ver gestiones</a></div>';
+            container.innerHTML = '<div class="campanas-widget-cta">' +
+                '<span class="campanas-widget-cta-icon">📝</span>' +
+                '<span class="campanas-widget-cta-title">Aún no has registrado gestiones</span>' +
+                '<span class="campanas-widget-cta-sub">Gestiona tus solicitudes o crea una campaña para trabajar en lote</span>' +
+                '<span class="campanas-widget-cta-btns">' +
+                '<a class="campanas-widget-cta-btn" href="/m/solicitudes">📋 Ir a solicitudes</a>' +
+                '<a class="campanas-widget-cta-btn campanas-widget-cta-btn-secondary" href="/m/gestion-lote">🚀 Crear campaña</a>' +
+                '</span>' +
+                '</div>';
             igualarAlturaWidgetSlides();
             return;
         }

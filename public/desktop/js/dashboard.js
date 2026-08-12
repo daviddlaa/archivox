@@ -359,6 +359,8 @@ function initDashdCarousel() {
 // PASARELA DE WIDGETS (campañas / solicitudes / gestiones)
 // Mismo patrón que el carrusel principal: flechas ‹ › con loop + dots.
 // ============================================================================
+// Los 3 widgets (campañas / solicitudes / gestiones) se muestran en línea
+// (grid de 3 columnas con el mismo alto). Ya no hay scroll horizontal ni dots.
 function igualarAlturaDashdWidgetsSlides() {
     var track = document.getElementById('dashdWidgetsTrack');
     if (!track) return;
@@ -373,52 +375,9 @@ function igualarAlturaDashdWidgetsSlides() {
 function initDashdWidgetsCarousel() {
     var track = document.getElementById('dashdWidgetsTrack');
     if (!track) return;
-    var cards = track.querySelectorAll('.dashd-widget-card');
-    var dots = Array.prototype.slice.call(document.querySelectorAll('.dashd-widgets-dot'));
-    var prev = document.getElementById('dashdWidgetsPrev');
-    var next = document.getElementById('dashdWidgetsNext');
-    if (cards.length < 2 || !dots.length) return;
-    var step = cards[1].offsetLeft - cards[0].offsetLeft;
-
-    function indiceActual() {
-        return Math.max(0, Math.min(dots.length - 1, Math.round(track.scrollLeft / step)));
-    }
-
-    function irA(index) {
-        track.scrollTo({ left: index * step, behavior: 'smooth' });
-    }
-
-    function actualizarDotActivo() {
-        var index = indiceActual();
-        dots.forEach(function(dot, i) {
-            dot.classList.toggle('active', i === index);
-        });
-    }
-
-    track.addEventListener('scroll', actualizarDotActivo, { passive: true });
-
-    dots.forEach(function(dot, i) {
-        dot.addEventListener('click', function() { irA(i); });
-    });
-
-    if (prev) {
-        prev.addEventListener('click', function() {
-            var i = indiceActual() - 1;
-            irA(i < 0 ? cards.length - 1 : i);
-        });
-    }
-    if (next) {
-        next.addEventListener('click', function() {
-            var i = indiceActual() + 1;
-            irA(i >= cards.length ? 0 : i);
-        });
-    }
-
-    window.addEventListener('resize', function() {
-        step = cards[1].offsetLeft - cards[0].offsetLeft;
-        actualizarDotActivo();
-        igualarAlturaDashdWidgetsSlides();
-    });
+    // Layout en línea: solo se igualan las alturas de las tarjetas.
+    igualarAlturaDashdWidgetsSlides();
+    window.addEventListener('resize', igualarAlturaDashdWidgetsSlides);
 }
 
 // Slide 2: mostrar el equipo si eres líder; si no, las 4 stats
@@ -470,7 +429,12 @@ async function cargarCampañasActivas() {
         });
 
         if (!activas.length) {
-            container.innerHTML = '<div class="campanas-widget-empty">No hay campañas activas.<br><a href="/gestion-lote">Crear o ver campañas</a></div>';
+            container.innerHTML = '<div class="campanas-widget-cta">' +
+                '<span class="campanas-widget-cta-icon">🚀</span>' +
+                '<span class="campanas-widget-cta-title">Todavía no tienes campañas activas</span>' +
+                '<span class="campanas-widget-cta-sub">Crea una campaña para gestionar tus solicitudes en lote</span>' +
+                '<a class="campanas-widget-cta-btn" href="/gestion-lote">➕ Crear campaña</a>' +
+                '</div>';
             return;
         }
 
@@ -525,7 +489,15 @@ async function cargarUltimasSolicitudes() {
         var lista = Array.isArray(result) ? result : (result.data || []);
 
         if (!lista.length) {
-            container.innerHTML = '<div class="campanas-widget-empty">No hay solicitudes.<br><a href="/solicitudes">Ver solicitudes</a></div>';
+            container.innerHTML = '<div class="campanas-widget-cta">' +
+                '<span class="campanas-widget-cta-icon">📋</span>' +
+                '<span class="campanas-widget-cta-title">Aún no tienes solicitudes</span>' +
+                '<span class="campanas-widget-cta-sub">Importa tu base de clientes o crea una solicitud manual</span>' +
+                '<span class="campanas-widget-cta-btns">' +
+                '<a class="campanas-widget-cta-btn" href="/importar">📤 Importar solicitudes</a>' +
+                '<a class="campanas-widget-cta-btn campanas-widget-cta-btn-secondary" href="/solicitudes">➕ Nueva solicitud</a>' +
+                '</span>' +
+                '</div>';
             return;
         }
 
@@ -624,7 +596,15 @@ async function cargarUltimasGestiones() {
         }
 
         if (!lista.length) {
-            container.innerHTML = '<div class="campanas-widget-empty">No hay gestiones registradas.<br><a href="/gestiones">Ver gestiones</a></div>';
+            container.innerHTML = '<div class="campanas-widget-cta">' +
+                '<span class="campanas-widget-cta-icon">📝</span>' +
+                '<span class="campanas-widget-cta-title">Aún no has registrado gestiones</span>' +
+                '<span class="campanas-widget-cta-sub">Gestiona tus solicitudes o crea una campaña para trabajar en lote</span>' +
+                '<span class="campanas-widget-cta-btns">' +
+                '<a class="campanas-widget-cta-btn" href="/solicitudes">📋 Ir a solicitudes</a>' +
+                '<a class="campanas-widget-cta-btn campanas-widget-cta-btn-secondary" href="/gestion-lote">🚀 Crear campaña</a>' +
+                '</span>' +
+                '</div>';
             return;
         }
 

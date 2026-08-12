@@ -122,7 +122,7 @@ ARCHIVOX/
 │   └── services/
 │       ├── excel.service.js        # Procesamiento Excel (solicitudes)
 │       ├── relaciones.service.js   # Procesamiento Excel (relaciones)
-│       ├── catalog.service.js      # Catalogos dinamicos con fallback
+│       ├── catalog.service.js      # Catalogos globales (estados/segmentos de toda la app)
 │       └── notificationBus.js      # SSE Bus (EventEmitter)
 │
 ├── public/                         # Frontend (estatico)
@@ -272,8 +272,8 @@ Optimizados para las consultas mas frecuentes: listado por usuario, dashboard po
 
 | Metodo | Ruta | Descripcion |
 |--------|------|-------------|
-| GET | `/api/catalogos/estados` | Estados disponibles |
-| GET | `/api/catalogos/segmentos` | Segmentos disponibles |
+| GET | `/api/catalogos/estados` | Estados disponibles (toda la aplicacion, todos los usuarios) |
+| GET | `/api/catalogos/segmentos` | Segmentos disponibles (toda la aplicacion, todos los usuarios) |
 
 ### Debug (`/api/debug`)
 
@@ -335,7 +335,7 @@ Estrategia **cache-aside** con `node-cache`:
 |------|-----|-------------|
 | Dashboard totals | 30s | Importacion, creacion, edicion, eliminacion |
 | Dashboard segmentos/estados | 30s | Mismo |
-| Estados/Segmentos (global) | 300s | Manual |
+| Catalogos Nueva Solicitud (estados/segmentos globales) | 60s | Importacion, creacion, edicion, eliminacion de solicitudes |
 | Estadisticas admin | 60s | CRUD usuarios |
 
 ---
@@ -393,6 +393,7 @@ Ver `docs/README.md` para documentacion completa del sistema (1375+ lineas), inc
 
 | Feature | Fecha | Documento |
 |---------|-------|-----------|
+| Catálogos globales en Nueva Solicitud: los listados de Estado y Segmento muestran valores de toda la aplicación (todos los usuarios), no solo los del usuario autenticado | Agosto 2026 | `docs/feature-catalogos-globales-nueva-solicitud.md` |
 | Rediseño de la tarjeta móvil de Solicitudes: compacta, Gestiones = historial del cliente, Completar/Editar fusionado, ⋮→🗑️ Eliminar, link a la campaña y checkbox de selección en fila 1 | Agosto 2026 | `docs/feature-rediseno-tarjeta-movil-solicitudes.md` |
 | Rediseño del Indicador de Estado (Semáforo) v6 | Agosto 2026 | `docs/feature-rediseño-semaforo-campañas.md` |
 | Rediseño UX de Campañas: progreso y prioridad | Agosto 2026 | `docs/feature-ux-comportamiento-campanas.md` |
