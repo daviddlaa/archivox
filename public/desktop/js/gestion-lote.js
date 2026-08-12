@@ -827,6 +827,28 @@ function antiguedadSinSeguimiento(sol) {
 
 // Texto del badge de tiempo sin seguimiento (⏱️ en la tarjeta)
 // Sistema psicológico: rangos de urgencia escalonada en vez de conteo exacto.
+// La función completa (textoTiempoSinSeguimiento) es la fuente de verdad
+// del cálculo; la versión corta deriva de ella por diccionario para que el
+// badge no desborde el header de la tarjeta (el texto descriptivo completo
+// se conserva en el tooltip title).
+function textoTiempoSinSeguimientoCorto(sol) {
+    var map = {
+        'Sin gestiones': 'Sin gestiones',
+        'Recién gestionada': 'Recién',
+        'Menos de una hora sin seguimiento': '~1 h',
+        'Hoy mismo': 'Hoy',
+        'Desde ayer': 'Ayer',
+        'Anteayer': 'Anteayer',
+        'Menos de una semana sin seguimiento': 'Esta semana',
+        'Más de una semana sin seguimiento': '+1 semana',
+        'Más de quince días sin seguimiento': '+15 días',
+        'Más de un mes sin seguimiento': '+1 mes',
+        'Más de dos meses sin seguimiento': '+2 meses'
+    };
+    return map[textoTiempoSinSeguimiento(sol)] || 'Sin gestiones';
+}
+
+// Texto descriptivo completo del badge de tiempo (usado en el tooltip).
 function textoTiempoSinSeguimiento(sol) {
     var timestamp = parseFechaGestion(sol);
     if (timestamp === null) return 'Sin gestiones';
@@ -1320,7 +1342,7 @@ function renderizarSolicitudes(lista) {
             html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1, event)" title="Destacar tarjeta">🔥 Destacar</span>';
         }
         html += '<span class="sol-estado" style="background:' + colorFondo + ';">' + estado + '</span>';
-        html += '<span class="sol-tiempo-badge' + (!sol.fecha_gestion ? ' sin-gestion' : '') + '" title="Tiempo sin última gestión">⏱️ ' + textoTiempoSinSeguimiento(sol) + '</span>';
+        html += '<span class="sol-tiempo-badge' + (!sol.fecha_gestion ? ' sin-gestion' : '') + '" title="' + textoTiempoSinSeguimiento(sol) + '">⏱️ ' + textoTiempoSinSeguimientoCorto(sol) + '</span>';
         if (sol.recordatorio_id) {
             html += '<span class="sol-recordatorio-badge" title="Recordatorio ' + escaparParaHTML(sol.recordatorio_canal || 'Llamada') + '">⏰ ' + formatearHoraRecordatorio(sol.recordatorio_fecha) + '</span>';
         }

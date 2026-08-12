@@ -77,22 +77,32 @@ Helpers nuevos (duplicados por plataforma con sufijo `Movil`):
 
 ### 2.4 Badge psicológico — rangos de urgencia escalonada
 
-El badge ya no muestra el conteo exacto; usa **rangos psicológicos** para generar sensación
-de urgencia sin abrumar con números (misma tabla en móvil y escritorio):
+El badge no muestra el conteo exacto; usa **rangos psicológicos** para generar sensación
+de urgencia sin abrumar con números (misma tabla en móvil y escritorio).
 
-| Tiempo real | Texto del badge |
-|-------------|-----------------|
-| Sin `fecha_gestion` | `Sin gestiones` (rojo) |
-| Menos de 1 minuto | `Recién gestionada` |
-| Menos de 1 hora | `Menos de una hora sin seguimiento` |
-| Menos de 24 h | `Hoy mismo` |
-| 1 día | `Desde ayer` |
-| 2 días | `Anteayer` |
-| 3–6 días | `Menos de una semana sin seguimiento` |
-| 7–14 días | `Más de una semana sin seguimiento` |
-| 15–29 días | `Más de quince días sin seguimiento` |
-| 30–59 días | `Más de un mes sin seguimiento` |
-| 60+ días | `Más de dos meses sin seguimiento` |
+**Versión corta visible en el badge** (Agosto 2026): para que el badge no desborde el
+header de la tarjeta en pantallas pequeñas, el texto visible es corto y el **tooltip
+(`title`)** conserva la descripción completa. La función corta deriva de la completa por
+diccionario (`textoTiempoSinSeguimientoCorto[Movil]` → `textoTiempoSinSeguimiento[Movil]`):
+
+| Tiempo real | Texto visible (corto) | Tooltip (completo) |
+|-------------|----------------------|--------------------|
+| Sin `fecha_gestion` | `Sin gestiones` (rojo) | `Sin gestiones` |
+| Menos de 1 minuto | `Recién` | `Recién gestionada` |
+| Menos de 1 hora | `~1 h` | `Menos de una hora sin seguimiento` |
+| Menos de 24 h | `Hoy` | `Hoy mismo` |
+| 1 día | `Ayer` | `Desde ayer` |
+| 2 días | `Anteayer` | `Anteayer` |
+| 3–6 días | `Esta semana` | `Menos de una semana sin seguimiento` |
+| 7–14 días | `+1 semana` | `Más de una semana sin seguimiento` |
+| 15–29 días | `+15 días` | `Más de quince días sin seguimiento` |
+| 30–59 días | `+1 mes` | `Más de un mes sin seguimiento` |
+| 60+ días | `+2 meses` | `Más de dos meses sin seguimiento` |
+
+**Badge de destacar solo icono (móvil, Agosto 2026):** en móvil el badge de destacar
+muestra solo el fuego `🔥` (28×28 circular): dorado y animado si está destacado, gris
+apagado si no. El significado completo se conserva en `title` y `aria-label`. Escritorio
+conserva el texto `🔥 Destacada` / `🔥 Destacar`.
 
 ### 2.5 CSS
 

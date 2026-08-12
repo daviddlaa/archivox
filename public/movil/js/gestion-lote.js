@@ -408,6 +408,28 @@ function antiguedadSinSeguimientoMovil(sol) {
 
 // Texto del badge de tiempo sin seguimiento (⏱️ en la tarjeta móvil)
 // Sistema psicológico: rangos de urgencia escalonada en vez de conteo exacto.
+// La función completa (textoTiempoSinSeguimientoMovil) es la fuente de verdad
+// del cálculo; la versión corta deriva de ella por diccionario para que el
+// badge quepa en una línea en pantallas pequeñas (el texto descriptivo
+// completo se conserva en el tooltip title).
+function textoTiempoSinSeguimientoCortoMovil(sol) {
+    var map = {
+        'Sin gestiones': 'Sin gestiones',
+        'Recién gestionada': 'Recién',
+        'Menos de una hora sin seguimiento': '~1 h',
+        'Hoy mismo': 'Hoy',
+        'Desde ayer': 'Ayer',
+        'Anteayer': 'Anteayer',
+        'Menos de una semana sin seguimiento': 'Esta semana',
+        'Más de una semana sin seguimiento': '+1 semana',
+        'Más de quince días sin seguimiento': '+15 días',
+        'Más de un mes sin seguimiento': '+1 mes',
+        'Más de dos meses sin seguimiento': '+2 meses'
+    };
+    return map[textoTiempoSinSeguimientoMovil(sol)] || 'Sin gestiones';
+}
+
+// Texto descriptivo completo del badge de tiempo (usado en el tooltip).
 function textoTiempoSinSeguimientoMovil(sol) {
     var timestamp = parseFechaGestionMovil(sol);
     if (timestamp === null) return 'Sin gestiones';
@@ -922,12 +944,12 @@ function renderizarSolicitudes(lista, sinEntrada) {
         html += '<div class="sol-header">';
         html += '<div class="sol-header-badges">';
         if (destacada) {
-            html += '<span class="sol-destacado-badge sol-destacado-badge-on" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 0, event)" title="Quitar destacado">🔥 Destacada</span>';
+            html += '<span class="sol-destacado-badge sol-destacado-badge-on" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 0, event)" title="Quitar destacado" aria-label="Quitar destacado">🔥</span>';
         } else {
-            html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1, event)" title="Destacar tarjeta">🔥 Destacar</span>';
+            html += '<span class="sol-destacado-badge sol-destacado-badge-off" onclick="event.stopPropagation(); toggleDestacado(\'' + sol.id_solicitud + '\', 1, event)" title="Destacar tarjeta" aria-label="Destacar tarjeta">🔥</span>';
         }
         html += '<span class="sol-segmento-badge" title="Segmento">' + (sol.segmento ? escaparParaHTML(sol.segmento) : '—') + '</span>';
-        html += '<span class="sol-tiempo-badge' + (!sol.fecha_gestion ? ' sin-gestion' : '') + '" title="Tiempo sin última gestión">⏱️ ' + textoTiempoSinSeguimientoMovil(sol) + '</span>';
+        html += '<span class="sol-tiempo-badge' + (!sol.fecha_gestion ? ' sin-gestion' : '') + '" title="' + textoTiempoSinSeguimientoMovil(sol) + '">⏱️ ' + textoTiempoSinSeguimientoCortoMovil(sol) + '</span>';
         html += '</div>';
         html += '</div>';
 

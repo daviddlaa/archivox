@@ -597,7 +597,7 @@
 }
 
 .sol-tiempo-badge {
-    max-width: 240px;
+    max-width: 130px;
     overflow: hidden;
     padding: 4px 8px;
     border: 1px solid #fde68a;
@@ -625,18 +625,21 @@
     justify-content: flex-end;
 }
 .sol-destacado-badge {
-    padding: 4px 10px;
-    border-radius: 16px;
-    font-size: 11px;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
-    min-height: 28px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 .sol-destacado-badge-on {
     background: #fef3c7;
