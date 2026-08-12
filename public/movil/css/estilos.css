@@ -819,15 +819,25 @@ body {
     background: #eef2ff;
 }
 
-/* ===== WIDGETS APILADOS (campañas activas / últimas solicitudes / gestiones) ===== */
-/* Los 3 widgets se muestran uno debajo del otro, todos visibles, con el mismo alto. */
+/* ===== CARRUSEL HORIZONTAL DE WIDGETS (campañas / solicitudes / gestiones) ===== */
+/* Pasarela deslizable horizontal; los 3 slides se igualan en alto (JS). */
 .dash-widget-carousel {
     display: flex;
-    flex-direction: column;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.dash-widget-carousel::-webkit-scrollbar {
+    display: none;
 }
 
 .dash-widget-slide {
-    width: 100%;
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
     min-height: 190px;
     padding: 0 15px;
     box-sizing: border-box;
@@ -842,6 +852,30 @@ body {
     justify-content: center;
     box-sizing: border-box;
     margin: 14px 0 0;
+}
+
+.dash-widget-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 0 4px;
+}
+
+.dash-widget-dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: #cbd5e1;
+    cursor: pointer;
+    transition: width .25s ease, background .25s ease;
+}
+
+.dash-widget-dot.active {
+    width: 22px;
+    border-radius: 5px;
+    background: #4f46e5;
 }
 
 .sol-widget-meta {

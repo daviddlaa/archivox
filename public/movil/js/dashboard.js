@@ -202,15 +202,42 @@ function initDashCarousel() {
 }
 
 // ============================================================================
-// CARRUSEL DE WIDGETS (campañas activas / últimas solicitudes)
+// CARRUSEL DE WIDGETS (campañas activas / últimas solicitudes / gestiones)
+// Pasarela horizontal deslizable; los 3 slides se igualan en alto (JS).
 // ============================================================================
 function initDashWidgetCarousel() {
     var carousel = document.getElementById('dashWidgetCarousel');
     if (!carousel) return;
-    // Los 3 widgets se muestran apilados verticalmente (todos visibles),
-    // con el mismo alto. Ya no hay scroll horizontal ni dots.
+    var slides = carousel.querySelectorAll('.dash-widget-slide');
+    var dots = Array.prototype.slice.call(document.querySelectorAll('.dash-widget-dot'));
+
     igualarAlturaWidgetSlides();
-    window.addEventListener('resize', igualarAlturaWidgetSlides);
+    if (slides.length < 2) return;
+    var step = slides[1].offsetLeft - slides[0].offsetLeft;
+
+    function actualizarDotActivo() {
+        var index = Math.max(0, Math.min(dots.length - 1, Math.round(carousel.scrollLeft / step)));
+        dots.forEach(function(dot, i) {
+            dot.classList.toggle('active', i === index);
+        });
+    }
+
+    carousel.addEventListener('scroll', actualizarDotActivo, { passive: true });
+
+    dots.forEach(function(dot, i) {
+        dot.addEventListener('click', function() {
+            carousel.scrollTo({ left: i * step, behavior: 'smooth' });
+        });
+    });
+
+    // Loop infinito por gesto táctil (swipe extra regresa suave al inicio/fin)
+    configurarLoopTouch(carousel, function() { return (slides.length - 1) * step; });
+
+    window.addEventListener('resize', function() {
+        step = slides[1].offsetLeft - slides[0].offsetLeft;
+        actualizarDotActivo();
+        igualarAlturaWidgetSlides();
+    });
 }
 
 // ============================================================================
