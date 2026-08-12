@@ -948,7 +948,7 @@ function renderizarSolicitudes(lista, sinEntrada) {
         html += '</div>';
 
         if (observacion) {
-            html += '<div class="sol-obs">' + observacion + '</div>';
+            html += '<div class="sol-obs" onclick="toggleObsMovil(this)" title="Toca para ver el texto completo" aria-expanded="false">' + observacion + '</div>';
         }
 
 html += '<div class="sol-botones sol-botones-fila">';
@@ -989,6 +989,12 @@ function renderizarTarjetaCompletadaMovil(sol) {
         '<div class="completada-mobile-gestion"><strong>' + (sol.tipo_gestion || 'Completada') + '</strong><span>' + observacion + '</span></div>' +
         '<div class="sol-botones"><button class="btn-sol btn-sol-ver" onclick="verGestion(\'' + sol.id_solicitud + '\')">📋 Ver gestión</button><button class="btn-sol btn-sol-historial" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button><button class="btn-sol btn-sol-quitar" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar</button></div>' +
         '</article>';
+}
+
+function toggleObsMovil(el) {
+    if (!el) return;
+    var expandido = el.classList.toggle('expandido');
+    el.setAttribute('aria-expanded', String(expandido));
 }
 
 function toggleCompletadasMovil(button) {

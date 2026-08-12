@@ -2039,7 +2039,16 @@ body {
 .sol-ultima-gestion-top strong { color: #475569; font-size: 11px; }
 .sol-ultima-gestion-top span { color: #94a3b8; font-size: 10px; }
 .sol-ultima-gestion-tipo { color: #4338ca; font-size: 12px; font-weight: 800; }
-.sol-ultima-gestion-obs { color: #64748b; font-size: 12px; line-height: 1.4; }
+.sol-ultima-gestion-obs {
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.4;
+    /* Límite de 4 líneas: tarjetas uniformes; el bloque abre "Ver gestión" con el detalle completo */
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
 .sol-ultima-gestion.vacia { cursor: default; border-left-color: #cbd5e1; }
 .sol-ultima-gestion.vacia:hover { transform: none; box-shadow: none; }
 .sol-ultima-gestion.vacia strong { color: #64748b; font-size: 12px; }
