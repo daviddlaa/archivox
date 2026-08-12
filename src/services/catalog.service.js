@@ -1,11 +1,12 @@
 // ============================================================================
-// CATALOG SERVICE — Catálogos dinámicos con fallback inteligente
+// CATALOG SERVICE — Catálogos globales con fallback inteligente
 // ============================================================================
 // Proporciona métodos para obtener listas de estados y segmentos
 // con la siguiente lógica de resolución:
-//   1. Buscar valores del usuario autenticado.
-//   2. Si está vacío → buscar DISTINCT global (todos los usuarios).
-//   3. Si está vacío → devolver valores por defecto.
+//   1. Buscar DISTINCT global (toda la aplicación, todos los usuarios).
+//   2. Si está vacío → devolver valores por defecto.
+// NOTA: El formulario Nueva Solicitud muestra TODOS los estados/segmentos
+//       que existen en la aplicación (no solo los del usuario autenticado).
 // ============================================================================
 
 const pool = require('../config/db.js');
@@ -56,40 +57,21 @@ async function getEstados(usuarioId) {
     }
 
     let valores;
-    // 1. Intentar con el usuario autenticado
-    if (usuarioId) {
-        const userResult = await pool.query(`
-            SELECT DISTINCT estado
-            FROM solicitudes
-            WHERE usuario_id = $1
-              AND estado IS NOT NULL
-              AND estado != ''
-            ORDER BY estado
-        `, [usuarioId]);
+    // 1. Buscar global (toda la aplicación, todos los usuarios)
+    const globalResult = await pool.query(`
+        SELECT DISTINCT estado
+        FROM solicitudes
+        WHERE estado IS NOT NULL
+          AND estado != ''
+        ORDER BY estado
+    `);
 
-        const userValues = extractValues(userResult.rows, 'estado');
-        if (userValues.length > 0) {
-            valores = userValues;
-        }
+    const globalValues = extractValues(globalResult.rows, 'estado');
+    if (globalValues.length > 0) {
+        valores = globalValues;
     }
 
-    // 2. Fallback: buscar global (todos los usuarios)
-    if (!valores) {
-        const globalResult = await pool.query(`
-            SELECT DISTINCT estado
-            FROM solicitudes
-            WHERE estado IS NOT NULL
-              AND estado != ''
-            ORDER BY estado
-        `);
-
-        const globalValues = extractValues(globalResult.rows, 'estado');
-        if (globalValues.length > 0) {
-            valores = globalValues;
-        }
-    }
-
-    // 3. Base de datos vacía → valores por defecto
+    // 2. Base de datos vacía → valores por defecto
     if (!valores) {
         valores = [...DEFAULT_ESTADOS];
     }
@@ -114,40 +96,21 @@ async function getSegmentos(usuarioId) {
     }
 
     let valores;
-    // 1. Intentar con el usuario autenticado
-    if (usuarioId) {
-        const userResult = await pool.query(`
-            SELECT DISTINCT segmento
-            FROM solicitudes
-            WHERE usuario_id = $1
-              AND segmento IS NOT NULL
-              AND segmento != ''
-            ORDER BY segmento
-        `, [usuarioId]);
+    // 1. Buscar global (toda la aplicación, todos los usuarios)
+    const globalResult = await pool.query(`
+        SELECT DISTINCT segmento
+        FROM solicitudes
+        WHERE segmento IS NOT NULL
+          AND segmento != ''
+        ORDER BY segmento
+    `);
 
-        const userValues = extractValues(userResult.rows, 'segmento');
-        if (userValues.length > 0) {
-            valores = userValues;
-        }
+    const globalValues = extractValues(globalResult.rows, 'segmento');
+    if (globalValues.length > 0) {
+        valores = globalValues;
     }
 
-    // 2. Fallback: buscar global (todos los usuarios)
-    if (!valores) {
-        const globalResult = await pool.query(`
-            SELECT DISTINCT segmento
-            FROM solicitudes
-            WHERE segmento IS NOT NULL
-              AND segmento != ''
-            ORDER BY segmento
-        `);
-
-        const globalValues = extractValues(globalResult.rows, 'segmento');
-        if (globalValues.length > 0) {
-            valores = globalValues;
-        }
-    }
-
-    // 3. Base de datos vacía → valores por defecto
+    // 2. Base de datos vacía → valores por defecto
     if (!valores) {
         valores = [...DEFAULT_SEGMENTOS];
     }
