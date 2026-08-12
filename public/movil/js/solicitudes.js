@@ -763,9 +763,10 @@ function renderizarCards(datos) {
         html += '    <span class="card-badge badge-estado ' + estadoClase + '" style="background:' + colorEstado + ';">' + (item.estado || 'Sin estado') + '</span>';
         html += '  </div>';
 
-        // FILA 2: Nombre
+        // FILA 2: Nombre (siempre UNA línea) + Cédula debajo
         html += '  <div class="card-fila-2" onclick="event.stopPropagation(); copiarNombreCedula(\'' + escaparParaAtributo(item.nombre || '') + '\', \'' + escaparParaAtributo(item.cedula || '') + '\')" title="Copiar nombre + cédula">';
-        html +=      (item.nombre || 'Sin nombre') + ' 📋';
+        html += '    <span class="card-fila-2-nombre">' + (item.nombre ? escaparParaHTMLMovil(item.nombre) : 'Sin nombre') + '</span>';
+        html += '    <span class="card-fila-2-cedula">🆔 ' + (item.cedula ? escaparParaHTMLMovil(item.cedula) : 'Sin cédula') + '</span>';
         html += '  </div>';
 
         // FILA 3: Botones compactos (Llamar · Gestiones · Completar · WhatsApp · Eliminar)

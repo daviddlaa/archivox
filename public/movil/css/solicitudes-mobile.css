@@ -209,17 +209,45 @@
        Como el asunto de un correo en Gmail
        ======================================================================== */
     .card-fila-2 {
-        font-size: 16px;
-        font-weight: 700;
-        color: #111827;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
         margin-bottom: 10px;
-        line-height: 1.4;
         padding: 2px;
         cursor: pointer;
-        word-break: break-word;
+        min-width: 0;
     }
-    .card-fila-2:active {
+    .card-fila-2:active .card-fila-2-nombre {
         color: #6366f1;
+    }
+
+    /* Nombre del cliente: SIEMPRE UNA línea (nunca se parte a 2 líneas).
+       Letra más pequeña + ellipsis para nombres largos. */
+    body .card-fila-2-nombre {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #111827;
+        line-height: 1.3;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    /* Cédula: siempre debajo del nombre, en una línea, tono secundario */
+    body .card-fila-2-cedula {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #6b7280;
+        line-height: 1.3;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+        max-width: 100%;
     }
 
     /* ========================================================================

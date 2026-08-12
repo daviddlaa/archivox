@@ -234,6 +234,9 @@ ARCHIVOX/
 │   ├── feature-limite-texto-seguimiento-tarjetas.md  # Límite del texto de seguimiento en tarjetas de campaña: 2 líneas móvil (tap para expandir) / 4 líneas escritorio (Agosto 2026)
 │   ├── feature-buscador-global-campanas.md           # Búsqueda global de solicitudes en todas las campañas (landing) + deep link ?card= en escritorio (Agosto 2026)
 │   ├── feature-guia-clasificacion-campanas.md        # Guía didáctica de clasificación al entrar a campaña (una sola vez por usuario) (Agosto 2026)
+│   ├── informe-correccion-flujo-seguimiento-campanas.md # Corrección del flujo de guardado de seguimientos en campañas: contador gestionadas, control de acceso, módulo GestionCampana (Agosto 2026)
+│   ├── feature-rediseno-equipo-movil.md              # Rediseño del panel del líder móvil: 3 tabs, detalle de agente en pantalla completa, campañas clicables, actividad por día (Agosto 2026)
+│   ├── feature-cedula-tarjeta-movil-solicitudes.md   # Cédula visible en la tarjeta móvil de Solicitudes (🆔 debajo del nombre) + nombre siempre en una línea con ellipsis (Agosto 2026)
 │   ├── demo/                                        # Archivos de ejemplo (Excel demo para video)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
@@ -319,7 +322,8 @@ ARCHIVOX/
 │   │   ├── drawer.js               # Drawer de navegación móvil
 │   │   ├── modal.js                # Sistema de modales
 │   │   ├── notificaciones-dashboard.js  # Widget de notificaciones
-│   │   └── perfil.js               # Lógica de perfil de usuario
+│   │   ├── perfil.js               # Lógica de perfil de usuario
+│   │   └── gestion-campana.js      # Guardado único de gestiones/recordatorios en campañas (gestion-lote desktop y móvil) (Agosto 2026)
 │   │
 │   ├── desktop/                    # VERSIÓN ESCRITORIO
 │   │   ├── login.html              # Login (escritorio)
@@ -376,6 +380,7 @@ ARCHIVOX/
 │       │   ├── solicitudes-mobile.css  # Solicitudes móvil
 │       │   ├── gestiones.css       # Gestiones móvil
 │       │   ├── gestion-lote.css    # Gestión por lotes móvil
+│       │   ├── equipo.css          # Panel del líder móvil (tabs, filas, detalle) (Agosto 2026)
 │       │   ├── importar.css        # Importar móvil
 │       │   └── plantillas.css      # Plantillas móvil
 │       │
@@ -736,6 +741,7 @@ El frontend está construido con **HTML + CSS + Vanilla JavaScript** (sin framew
 | `notificaciones-dashboard.js` | Widget de notificaciones en tiempo real (SSE) |
 | `perfil.js` | Gestión de perfil de usuario |
 | `guia-campana.js` | Guía didáctica de clasificación en campañas (una sola vez por usuario, `localStorage` `campana_guia_v1_<usuarioId>`) |
+| `gestion-campana.js` | Guardado único de gestión/recordatorio en campañas (compartido por gestion-lote desktop y móvil): valida, aplica update local de la tarjeta, aísla el destacar y muestra toast por tipo (Agosto 2026) |
 
 ### 7.3 Características del Cliente
 
@@ -1366,6 +1372,15 @@ La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tabla
 - Filtros rápidos por **agente** y por **tipo de gestión** (del lado del cliente, sobre las registros cargados).
 - Botón **"Cargar más"** que incrementa el `limite` del endpoint `/api/equipos/:id/gestiones` en 20 (oculto cuando no quedan registros).
 - La fila de botones grandes (Nuevo Agente / Importar / Ver Solicitudes) se eliminó: "Nuevo Agente" queda dentro del **panel lateral de agentes** (botón "👥 Agentes" del header); Importar/Solicitudes siguen en el menú lateral.
+
+**Rediseño móvil del panel del líder (`/m/equipo`, Agosto 2026):** experiencia tipo app nativa, ver `docs/feature-rediseno-equipo-movil.md`.
+- **Navegación por 3 pestañas internas** (`.eq-tabs`, sticky): **👥 Agentes** (default) / **📢 Campañas** / **📝 Actividad**. Se eliminó el scroll único con quick actions y el FAB de refresh (queda pull-to-refresh).
+- **Pestaña Agentes:** KPI strip compacto de 3 métricas (activos / asignadas / gestiones 7d), buscador + chips de orden (Nombre / Asignadas / Actividad), filas compactas (avatar con inicial, dot de estado, stats inline) y botón "＋ Nuevo" en el header (acción primaria del líder; se oculta si `_esLider` es falso).
+- **Detalle de agente en pantalla completa** (ya no bottom sheet): cabecera con estado, stats, **campañas asignadas con barra de progreso** (tap → `/m/gestion-lote?id=X`), **últimas gestiones del agente** (tap → `/m/solicitudes?buscar=ID`) y acciones Editar / Cambiar contraseña / Activar-Desactivar (reutilizan los `mm-sheet`). Volver conserva el scroll de la lista.
+- **Pestaña Campañas:** chips de filtro (Todas / Activas / Completadas) y tarjetas **clicables** que abren la campaña.
+- **Pestaña Actividad:** timeline **agrupado por día** (Hoy / Ayer / fecha), chips de filtro por agente y **paginación real** con `offset` (botón "Cargar más gestiones").
+- **CSS dedicado:** `public/movil/css/equipo.css` (se vació el `<style>` inline del HTML y se eliminó la carga de `gestiones.css`, cuyas clases no se usaban). `viewport-fit=cover` sin `user-scalable=no`.
+- **Sin cambios en backend:** se reutilizan `GET /api/equipos/mi-equipo`, `/dashboard`, `/campanas` y `/gestiones?limite&offset`. Se eliminó el fetch redundante de `verAsignacionesAgenteMovil` (usa datos en memoria) y los onclicks generados solo llevan IDs numéricos (sin usernames inline, evita ruptura por comillas).
 
 ### 11.9 Panel de Administración
 
