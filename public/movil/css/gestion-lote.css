@@ -1953,3 +1953,153 @@
 .campana-landing-more:active {
     background: #e2e8f0;
 }
+
+/* ===== GUÍA DIDÁCTICA AL ENTRAR A UNA CAMPAÑA (una sola vez) — MÓVIL ===== */
+.guia-campana {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    box-sizing: border-box;
+    padding: 4px 2px;
+    text-align: center;
+}
+.guia-campana * { box-sizing: border-box; }
+.guia-campana-header .guia-campana-icon {
+    display: block;
+    font-size: 38px;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+.guia-campana-header h2 {
+    margin: 0 0 6px;
+    color: #1f2937;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+}
+.guia-campana-header p {
+    margin: 0 auto 12px;
+    max-width: 420px;
+    color: #6b7280;
+    font-size: 12px;
+    line-height: 1.5;
+}
+.guia-campana-semaforo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0 0 12px;
+    padding: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    background: #f8fafc;
+    text-align: left;
+}
+.guia-campana-fila {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: #ffffff;
+    min-height: 42px;
+}
+.guia-campana-fila.guia-sin_clasificar { border-color: #cbd5e1; }
+.guia-campana-fila.guia-amarillo { background: #fef9ec; border-color: #e5c77f; }
+.guia-campana-fila.guia-verde { background: #f0f7f2; border-color: #a9cfb3; }
+.guia-campana-fila.guia-rojo { background: #fdf1ee; border-color: #e1aaa0; }
+.guia-campana-dot { font-size: 16px; flex: 0 0 auto; }
+.guia-campana-fila-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.guia-campana-fila-info strong { color: #334155; font-size: 12px; }
+.guia-campana-fila-info small { color: #64748b; font-size: 10px; line-height: 1.35; }
+.guia-campana-prioridad {
+    margin: 0 0 12px;
+    text-align: left;
+}
+.guia-campana-prioridad-titulo {
+    display: block;
+    margin-bottom: 6px;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+.guia-campana-segmento {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    padding: 4px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #f8fafc;
+}
+.guia-campana-seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 6px 6px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.2;
+}
+.guia-campana-seg.activo {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(99, 102, 241, .3);
+}
+.guia-campana-tip {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 14px;
+    padding: 11px 12px;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    background: #fffbeb;
+    text-align: left;
+    flex-wrap: wrap;
+}
+.guia-campana-tip-icon { font-size: 18px; flex: 0 0 auto; }
+.guia-campana-tip-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.guia-campana-tip-info strong { color: #92400e; font-size: 12px; }
+.guia-campana-tip-info small { color: #a16207; font-size: 10px; line-height: 1.35; }
+.guia-campana-copiar {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #92400e;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: background .2s ease, transform .2s ease;
+}
+.guia-campana-copiar:active { background: #fef3c7; transform: scale(.97); }
+.guia-campana-cta {
+    width: 100%;
+    min-height: 46px;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: filter .2s ease, transform .2s ease;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, .25);
+}
+.guia-campana-cta:active { transform: scale(.98); }
+
+@media (prefers-reduced-motion: reduce) {
+    .guia-campana-copiar, .guia-campana-cta { transition: none; }
+}

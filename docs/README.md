@@ -231,6 +231,7 @@ ARCHIVOX/
 │   ├── feature-admin-campanas-sistema.md             # Superadmin: campañas "Asignadas por el sistema" (checkbox + modal + badge es_sistema) (Agosto 2026)
 │   ├── feature-calendario-recordatorios.md           # Calendario mes + lista del día de recordatorios v2: modal posponer, toast, swipe (Agosto 2026)
 │   ├── feature-prioridad-tiempo-sin-seguimiento.md   # Prioridad por tiempo sin seguimiento en campañas: orden + toast + badge ⏱️ (Agosto 2026)
+│   ├── feature-guia-clasificacion-campanas.md        # Guía didáctica de clasificación al entrar a campaña (una sola vez por usuario) (Agosto 2026)
 │   ├── demo/                                        # Archivos de ejemplo (Excel demo para video)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
@@ -732,6 +733,7 @@ El frontend está construido con **HTML + CSS + Vanilla JavaScript** (sin framew
 | `modal.js` | Sistema de modales reutilizables |
 | `notificaciones-dashboard.js` | Widget de notificaciones en tiempo real (SSE) |
 | `perfil.js` | Gestión de perfil de usuario |
+| `guia-campana.js` | Guía didáctica de clasificación en campañas (una sola vez por usuario, `localStorage` `campana_guia_v1_<usuarioId>`) |
 
 ### 7.3 Características del Cliente
 
@@ -1286,7 +1288,7 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
 ### 11.5 Gestión por Lotes
 
 **Ruta:** `/gestion-lote` (desktop/móvil)
-**Archivos:** `gestionesMaestro.controller.js`, `public/desktop/js/gestion-lote.js`, `public/desktop/gestion-lote.html`, `public/movil/js/gestion-lote.js`, `public/movil/gestion-lote.html`
+**Archivos:** `gestionesMaestro.controller.js`, `public/js/guia-campana.js`, `public/desktop/js/gestion-lote.js`, `public/desktop/gestion-lote.html`, `public/movil/js/gestion-lote.js`, `public/movil/gestion-lote.html`
 
 - Asignar agentes a campañas
 - Visualizar solicitudes de una campaña
@@ -1299,6 +1301,7 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
 - **Jerarquía de tarjetas desktop:** El selector semafórico segmentado, el segmento junto al nombre y la última gestión clicable hacen más visible el contexto operativo; el historial se consulta con control de acceso contextual por campaña.
 - **Orden de lista por prioridad (D3/M3):** La lista se ordena amarillo → sin clasificar → verde → rojo, con destacadas primero, en desktop y móvil; el carrusel móvil conserva su orden fijo (Sin clasificar → Seguimiento → Encaminadas → En espera).
 - **Prioridad por tiempo sin seguimiento (Agosto 2026):** Al filtrar por semáforo (Encaminadas · Seguimiento · En espera) en gestion-lote, la lista prioriza las solicitudes con más tiempo sin una gestión: sin gestión primero, luego por fecha de última gestión más antigua; toast informativo y badge ⏱️ por tarjeta (móvil + escritorio). Sin filtro se conserva el orden por prioridad de semáforo. Ver `docs/feature-prioridad-tiempo-sin-seguimiento.md`.
+- **Guía didáctica de clasificación (una sola vez por usuario, Agosto 2026):** al entrar a una campaña (y al crearla, ya que redirige a gestion-lote) se muestra un modal didáctico que explica el semáforo (Seguimiento = aún no responden, Encaminadas = interés, En espera = no quieren nada), prioriza llamar antes que mensaje y recomienda guardar el contacto con botón "Copiar nombre y cédula". Se persiste en `localStorage` (`campana_guia_v1_<usuarioId>`). Ver `docs/feature-guia-clasificacion-campanas.md`.
 - **Atajos de teclado desktop (D3):** `/` busca, `j`/`k` navegan tarjetas, `Enter` abre la última gestión, `1-4` filtran semáforo, `0` limpia, `Esc` cierra; foco visual `.card-focused`.
 - **Rail/workspace (D2):** Panel lateral de campañas colapsable con transición de `grid-template-columns` (0.28s) y fade-in de tarjetas (`railFadeIn`); el estado persiste en `localStorage`.
 - **WhatsApp Directo con plantillas:** el envío de mensajes (botón "💬 Directo" en desktop e icono 💬 en las tarjetas móviles) usa las **plantillas del usuario** (ver §11.12); todos los modales de Campañas (WhatsApp, Gestionar, Ver gestión, Historial) escapan sus datos para evitar inyección HTML.

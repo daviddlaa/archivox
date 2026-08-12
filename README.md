@@ -393,6 +393,7 @@ Ver `docs/README.md` para documentacion completa del sistema (1375+ lineas), inc
 
 | Feature | Fecha | Documento |
 |---------|-------|-----------|
+| Guía didáctica de clasificación al crear/entrar a una campaña (una sola vez por usuario): semáforo explicado (Seguimiento/Encaminadas/En espera), llamar antes que mensaje y botón copiar contacto | Agosto 2026 | `docs/feature-guia-clasificacion-campanas.md` |
 | Catálogos globales en Nueva Solicitud: los listados de Estado y Segmento muestran valores de toda la aplicación (todos los usuarios), no solo los del usuario autenticado | Agosto 2026 | `docs/feature-catalogos-globales-nueva-solicitud.md` |
 | Rediseño de la tarjeta móvil de Solicitudes: compacta, Gestiones = historial del cliente, Completar/Editar fusionado, ⋮→🗑️ Eliminar, link a la campaña y checkbox de selección en fila 1 | Agosto 2026 | `docs/feature-rediseno-tarjeta-movil-solicitudes.md` |
 | Rediseño del Indicador de Estado (Semáforo) v6 | Agosto 2026 | `docs/feature-rediseño-semaforo-campañas.md` |

@@ -241,6 +241,31 @@ function marcarCampañaActiva(id) {
 }
 
 // Unifica cargarGestion + cargarSolicitudes en móvil
+// ============================================================================
+// GUÍA DIDÁCTICA DE CLASIFICACIÓN (una sola vez por usuario)
+// Se intenta mostrar una vez por carga de página al entrar a una campaña. El
+// flag de 'vista' vive en localStorage por usuario (ver public/js/guia-campana.js).
+// ============================================================================
+var guiaCampanaIntentada = false;
+async function intentarMostrarGuiaCampana() {
+    if (guiaCampanaIntentada) return;
+    guiaCampanaIntentada = true;
+    try {
+        var sesionRes = await fetch('/api/auth/sesion');
+        var sesion = await sesionRes.json();
+        if (!sesion.autenticado || !sesion.usuario) return;
+        if (typeof window.mostrarGuiaCampanaSiPrimeraVez !== 'function') return;
+        var primera = (solicitudes && solicitudes.length > 0) ? solicitudes[0] : {};
+        window.mostrarGuiaCampanaSiPrimeraVez({
+            usuarioId: sesion.usuario.id,
+            nombre: primera.nombre,
+            cedula: primera.cedula
+        });
+    } catch (e) {
+        console.error('[guia-campana] Error al intentar mostrar la guía:', e);
+    }
+}
+
 async function cargarDatosGestionMovil() {
     try {
         console.log('[movil-cargarDatos] Cargando gestión ID:', gestionId);
@@ -289,6 +314,7 @@ async function cargarDatosGestionMovil() {
         actualizarProgreso();
         mostrarBotonHistorialCampanaMovil();
         ajustarStickySemaforo();
+        intentarMostrarGuiaCampana();
     } catch (error) {
         console.error('[movil-cargarDatos] Error:', error);
         var container = document.getElementById('lista-solicitudes');
