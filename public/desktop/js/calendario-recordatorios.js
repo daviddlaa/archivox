@@ -169,6 +169,15 @@
         diaSeleccionado = key;
         renderGrid();
         renderListaDia(key);
+        // Móvil: auto-scroll suave hasta el panel del día para ver la lista sin scroll manual
+        if (esMovil) {
+            var panel = document.querySelector('.cal-dia-panel-movil') || document.querySelector('.cal-dia-panel');
+            if (panel) {
+                setTimeout(function () {
+                    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 60);
+            }
+        }
     }
 
     function renderListaDia(key) {
@@ -186,6 +195,8 @@
 
         var now = Date.now();
         var hoy = ymd(new Date());
+        var hoyBadge = document.getElementById('cal-dia-hoy-badge');
+        if (hoyBadge) hoyBadge.style.display = (key === hoy) ? 'inline-flex' : 'none';
         var vencidos = [];
         var delDia = [];
         for (var i = 0; i < items.length; i++) {
@@ -231,7 +242,7 @@
         html += '<div class="cal-item-actions">';
         if (r.estado === 'pendiente') {
             html += '<button type="button" class="btn-hecho" onclick="accionRecordatorio(' + r.gestion_maestro_id + ',' + r.id + ',\'hecho\')">✅ Hecho</button>';
-            html += '<button type="button" class="btn-posponer" onclick="posponerDesdeCal(' + r.gestion_maestro_id + ',' + r.id + ')">⏰ Posponer</button>';
+            html += '<button type="button" class="btn-posponer" onclick="posponerDesdeCal(' + r.gestion_maestro_id + ',' + r.id + ',\'' + String(r.fecha_recordatorio || '').replace(/'/g, '') + '\')">⏰ Posponer</button>';
             html += '<button type="button" class="btn-cancelar" onclick="accionRecordatorio(' + r.gestion_maestro_id + ',' + r.id + ',\'cancelado\')">❌ Cancelar</button>';
         } else {
             html += '<span class="cal-item-hora">Estado: ' + esc(r.estado) + '</span>';
@@ -250,15 +261,65 @@
                 body: JSON.stringify({ estado: estado })
             });
             if (!res.ok) throw new Error('No se pudo actualizar');
+            mostrarToastCal(estado === 'hecho' ? '✅ Marcado como hecho' : '❌ Recordatorio cancelado');
             await recargarMes();
         } catch (e) {
-            alert(e.message || 'Error');
+            mostrarToastCal('⚠️ ' + (e.message || 'Error'));
         }
     }
 
-    async function posponerDesdeCal(campanaId, rid) {
-        var val = prompt('Nueva fecha y hora (YYYY-MM-DD HH:MM):');
-        if (!val) return;
+    // ========================================================================
+    // POSPONER CON MODAL (reemplaza prompt() nativo)
+    // Modal con atajos rápidos + datetime-local, estilo notificaciones.
+    // ========================================================================
+    function localToInputCal(d) {
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+            'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    function abrirModalPosponerCal(campanaId, rid, fechaActual) {
+        var valorInicial = '';
+        if (fechaActual) {
+            var f = parseFecha(fechaActual);
+            if (f) valorInicial = localToInputCal(f);
+        }
+        if (!valorInicial) valorInicial = localToInputCal(new Date(Date.now() + 60 * 60000));
+
+        var html =
+            '<div class="modal-header">' +
+                '<h2>⏰ Posponer recordatorio</h2>' +
+                '<button class="modal-close-btn" onclick="Modal.cerrar()">✕</button>' +
+            '</div>' +
+            '<div class="modal-body cal-posponer-body">' +
+                '<p class="cal-posponer-sub">¿Cuándo quieres que te avise de nuevo?</p>' +
+                '<div class="cal-posponer-presets">' +
+                    '<button type="button" class="cal-posponer-preset" data-min="30">+30 min</button>' +
+                    '<button type="button" class="cal-posponer-preset" data-min="60">+1 hora</button>' +
+                    '<button type="button" class="cal-posponer-preset" data-min="1440">+1 día</button>' +
+                '</div>' +
+                '<input type="datetime-local" id="cal-posponer-input" value="' + valorInicial + '" class="cal-posponer-input">' +
+            '</div>' +
+            '<div class="modal-footer">' +
+                '<button class="modal-btn modal-btn-cancel" onclick="Modal.cerrar()">Cancelar</button>' +
+                '<button class="modal-btn modal-btn-primary" onclick="guardarPosponerCal(' + campanaId + ',' + rid + ')">💾 Guardar</button>' +
+            '</div>';
+
+        Modal.abrir(html);
+
+        var input = document.getElementById('cal-posponer-input');
+        var presets = document.querySelectorAll('.cal-posponer-preset');
+        for (var i = 0; i < presets.length; i++) {
+            presets[i].addEventListener('click', function () {
+                var mins = parseInt(this.getAttribute('data-min'), 10) || 30;
+                input.value = localToInputCal(new Date(Date.now() + mins * 60000));
+            });
+        }
+    }
+
+    async function guardarPosponerCal(campanaId, rid) {
+        var input = document.getElementById('cal-posponer-input');
+        var val = input ? input.value : '';
+        if (!val) { mostrarToastCal('⚠️ Elige una fecha y hora'); return; }
         var norm = String(val).trim().replace('T', ' ');
         if (norm.length === 16) norm += ':00';
         try {
@@ -269,15 +330,62 @@
                 body: JSON.stringify({ fecha_recordatorio: norm })
             });
             if (!res.ok) throw new Error('No se pudo posponer');
+            Modal.cerrar();
+            mostrarToastCal('⏰ Recordatorio reprogramado');
             await recargarMes();
         } catch (e) {
-            alert(e.message || 'Error');
+            mostrarToastCal('⚠️ ' + (e.message || 'Error'));
         }
+    }
+
+    function posponerDesdeCal(campanaId, rid, fechaActual) {
+        abrirModalPosponerCal(campanaId, rid, fechaActual);
+    }
+
+    // ========================================================================
+    // TOAST (feedback no bloqueante en vez de alert())
+    // ========================================================================
+    function mostrarToastCal(mensaje) {
+        var anterior = document.querySelector('.cal-toast');
+        if (anterior) anterior.remove();
+        var toast = document.createElement('div');
+        toast.className = 'cal-toast';
+        toast.textContent = mensaje;
+        document.body.appendChild(toast);
+        requestAnimationFrame(function () { toast.classList.add('visible'); });
+        setTimeout(function () {
+            toast.classList.remove('visible');
+            setTimeout(function () { if (toast.parentNode) toast.remove(); }, 300);
+        }, 2200);
     }
 
     function cambiarMes(delta) {
         mesActual.setMonth(mesActual.getMonth() + delta);
         recargarMes();
+    }
+
+    // ========================================================================
+    // SWIPE PARA CAMBIAR DE MES (solo móvil)
+    // ========================================================================
+    function configurarSwipeMes() {
+        var panel = document.querySelector('.cal-mes-panel');
+        if (!panel) return;
+        var startX = null, startY = null;
+        panel.addEventListener('touchstart', function (e) {
+            if (e.touches.length !== 1) { startX = null; return; }
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+        panel.addEventListener('touchcancel', function () { startX = null; }, { passive: true });
+        panel.addEventListener('touchend', function (e) {
+            if (startX === null) return;
+            var t = e.changedTouches[0];
+            var dX = t.clientX - startX;
+            var dY = t.clientY - startY;
+            startX = null;
+            if (Math.abs(dX) < 70 || Math.abs(dX) < Math.abs(dY)) return;
+            if (dX < 0) cambiarMes(1); else cambiarMes(-1);
+        }, { passive: true });
     }
 
     function irHoy() {
@@ -293,8 +401,10 @@
     window.seleccionarDia = seleccionarDia;
     window.accionRecordatorio = accionRecordatorio;
     window.posponerDesdeCal = posponerDesdeCal;
+    window.guardarPosponerCal = guardarPosponerCal;
 
     document.addEventListener('DOMContentLoaded', function () {
         irHoy();
+        if (esMovil) configurarSwipeMes();
     });
 })();

@@ -15,6 +15,9 @@
             <h1>💬 Plantillas</h1>
             <p>Mensajes con el nombre del cliente</p>
         </div>
+        <button class="notif-bell-usuario notif-bell-movil" onclick="abrirPanelNotificacionesWidget()" title="Notificaciones">
+            🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
+        </button>
     </div>
 
     <div class="plantillas-container">
@@ -47,13 +50,24 @@
 
         <!-- Empty -->
         <div class="plantillas-empty" id="plantillasEmpty" style="display:none;">
-            <div class="plantillas-empty-icon">💬</div>
-            <h3>Sin plantillas</h3>
-            <p>Crea tu primera plantilla para enviar mensajes más rápido</p>
-            <button class="btn-nueva-plantilla" onclick="abrirModalPlantilla()">✨ Crear plantilla</button>
+            <div class="plantillas-empty-cta">
+                <div class="plantillas-empty-icon">💬</div>
+                <h3>¡Crea tu primera plantilla!</h3>
+                <p>Ahorra tiempo enviando mensajes personalizados con el nombre de cada cliente</p>
+                <div class="plantillas-empty-ejemplo">
+                    <span class="plantillas-empty-emoji">👋</span>
+                    <span><em>"Hola <span class="var-chip">{nombre}</span>, tu crédito está aprobado..."</em></span>
+                </div>
+                <button class="btn-nueva-plantilla btn-cta-grande" onclick="abrirModalPlantilla()">✨ Crear plantilla</button>
+            </div>
         </div>
 
     </div>
+
+    <!-- FAB Nueva plantilla -->
+    <button class="fab-nueva-plantilla" id="fabNuevaPlantilla" onclick="abrirModalPlantilla()" title="Nueva plantilla" aria-label="Nueva plantilla">
+        <span class="fab-nueva-icon">✨</span>
+    </button>
 
     <!-- Footer -->
     <nav class="nav-bottom">
@@ -71,6 +85,8 @@
         </a>
     </nav>
 
+    <script src="/js/deep-link-router.js"></script>
+    <script src="/js/notificaciones-dashboard.js"></script>
     <script src="/js/modal.js"></script>
     <script src="/js/drawer.js"></script>
     <script src="/movil/js/plantillas.js"></script>

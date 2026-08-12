@@ -37,6 +37,7 @@ function actualizarContador() {
     var contador = document.getElementById('contadorPlantillas');
     var fill = document.getElementById('limiteFill');
     var btn = document.getElementById('btnNuevaPlantilla');
+    var fab = document.getElementById('fabNuevaPlantilla');
 
     contador.textContent = plantillas.length;
     var maxEl = document.getElementById('maxPlantillas');
@@ -46,9 +47,11 @@ function actualizarContador() {
     if (plantillas.length >= MAX_PLANTILLAS) {
         btn.disabled = true;
         btn.textContent = '🚫 Límite';
+        if (fab) fab.classList.add('fab-limit');
     } else {
         btn.disabled = false;
         btn.textContent = '✨ Nueva';
+        if (fab) fab.classList.remove('fab-limit');
     }
 }
 
@@ -75,8 +78,9 @@ function renderizarPlantillas() {
         html += '<div class="plantilla-card-footer">';
         html += '<span class="plantilla-card-fecha">' + fecha + '</span>';
         html += '<div class="plantilla-card-acciones">';
-        html += '<button class="btn-plantilla-accion btn-plantilla-editar" onclick="abrirModalPlantilla(' + p.id + ')">✏️ Editar</button>';
-        html += '<button class="btn-plantilla-accion btn-plantilla-eliminar" onclick="eliminarPlantilla(' + p.id + ', \'' + escaparJS(p.nombre || '') + '\')">🗑️</button>';
+        html += '<button class="btn-plantilla-accion btn-plantilla-copiar" onclick="copiarPlantilla(' + p.id + ')" title="Copiar mensaje" aria-label="Copiar mensaje">📋</button>';
+        html += '<button class="btn-plantilla-accion btn-plantilla-editar" onclick="abrirModalPlantilla(' + p.id + ')" title="Editar" aria-label="Editar plantilla">✏️</button>';
+        html += '<button class="btn-plantilla-accion btn-plantilla-eliminar" onclick="eliminarPlantilla(' + p.id + ', \'' + escaparJS(p.nombre || '') + '\')" title="Eliminar" aria-label="Eliminar plantilla">🗑️</button>';
         html += '</div>';
         html += '</div>';
         html += '</div>';
@@ -139,6 +143,7 @@ function abrirModalPlantilla(id) {
     contenidoHtml += '<span>➕</span><span>Insertar <span class="plantilla-var-chip">{nombre}</span> (nombre del cliente)</span>';
     contenidoHtml += '</div>';
     contenidoHtml += '<div class="plantilla-caracteres" id="plantilla-caracteres">0 / 2000</div>';
+    contenidoHtml += '<div class="plantilla-preview" id="plantilla-preview"></div>';
     contenidoHtml += '</div>';
 
     Modal.abrir(
@@ -155,12 +160,21 @@ function abrirModalPlantilla(id) {
 
     var textarea = document.getElementById('plantilla-contenido');
     var contador = document.getElementById('plantilla-caracteres');
-    textarea.addEventListener('input', function() {
+    function actualizarPreview() {
         var n = textarea.value.length;
         contador.textContent = n + ' / 2000';
         contador.classList.toggle('over', n > 2000);
-    });
-    contador.textContent = textarea.value.length + ' / 2000';
+        var preview = document.getElementById('plantilla-preview');
+        if (preview) {
+            var texto = textarea.value;
+            preview.innerHTML = texto.trim()
+                ? '<div class="plantilla-preview-label">👁️ Vista previa</div>' +
+                  '<div class="plantilla-preview-bubble">💬 ' + escaparHTML(texto).replace(/\{nombre\}/g, '<span class="plantilla-preview-nombre">María Pérez</span>') + '</div>'
+                : '';
+        }
+    }
+    textarea.addEventListener('input', actualizarPreview);
+    actualizarPreview();
 }
 
 function escaparAtributo(texto) {
@@ -228,6 +242,43 @@ function mostrarErrorModal(mensaje) {
     if (errorEl) {
         errorEl.textContent = '⚠️ ' + mensaje;
         errorEl.classList.add('visible');
+    }
+}
+
+// ================== COPIAR ==================
+function copiarPlantilla(id) {
+    var p = null;
+    for (var i = 0; i < plantillas.length; i++) {
+        if (String(plantillas[i].id) === String(id)) { p = plantillas[i]; break; }
+    }
+    if (!p) return;
+    var texto = p.contenido || '';
+
+    function copiarOk() { mostrarToast('✅ Mensaje copiado'); }
+    function copiarErr() { mostrarToast('❌ No se pudo copiar'); }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(copiarOk).catch(function() {
+            copiarConFallback(texto, copiarOk, copiarErr);
+        });
+    } else {
+        copiarConFallback(texto, copiarOk, copiarErr);
+    }
+}
+
+function copiarConFallback(texto, ok, err) {
+    try {
+        var ta = document.createElement('textarea');
+        ta.value = texto;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        var r = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (r) ok(); else err();
+    } catch (e) {
+        err();
     }
 }
 

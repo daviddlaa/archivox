@@ -45,3 +45,24 @@
 .cal-dia-lista {
     max-height: none;
 }
+
+/* Botones de acción con target táctil amplio (>= 44px) */
+.cal-item-actions button,
+.cal-item-actions a {
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Toast por encima del nav-bottom */
+.cal-toast {
+    bottom: 84px;
+}
+
+/* Swipe de mes: el panel no intercepta scroll vertical */
+.cal-mes-panel {
+    touch-action: pan-y;
+}

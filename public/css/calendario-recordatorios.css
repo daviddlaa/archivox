@@ -123,7 +123,17 @@
     margin-bottom: 10px;
 }
 .cal-dia-header h3 { margin: 0; font-size: 16px; color: #0f172a; }
+.cal-dia-header-right { display: flex; align-items: center; gap: 8px; }
 .cal-dia-count { font-size: 12px; color: #64748b; font-weight: 600; }
+.cal-dia-hoy-badge {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 2px 10px;
+}
 .cal-dia-lista { display: flex; flex-direction: column; gap: 10px; max-height: 70vh; overflow: auto; }
 .cal-empty {
     text-align: center;
@@ -144,6 +154,12 @@
     border-radius: 12px;
     padding: 12px;
     background: #fff;
+    transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+.cal-item:hover {
+    border-color: #c7d2fe;
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.12);
+    transform: translateY(-2px);
 }
 .cal-item.vencido { border-color: #fecaca; background: #fff7f7; }
 .cal-item-top {
@@ -184,4 +200,69 @@
 @media (max-width: 900px) {
     .cal-layout { grid-template-columns: 1fr; }
     .cal-day { min-height: 56px; }
+    .cal-item:hover { transform: none; }
+}
+
+/* ===== MODAL POSPONER ===== */
+.cal-posponer-body { padding-bottom: 8px; }
+.cal-posponer-sub { margin: 0 0 14px; color: #6b7280; font-size: 14px; }
+.cal-posponer-presets {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+.cal-posponer-preset {
+    flex: 1;
+    min-width: 80px;
+    padding: 10px 8px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #334155;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+}
+.cal-posponer-preset:hover { background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
+.cal-posponer-preset:active { transform: scale(0.96); }
+.cal-posponer-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+.cal-posponer-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+/* ===== TOAST CAL ===== */
+.cal-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1f2937;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    max-width: 90%;
+    text-align: center;
+}
+.cal-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
 }
