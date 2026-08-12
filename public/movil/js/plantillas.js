@@ -36,21 +36,20 @@ async function cargarPlantillas() {
 function actualizarContador() {
     var contador = document.getElementById('contadorPlantillas');
     var fill = document.getElementById('limiteFill');
-    var btn = document.getElementById('btnNuevaPlantilla');
+    var pctEl = document.getElementById('limitePct');
     var fab = document.getElementById('fabNuevaPlantilla');
 
     contador.textContent = plantillas.length;
     var maxEl = document.getElementById('maxPlantillas');
     if (maxEl) maxEl.textContent = MAX_PLANTILLAS;
-    fill.style.width = Math.min((plantillas.length / MAX_PLANTILLAS) * 100, 100) + '%';
+    var pct = Math.min(Math.round((plantillas.length / MAX_PLANTILLAS) * 100), 100);
+    fill.style.width = pct + '%';
+    if (pctEl) pctEl.textContent = pct + '%';
 
+    // El FAB es la acción principal para crear (el botón inline se eliminó del rediseño)
     if (plantillas.length >= MAX_PLANTILLAS) {
-        btn.disabled = true;
-        btn.textContent = '🚫 Límite';
         if (fab) fab.classList.add('fab-limit');
     } else {
-        btn.disabled = false;
-        btn.textContent = '✨ Nueva';
         if (fab) fab.classList.remove('fab-limit');
     }
 }

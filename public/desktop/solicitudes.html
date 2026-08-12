@@ -72,8 +72,8 @@
                             <option value="">Todos</option>
                         </select>
                     </div>
-                    <!-- Filtros solo para Lider+ (se muestran cuando corresponde) -->
-                    <div id="filtrosLider" class="toolbar-filtros-lider" style="display:none;">
+                    <!-- Filtros de fecha disponibles para TODOS los usuarios -->
+                    <div id="filtrosFecha" class="toolbar-filtros-lider">
                         <div class="toolbar-filtro">
                             <label for="fechaDesde">📅 Desde</label>
                             <input type="date" id="fechaDesde" class="filtro-input-date">
@@ -82,6 +82,9 @@
                             <label for="fechaHasta">📅 Hasta</label>
                             <input type="date" id="fechaHasta" class="filtro-input-date">
                         </div>
+                    </div>
+                    <!-- Filtro de Vendedor solo para Lider+ (se muestra cuando corresponde) -->
+                    <div id="filtrosLider" class="toolbar-filtros-lider" style="display:none;">
                         <div class="toolbar-filtro">
                             <label for="filtroVendedor">👤 Vendedor</label>
                             <input type="text" id="filtroVendedor" placeholder="Vendedor..." class="filtro-input-text" list="vendedoresList">

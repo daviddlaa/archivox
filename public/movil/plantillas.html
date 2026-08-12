@@ -25,9 +25,12 @@
         <!-- Límite -->
         <div class="plantillas-limite">
             <div class="plantillas-limite-top">
-                <span class="plantillas-limite-icon">📊</span>
-                <span class="plantillas-limite-texto"><strong id="contadorPlantillas">0</strong> de <strong id="maxPlantillas">5</strong> plantillas</span>
-                <button class="btn-nueva-plantilla" id="btnNuevaPlantilla" onclick="abrirModalPlantilla()">✨ Nueva</button>
+                <span class="plantillas-limite-icon">💬</span>
+                <span class="plantillas-limite-texto">
+                    <span class="plantillas-limite-titulo">Tus plantillas</span>
+                    <span class="plantillas-limite-sub"><strong id="contadorPlantillas">0</strong> de <strong id="maxPlantillas">5</strong> creadas</span>
+                </span>
+                <span class="plantillas-limite-pct" id="limitePct">0%</span>
             </div>
             <div class="plantillas-limite-bar">
                 <div class="plantillas-limite-fill" id="limiteFill" style="width:0%"></div>
@@ -58,7 +61,7 @@
                     <span class="plantillas-empty-emoji">👋</span>
                     <span><em>"Hola <span class="var-chip">{nombre}</span>, tu crédito está aprobado..."</em></span>
                 </div>
-                <button class="btn-nueva-plantilla btn-cta-grande" onclick="abrirModalPlantilla()">✨ Crear plantilla</button>
+                <button class="btn-cta-grande" onclick="abrirModalPlantilla()">✨ Crear plantilla</button>
             </div>
         </div>
 

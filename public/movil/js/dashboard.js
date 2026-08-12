@@ -430,12 +430,12 @@ async function cargarUltimasGestiones() {
 
         var lista;
         if (esLider && equipoId) {
-            var res = await fetch('/api/equipos/' + equipoId + '/gestiones?limite=5');
+            var res = await fetch('/api/equipos/' + equipoId + '/gestiones?limite=4');
             if (!res.ok) throw new Error('status ' + res.status);
             var result = await res.json();
             lista = Array.isArray(result) ? result : (result.data || []);
         } else {
-            var res2 = await fetch('/api/excel/gestiones/todas?limite=5');
+            var res2 = await fetch('/api/excel/gestiones/todas?limite=4');
             if (!res2.ok) throw new Error('status ' + res2.status);
             var result2 = await res2.json();
             lista = Array.isArray(result2) ? result2 : (result2.data || []);
@@ -455,37 +455,29 @@ async function cargarUltimasGestiones() {
             return;
         }
 
+        var verTodas = document.getElementById('ultimas-gestiones-link');
+        var hrefTodas = verTodas ? verTodas.href : '/m/gestiones';
         var html = '';
         for (var i = 0; i < lista.length; i++) {
             var g = lista[i];
-            var isLast = i === lista.length - 1;
             var color = coloresTipoGestion[g.tipo_gestion] || '#f3f4f6';
             var fecha = formatearFechaWidget(g.fecha_gestion);
             var principal = esLider
                 ? (g.agente_nombre || g.agente_username || 'Agente')
                 : (g.nombre || 'Sin nombre');
-            var linea = esLider
-                ? '#' + g.solicitud_id + (g.cliente_nombre ? ' · ' + truncarTexto(g.cliente_nombre, 20) : '')
-                : '#' + g.solicitud_id + (g.cedula ? ' · 🆔 ' + truncarTexto(g.cedula, 15) : '');
-            var obs = g.observacion ? truncarTexto(g.observacion, 80) : '';
+            var detalle = (g.tipo_gestion || '—') + ' · ' + fecha;
+            if (!esLider) {
+                detalle = '#' + g.solicitud_id + (g.cedula ? ' · 🆔 ' + truncarTexto(g.cedula, 15) : '') + ' · ' + detalle;
+            }
 
-            html += '<div class="ges-widget-item">' +
-                '<div class="ges-widget-rail">' +
-                '<span class="ges-widget-dot" style="background:' + color + ';"></span>' +
-                (isLast ? '' : '<span class="ges-widget-line"></span>') +
-                '</div>' +
-                '<div class="ges-widget-body">' +
-                '<div class="ges-widget-top">' +
-                '<span class="ges-widget-name">' + escapeHtmlMovil(truncarTexto(principal, 26)) + '</span>' +
-                '</div>' +
-                '<div class="ges-widget-meta">' + escapeHtmlMovil(linea) + '</div>' +
-                '<div class="ges-widget-badges">' +
-                '<span class="ges-widget-badge" style="background:' + color + ';">' + escapeHtmlMovil(g.tipo_gestion || '—') + '</span>' +
-                '<span class="ges-widget-fecha">⏱️ ' + escapeHtmlMovil(fecha) + '</span>' +
-                '</div>' +
-                (obs ? '<div class="ges-widget-obs">' + escapeHtmlMovil(obs) + '</div>' : '') +
-                '</div>' +
-                '</div>';
+            html += '<a class="campana-widget-item" href="' + hrefTodas + '">' +
+                '<span class="campana-widget-icon" style="background:' + color + ';">📝</span>' +
+                '<span class="campana-widget-info">' +
+                '<span class="campana-widget-name">' + escapeHtmlMovil(truncarTexto(principal, 26)) + '</span>' +
+                '<span class="ges-widget-meta">' + escapeHtmlMovil(truncarTexto(detalle, 40)) + '</span>' +
+                '</span>' +
+                '<span class="campana-widget-chevron">›</span>' +
+                '</a>';
         }
         container.innerHTML = html;
         igualarAlturaWidgetSlides();

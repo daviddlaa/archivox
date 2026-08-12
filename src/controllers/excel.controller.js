@@ -200,16 +200,17 @@ exports.listarSolicitudes = async (req, res) => {
         params.push('%' + telefono + '%');
     }
 
-    // Filtros adicionales solo para Lider+ (nivel >= 30)
+    // Filtros de fecha disponibles para todos los usuarios
+    if (fecha_desde) {
+        sql += ' AND s.fecha_solicitud >= $' + paramIndex++;
+        params.push(fecha_desde);
+    }
+    if (fecha_hasta) {
+        sql += ' AND s.fecha_solicitud <= $' + paramIndex++;
+        params.push(fecha_hasta + ' 23:59:59');
+    }
+    // Filtro de vendedor solo para Lider+ (nivel >= 30)
     if (isLeader) {
-        if (fecha_desde) {
-            sql += ' AND s.fecha_solicitud >= $' + paramIndex++;
-            params.push(fecha_desde);
-        }
-        if (fecha_hasta) {
-            sql += ' AND s.fecha_solicitud <= $' + paramIndex++;
-            params.push(fecha_hasta + ' 23:59:59');
-        }
         if (vendedor && vendedor.trim() !== '') {
             sql += ' AND LOWER(s.vendedor) LIKE LOWER($' + paramIndex++ + ')';
             params.push('%' + vendedor.trim() + '%');
@@ -237,9 +238,11 @@ exports.listarSolicitudes = async (req, res) => {
                 if (estado === '__no_aplica_credito__') { countSql += ' AND s.no_aplica_credito = 0'; }
                 else if (estado) { countSql += ' AND s.estado = $' + countIdx++; countParams.push(estado); }
                 if (segmento) { countSql += ' AND s.segmento = $' + countIdx++; countParams.push(segmento); }
+                // Filtros de fecha disponibles para todos
+                if (fecha_desde) { countSql += ' AND s.fecha_solicitud >= $' + countIdx++; countParams.push(fecha_desde); }
+                if (fecha_hasta) { countSql += ' AND s.fecha_solicitud <= $' + countIdx++; countParams.push(fecha_hasta + ' 23:59:59'); }
+                // Filtro de vendedor solo para Lider+
                 if (isLeader) {
-                    if (fecha_desde) { countSql += ' AND s.fecha_solicitud >= $' + countIdx++; countParams.push(fecha_desde); }
-                    if (fecha_hasta) { countSql += ' AND s.fecha_solicitud <= $' + countIdx++; countParams.push(fecha_hasta + ' 23:59:59'); }
                     if (vendedor && vendedor.trim() !== '') { countSql += ' AND LOWER(s.vendedor) LIKE LOWER($' + countIdx++ + ')'; countParams.push('%' + vendedor.trim() + '%'); }
                 }
                 return pool.query(countSql, countParams);
@@ -1418,16 +1421,17 @@ exports.buscarSolicitudes = async (req, res) => {
             params.push(segmento);
         }
 
-        // Filtros adicionales solo para Lider+ (nivel >= 30)
+        // Filtros de fecha disponibles para todos los usuarios
+        if (fecha_desde) {
+            sql += ` AND s.fecha_solicitud >= $${paramIdx++}`;
+            params.push(fecha_desde);
+        }
+        if (fecha_hasta) {
+            sql += ` AND s.fecha_solicitud <= $${paramIdx++}`;
+            params.push(fecha_hasta + ' 23:59:59');
+        }
+        // Filtro de vendedor solo para Lider+ (nivel >= 30)
         if (isLeader) {
-            if (fecha_desde) {
-                sql += ` AND s.fecha_solicitud >= $${paramIdx++}`;
-                params.push(fecha_desde);
-            }
-            if (fecha_hasta) {
-                sql += ` AND s.fecha_solicitud <= $${paramIdx++}`;
-                params.push(fecha_hasta + ' 23:59:59');
-            }
             if (vendedor && vendedor.trim() !== '') {
                 sql += ` AND LOWER(s.vendedor) LIKE LOWER($${paramIdx++})`;
                 params.push('%' + vendedor.trim() + '%');
@@ -1468,9 +1472,11 @@ exports.buscarSolicitudes = async (req, res) => {
                 if (estado === '__no_aplica_credito__') { countSql += ` AND s.no_aplica_credito = 0`; }
                 else if (estado) { countSql += ` AND s.estado = $${cIdx++}`; countParams.push(estado); }
                 if (segmento) { countSql += ` AND s.segmento = $${cIdx++}`; countParams.push(segmento); }
+                // Filtros de fecha disponibles para todos
+                if (fecha_desde) { countSql += ` AND s.fecha_solicitud >= $${cIdx++}`; countParams.push(fecha_desde); }
+                if (fecha_hasta) { countSql += ` AND s.fecha_solicitud <= $${cIdx++}`; countParams.push(fecha_hasta + ' 23:59:59'); }
+                // Filtro de vendedor solo para Lider+
                 if (isLeader) {
-                    if (fecha_desde) { countSql += ` AND s.fecha_solicitud >= $${cIdx++}`; countParams.push(fecha_desde); }
-                    if (fecha_hasta) { countSql += ` AND s.fecha_solicitud <= $${cIdx++}`; countParams.push(fecha_hasta + ' 23:59:59'); }
                     if (vendedor && vendedor.trim() !== '') { countSql += ` AND LOWER(s.vendedor) LIKE LOWER($${cIdx++})`; countParams.push('%' + vendedor.trim() + '%'); }
                 }
                 

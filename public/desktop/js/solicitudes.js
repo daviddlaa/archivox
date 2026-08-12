@@ -177,11 +177,11 @@ async function buscarEnServidor(resetOffset, extraOffset) {
             let url = `/api/excel/solicitudes/buscar?q=${encodeURIComponent(termino || '%')}&limite=${CONFIG.TAMANO_LOTE}&offset=${nuevoOffset}`;
             if (estadoActual) url += `&estado=${encodeURIComponent(estadoActual)}`;
             if (segmentoActual) url += `&segmento=${encodeURIComponent(segmentoActual)}`;
-            if (_esLider) {
-                if (fechaDesdeActual) url += `&fecha_desde=${encodeURIComponent(fechaDesdeActual)}`;
-                if (fechaHastaActual) url += `&fecha_hasta=${encodeURIComponent(fechaHastaActual)}`;
-                if (vendedorActual) url += `&vendedor=${encodeURIComponent(vendedorActual)}`;
-            }
+            // Filtros de fecha disponibles para todos los usuarios
+            if (fechaDesdeActual) url += `&fecha_desde=${encodeURIComponent(fechaDesdeActual)}`;
+            if (fechaHastaActual) url += `&fecha_hasta=${encodeURIComponent(fechaHastaActual)}`;
+            // Filtro de vendedor solo para Lider+
+            if (_esLider && vendedorActual) url += `&vendedor=${encodeURIComponent(vendedorActual)}`;
 
             const response = await fetch(url, { signal });
             const result = await response.json();
@@ -1249,6 +1249,11 @@ function actualizarInfoPanel() {
 function restaurarFiltrosUI() {
     // Los botones de filtro ya se restauran desde cargarEstados/cargarSegmentos
     // porque toman el valor de estadoActual/segmentoActual
+    // Restaurar valores de fecha (disponibles para todos los usuarios)
+    var fd = document.getElementById('fechaDesde');
+    var fh = document.getElementById('fechaHasta');
+    if (fd && fechaDesdeActual) fd.value = fechaDesdeActual;
+    if (fh && fechaHastaActual) fh.value = fechaHastaActual;
     actualizarInfoPanel();
 }
 

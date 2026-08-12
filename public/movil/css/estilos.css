@@ -636,11 +636,13 @@ body {
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
+    min-height: 62px;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     background: #f8fafc;
     text-decoration: none;
     transition: background .15s ease;
+    box-sizing: border-box;
 }
 
 .campana-widget-item:active {
@@ -911,71 +913,10 @@ body {
     text-overflow: ellipsis;
 }
 
-/* ===== WIDGET ÚLTIMAS GESTIONES (timeline "últimas actividades") ===== */
+/* ===== WIDGET ÚLTIMAS GESTIONES (tarjeta igual a campañas/solicitudes) ===== */
 #ultimas-gestiones-lista {
     max-height: 50vh;
     overflow-y: auto;
-}
-
-.ges-widget-item {
-    display: flex;
-    gap: 10px;
-    min-width: 0;
-}
-
-.ges-widget-rail {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 0 0 auto;
-}
-
-.ges-widget-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    border: 2px solid #9ca3af;
-    flex-shrink: 0;
-    box-sizing: border-box;
-}
-
-.ges-widget-line {
-    width: 2px;
-    flex: 1;
-    background: #e2e8f0;
-    margin: 3px 0;
-    min-height: 8px;
-}
-
-.ges-widget-body {
-    flex: 1;
-    min-width: 0;
-    padding-bottom: 12px;
-    overflow: hidden;
-}
-
-.ges-widget-item:last-child .ges-widget-body {
-    padding-bottom: 0;
-}
-
-.ges-widget-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    margin-bottom: 2px;
-    min-width: 0;
-}
-
-.ges-widget-name {
-    display: block;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text-dark);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
 }
 
 .ges-widget-meta {
@@ -987,51 +928,6 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
-}
-
-.ges-widget-badges {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 3px 0;
-    min-width: 0;
-    overflow: hidden;
-}
-
-.ges-widget-badge {
-    flex: 0 0 auto;
-    padding: 1px 8px;
-    border-radius: 999px;
-    font-size: 9px;
-    font-weight: 700;
-    color: #374151;
-    white-space: nowrap;
-    max-width: 110px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.ges-widget-fecha {
-    font-size: 9px;
-    color: var(--text-muted);
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
-}
-
-.ges-widget-obs {
-    background: #f9fafb;
-    padding: 6px 8px;
-    border-radius: 8px;
-    font-size: 11px;
-    color: #374151;
-    line-height: 1.4;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
 }
 
 /* ===== ESTADOS VACÍOS ===== */
