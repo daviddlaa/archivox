@@ -61,9 +61,21 @@
         document.body.appendChild(overlay);
         modalActual = overlay;
 
-        // Focus trap: enfocar el primer input/botón dentro del modal
+        // Focus inicial: enfocar el elemento indicado por opciones.focusId (si existe).
+        // En los modales de gestión de campaña se enfoca automáticamente el textarea
+        // de observación (#observacion-modal); en el resto, el primer elemento
+        // enfocable del modal.
         setTimeout(function() {
-            var focusable = modal.querySelector('input, select, textarea, button, a');
+            var focusable = null;
+            if (opciones.focusId) {
+                focusable = modal.querySelector('#' + opciones.focusId);
+            }
+            if (!focusable) {
+                focusable = modal.querySelector('#observacion-modal');
+            }
+            if (!focusable) {
+                focusable = modal.querySelector('input, select, textarea, button, a');
+            }
             if (focusable) focusable.focus();
         }, 100);
 

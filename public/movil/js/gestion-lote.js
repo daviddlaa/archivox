@@ -1306,71 +1306,20 @@ function seleccionarTipoMovil(pill) {
     var hidden = document.getElementById('tipo-gestion-modal');
     if (hidden) {
         hidden.value = pill.getAttribute('data-tipo') || '';
-        alternarModoRecordatorioMovil(hidden);
+        GestionCampana.alternarModoRecordatorio(hidden);
     }
 }
 
 async function guardarGestionIndividual(solicitudId) {
-    var tipo = document.getElementById('tipo-gestion-modal').value;
-    var observacion = document.getElementById('observacion-modal').value.trim();
-    if (tipo !== 'Recordatorio' && !observacion) { alert('Por favor escriba una observación'); return; }
-
-    var btn = document.querySelector('.btn-guardar');
-    if (btn) { btn.textContent = '💾 Guardando...'; btn.disabled = true; }
-
-    try {
-        if (tipo === 'Recordatorio') {
-            var fechaRec = document.getElementById('recordatorio-fecha').value;
-            if (!fechaRec) {
-                alert('Seleccione la fecha y hora del recordatorio');
-                return;
-            }
-            await guardarRecordatorioModalMovil(solicitudId, observacion, fechaRec);
-            mostrarConfirmacionGestionMovil('⏰ Recordatorio programado');
-            cerrarModal();
-            cargarDatosGestionMovil();
-            return;
+    return window.GestionCampana.guardarGestionIndividual({
+        solicitudId: String(solicitudId),
+        gestionId: gestionId,
+        onConfirmar: mostrarConfirmacionGestionMovil,
+        onCargarDatos: function() {
+            renderizarSolicitudes(todasLasSolicitudes, true);
+            actualizarProgreso();
         }
-        var bodyLoteMovil = {
-            solicitud_id: solicitudId,
-            tipo_gestion: tipo,
-            observacion: observacion,
-            gestion_maestro_id: gestionId
-        };
-
-        var response = await fetch('/api/excel/gestiones', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(bodyLoteMovil)
-        });
-
-        var resultado = await response.json();
-        if (response.ok && !resultado.error) {
-            // Guardar destacado si cambió
-            var checkboxDestacar = document.getElementById('toggle-destacar');
-            if (checkboxDestacar) {
-                var solActual = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
-                var nuevoDestacado = checkboxDestacar.checked ? 1 : 0;
-                if (solActual && nuevoDestacado !== (solActual.destacado || 0)) {
-                    await fetch('/api/gestiones-maestro/' + gestionId + '/solicitudes/' + encodeURIComponent(solicitudId) + '/destacar', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ destacado: nuevoDestacado })
-                    });
-                }
-            }
-            mostrarConfirmacionGestionMovil('Una gestión más completada');
-            cerrarModal();
-            cargarDatosGestionMovil();
-        } else {
-            alert('Error: ' + (resultado.error || 'Error desconocido'));
-        }
-    } catch (error) {
-        console.error('Error guardando gestión:', error);
-        alert('Error al guardar la gestión');
-    } finally {
-        if (btn) { btn.textContent = '💾 Guardar'; btn.disabled = false; }
-    }
+    });
 }
 
 // Alternar destacado de una solicitud (solo anima el badge; no pinta la tarjeta)
@@ -1451,33 +1400,8 @@ function valorMinimoDatetimeLocalMovil() {
     return d.toISOString().slice(0, 16);
 }
 
-// Mostrar/ocultar campos de recordatorio según el tipo seleccionado en el modal
-function alternarModoRecordatorioMovil(select) {
-    var block = document.getElementById('recordatorio-fields');
-    if (!block) return;
-    var esRecordatorio = select && select.value === 'Recordatorio';
-    block.style.display = esRecordatorio ? 'block' : 'none';
-    var labelObs = document.getElementById('label-observacion-modal');
-    if (labelObs) {
-        labelObs.textContent = esRecordatorio ? '📝 Nota (opcional):' : '📝 Observación:';
-    }
-}
-
-// Guardar un recordatorio a través del endpoint de la campaña
-async function guardarRecordatorioModalMovil(solicitudId, nota, fecha) {
-    var canal = document.getElementById('recordatorio-canal').value;
-    var response = await fetch('/api/gestiones-maestro/' + gestionId + '/recordatorios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ solicitud_id: solicitudId, canal: canal, fecha_recordatorio: fecha, nota: nota || '' })
-    });
-    var resultado = await response.json().catch(function() { return {}; });
-    if (!response.ok || resultado.error) {
-        alert('Error: ' + (resultado.error || 'Error desconocido'));
-        throw new Error(resultado.error || 'Error al programar recordatorio');
-    }
-    return resultado;
-}
+// alternarModoRecordatorio y guardarRecordatorioModal viven en /js/gestion-campana.js
+// (GestionCampana.alternarModoRecordatorio / GestionCampana.guardarRecordatorioModal)
 
 // Formato compacto para el badge de la tarjeta: "Hoy 15:30" o "06/08 15:30"
 function formatearHoraRecordatorioMovil(fecha) {

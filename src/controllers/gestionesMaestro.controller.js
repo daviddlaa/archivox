@@ -224,6 +224,56 @@ async function obtenerConteoSemaforo(gestionMaestroId) {
     return conteo;
 }
 
+// Recalcular el contador "gestionadas" de una campaña a partir de los datos reales.
+// Semántica unificada: número de solicitudes de la campaña cuya última gestión
+// (dentro de la campaña o sin campaña) existe y no es 'Pendiente'.
+// Se invoca desde todos los puntos de escritura para que la columna nunca
+// dependa de incrementos manuales (que inflaban el contador con gestiones repetidas).
+async function recalcularGestionadas(gestionId) {
+    try {
+        const resultGM = await pool.query(
+            'SELECT solicitudes_ids FROM gestiones_maestro WHERE id = ?',
+            [gestionId]
+        );
+        const gestion = getFirstRow(resultGM);
+        if (!gestion) return 0;
+
+        let ids = [];
+        try {
+            ids = JSON.parse(gestion.solicitudes_ids || '[]').map(Number).filter(Boolean);
+        } catch (e) {
+            ids = [];
+        }
+
+        let count = 0;
+        if (ids.length > 0) {
+            const placeholders = ids.map(function() { return '?'; }).join(',');
+            const result = await pool.query(
+                `SELECT COUNT(*) AS count FROM (
+                    SELECT g2.solicitud_id, g2.tipo_gestion,
+                           ROW_NUMBER() OVER (PARTITION BY g2.solicitud_id ORDER BY g2.id DESC) AS rn
+                    FROM gestiones g2
+                    WHERE (g2.gestion_maestro_id = ? OR g2.gestion_maestro_id IS NULL)
+                      AND g2.solicitud_id IN (${placeholders})
+                ) t
+                WHERE t.rn = 1 AND t.tipo_gestion <> 'Pendiente'`,
+                [gestionId].concat(ids)
+            );
+            const row = getFirstRow(result);
+            count = row ? parseInt(row.count || 0, 10) : 0;
+        }
+
+        await pool.query(
+            'UPDATE gestiones_maestro SET gestionadas = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [count, gestionId]
+        );
+        return count;
+    } catch (e) {
+        console.error('[recalcularGestionadas] Error:', e.message);
+        return null;
+    }
+}
+
 // GET /api/gestiones-maestro - Listar todas las gestione maestro
 async function getGestionesMaestro(req, res) {
     try {
@@ -280,6 +330,18 @@ async function getGestionesMaestro(req, res) {
             FROM gestiones_maestro gm WHERE ` + buildGestionSQL(access) + ` ORDER BY gm.created_at DESC`;
         const result = await pool.query(sql, access.params);
         const rows = getRows(result);
+
+        // Auto-reparación del contador: si una campaña quedó con "gestionadas" inflado
+        // (restos del antiguo incremento por fila) o negativo, recalcularlo una vez.
+        for (let i = 0; i < rows.length; i++) {
+            const gestionadasActual = parseInt(rows[i].gestionadas || 0, 10);
+            const totalActual = parseInt(rows[i].total_solicitudes || 0, 10);
+            if (gestionadasActual > totalActual || gestionadasActual < 0) {
+                const recalculado = await recalcularGestionadas(rows[i].id);
+                if (recalculado !== null) rows[i].gestionadas = recalculado;
+            }
+        }
+
         cache.setCampanas(usuario_id, rows);
         res.json(rows);
     } catch (error) {
@@ -451,10 +513,16 @@ async function getGestionMaestroById(req, res) {
 
         const semaforo_conteos = await obtenerConteoSemaforo(id);
         
+        // "gestionadas" computado = solicitudes con última gestión real (coherente con el KPI del header)
+        const gestionadasComputado = Solicitudes.filter(function(s) {
+            return s.gestion_id && s.tipo_gestion && s.tipo_gestion !== 'Pendiente';
+        }).length;
+
         res.json({
             ...gestion,
             solicitudes: Solicitudes,
             completadas: Solicitudes.filter(function(s) { return s.tipo_gestion === 'Completada'; }).length,
+            gestionadas: gestionadasComputado,
             semaforo_conteos: semaforo_conteos
         });
     } catch (error) {
@@ -490,7 +558,7 @@ async function getHistorialSolicitudCampana(req, res) {
              FROM gestiones
              WHERE solicitud_id = ?
                AND (gestion_maestro_id = ? OR gestion_maestro_id IS NULL)
-             ORDER BY fecha_gestion DESC`,
+             ORDER BY fecha_gestion DESC, id DESC`,
             [solicitudId, id]
         );
         res.json(getRows(result));
@@ -544,7 +612,7 @@ async function getHistorialGeneralCampana(req, res) {
                 ON gms.gestion_maestro_id = ? AND gms.id_solicitud = g.solicitud_id
             WHERE g.solicitud_id IN (${placeholders})
               AND (g.gestion_maestro_id = ? OR g.gestion_maestro_id IS NULL)
-            ORDER BY g.fecha_gestion DESC
+            ORDER BY g.fecha_gestion DESC, g.id DESC
         `, [id].concat(solicitudIds).concat([id]));
 
         const gestiones = getRows(result);
@@ -829,51 +897,6 @@ async function deleteGestionMaestro(req, res) {
     }
 }
 
-// POST /api/gestiones - Guardar gestión individual (modificado para aceptar gestion_maestro_id)
-async function createGestion(req, res) {
-    try {
-        const usuario_id = getUsuarioId(req);
-        if (!usuario_id) {
-            return res.status(401).json({ error: 'No autenticado' });
-        }
-        
-        const { solicitud_id, tipo_gestion, observacion, gestion_maestro_id } = req.body;
-        
-        if (!solicitud_id) {
-            return res.status(400).json({ error: 'solicitud_id es requerido' });
-        }
-        
-        if (!tipo_gestion) {
-            return res.status(400).json({ error: 'tipo_gestion es requerido' });
-        }
-        
-        const result = await pool.query(`
-            INSERT INTO gestiones (solicitud_id, usuario_id, tipo_gestion, observacion, gestion_maestro_id)
-            VALUES (?, ?, ?, ?, ?)
-        `, [solicitud_id, usuario_id, tipo_gestion, observacion || '', gestion_maestro_id || null]);
-        
-        const gestion_id = result.lastInsertRowid;
-        
-        // Si tiene gestion_maestro_id, actualizar contador
-        if (gestion_maestro_id) {
-            await pool.query(`
-                UPDATE gestiones_maestro 
-                SET gestionadas = gestionadas + 1,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            `, [gestion_maestro_id]);
-        }
-        
-        res.json({ 
-            id: gestion_id, 
-            mensaje: 'Gestión guardada correctamente' 
-        });
-    } catch (error) {
-        console.error('Error en createGestion:', error);
-        res.status(500).json({ error: 'Error al guardar gestión' });
-    }
-}
-
 // POST /api/gestiones-maestro/:id/recordatorios
 // Programar un recordatorio de llamada/mensaje dentro de una campaña accesible.
 async function crearRecordatorio(req, res) {
@@ -931,12 +954,8 @@ async function crearRecordatorio(req, res) {
             VALUES (?, ?, ?, ?, ?)
         `, [solicitud_id, usuario_id, 'Recordatorio', nota || '', id]);
 
-        await pool.query(`
-            UPDATE gestiones_maestro
-            SET gestionadas = gestionadas + 1,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        `, [id]);
+        // Recalcular el contador real (solicitudes gestionadas, no filas)
+        await recalcularGestionadas(id);
 
         res.json({
             id: recordatorio_id,
@@ -1065,11 +1084,21 @@ async function obtenerProgresoGestion(req, res) {
         
         // Calcular progreso - todas las gestiones son reales
         const porEstado = {};
-        let gestionadas = 0;
-        
         for (const c of conteo) {
             porEstado[c.tipo_gestion] = c.count;
-            gestionadas += parseInt(c.count);
+        }
+
+        // Gestionadas = solicitudes distintas con gestión en la campaña (no filas)
+        let gestionadas = 0;
+        try {
+            const resultDistinct = await pool.query(
+                'SELECT COUNT(DISTINCT solicitud_id) as count FROM gestiones WHERE gestion_maestro_id = ?',
+                [id]
+            );
+            const distinctRow = getFirstRow(resultDistinct);
+            gestionadas = distinctRow ? parseInt(distinctRow.count || 0, 10) : 0;
+        } catch (e) {
+            console.error('[obtenerProgresoGestion] Error contando gestionadas:', e.message);
         }
         
         res.json({
@@ -1162,29 +1191,17 @@ async function agregarSolicitudesACampana(req, res) {
             return res.json({ mensaje: 'Las solicitudes ya estaban en la campaña', agregados: 0, total: idsActualizados.length });
         }
 
-        // Recalcular gestionadas: contar todas las gestiones reales en la campaña
-        var nuevasGestionadas = 0;
-        try {
-            const resultCount = await pool.query(
-                'SELECT COUNT(*) as count FROM gestiones WHERE gestion_maestro_id = ?',
-                [id]
-            );
-            var countRow = Array.isArray(resultCount) ? resultCount[0] : (resultCount.rows ? resultCount.rows[0] : null);
-            if (countRow) {
-                nuevasGestionadas = parseInt(countRow.count || 0);
-            }
-        } catch (e) {
-            console.error('[agregarSolicitudesACampana] Error contando gestiones:', e);
-            nuevasGestionadas = gestion.gestionadas || 0;
-        }
-
-        // Guardar los IDs actualizados con las nuevas gestionadas recalculadas
+        // Guardar los IDs actualizados (primero, para que el recálculo use los ids nuevos)
         const solicitudesIdsJson = JSON.stringify(idsActualizados);
         await pool.query(`
             UPDATE gestiones_maestro 
-            SET solicitudes_ids = ?, total_solicitudes = ?, gestionadas = ?, updated_at = CURRENT_TIMESTAMP
+            SET solicitudes_ids = ?, total_solicitudes = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        `, [solicitudesIdsJson, idsActualizados.length, nuevasGestionadas, id]);
+        `, [solicitudesIdsJson, idsActualizados.length, id]);
+
+        // Recalcular gestionadas (solicitudes gestionadas reales, no filas)
+        var nuevasGestionadas = await recalcularGestionadas(id);
+        if (nuevasGestionadas === null) nuevasGestionadas = gestion.gestionadas || 0;
 
         // Actualizar campana_id en las solicitudes nuevas
         for (var i = 0; i < idsRealmenteNuevos.length; i++) {
@@ -1250,29 +1267,16 @@ async function quitarSolicitudDeCampanaDb(gestionId, solicitudIdNum) {
     // Quitar el ID
     idsExistentes.splice(index, 1);
 
-    // Recalcular gestionadas: si la solicitud tenía gestión, restar 1
-    var nuevasGestionadas = gestion.gestionadas || 0;
-    try {
-        const resultCheckGestion = await pool.query(
-            'SELECT COUNT(*) as count FROM gestiones WHERE solicitud_id = ? AND gestion_maestro_id = ?',
-            [solicitudIdNum, gestionId]
-        );
-        var checkRow = getFirstRow(resultCheckGestion);
-        var count = checkRow ? (checkRow.count || 0) : 0;
-        if (count > 0) {
-            nuevasGestionadas = Math.max(0, nuevasGestionadas - 1);
-        }
-    } catch (e) {
-        console.error('[quitarSolicitudDeCampanaDb] Error contando gestiones:', e.message);
-    }
-
-    // Guardar los IDs actualizados
+    // Guardar los IDs actualizados (primero, para que el recálculo use los ids nuevos)
     const solicitudesIdsJson = JSON.stringify(idsExistentes);
     await pool.query(`
         UPDATE gestiones_maestro 
-        SET solicitudes_ids = ?, total_solicitudes = ?, gestionadas = ?, updated_at = CURRENT_TIMESTAMP
+        SET solicitudes_ids = ?, total_solicitudes = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-    `, [solicitudesIdsJson, idsExistentes.length, nuevasGestionadas, gestionId]);
+    `, [solicitudesIdsJson, idsExistentes.length, gestionId]);
+
+    // Recalcular gestionadas (solicitudes gestionadas reales de la campaña)
+    await recalcularGestionadas(gestionId);
 
     // Limpiar campana_id de la solicitud quitada
     try {
@@ -1775,7 +1779,6 @@ module.exports = {
     obtenerProgresoGestion: obtenerProgresoGestion,
     agregarSolicitudesACampana: agregarSolicitudesACampana,
     quitarSolicitudDeCampana: quitarSolicitudDeCampana,
-    createGestion: createGestion,
     asignarAgenteACampana: asignarAgenteACampana,
     quitarAsignacionAgente: quitarAsignacionAgente,
     actualizarSemaforoSolicitud: actualizarSemaforoSolicitud,
@@ -1790,6 +1793,9 @@ module.exports = {
     // Flag "ya no aplica para crédito"
     marcarNoAplicaCreditoSolicitud: marcarNoAplicaCreditoSolicitud,
     quitarSolicitudDeCampanaDb: quitarSolicitudDeCampanaDb,
+    buildGestionAccessWhere: buildGestionAccessWhere,
+    buildGestionSQL: buildGestionSQL,
+    recalcularGestionadas: recalcularGestionadas,
     // Aliases en inglés para excel.routes.js
     getGestionesMaestro: getGestionesMaestro,
     getGestionMaestroById: getGestionMaestroById,

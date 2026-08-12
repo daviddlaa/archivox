@@ -1671,7 +1671,7 @@ function abrirGestion(solicitudId, tipo) {
     // Formulario
     contenido += '<div class="modal-form">';
     contenido += '<label>📋 Tipo de Gestión:</label>';
-    contenido += '<select id="tipo-gestion-modal" onchange="alternarModoRecordatorio(this)">' + opcionesDropdown + '</select>';
+    contenido += '<select id="tipo-gestion-modal" onchange="GestionCampana.alternarModoRecordatorio(this)">' + opcionesDropdown + '</select>';
     
     contenido += '<label id="label-observacion-modal">📝 Observación:</label>';
     contenido += '<textarea id="observacion-modal" rows="4" placeholder="Escriba su observación..."></textarea>';
@@ -1750,75 +1750,17 @@ async function toggleDestacado(solicitudId, nuevoEstado, eventRef) {
     }
 }
 
-// Guardar gestión individual
+// Guardar gestión individual (lógica compartida en /js/gestion-campana.js)
 async function guardarGestionIndividual(solicitudId) {
-    var tipo = document.getElementById('tipo-gestion-modal').value;
-    var observacion = document.getElementById('observacion-modal').value.trim();
-    
-    if (tipo !== 'Recordatorio' && !observacion) {
-        alert('Por favor escriba una observación');
-        return;
-    }
-    
-    var btn = document.querySelector('.btn-guardar');
-    btn.textContent = '💾 Guardando...';
-    btn.disabled = true;
-    
-    try {
-        if (tipo === 'Recordatorio') {
-            var fechaRec = document.getElementById('recordatorio-fecha').value;
-            if (!fechaRec) {
-                alert('Seleccione la fecha y hora del recordatorio');
-                return;
-            }
-            await guardarRecordatorioModal(solicitudId, observacion, fechaRec);
-            mostrarConfirmacionGestion('⏰ Recordatorio programado');
-            cerrarModal();
-            cargarDatosGestion();
-            return;
+    return window.GestionCampana.guardarGestionIndividual({
+        solicitudId: String(solicitudId),
+        gestionId: gestionId,
+        onConfirmar: mostrarConfirmacionGestion,
+        onCargarDatos: function() {
+            actualizarProgreso();
+            renderizarSolicitudes(todasLasSolicitudes);
         }
-        var bodyLote = {
-            solicitud_id: solicitudId,
-            tipo_gestion: tipo,
-            observacion: observacion,
-            gestion_maestro_id: gestionId
-        };
-
-        var response = await fetch('/api/excel/gestiones', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(bodyLote)
-        });
-        
-        var resultado = await response.json();
-        
-        if (response.ok && !resultado.error) {
-            // Guardar destacado si cambió
-            var checkboxDestacar = document.getElementById('toggle-destacar');
-            if (checkboxDestacar) {
-                var solActual = solicitudes.find(function(s) { return s.id_solicitud == solicitudId; });
-                var nuevoDestacado = checkboxDestacar.checked ? 1 : 0;
-                if (solActual && nuevoDestacado !== (solActual.destacado || 0)) {
-                    await fetch('/api/gestiones-maestro/' + gestionId + '/solicitudes/' + encodeURIComponent(solicitudId) + '/destacar', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ destacado: nuevoDestacado })
-                    });
-                }
-            }
-            mostrarConfirmacionGestion('Una gestión más completada');
-            cerrarModal();
-            cargarDatosGestion();
-        } else {
-            alert('Error: ' + (resultado.error || 'Error desconocido'));
-        }
-    } catch (error) {
-        console.error('Error guardando gestión:', error);
-        alert('Error al guardar la gestión');
-    } finally {
-        btn.textContent = '💾 Guardar';
-        btn.disabled = false;
-    }
+    });
 }
 
 // Ver gestión existente
@@ -1857,33 +1799,8 @@ function valorMinimoDatetimeLocal() {
     return d.toISOString().slice(0, 16);
 }
 
-// Mostrar/ocultar campos de recordatorio según el tipo seleccionado en el modal
-function alternarModoRecordatorio(select) {
-    var block = document.getElementById('recordatorio-fields');
-    if (!block) return;
-    var esRecordatorio = select && select.value === 'Recordatorio';
-    block.style.display = esRecordatorio ? 'block' : 'none';
-    var labelObs = document.getElementById('label-observacion-modal');
-    if (labelObs) {
-        labelObs.textContent = esRecordatorio ? '📝 Nota (opcional):' : '📝 Observación:';
-    }
-}
-
-// Guardar un recordatorio a través del endpoint de la campaña
-async function guardarRecordatorioModal(solicitudId, nota, fecha) {
-    var canal = document.getElementById('recordatorio-canal').value;
-    var response = await fetch('/api/gestiones-maestro/' + gestionId + '/recordatorios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ solicitud_id: solicitudId, canal: canal, fecha_recordatorio: fecha, nota: nota || '' })
-    });
-    var resultado = await response.json().catch(function() { return {}; });
-    if (!response.ok || resultado.error) {
-        alert('Error: ' + (resultado.error || 'Error desconocido'));
-        throw new Error(resultado.error || 'Error al programar recordatorio');
-    }
-    return resultado;
-}
+// alternarModoRecordatorio y guardarRecordatorioModal viven en /js/gestion-campana.js
+// (GestionCampana.alternarModoRecordatorio / GestionCampana.guardarRecordatorioModal)
 
 // Formato compacto para el badge de la tarjeta: "Hoy 15:30" o "06/08 15:30"
 function formatearHoraRecordatorio(fecha) {

@@ -17,7 +17,7 @@ exports.uploadExcel = async (req, res) => {
 
         }
 
-        // Obtener ID del usuario de la sesi�n
+        // Obtener ID del usuario de la sesión
         const usuarioId = req.session.usuario?.id;
         if (!usuarioId) {
             return res.status(401).json({
@@ -115,7 +115,7 @@ exports.listarSolicitudes = async (req, res) => {
         vendedor
     } = req.query;
 
-    // Obtener ID del usuario de la sesi�n
+    // Obtener ID del usuario de la sesión
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
         return res.status(401).json({
@@ -153,13 +153,13 @@ exports.listarSolicitudes = async (req, res) => {
     let sql = `SELECT s.*,
                    (SELECT g2.tipo_gestion FROM gestiones g2 
                     WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id 
-                    ORDER BY g2.fecha_gestion DESC LIMIT 1) as ultima_gestion_tipo,
+                    ORDER BY g2.id DESC LIMIT 1) as ultima_gestion_tipo,
                    (SELECT g2.observacion FROM gestiones g2 
                     WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id 
-                    ORDER BY g2.fecha_gestion DESC LIMIT 1) as ultima_gestion_obs,
+                    ORDER BY g2.id DESC LIMIT 1) as ultima_gestion_obs,
                    (SELECT g2.fecha_gestion FROM gestiones g2 
                     WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id 
-                    ORDER BY g2.fecha_gestion DESC LIMIT 1) as ultima_gestion_fecha,
+                    ORDER BY g2.id DESC LIMIT 1) as ultima_gestion_fecha,
                    gm.nombre as nombre_campana
             FROM solicitudes s
             LEFT JOIN gestiones_maestro gm ON s.campana_id = gm.id
@@ -386,7 +386,7 @@ exports.deleteVendedor = async (req, res) => {
     }
 };
 
-// Obtener configuraci�n de bonos
+// Obtener configuración de bonos
 exports.getConfigBonos = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -424,7 +424,7 @@ exports.getConfigBonos = async (req, res) => {
     }
 };
 
-// Guardar configuraci�n de bonos
+// Guardar configuración de bonos
 exports.saveConfigBonos = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -452,7 +452,7 @@ exports.saveConfigBonos = async (req, res) => {
             [usuarioId, mes, bono1, bono2, bono3, bono4, bono5, bono6, meta_equipo]
         );
         
-        res.json({ mensaje: 'Configuraci�n guardada', data: result.rows[0] });
+        res.json({ mensaje: 'Configuración guardada', data: result.rows[0] });
 } catch (err) {
         console.error('Error saveConfigBonos:', err);
         res.status(500).json({ error: err.message });
@@ -461,7 +461,7 @@ exports.saveConfigBonos = async (req, res) => {
 
 // ================== GESTIONES ==================
 
-// Crear una nueva gesti�n
+// Crear una nueva gestión
 exports.crearGestion = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -475,29 +475,66 @@ exports.crearGestion = async (req, res) => {
     }
     
     try {
-const result = await pool.query(
+        // Validar que la solicitud existe (la propiedad se exige solo cuando NO viene de una campaña)
+        const solResult = await pool.query(
+            'SELECT id_solicitud, usuario_id FROM solicitudes WHERE id_solicitud = ?',
+            [solicitud_id]
+        );
+        if (!solResult.rows || solResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Solicitud no encontrada' });
+        }
+
+        // Con campaña: validar acceso a la campaña (equipo/rol/asignación) y que la
+        // solicitud pertenezca a ella. Permite que un agente asigne gestiones a
+        // solicitudes de una campaña que le fue asignada aunque no las haya creado.
+        if (gestion_maestro_id) {
+            const access = gmController.buildGestionAccessWhere(req, gestion_maestro_id);
+            const campResult = await pool.query(
+                'SELECT gm.id, gm.solicitudes_ids FROM gestiones_maestro gm WHERE ' + gmController.buildGestionSQL(access),
+                access.params
+            );
+            const camp = (campResult.rows && campResult.rows[0]) || null;
+            if (!camp) {
+                return res.status(404).json({ error: 'Campaña no encontrada o sin acceso' });
+            }
+            let idsCampana = [];
+            try {
+                idsCampana = JSON.parse(camp.solicitudes_ids || '[]').map(function(id) { return String(id); });
+            } catch (e) {
+                idsCampana = [];
+            }
+            if (idsCampana.indexOf(String(solicitud_id)) === -1) {
+                return res.status(400).json({ error: 'La solicitud no pertenece a esta campaña' });
+            }
+        } else {
+            // Sin campaña (página de Solicitudes): la solicitud debe ser del usuario
+            const sol = solResult.rows[0];
+            if (Number(sol.usuario_id) !== Number(usuarioId)) {
+                return res.status(404).json({ error: 'Solicitud no encontrada' });
+            }
+        }
+
+        const result = await pool.query(
             `INSERT INTO gestiones (solicitud_id, usuario_id, tipo_gestion, observacion, gestion_maestro_id)
-             VALUES ($1, $2, $3, $4, $5)
+             VALUES (?, ?, ?, ?, ?)
              RETURNING *`,
             [solicitud_id, usuarioId, tipo_gestion, observacion || '', gestion_maestro_id || null]
         );
 
-        // Si tiene gestion_maestro_id, actualizar contador de progreso
+        // Recalcular el contador real de la campaña (solicitudes gestionadas, no filas)
         if (gestion_maestro_id) {
             try {
-                await pool.query(
-                    `UPDATE gestiones_maestro 
-                     SET gestionadas = gestionadas + 1, updated_at = CURRENT_TIMESTAMP
-                     WHERE id = $1`,
-                    [gestion_maestro_id]
-                );
-                console.log('DEBUG: Contador actualizado para campaña:', gestion_maestro_id);
+                await gmController.recalcularGestionadas(gestion_maestro_id);
             } catch (e) {
-                console.error('Error actualizando contador:', e);
+                console.error('Error recalculando contador:', e);
             }
         }
-        
-        res.json({ mensaje: 'Gesti�n guardada', data: result.rows[0] });
+
+        // Invalidar cachés para que los listados reflejen el cambio
+        try { cache.invalidateAllCampanas(); } catch (e) { /* silencioso */ }
+        try { cache.invalidateDashboard(usuarioId); } catch (e) { /* silencioso */ }
+
+        res.json({ mensaje: 'Gestión guardada', data: result.rows[0] });
     } catch (err) {
         console.error('Error crearGestion:', err);
         res.status(500).json({ error: err.message });
@@ -569,7 +606,7 @@ exports.getGestionesUltimas = async (req, res) => {
             FROM gestiones g
             WHERE g.solicitud_id IN (${placeholders}) 
               AND g.usuario_id = $${solicitudIds.length + 1}
-            ORDER BY g.solicitud_id, g.fecha_gestion DESC
+            ORDER BY g.solicitud_id, g.id DESC
         `;
         
         const params = [...solicitudIds, usuarioId];
@@ -599,7 +636,7 @@ exports.getGestionesUltimas = async (req, res) => {
     }
 };
 
-// Actualizar una gesti�n existente
+// Actualizar una gestión existente
 exports.actualizarGestion = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -610,11 +647,11 @@ exports.actualizarGestion = async (req, res) => {
     const { tipo_gestion, observacion } = req.body;
     
     if (!id) {
-        return res.status(400).json({ error: 'ID de gesti�n requerido' });
+        return res.status(400).json({ error: 'ID de gestión requerido' });
     }
     
     if (!tipo_gestion) {
-        return res.status(400).json({ error: 'Tipo de gesti�n requerido' });
+        return res.status(400).json({ error: 'Tipo de gestión requerido' });
     }
     
 try {
@@ -627,17 +664,17 @@ try {
         );
         
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Gesti�n no encontrada' });
+            return res.status(404).json({ error: 'Gestión no encontrada' });
         }
         
-        res.json({ mensaje: 'Gesti�n actualizada', data: result.rows[0] });
+        res.json({ mensaje: 'Gestión actualizada', data: result.rows[0] });
     } catch (err) {
         console.error('Error actualizarGestion:', err);
         res.status(500).json({ error: err.message });
     }
 };
 
-// Eliminar una gesti�n
+// Eliminar una gestión
 exports.eliminarGestion = async (req, res) => {
     const usuarioId = req.session.usuario?.id;
     if (!usuarioId) {
@@ -647,20 +684,46 @@ exports.eliminarGestion = async (req, res) => {
     const { id } = req.params;
     
     if (!id) {
-        return res.status(400).json({ error: 'ID de gesti�n requerido' });
+        return res.status(400).json({ error: 'ID de gestión requerido' });
     }
     
-try {
+    try {
+        // Identificar la campaña de la gestión antes de eliminarla
+        let gestionMaestroId = null;
+        try {
+            const antesResult = await pool.query(
+                'SELECT gestion_maestro_id FROM gestiones WHERE id = ? AND usuario_id = ?',
+                [id, usuarioId]
+            );
+            const antes = antesResult.rows && antesResult.rows[0];
+            if (antes && antes.gestion_maestro_id) {
+                gestionMaestroId = antes.gestion_maestro_id;
+            }
+        } catch (e) {
+            console.error('Error consultando gestión antes de eliminar:', e.message);
+        }
+
         const result = await pool.query(
-            `DELETE FROM gestiones WHERE id = $1 AND usuario_id = $2 RETURNING id`,
+            `DELETE FROM gestiones WHERE id = ? AND usuario_id = ? RETURNING id`,
             [id, usuarioId]
         );
         
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Gesti�n no encontrada' });
+            return res.status(404).json({ error: 'Gestión no encontrada' });
         }
         
-        res.json({ mensaje: 'Gesti�n eliminada' });
+        // Recalcular el contador de la campaña afectada y refrescar cachés
+        if (gestionMaestroId) {
+            try {
+                await gmController.recalcularGestionadas(gestionMaestroId);
+            } catch (e) {
+                console.error('Error recalculando contador:', e);
+            }
+        }
+        try { cache.invalidateAllCampanas(); } catch (e) { /* silencioso */ }
+        try { cache.invalidateDashboard(usuarioId); } catch (e) { /* silencioso */ }
+        
+        res.json({ mensaje: 'Gestión eliminada' });
     } catch (err) {
         console.error('Error eliminarGestion:', err);
         res.status(500).json({ error: err.message });
@@ -1052,7 +1115,7 @@ exports.actualizarCodigoPlus = async (req, res) => {
             return res.status(404).json({ error: 'Solicitud no encontrada' });
         }
         
-        res.json({ mensaje: 'C�digo Plus actualizado', data: result.rows[0] });
+        res.json({ mensaje: 'Código Plus actualizado', data: result.rows[0] });
     } catch (err) {
         console.error('Error actualizarCodigoPlus:', err);
         res.status(500).json({ error: err.message });
@@ -1374,13 +1437,13 @@ exports.buscarSolicitudes = async (req, res) => {
     let sql = `SELECT s.*,
                    (SELECT g2.tipo_gestion FROM gestiones g2 
                     WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id 
-                    ORDER BY g2.fecha_gestion DESC LIMIT 1) as ultima_gestion_tipo,
+                    ORDER BY g2.id DESC LIMIT 1) as ultima_gestion_tipo,
                    (SELECT g2.observacion FROM gestiones g2 
                     WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id 
-                    ORDER BY g2.fecha_gestion DESC LIMIT 1) as ultima_gestion_obs,
+                    ORDER BY g2.id DESC LIMIT 1) as ultima_gestion_obs,
                    (SELECT g2.fecha_gestion FROM gestiones g2 
                     WHERE g2.solicitud_id = s.id_solicitud AND g2.usuario_id = s.usuario_id 
-                    ORDER BY g2.fecha_gestion DESC LIMIT 1) as ultima_gestion_fecha,
+                    ORDER BY g2.id DESC LIMIT 1) as ultima_gestion_fecha,
                    gm.nombre as nombre_campana
             FROM solicitudes s
             LEFT JOIN gestiones_maestro gm ON s.campana_id = gm.id

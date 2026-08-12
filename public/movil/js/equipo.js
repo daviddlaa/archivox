@@ -1,7 +1,8 @@
 // ============================================================================
-// EQUIPO MÓVIL - Archivox v3.0
-// Gestión de equipo con experiencia tipo app nativa
-// Rediseñado desde la auditoría del módulo Desktop
+// EQUIPO MÓVIL - Archivox v4.0
+// Gestión de equipo con experiencia tipo app nativa (vista Líder)
+// Rediseño: 3 pestañas (Agentes / Campañas / Actividad) + detalle en
+// pantalla completa. Backend sin cambios (mismos endpoints).
 // ============================================================================
 
 // ============================================================================
@@ -17,6 +18,18 @@ var _totalGestiones7d = 0;
 var _totalAsignadas = 0;
 var _refrescando = false;
 var _ptrEstado = 'idle';
+
+// Estado de la UI (tabs, filtros, orden)
+var _tabActual = 'agentes';
+var _ordenAgentes = 'nombre';
+var _busquedaAgentes = '';
+var _filtroCampanas = 'todas';
+var _filtroAgenteActividad = 'todos';
+var _offsetGestiones = 15;      // ya se cargaron 15
+var _limiteGestiones = 15;
+var _hayMasGestiones = false;
+var _detalleAbierto = false;
+var _scrollListaGuardado = 0;
 
 // ============================================================================
 // INICIALIZACIÓN
@@ -35,39 +48,38 @@ document.addEventListener('DOMContentLoaded', async function() {
         var user = sesion.usuario;
 
         if (!user.equipo_id) {
-            document.getElementById('equipoContainer').innerHTML = `
-                <div class="equipo-empty" style="margin-top:40px;">
-                    <div class="equipo-empty-icon">🏢</div>
-                    <h3>Sin Equipo Asignado</h3>
-                    <p>No perteneces a ningún equipo. Contacta al administrador.</p>
-                </div>
-            `;
-            var fab = document.getElementById('btnRefresh');
-            if (fab) fab.style.display = 'none';
+            document.getElementById('tab-agentes').innerHTML =
+                '<div class="eq-empty" style="margin-top:24px;">' +
+                '<span class="eq-empty-icon">🏢</span>' +
+                '<h3>Sin Equipo Asignado</h3>' +
+                '<p>No perteneces a ningún equipo. Contacta al administrador.</p>' +
+                '</div>';
             return;
         }
 
         _esLider = !!user.es_lider;
 
+        // Solo los líderes gestionan agentes: ocultar acción de creación si no lo es
+        var btnNuevo = document.getElementById('btnNuevoAgente');
+        if (btnNuevo && !_esLider) btnNuevo.style.display = 'none';
+
         initPullToRefresh();
-        initKpiScrollIndicator();
         await cargarTodo();
 
     } catch (err) {
         console.error('[Equipo Móvil] Error:', err);
-        document.getElementById('equipoAgentesList').innerHTML = `
-            <div class="equipo-empty">
-                <div class="equipo-empty-icon">⚠️</div>
-                <h3>Error al cargar</h3>
-                <p>${escapeHtmlMovil(err.message)}</p>
-                <button onclick="recargarTodo()" style="padding:10px 24px;background:#6366f1;color:white;border:none;border-radius:10px;font-weight:600;font-size:14px;">Reintentar</button>
-            </div>
-        `;
+        document.getElementById('equipoAgentesList').innerHTML =
+            '<div class="eq-empty">' +
+            '<span class="eq-empty-icon">⚠️</span>' +
+            '<h3>Error al cargar</h3>' +
+            '<p>' + escapeHtmlMovil(err.message) + '</p>' +
+            '<button onclick="recargarTodo()" class="eq-btn-nuevo" style="margin-top:14px;">Reintentar</button>' +
+            '</div>';
     }
 });
 
 // ============================================================================
-// CARGAR TODOS LOS DATOS (UNA SOLA LLAMADA A mi-equipo)
+// CARGAR TODOS LOS DATOS
 // ============================================================================
 async function cargarTodo() {
     try {
@@ -82,61 +94,60 @@ async function cargarTodo() {
         _equipoId = eqData.id;
         if (!_equipoId) {
             mostrarEstadoVacio('⚠️', 'Error de datos', 'No se pudo identificar el equipo. Intenta recargar.');
-            document.querySelectorAll('.equipo-kpi-value').forEach(function(el) { el.textContent = '—'; });
             return;
         }
 
-        // Header dinámico
         actualizarHeader(eqData);
 
         // Carga paralela de dashboard, campañas y gestiones
         var [dashRes, campRes, gestRes] = await Promise.all([
             fetch('/api/equipos/' + _equipoId + '/dashboard'),
             fetch('/api/equipos/' + _equipoId + '/campanas'),
-            fetch('/api/equipos/' + _equipoId + '/gestiones?limite=10')
+            fetch('/api/equipos/' + _equipoId + '/gestiones?limite=' + _limiteGestiones)
         ]);
 
         if (!dashRes.ok) throw new Error('Error al cargar dashboard');
         var dashData = await dashRes.json();
 
         _agentesData = dashData.agentes || [];
-        var campanasDash = dashData.campañas || [];
 
         _totalGestiones7d = _agentesData.reduce(function(acc, a) {
             return acc + parseInt(a.gestiones_7d || 0);
         }, 0);
-        _totalAsignadas = dashData.totales?.asignadas || _agentesData.reduce(function(acc, a) {
-            return acc + parseInt(a.asignadas || 0);
-        }, 0);
+        _totalAsignadas = dashData.totales && dashData.totales.asignadas != null
+            ? dashData.totales.asignadas
+            : _agentesData.reduce(function(acc, a) { return acc + parseInt(a.asignadas || 0); }, 0);
 
         var agentesActivos = _agentesData.filter(function(a) { return a.is_active; }).length;
 
-        // KPIs
-        document.getElementById('kpiAgentes').textContent = agentesActivos;
-        document.getElementById('kpiCampanas').textContent = campanasDash.length;
-        document.getElementById('kpiGestiones').textContent = _totalGestiones7d;
-        document.getElementById('kpiAsignadas').textContent = _totalAsignadas;
+        // KPIs (3 métricas)
+        var kpiAgentes = document.getElementById('kpiAgentes');
+        if (kpiAgentes) kpiAgentes.textContent = agentesActivos;
+        var kpiGestiones = document.getElementById('kpiGestiones');
+        if (kpiGestiones) kpiGestiones.textContent = _totalGestiones7d;
+        var kpiAsignadas = document.getElementById('kpiAsignadas');
+        if (kpiAsignadas) kpiAsignadas.textContent = _totalAsignadas;
 
         document.getElementById('agentesCount').textContent = _agentesData.length + ' agente(s)';
 
         // Renderizar todo
-        renderizarAgentesCards();
+        renderizarAgentes();
 
         if (campRes.ok) {
             var campData = await campRes.json();
             _campanasData = campData.data || [];
+            renderizarCampanas();
+        } else {
             renderizarCampanas();
         }
 
         if (gestRes.ok) {
             var gestData = await gestRes.json();
             _gestionesData = gestData.data || [];
-            renderizarGestiones();
+            _hayMasGestiones = _gestionesData.length >= _limiteGestiones;
         }
-
-        // Mostrar acciones rápidas (ocultas por defecto)
-        var actions = document.getElementById('equipoQuickActions');
-        if (actions) actions.style.display = 'grid';
+        renderizarGestiones();
+        renderizarChipsActividad();
 
     } catch (err) {
         console.error('[Equipo Móvil] Error cargar datos:', err);
@@ -149,22 +160,40 @@ async function cargarTodo() {
 // ============================================================================
 function actualizarHeader(eqData) {
     var h1 = document.querySelector('.header-title h1');
-    var p = document.querySelector('.header-title p');
-    if (h1) h1.textContent = '🏢 ' + (eqData.nombre || 'Mi Equipo');
-    if (p) p.textContent = (eqData.descripcion || 'Gestión de agentes') + (_esLider ? ' · 👑 Líder' : '');
+    var p = document.getElementById('equipoSubtitle');
+    if (h1) h1.textContent = (eqData.nombre || 'Mi Equipo');
+    if (p) p.textContent = (eqData.descripcion || 'Gestión de agentes') + (_esLider ? ' · Líder' : '');
+}
+
+// ============================================================================
+// TABS
+// ============================================================================
+function cambiarTab(tab) {
+    if (tab === _tabActual) return;
+    _tabActual = tab;
+
+    var tabs = document.querySelectorAll('.eq-tab');
+    for (var i = 0; i < tabs.length; i++) {
+        tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === tab);
+    }
+
+    var panes = ['agentes', 'campanas', 'actividad', 'detalle'];
+    for (var j = 0; j < panes.length; j++) {
+        var pane = document.getElementById('tab-' + panes[j]);
+        if (pane) pane.style.display = (panes[j] === tab) ? '' : 'none';
+    }
 }
 
 // ============================================================================
 // ESTADOS VACÍO
 // ============================================================================
 function mostrarEstadoVacio(icono, titulo, mensaje) {
-    document.getElementById('equipoAgentesList').innerHTML = `
-        <div class="equipo-empty">
-            <div class="equipo-empty-icon">${icono}</div>
-            <h3>${titulo}</h3>
-            <p>${mensaje}</p>
-        </div>
-    `;
+    document.getElementById('equipoAgentesList').innerHTML =
+        '<div class="eq-empty">' +
+        '<span class="eq-empty-icon">' + icono + '</span>' +
+        '<h3>' + titulo + '</h3>' +
+        '<p>' + mensaje + '</p>' +
+        '</div>';
     document.getElementById('agentesCount').textContent = '0';
 }
 
@@ -258,28 +287,507 @@ function resetPtr() {
 }
 
 // ============================================================================
-// KPI SCROLL INDICATOR
+// PESTAÑA AGENTES — búsqueda y orden
 // ============================================================================
-function initKpiScrollIndicator() {
-    var kpis = document.getElementById('equipoKpis');
-    if (!kpis) return;
-    kpis.addEventListener('scroll', actualizarKpiScrollDots, { passive: true });
+function filtrarAgentesPorBusqueda() {
+    _busquedaAgentes = (document.getElementById('agenteBusqueda').value || '').trim().toLowerCase();
+    renderizarAgentes();
 }
 
-function actualizarKpiScrollDots() {
-    var kpis = document.getElementById('equipoKpis');
-    var dots = document.querySelectorAll('.kpi-scroll-dot');
-    if (!kpis || !dots.length) return;
-    var scrollLeft = kpis.scrollLeft;
-    var cardWidth = 150;
-    var activeIndex = Math.round(scrollLeft / cardWidth);
-    for (var i = 0; i < dots.length; i++) {
-        dots[i].classList.toggle('active', i === activeIndex);
+function setOrdenAgentes(orden) {
+    _ordenAgentes = orden;
+    var chips = document.querySelectorAll('#agenteSortChips .eq-chip');
+    for (var i = 0; i < chips.length; i++) {
+        chips[i].classList.toggle('active', chips[i].getAttribute('data-sort') === orden);
+    }
+    renderizarAgentes();
+}
+
+function getAgentesFiltradosYOrdenados() {
+    var lista = _agentesData.slice();
+
+    if (_busquedaAgentes) {
+        lista = lista.filter(function(a) {
+            var nombre = ((a.nombre || '') + ' ' + (a.username || '')).toLowerCase();
+            return nombre.indexOf(_busquedaAgentes) !== -1;
+        });
+    }
+
+    if (_ordenAgentes === 'asignadas') {
+        lista.sort(function(a, b) { return (parseInt(b.asignadas || 0)) - (parseInt(a.asignadas || 0)); });
+    } else if (_ordenAgentes === 'actividad') {
+        lista.sort(function(a, b) { return (parseInt(b.gestiones_7d || 0)) - (parseInt(a.gestiones_7d || 0)); });
+    } else {
+        lista.sort(function(a, b) { return (a.nombre || a.username || '').localeCompare(b.nombre || b.username || '', 'es'); });
+    }
+
+    return lista;
+}
+
+// ============================================================================
+// RENDERIZAR AGENTES (filas compactas)
+// ============================================================================
+function renderizarAgentes() {
+    var container = document.getElementById('equipoAgentesList');
+    if (!container) return;
+
+    var lista = getAgentesFiltradosYOrdenados();
+
+    if (lista.length === 0) {
+        container.innerHTML =
+            '<div class="eq-empty">' +
+            '<span class="eq-empty-icon">' + (_agentesData.length ? '🔍' : '👥') + '</span>' +
+            '<h3>' + (_agentesData.length ? 'Sin resultados' : 'Sin Agentes') + '</h3>' +
+            '<p>' + (_agentesData.length
+                ? 'No hay agentes que coincidan con la búsqueda.'
+                : 'Aún no hay agentes en tu equipo. Crea el primero.') + '</p>' +
+            '</div>';
+        return;
+    }
+
+    var html = '';
+    for (var i = 0; i < lista.length; i++) {
+        var a = lista[i];
+        var activo = a.is_active;
+        var estadoClase = activo ? 'activo' : 'inactivo';
+        var asignadas = parseInt(a.asignadas || 0);
+        var gestiones7d = parseInt(a.gestiones_7d || 0);
+        var nombreMostrar = a.nombre || a.username || 'Sin nombre';
+        var inicial = (nombreMostrar.charAt(0) || '👤').toUpperCase();
+
+        html += '<div class="eq-agente-row ' + estadoClase + '" data-id="' + a.id + '" onclick="abrirDetalleAgente(' + a.id + ')">';
+        html += '<div class="eq-agente-avatar ' + estadoClase + '">' + escapeHtmlMovil(inicial) +
+                '<span class="eq-agente-status-dot ' + estadoClase + '"></span></div>';
+        html += '<div class="eq-agente-info">';
+        html += '<span class="eq-agente-nombre">' + escapeHtmlMovil(nombreMostrar) + '</span>';
+        html += '<span class="eq-agente-username">@' + escapeHtmlMovil(a.username) + (activo ? '' : ' · Inactivo') + '</span>';
+        html += '</div>';
+        html += '<div class="eq-agente-side">';
+        html += '<div class="eq-agente-mini"><b>' + asignadas + '</b><span>Asig.</span></div>';
+        html += '<div class="eq-agente-mini"><b>' + gestiones7d + '</b><span>7 días</span></div>';
+        html += '</div>';
+        html += '<span class="eq-agente-chevron">›</span>';
+        html += '</div>';
+    }
+
+    container.innerHTML = html;
+    animarFilasAgentes();
+}
+
+function animarFilasAgentes() {
+    var filas = document.querySelectorAll('.eq-agente-row');
+    for (var i = 0; i < filas.length; i++) {
+        (function(fila, idx) {
+            setTimeout(function() { fila.classList.add('visible'); }, 40 + (idx * 60));
+        })(filas[i], i);
     }
 }
 
 // ============================================================================
-// ACCIONES RÁPIDAS
+// DETALLE DE AGENTE (pantalla completa)
+// ============================================================================
+function buscarAgente(agenteId) {
+    for (var i = 0; i < _agentesData.length; i++) {
+        if (_agentesData[i].id == agenteId) return _agentesData[i];
+    }
+    return null;
+}
+
+function abrirDetalleAgente(agenteId) {
+    var agente = buscarAgente(agenteId);
+    if (!agente) return;
+
+    // Guardar scroll de la lista para volver
+    _scrollListaGuardado = window.scrollY;
+
+    var activo = agente.is_active;
+    var estadoClase = activo ? 'activo' : 'inactivo';
+    var estadoTexto = activo ? '🟢 Activo' : '🔴 Inactivo';
+    var estadoAccion = activo ? '🔴 Desactivar' : '🟢 Activar';
+    var estadoAccionClase = activo ? 'eq-detalle-btn-danger' : 'eq-detalle-btn-success';
+    var nombreMostrar = agente.nombre || agente.username || 'Sin nombre';
+    var asignadas = parseInt(agente.asignadas || 0);
+    var gestiones7d = parseInt(agente.gestiones_7d || 0);
+    var inicial = (nombreMostrar.charAt(0) || '👤').toUpperCase();
+
+    var html = '';
+
+    // Topbar con botón volver
+    html += '<div class="eq-detalle-topbar">';
+    html += '<button class="eq-back-btn" onclick="cerrarDetalleAgente()" title="Volver">←</button>';
+    html += '<span class="eq-detalle-title">Detalle del agente</span>';
+    html += '<span class="eq-detalle-spacer"></span>';
+    html += '</div>';
+
+    // Cabecera + stats
+    html += '<div class="eq-detalle-card">';
+    html += '<div class="eq-detalle-header">';
+    html += '<div class="eq-detalle-avatar ' + estadoClase + '">' + escapeHtmlMovil(inicial) +
+            '<span class="eq-agente-status-dot ' + estadoClase + '"></span></div>';
+    html += '<div class="eq-detalle-info">';
+    html += '<h3>' + escapeHtmlMovil(nombreMostrar) + '</h3>';
+    html += '<p>@' + escapeHtmlMovil(agente.username) + ' · ' + estadoTexto + '</p>';
+    html += '<span class="badge ' + (activo ? 'badge-green' : 'badge-red') + '">' + estadoTexto + '</span>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div class="eq-detalle-stats">';
+    html += '<div class="eq-detalle-stat"><span class="eq-detalle-stat-value">' + asignadas.toLocaleString() + '</span><span class="eq-detalle-stat-label">📋 Asignadas</span></div>';
+    html += '<div class="eq-detalle-stat"><span class="eq-detalle-stat-value">' + gestiones7d.toLocaleString() + '</span><span class="eq-detalle-stat-label">📝 Gestiones 7d</span></div>';
+    html += '</div>';
+    html += '</div>';
+
+    // Campañas asignadas
+    var campanasAgente = _campanasData.filter(function(c) { return String(c.asignado_a) === String(agente.id); });
+    html += '<div class="eq-detalle-card">';
+    html += '<h4 class="eq-detalle-section-title">📢 Campañas asignadas</h4>';
+    if (campanasAgente.length === 0) {
+        html += '<p style="font-size:12.5px;color:#9ca3af;margin:0;">Sin campañas asignadas.</p>';
+    } else {
+        for (var c = 0; c < campanasAgente.length; c++) {
+            var cam = campanasAgente[c];
+            var camTotal = parseInt(cam.total_solicitudes || 0);
+            var camGest = parseInt(cam.gestionadas || 0);
+            var camPct = camTotal > 0 ? Math.round((camGest / camTotal) * 100) : 0;
+            html += '<div class="eq-campana-mini" onclick="location.href=\'/m/gestion-lote?id=' + cam.id + '\'">';
+            html += '<div class="eq-campana-mini-info">';
+            html += '<span class="eq-campana-mini-nombre">' + escapeHtmlMovil(cam.nombre || cam.nombre_campana || ('Campaña #' + cam.id)) + '</span>';
+            html += '<div class="eq-campana-mini-bar"><div class="eq-campana-mini-fill" style="width:' + Math.min(camPct, 100) + '%;"></div></div>';
+            html += '</div>';
+            html += '<span class="eq-campana-mini-pct">' + camPct + '%</span>';
+            html += '</div>';
+        }
+    }
+    html += '</div>';
+
+    // Últimas gestiones del agente
+    var gestionesAgente = _gestionesData
+        .filter(function(g) { return g.agente_username === agente.username; })
+        .slice(0, 5);
+    html += '<div class="eq-detalle-card">';
+    html += '<h4 class="eq-detalle-section-title">📝 Últimas gestiones</h4>';
+    if (gestionesAgente.length === 0) {
+        html += '<p style="font-size:12.5px;color:#9ca3af;margin:0;">Sin gestiones recientes.</p>';
+    } else {
+        for (var g = 0; g < gestionesAgente.length; g++) {
+            var ges = gestionesAgente[g];
+            html += '<div class="gestion-item" onclick="location.href=\'/m/solicitudes?buscar=' + ges.solicitud_id + '\'">';
+            html += '<div class="gestion-timeline-dot"></div>';
+            html += '<div class="gestion-content">';
+            html += '<div class="gestion-header-line">';
+            html += '<span class="gestion-id">#' + ges.solicitud_id + '</span>';
+            html += '<span class="gestion-tipo badge badge-blue">' + escapeHtmlMovil(ges.tipo_gestion) + '</span>';
+            html += '</div>';
+            html += '<div class="gestion-cliente">' + escapeHtmlMovil(ges.cliente_nombre || '—') + '</div>';
+            html += '<div class="gestion-meta"><span>📅 ' + formatearFechaRelativa(ges.fecha_gestion) + '</span></div>';
+            if (ges.observacion) {
+                html += '<div class="gestion-obs">' + escapeHtmlMovil(ges.observacion.substring(0, 60)) + (ges.observacion.length > 60 ? '...' : '') + '</div>';
+            }
+            html += '</div>';
+            html += '</div>';
+        }
+    }
+    html += '</div>';
+
+    // Acciones
+    html += '<div class="eq-detalle-card">';
+    html += '<div class="eq-detalle-actions">';
+    html += '<button class="eq-detalle-btn" onclick="editarAgente(' + agente.id + ')">';
+    html += '<span class="eq-detalle-btn-icon">✏️</span> Editar Agente</button>';
+    html += '<button class="eq-detalle-btn" onclick="resetPasswordAgente(' + agente.id + ')">';
+    html += '<span class="eq-detalle-btn-icon">🔑</span> Cambiar Contraseña</button>';
+    html += '<div class="eq-detalle-divider"></div>';
+    html += '<button class="eq-detalle-btn ' + estadoAccionClase + '" onclick="toggleActivoAgente(' + agente.id + ', ' + (activo ? 'false' : 'true') + ')">';
+    html += '<span class="eq-detalle-btn-icon">' + (activo ? '🔴' : '🟢') + '</span> ' + estadoAccion + '</button>';
+    html += '</div>';
+    html += '</div>';
+
+    // Link rápido a solicitudes del agente
+    html += '<div class="eq-detalle-card">';
+    html += '<a href="/m/solicitudes?usuario=' + agente.id + '" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;background:#f5f7ff;color:#4f46e5;border-radius:12px;text-decoration:none;font-weight:700;font-size:13.5px;">';
+    html += '📋 Ver todas sus solicitudes</a>';
+    html += '</div>';
+
+    document.getElementById('detalleAgenteContenido').innerHTML = html;
+
+    // Mostrar detalle, ocultar pestañas y demás panes
+    _detalleAbierto = true;
+    var tabs = document.getElementById('eqTabs');
+    if (tabs) tabs.style.display = 'none';
+    var panes = ['agentes', 'campanas', 'actividad'];
+    for (var p = 0; p < panes.length; p++) {
+        var pane = document.getElementById('tab-' + panes[p]);
+        if (pane) pane.style.display = 'none';
+    }
+    document.getElementById('tab-detalle').style.display = '';
+    window.scrollTo(0, 0);
+}
+
+function cerrarDetalleAgente() {
+    _detalleAbierto = false;
+    var tabs = document.getElementById('eqTabs');
+    if (tabs) tabs.style.display = '';
+    var panes = ['agentes', 'campanas', 'actividad', 'detalle'];
+    for (var i = 0; i < panes.length; i++) {
+        var pane = document.getElementById('tab-' + panes[i]);
+        if (pane) pane.style.display = (panes[i] === _tabActual) ? '' : 'none';
+    }
+    window.scrollTo(0, _scrollListaGuardado);
+}
+
+// ============================================================================
+// PESTAÑA CAMPAÑAS — filtros y render
+// ============================================================================
+function setFiltroCampanas(filtro) {
+    _filtroCampanas = filtro;
+    var chips = document.querySelectorAll('#campanaFilterChips .eq-chip');
+    for (var i = 0; i < chips.length; i++) {
+        chips[i].classList.toggle('active', chips[i].getAttribute('data-filtro') === filtro);
+    }
+    renderizarCampanas();
+}
+
+function renderizarCampanas() {
+    var container = document.getElementById('campanasEquipoList');
+    var countEl = document.getElementById('campanasCount');
+    if (!container) return;
+
+    var lista = _campanasData.filter(function(c) {
+        if (_filtroCampanas === 'todas') return true;
+        var estado = String(c.estado || '').toLowerCase();
+        if (_filtroCampanas === 'activa') return estado.indexOf('activa') !== -1 || estado === 'activo';
+        if (_filtroCampanas === 'completada') return estado.indexOf('completad') !== -1;
+        return true;
+    });
+
+    if (countEl) countEl.textContent = lista.length + ' campaña(s)';
+
+    if (lista.length === 0) {
+        container.innerHTML =
+            '<div class="eq-empty">' +
+            '<span class="eq-empty-icon">📢</span>' +
+            '<h3>' + (_campanasData.length ? 'Sin resultados' : 'Sin campañas') + '</h3>' +
+            '<p>' + (_campanasData.length
+                ? 'No hay campañas con ese filtro.'
+                : 'No hay campañas asociadas a tu equipo.') + '</p>' +
+            '</div>';
+        return;
+    }
+
+    var html = '';
+    for (var i = 0; i < lista.length; i++) {
+        var c = lista[i];
+        var total = parseInt(c.total_solicitudes || 0);
+        var gestionadas = parseInt(c.gestionadas || 0);
+        var pct = total > 0 ? Math.round((gestionadas / total) * 100) : 0;
+        var pctCls = pct >= 100 ? 'completa' : '';
+        var estado = String(c.estado || 'activa').toLowerCase();
+        var estadoCls = estado.indexOf('completad') !== -1 ? 'completada'
+            : (estado === 'activa' || estado === 'activo') ? 'activa' : 'pausada';
+
+        var asignadoHtml = c.asignado_a
+            ? '<span class="eq-campana-asignado">👤 ' + escapeHtmlMovil(c.asignado_username || 'Agente') + '</span>'
+            : '<span class="eq-campana-asignado sin-asignar">⬜ Sin asignar</span>';
+
+        html += '<div class="eq-campana-card" onclick="location.href=\'/m/gestion-lote?id=' + c.id + '\'">';
+        html += '<div class="eq-campana-head">';
+        html += '<div class="eq-campana-icon">📢</div>';
+        html += '<div class="eq-campana-info">';
+        html += '<span class="eq-campana-nombre">' + escapeHtmlMovil(c.nombre_campana || c.nombre || ('Campaña #' + c.id)) + '</span>';
+        html += '<span class="eq-campana-meta">#' + c.id + ' · ' + total + ' solicitudes</span>';
+        html += '</div>';
+        html += '<span class="eq-campana-estado ' + estadoCls + '"></span>';
+        html += '</div>';
+        html += '<div class="eq-campana-progress">';
+        html += '<div class="eq-campana-progress-bar"><div class="eq-campana-progress-fill ' + pctCls + '" style="width:' + Math.min(pct, 100) + '%;"></div></div>';
+        html += '<span class="eq-campana-progress-text ' + pctCls + '">' + pct + '%</span>';
+        html += '</div>';
+        html += '<div class="eq-campana-stats">';
+        html += '<span>📄 ' + total + ' · ✓ ' + gestionadas + '</span>';
+        html += asignadoHtml;
+        html += '</div>';
+        html += '</div>';
+    }
+
+    container.innerHTML = html;
+}
+
+// ============================================================================
+// PESTAÑA ACTIVIDAD — chips por agente + timeline por día
+// ============================================================================
+function renderizarChipsActividad() {
+    var contChips = document.getElementById('actividadAgenteChips');
+    if (!contChips) return;
+
+    var html = '<button class="eq-chip' + (_filtroAgenteActividad === 'todos' ? ' active' : '') + '" onclick="setFiltroActividad(-1)">Todos</button>';
+
+    for (var i = 0; i < _agentesData.length; i++) {
+        var username = _agentesData[i].username;
+        if (!username) continue;
+        html += '<button class="eq-chip' + (_filtroAgenteActividad === username ? ' active' : '') + '" onclick="setFiltroActividad(' + i + ')">' + escapeHtmlMovil(username) + '</button>';
+    }
+
+    contChips.innerHTML = html;
+}
+
+function setFiltroActividad(idx) {
+    _filtroAgenteActividad = idx === -1 ? 'todos' : (_agentesData[idx] ? _agentesData[idx].username : 'todos');
+    renderizarChipsActividad();
+    renderizarGestiones();
+}
+
+function renderizarGestiones() {
+    var container = document.getElementById('gestionesEquipoList');
+    var countEl = document.getElementById('gestionesCount');
+    if (!container) return;
+
+    var lista = _gestionesData.filter(function(g) {
+        return _filtroAgenteActividad === 'todos' || g.agente_username === _filtroAgenteActividad;
+    });
+
+    if (countEl) countEl.textContent = lista.length + ' gestión(es)';
+
+    // Botón cargar más (re-establecer texto tras una carga)
+    var btnMas = document.getElementById('btnCargarMasGestiones');
+    if (btnMas) {
+        btnMas.style.display = _hayMasGestiones ? '' : 'none';
+        btnMas.disabled = false;
+        btnMas.textContent = 'Cargar más gestiones';
+    }
+
+    if (lista.length === 0) {
+        container.innerHTML =
+            '<div class="eq-empty">' +
+            '<span class="eq-empty-icon">📝</span>' +
+            '<h3>' + (_gestionesData.length ? 'Sin resultados' : 'Sin gestiones') + '</h3>' +
+            '<p>' + (_gestionesData.length
+                ? 'No hay gestiones de ese agente en el período reciente.'
+                : 'Aún no hay gestiones registradas por el equipo.') + '</p>' +
+            '</div>';
+        return;
+    }
+
+    // Agrupar por día
+    var grupos = {};
+    var ordenDias = [];
+    for (var i = 0; i < lista.length; i++) {
+        var g = lista[i];
+        var clave = claveDia(g.fecha_gestion);
+        if (!grupos[clave]) {
+            grupos[clave] = { etiqueta: etiquetaDia(g.fecha_gestion), items: [] };
+            ordenDias.push(clave);
+        }
+        grupos[clave].items.push(g);
+    }
+
+    var html = '';
+    for (var d = 0; d < ordenDias.length; d++) {
+        var grupo = grupos[ordenDias[d]];
+        html += '<div class="eq-grupo-dia">' + grupo.etiqueta + '</div>';
+        for (var k = 0; k < grupo.items.length; k++) {
+            var gest = grupo.items[k];
+            html += '<div class="gestion-item" onclick="location.href=\'/m/solicitudes?buscar=' + gest.solicitud_id + '\'">';
+            html += '<div class="gestion-timeline-dot"></div>';
+            html += '<div class="gestion-content">';
+            html += '<div class="gestion-header-line">';
+            html += '<span class="gestion-id">#' + gest.solicitud_id + '</span>';
+            html += '<span class="gestion-tipo badge badge-blue">' + escapeHtmlMovil(gest.tipo_gestion) + '</span>';
+            html += '</div>';
+            html += '<div class="gestion-cliente">' + escapeHtmlMovil(gest.cliente_nombre || '—') + '</div>';
+            html += '<div class="gestion-meta">';
+            html += '<span>👤 ' + escapeHtmlMovil(gest.agente_username || '-') + '</span>';
+            html += '<span>🕐 ' + formatearHora(gest.fecha_gestion) + '</span>';
+            html += '</div>';
+            if (gest.observacion) {
+                html += '<div class="gestion-obs">' + escapeHtmlMovil(gest.observacion.substring(0, 60)) + (gest.observacion.length > 60 ? '...' : '') + '</div>';
+            }
+            html += '</div>';
+            html += '</div>';
+        }
+    }
+
+    container.innerHTML = html;
+}
+
+async function cargarMasGestiones() {
+    var btnMas = document.getElementById('btnCargarMasGestiones');
+    if (btnMas) { btnMas.disabled = true; btnMas.textContent = 'Cargando...'; }
+
+    try {
+        var res = await fetch('/api/equipos/' + _equipoId + '/gestiones?limite=' + _limiteGestiones + '&offset=' + _offsetGestiones);
+        if (!res.ok) throw new Error('Error');
+        var data = await res.json();
+        var nuevas = data.data || [];
+        _gestionesData = _gestionesData.concat(nuevas);
+        _offsetGestiones += nuevas.length;
+        _hayMasGestiones = nuevas.length >= _limiteGestiones;
+        renderizarGestiones();
+        renderizarChipsActividad();
+    } catch (err) {
+        console.error('[Equipo Móvil] Error cargar más gestiones:', err);
+        if (btnMas) { btnMas.disabled = false; btnMas.textContent = 'Cargar más gestiones'; }
+        mostrarToastMovil('⚠️ Error al cargar más gestiones');
+    }
+}
+
+// ============================================================================
+// HELPERS DE FECHA
+// ============================================================================
+function claveDia(fecha) {
+    try {
+        var d = new Date(fecha);
+        if (isNaN(d.getTime())) return String(fecha);
+        var dd = String(d.getDate()).padStart(2, '0');
+        var mm = String(d.getMonth() + 1).padStart(2, '0');
+        var yyyy = d.getFullYear();
+        return yyyy + '-' + mm + '-' + dd;
+    } catch (e) { return String(fecha); }
+}
+
+function etiquetaDia(fecha) {
+    try {
+        var d = new Date(fecha);
+        if (isNaN(d.getTime())) return 'Sin fecha';
+        var hoy = new Date();
+        var ayer = new Date();
+        ayer.setDate(ayer.getDate() - 1);
+        var cHoy = claveDia(hoy);
+        var cAyer = claveDia(ayer);
+        var c = claveDia(d);
+        if (c === cHoy) return 'Hoy';
+        if (c === cAyer) return 'Ayer';
+        return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+    } catch (e) { return 'Sin fecha'; }
+}
+
+function formatearHora(fecha) {
+    try {
+        var d = new Date(fecha);
+        if (isNaN(d.getTime())) return '';
+        return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return ''; }
+}
+
+function formatearFechaRelativa(fecha) {
+    if (!fecha) return '';
+    try {
+        var d = new Date(fecha);
+        if (isNaN(d.getTime())) return fecha;
+        var ahora = new Date();
+        var diffMs = ahora - d;
+        var diffMin = Math.floor(diffMs / 60000);
+        var diffHoras = Math.floor(diffMs / 3600000);
+        var diffDias = Math.floor(diffMs / 86400000);
+
+        if (diffMin < 1) return 'Ahora';
+        if (diffMin < 60) return 'Hace ' + diffMin + ' min';
+        if (diffHoras < 24) return 'Hace ' + diffHoras + ' h';
+        if (diffDias < 7) return 'Hace ' + diffDias + ' día(s)';
+        return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+    } catch(e) { return fecha; }
+}
+
+// ============================================================================
+// CREAR AGENTE (sheet)
 // ============================================================================
 function abrirNuevoAgente() {
     var bodyHtml = '';
@@ -300,9 +808,7 @@ function abrirNuevoAgente() {
     bodyHtml += '<label>Email (opcional)</label>';
     bodyHtml += '<input type="email" id="movil-nuevo-email" placeholder="correo@ejemplo.com" autocomplete="off">';
     bodyHtml += '</div>';
-    bodyHtml += '<button class="equipo-detalle-btn" style="background:#10b981;color:white;justify-content:center;margin-top:12px;" onclick="ejecutarCrearAgente()">';
-    bodyHtml += '<span class="equipo-detalle-btn-icon">➕</span> Crear Agente';
-    bodyHtml += '</button>';
+    bodyHtml += '<button class="eq-sheet-submit" onclick="ejecutarCrearAgente()">➕ Crear Agente</button>';
     bodyHtml += '</div>';
 
     mostrarSheetMovil('➕ Nuevo Agente', bodyHtml);
@@ -343,325 +849,7 @@ async function ejecutarCrearAgente() {
 }
 
 // ============================================================================
-// RENDERIZAR CARDS DE AGENTES
-// ============================================================================
-function renderizarAgentesCards() {
-    var container = document.getElementById('equipoAgentesList');
-
-    if (!_agentesData || _agentesData.length === 0) {
-        container.innerHTML = `
-            <div class="equipo-empty">
-                <div class="equipo-empty-icon">👥</div>
-                <h3>Sin Agentes</h3>
-                <p>Aún no hay agentes en tu equipo. Crea el primero.</p>
-            </div>
-        `;
-        return;
-    }
-
-    var html = '';
-    for (var i = 0; i < _agentesData.length; i++) {
-        var a = _agentesData[i];
-        var activo = a.is_active;
-        var estadoClase = activo ? 'activo' : 'inactivo';
-        var estadoTexto = activo ? '🟢 Activo' : '🔴 Inactivo';
-        var asignadas = parseInt(a.asignadas || 0);
-        var gestiones7d = parseInt(a.gestiones_7d || 0);
-        var nombreMostrar = a.nombre || a.username || 'Sin nombre';
-
-        html += '<div class="equipo-agente-card ' + estadoClase + '" data-index="' + i + '" onclick="abrirDetalleAgente(' + i + ')">';
-        html += '<div class="equipo-agente-header">';
-        html += '<div class="equipo-agente-avatar ' + estadoClase + '">👤</div>';
-        html += '<div class="equipo-agente-info">';
-        html += '<span class="equipo-agente-nombre">' + escapeHtmlMovil(nombreMostrar) + '</span>';
-        html += '<span class="equipo-agente-username">@' + escapeHtmlMovil(a.username) + '</span>';
-        html += '</div>';
-        html += '<span class="equipo-agente-status ' + estadoClase + '">' + estadoTexto + '</span>';
-        html += '</div>';
-
-        html += '<div class="equipo-agente-stats">';
-        html += '<div class="equipo-agente-stat">';
-        html += '<span class="equipo-agente-stat-value">' + asignadas + '</span>';
-        html += '<span class="equipo-agente-stat-label">📋 Asignadas</span>';
-        html += '</div>';
-        html += '<div class="equipo-agente-stat">';
-        html += '<span class="equipo-agente-stat-value">' + gestiones7d + '</span>';
-        html += '<span class="equipo-agente-stat-label">📝 Gestiones (7d)</span>';
-        html += '</div>';
-        html += '</div>';
-
-        html += '<button class="equipo-agente-btn" onclick="event.stopPropagation(); abrirDetalleAgente(' + i + ')">';
-        html += '📋 Ver Detalles';
-        html += '</button>';
-        html += '</div>';
-    }
-
-    container.innerHTML = html;
-    animarCardsAgentes();
-}
-
-function animarCardsAgentes() {
-    var cards = document.querySelectorAll('.equipo-agente-card');
-    cards.forEach(function(card, index) {
-        setTimeout(function() {
-            card.classList.add('visible');
-        }, 50 + (index * 80));
-    });
-}
-
-// ============================================================================
-// RENDERIZAR CAMPAÑAS DEL EQUIPO
-// ============================================================================
-function renderizarCampanas() {
-    var container = document.getElementById('campanasEquipoList');
-    var countEl = document.getElementById('campanasCount');
-    if (!container) return;
-
-    if (!_campanasData || _campanasData.length === 0) {
-        container.innerHTML = `
-            <div class="equipo-empty" style="padding:20px;">
-                <p style="margin:0;color:#9ca3af;font-size:13px;">No hay campañas asociadas a tu equipo.</p>
-            </div>
-        `;
-        if (countEl) countEl.textContent = '0';
-        return;
-    }
-
-    if (countEl) countEl.textContent = _campanasData.length + ' campaña(s)';
-
-    var html = '';
-    for (var i = 0; i < _campanasData.length; i++) {
-        var c = _campanasData[i];
-        var total = parseInt(c.total_solicitudes || 0);
-        var gestionadas = parseInt(c.gestionadas || 0);
-        var pct = total > 0 ? Math.round((gestionadas / total) * 100) : 0;
-        var pctCls = pct >= 100 ? 'completa' : '';
-        var estadoCls = c.estado === 'activa' ? 'activo' : 'inactivo';
-
-        var asignadoHtml = c.asignado_a
-            ? '<span style="color:#059669;font-weight:600;">👤 ' + escapeHtmlMovil(c.asignado_username || 'Agente') + '</span>'
-            : '<span style="color:#9ca3af;">⬜ Sin asignar</span>';
-
-        html += '<div class="campana-card">';
-        html += '<div class="campana-header">';
-        html += '<div class="campana-icon">📢</div>';
-        html += '<div class="campana-info">';
-        html += '<span class="campana-nombre">' + escapeHtmlMovil(c.nombre_campana || 'Campaña #' + c.id) + '</span>';
-        html += '<span class="campana-meta">#' + c.id + ' · ' + total + ' solicitudes</span>';
-        html += '</div>';
-        html += '<span class="campana-estado ' + estadoCls + '"></span>';
-        html += '</div>';
-
-        html += '<div class="campana-body">';
-        html += '<div class="campana-progress">';
-        html += '<div class="campana-progress-bar">';
-        html += '<div class="campana-progress-fill ' + pctCls + '" style="width:' + Math.min(pct, 100) + '%;"></div>';
-        html += '</div>';
-        html += '<span class="campana-progress-text">' + pct + '%</span>';
-        html += '</div>';
-        html += '<div class="campana-stats">';
-        html += '<span>📄 ' + total + ' asignadas</span>';
-        html += '<span>✓ ' + gestionadas + ' gestionadas</span>';
-        html += '</div>';
-        html += '<div class="campana-asignado">' + asignadoHtml + '</div>';
-        html += '</div>';
-        html += '</div>';
-    }
-
-    container.innerHTML = html;
-}
-
-// ============================================================================
-// RENDERIZAR GESTIONES RECIENTES
-// ============================================================================
-function renderizarGestiones() {
-    var container = document.getElementById('gestionesEquipoList');
-    var countEl = document.getElementById('gestionesCount');
-    if (!container) return;
-
-    if (!_gestionesData || _gestionesData.length === 0) {
-        container.innerHTML = `
-            <div class="equipo-empty" style="padding:20px;">
-                <p style="margin:0;color:#9ca3af;font-size:13px;">No hay gestiones recientes del equipo.</p>
-            </div>
-        `;
-        if (countEl) countEl.textContent = '0';
-        return;
-    }
-
-    if (countEl) countEl.textContent = _gestionesData.length + ' gestión(es)';
-
-    var html = '';
-    for (var i = 0; i < _gestionesData.length; i++) {
-        var g = _gestionesData[i];
-        html += '<div class="gestion-item">';
-        html += '<div class="gestion-timeline-dot"></div>';
-        html += '<div class="gestion-content">';
-        html += '<div class="gestion-header-line">';
-        html += '<a href="/m/solicitudes?buscar=' + g.solicitud_id + '" class="gestion-id">#' + g.solicitud_id + '</a>';
-        html += '<span class="gestion-tipo badge badge-blue">' + escapeHtmlMovil(g.tipo_gestion) + '</span>';
-        html += '</div>';
-        html += '<div class="gestion-cliente">' + escapeHtmlMovil(g.cliente_nombre || '—') + '</div>';
-        html += '<div class="gestion-meta">';
-        html += '<span>👤 ' + escapeHtmlMovil(g.agente_username || g.agente_nombre || '-') + '</span>';
-        html += '<span>📅 ' + formatearFechaRelativa(g.fecha_gestion) + '</span>';
-        html += '</div>';
-        if (g.observacion) {
-            html += '<div class="gestion-obs">' + escapeHtmlMovil(g.observacion.substring(0, 60)) + (g.observacion.length > 60 ? '...' : '') + '</div>';
-        }
-        html += '</div>';
-        html += '</div>';
-    }
-
-    container.innerHTML = html;
-}
-
-function formatearFechaRelativa(fecha) {
-    if (!fecha) return '';
-    try {
-        var d = new Date(fecha);
-        if (isNaN(d.getTime())) return fecha;
-        var ahora = new Date();
-        var diffMs = ahora - d;
-        var diffMin = Math.floor(diffMs / 60000);
-        var diffHoras = Math.floor(diffMs / 3600000);
-        var diffDias = Math.floor(diffMs / 86400000);
-
-        if (diffMin < 1) return 'Ahora';
-        if (diffMin < 60) return 'Hace ' + diffMin + ' min';
-        if (diffHoras < 24) return 'Hace ' + diffHoras + ' h';
-        if (diffDias < 7) return 'Hace ' + diffDias + ' día(s)';
-        return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
-    } catch(e) { return fecha; }
-}
-
-// ============================================================================
-// BOTTOM SHEET DETALLE DE AGENTE (MEJORADO con asignaciones detalladas)
-// ============================================================================
-function abrirDetalleAgente(index) {
-    var agente = _agentesData[index];
-    if (!agente) return;
-
-    var activo = agente.is_active;
-    var estadoClase = activo ? 'activo' : 'inactivo';
-    var estadoTexto = activo ? '🟢 Activo' : '🔴 Inactivo';
-    var estadoAccion = activo ? '🔴 Desactivar' : '🟢 Activar';
-    var estadoAccionClase = activo ? 'equipo-detalle-btn-danger' : 'equipo-detalle-btn-success';
-    var nombreMostrar = agente.nombre || agente.username || 'Sin nombre';
-    var asignadas = parseInt(agente.asignadas || 0);
-    var gestiones7d = parseInt(agente.gestiones_7d || 0);
-
-    var bodyHtml = '';
-
-    // Header del detalle
-    bodyHtml += '<div class="equipo-detalle-header">';
-    bodyHtml += '<div class="equipo-detalle-avatar equipo-agente-avatar ' + estadoClase + '">👤</div>';
-    bodyHtml += '<div class="equipo-detalle-info">';
-    bodyHtml += '<h3>' + escapeHtmlMovil(nombreMostrar) + '</h3>';
-    bodyHtml += '<p>@' + escapeHtmlMovil(agente.username) + ' · ' + estadoTexto + '</p>';
-    bodyHtml += '</div>';
-    bodyHtml += '</div>';
-
-    // Resumen de stats
-    bodyHtml += '<div class="equipo-agente-stats" style="margin-bottom:16px;">';
-    bodyHtml += '<div class="equipo-agente-stat">';
-    bodyHtml += '<span class="equipo-agente-stat-value">' + asignadas + '</span>';
-    bodyHtml += '<span class="equipo-agente-stat-label">📋 Asignadas</span>';
-    bodyHtml += '</div>';
-    bodyHtml += '<div class="equipo-agente-stat">';
-    bodyHtml += '<span class="equipo-agente-stat-value">' + gestiones7d + '</span>';
-    bodyHtml += '<span class="equipo-agente-stat-label">📝 Gestiones (7d)</span>';
-    bodyHtml += '</div>';
-    bodyHtml += '</div>';
-
-    // Acciones
-    bodyHtml += '<div class="equipo-detalle-actions">';
-
-    // Ver asignaciones detalladas (igual que Desktop)
-    bodyHtml += '<button class="equipo-detalle-btn" onclick="event.stopPropagation(); cerrarSheetDetalle(); verAsignacionesAgenteMovil(' + agente.id + ', \'' + escapeHtmlMovil(agente.username) + '\')">';
-    bodyHtml += '<span class="equipo-detalle-btn-icon">📋</span>';
-    bodyHtml += 'Ver Asignaciones Detalladas';
-    bodyHtml += '</button>';
-
-    // Ver campañas asignadas
-    bodyHtml += '<button class="equipo-detalle-btn" onclick="event.stopPropagation(); cerrarSheetDetalle(); verCampanasAgente(' + agente.id + ', \'' + escapeHtmlMovil(agente.username) + '\')">';
-    bodyHtml += '<span class="equipo-detalle-btn-icon">📢</span>';
-    bodyHtml += 'Ver Campañas Asignadas';
-    bodyHtml += '</button>';
-
-    // Editar agente
-    bodyHtml += '<button class="equipo-detalle-btn" onclick="event.stopPropagation(); cerrarSheetDetalle(); editarAgente(' + agente.id + ', \'' + escapeHtmlMovil(agente.username) + '\', \'' + escapeHtmlMovil(agente.nombre || '') + '\')">';
-    bodyHtml += '<span class="equipo-detalle-btn-icon">✏️</span>';
-    bodyHtml += 'Editar Agente';
-    bodyHtml += '</button>';
-
-    // Reset password
-    bodyHtml += '<button class="equipo-detalle-btn" onclick="event.stopPropagation(); cerrarSheetDetalle(); resetPasswordAgente(' + agente.id + ', \'' + escapeHtmlMovil(agente.username) + '\')">';
-    bodyHtml += '<span class="equipo-detalle-btn-icon">🔑</span>';
-    bodyHtml += 'Cambiar Contraseña';
-    bodyHtml += '</button>';
-
-    bodyHtml += '<div class="equipo-detalle-divider"></div>';
-
-    // Activar/Desactivar
-    bodyHtml += '<button class="equipo-detalle-btn ' + estadoAccionClase + '" onclick="event.stopPropagation(); cerrarSheetDetalle(); toggleActivoAgente(' + agente.id + ', ' + (activo ? 'false' : 'true') + ', \'' + escapeHtmlMovil(agente.username) + '\')">';
-    bodyHtml += '<span class="equipo-detalle-btn-icon">' + (activo ? '🔴' : '🟢') + '</span>';
-    bodyHtml += estadoAccion;
-    bodyHtml += '</button>';
-
-    bodyHtml += '</div>';
-
-    mostrarSheetMovil('👤 ' + escapeHtmlMovil(agente.username), bodyHtml);
-}
-
-// ============================================================================
-// VER ASIGNACIONES DETALLADAS (como en Desktop)
-// ============================================================================
-async function verAsignacionesAgenteMovil(agenteId, username) {
-    mostrarToastMovil('📋 Cargando asignaciones...');
-    try {
-        var dashRes = await fetch('/api/equipos/' + _equipoId + '/dashboard');
-        if (!dashRes.ok) throw new Error('Error');
-        var data = await dashRes.json();
-
-        var agente = (data.agentes || []).find(function(a) { return a.id == agenteId; });
-        if (!agente) {
-            mostrarToastMovil('⚠️ No se encontró información del agente');
-            return;
-        }
-
-        var asignadas = parseInt(agente.asignadas || 0);
-        var gestiones7d = parseInt(agente.gestiones_7d || 0);
-
-        var bodyHtml = '';
-        bodyHtml += '<div style="padding:8px 0;">';
-        bodyHtml += '<div class="asignaciones-detalle-card">';
-        bodyHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
-        bodyHtml += '<div style="background:#ecfdf5;padding:16px;border-radius:10px;border:1px solid #a7f3d0;text-align:center;">';
-        bodyHtml += '<div style="font-size:28px;font-weight:700;color:#065f46;">' + asignadas.toLocaleString() + '</div>';
-        bodyHtml += '<div style="font-size:11px;color:#047857;font-weight:600;margin-top:4px;">📋 Solicitudes Asignadas</div>';
-        bodyHtml += '</div>';
-        bodyHtml += '<div style="background:#ede9fe;padding:16px;border-radius:10px;border:1px solid #ddd6fe;text-align:center;">';
-        bodyHtml += '<div style="font-size:28px;font-weight:700;color:#5b21b6;">' + gestiones7d.toLocaleString() + '</div>';
-        bodyHtml += '<div style="font-size:11px;color:#6d28d9;font-weight:600;margin-top:4px;">📝 Gestiones (7 días)</div>';
-        bodyHtml += '</div>';
-        bodyHtml += '</div>';
-        bodyHtml += '<a href="/m/solicitudes?usuario=' + agenteId + '" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;margin-top:12px;background:#6366f1;color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:13px;">';
-        bodyHtml += '📋 Ver todas las solicitudes de ' + escapeHtmlMovil(username);
-        bodyHtml += '</a>';
-        bodyHtml += '</div>';
-        bodyHtml += '</div>';
-
-        mostrarSheetMovil('📋 Asignaciones de ' + escapeHtmlMovil(username), bodyHtml);
-
-    } catch (err) {
-        console.error('[Equipo Móvil] Error cargando asignaciones:', err);
-        mostrarToastMovil('⚠️ Error al cargar asignaciones');
-    }
-}
-
-// ============================================================================
-// BOTTOM SHEET MÓVIL
+// BOTTOM SHEET MÓVIL (reutilizable)
 // ============================================================================
 function mostrarSheetMovil(titulo, bodyHtml) {
     var overlay = document.createElement('div');
@@ -699,48 +887,13 @@ function cerrarSheetDetalle() {
 }
 
 // ============================================================================
-// ACCIONES DE AGENTE (usan _equipoId global)
+// ACCIONES DE AGENTE
 // ============================================================================
-
-// Ver campañas del agente
-async function verCampanasAgente(agenteId, username) {
-    mostrarToastMovil('📢 Cargando campañas de ' + username + '...');
-    try {
-        var campRes = await fetch('/api/equipos/' + _equipoId + '/campanas');
-        var campData = await campRes.json();
-        var campañas = campData.data || [];
-        var asignadas = campañas.filter(function(c) { return String(c.asignado_a) === String(agenteId); });
-
-        var bodyHtml = '';
-        if (asignadas.length === 0) {
-            bodyHtml = '<div style="text-align:center;padding:30px 0;color:#6b7280;">';
-            bodyHtml += '<div style="font-size:40px;margin-bottom:10px;">📢</div>';
-            bodyHtml += '<p style="font-size:14px;">' + escapeHtmlMovil(username) + ' no tiene campañas asignadas.</p>';
-            bodyHtml += '</div>';
-        } else {
-            bodyHtml += '<div style="margin-bottom:12px;font-size:13px;color:#6b7280;">📊 Total: ' + asignadas.length + ' campaña(s)</div>';
-            for (var i = 0; i < asignadas.length; i++) {
-                var c = asignadas[i];
-                var total = parseInt(c.total_solicitudes || 0);
-                var gestionadas = parseInt(c.gestionadas || 0);
-                var pct = total > 0 ? Math.round((gestionadas / total) * 100) : 0;
-                bodyHtml += '<div style="background:#f9fafb;border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #f3f4f6;">';
-                bodyHtml += '<div style="font-weight:700;font-size:13px;color:#1f2937;margin-bottom:6px;">#' + c.id + ' ' + escapeHtmlMovil(c.nombre_campana || 'Campaña') + '</div>';
-                bodyHtml += '<div style="font-size:11px;color:#6b7280;">📄 ' + total + ' · ✓ ' + gestionadas + ' · 📊 ' + pct + '%</div>';
-                bodyHtml += '<div style="margin-top:6px;height:4px;background:#e5e7eb;border-radius:2px;overflow:hidden;">';
-                bodyHtml += '<div style="height:100%;width:' + pct + '%;background:#10b981;border-radius:2px;transition:width 0.3s;"></div>';
-                bodyHtml += '</div></div>';
-            }
-        }
-        mostrarSheetMovil('📢 Campañas de ' + escapeHtmlMovil(username), bodyHtml);
-    } catch (err) {
-        console.error('[Equipo Móvil] Error cargando campañas:', err);
-        mostrarToastMovil('⚠️ Error al cargar campañas');
-    }
-}
-
-// Editar agente
-function editarAgente(agenteId, username, nombreActual) {
+function editarAgente(agenteId) {
+    var agente = buscarAgente(agenteId);
+    if (!agente) return;
+    var username = agente.username || '';
+    var nombreActual = agente.nombre || '';
     var bodyHtml = '';
     bodyHtml += '<div style="padding:8px 0;">';
     bodyHtml += '<div class="equipo-form-group-movil">';
@@ -751,9 +904,7 @@ function editarAgente(agenteId, username, nombreActual) {
     bodyHtml += '<label>Email (opcional)</label>';
     bodyHtml += '<input type="email" id="edit-email-agente" placeholder="correo@ejemplo.com">';
     bodyHtml += '</div>';
-    bodyHtml += '<button class="equipo-detalle-btn" style="background:#6366f1;color:white;justify-content:center;margin-top:8px;" onclick="guardarEdicionAgente(' + agenteId + ')">';
-    bodyHtml += '<span class="equipo-detalle-btn-icon">💾</span> Guardar Cambios';
-    bodyHtml += '</button>';
+    bodyHtml += '<button class="eq-sheet-submit" onclick="guardarEdicionAgente(' + agenteId + ')">💾 Guardar Cambios</button>';
     bodyHtml += '</div>';
     mostrarSheetMovil('✏️ Editar ' + escapeHtmlMovil(username), bodyHtml);
 }
@@ -772,6 +923,8 @@ async function guardarEdicionAgente(agenteId) {
             mostrarToastMovil('✅ Agente actualizado');
             cerrarSheetDetalle();
             await recargarTodo();
+            // Reabrir detalle si estábamos en él
+            if (_detalleAbierto) abrirDetalleAgente(agenteId);
         } else {
             var errData = await res.json();
             mostrarToastMovil('⚠️ ' + (errData.error || 'Error al actualizar'));
@@ -782,8 +935,10 @@ async function guardarEdicionAgente(agenteId) {
     }
 }
 
-// Reset password
-function resetPasswordAgente(agenteId, username) {
+function resetPasswordAgente(agenteId) {
+    var agente = buscarAgente(agenteId);
+    if (!agente) return;
+    var username = agente.username || '';
     var bodyHtml = '';
     bodyHtml += '<div style="padding:8px 0;">';
     bodyHtml += '<p style="font-size:13px;color:#6b7280;margin-bottom:14px;">Nueva contraseña para <strong>' + escapeHtmlMovil(username) + '</strong></p>';
@@ -791,9 +946,7 @@ function resetPasswordAgente(agenteId, username) {
     bodyHtml += '<label>Nueva contraseña</label>';
     bodyHtml += '<input type="text" id="reset-password-input" placeholder="Mín 8 carac., mayúscula y número">';
     bodyHtml += '</div>';
-    bodyHtml += '<button class="equipo-detalle-btn" style="background:#6366f1;color:white;justify-content:center;" onclick="guardarResetPassword(' + agenteId + ')">';
-    bodyHtml += '<span class="equipo-detalle-btn-icon">🔑</span> Cambiar Contraseña';
-    bodyHtml += '</button>';
+    bodyHtml += '<button class="eq-sheet-submit" onclick="guardarResetPassword(' + agenteId + ')">🔑 Cambiar Contraseña</button>';
     bodyHtml += '</div>';
     mostrarSheetMovil('🔑 Reset Password', bodyHtml);
 }
@@ -822,8 +975,10 @@ async function guardarResetPassword(agenteId) {
     }
 }
 
-// Toggle activo/inactivo
-async function toggleActivoAgente(agenteId, nuevoEstado, username) {
+async function toggleActivoAgente(agenteId, nuevoEstado) {
+    var agente = buscarAgente(agenteId);
+    if (!agente) return;
+    var username = agente.username || '';
     var accion = nuevoEstado ? 'activar' : 'desactivar';
     var confirmado = await new Promise(function(resolve) {
         Modal.confirmar({
@@ -846,6 +1001,7 @@ async function toggleActivoAgente(agenteId, nuevoEstado, username) {
         if (res.ok) {
             mostrarToastMovil('✅ ' + username + ' ' + (nuevoEstado ? 'activado' : 'desactivado'));
             await recargarTodo();
+            if (_detalleAbierto) abrirDetalleAgente(agenteId);
         } else {
             var errData = await res.json();
             mostrarToastMovil('⚠️ ' + (errData.error || 'Error'));
@@ -854,17 +1010,6 @@ async function toggleActivoAgente(agenteId, nuevoEstado, username) {
         console.error('[Equipo Móvil] Error toggle:', err);
         mostrarToastMovil('⚠️ Error de conexión');
     }
-}
-
-// ============================================================================
-// NAVEGACIÓN
-// ============================================================================
-function irASolicitudes() {
-    window.location.href = '/m/solicitudes';
-}
-
-function irAImportar() {
-    window.location.href = '/m/importar';
 }
 
 // ============================================================================
@@ -880,8 +1025,11 @@ async function recargarTodo() {
             '<div class="equipo-shimmer" style="margin-top:12px;"></div>';
     }
 
-    var kpiValues = document.querySelectorAll('.equipo-kpi-value');
+    var kpiValues = document.querySelectorAll('.eq-kpi-value');
     for (var i = 0; i < kpiValues.length; i++) kpiValues[i].textContent = '...';
+
+    _offsetGestiones = _limiteGestiones;
+    _gestionesData = [];
 
     await cargarTodo();
 
