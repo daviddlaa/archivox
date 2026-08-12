@@ -37,7 +37,6 @@ function actualizarContador() {
     var contador = document.getElementById('contadorPlantillas');
     var fill = document.getElementById('limiteFill');
     var pctEl = document.getElementById('limitePct');
-    var fab = document.getElementById('fabNuevaPlantilla');
 
     contador.textContent = plantillas.length;
     var maxEl = document.getElementById('maxPlantillas');
@@ -46,11 +45,18 @@ function actualizarContador() {
     fill.style.width = pct + '%';
     if (pctEl) pctEl.textContent = pct + '%';
 
-    // El FAB es la acción principal para crear (el botón inline se eliminó del rediseño)
-    if (plantillas.length >= MAX_PLANTILLAS) {
-        if (fab) fab.classList.add('fab-limit');
-    } else {
-        if (fab) fab.classList.remove('fab-limit');
+    // Botón "✨ Nueva plantilla" en el flujo: oculto si no hay plantillas
+    // (el empty state ya muestra su CTA grande); se deshabilita al llegar al límite.
+    var btn = document.getElementById('btnNuevaPlantilla');
+    if (btn) {
+        if (plantillas.length === 0) {
+            btn.style.display = 'none';
+        } else {
+            btn.style.display = '';
+            var enLimite = plantillas.length >= MAX_PLANTILLAS;
+            btn.disabled = enLimite;
+            btn.textContent = enLimite ? '🚫 Límite alcanzado' : '✨ Nueva plantilla';
+        }
     }
 }
 

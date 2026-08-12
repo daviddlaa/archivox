@@ -1,11 +1,35 @@
 # Feature: Plantillas de Mensajes Personalizadas
 
-**Versión:** 1.3
+**Versión:** 1.5
 
 **Fecha:** Agosto 2026
 
 **Estado:** Implementado
 
+> **v1.5 (Agosto 2026):** rediseño completo de la pantalla móvil (`/m/plantillas`).
+> - El botón inline "✨ Nueva" del bloque de límite **se eliminó**: el **FAB flotante** ✨ es
+>   la única acción de crear (60px, gradiente morado; se atenúa al llegar al límite con
+>   `.fab-limit`).
+> - El bloque de límite es ahora un indicador limpio: 💬 "Tus plantillas" + "X de 5 creadas"
+>   + **porcentaje** (`limitePct`) + barra de progreso delgada redondeada.
+> - Las tarjetas pasaron a formato **burbuja estilo WhatsApp** (fondo azul claro, esquinas
+>   asimétricas), cabecera limpia con icono 💬 y número, y footer con botones con **borde y
+>   colores suaves** (verde copiar / índigo editar / rojo eliminar).
+> - `actualizarContador()` ya no referencia el botón eliminado y actualiza `limitePct`.
+>
+> **v1.4 (Agosto 2026):** mejoras UX de la pantalla móvil.
+> - **FAB flotante** ✨ (`.fab-nueva-plantilla`) siempre visible abajo-derecha para crear.
+> - **Campana de notificaciones** 🔔 en el header (carga `deep-link-router.js` y
+>   `notificaciones-dashboard.js`).
+> - **Estado vacío con CTA potente** (`.plantillas-empty-cta`): icono grande, ejemplo visual
+>   de `{nombre}` y botón grande "✨ Crear plantilla".
+> - **Botón 📋 Copiar** (`copiarPlantilla()`): `navigator.clipboard` con fallback
+>   `execCommand` + toast de confirmación.
+> - **Vista previa en vivo** en el modal: burbuja verde estilo WhatsApp (`.plantilla-preview-bubble`)
+>   que muestra el mensaje con "María Pérez" en vez de `{nombre}`, actualizándose mientras
+>   escribes.
+> - Botones de acción con target táctil **mín. 44px** + `aria-label`.
+>
 > **v1.3 (Agosto 2026):** acceso desde la versión móvil de Campañas y blindaje total de modales.
 > - En `/m/gestion-lote`, el icono **💬** de cada tarjeta ya no abre WhatsApp directo:
 >   ahora abre el modal de WhatsApp Directo con las plantillas del usuario
@@ -146,11 +170,23 @@ helpers `escaparHTML()`, `escaparJS()`, `escaparAtributo()`, `escaparTextoArea()
 
 ## Frontend — Móvil (`/m/plantillas`)
 
-Misma funcionalidad en layout táctil:
+Misma funcionalidad en layout táctil (v1.4 + v1.5):
 
-- Header fijo + `nav-bottom` (Inicio / Plantillas / Menú).
-- Bloque de límite compacto con botón "✨ Nueva".
-- Lista vertical de tarjetas (`.plantillas-list`).
+- **FAB flotante ✨** (`.fab-nueva-plantilla`): botón circular morado (60px) abajo-derecha,
+  siempre visible; es la **única** acción de crear (v1.5). Al llegar al límite se atenúa y
+  desactiva con `.fab-limit`.
+- Header fijo con **campana de notificaciones** 🔔 (v1.4) + `nav-bottom`
+  (Inicio / Plantillas / Menú).
+- **Bloque de uso** (`.plantillas-limite`): 💬 "Tus plantillas" + "X de 5 creadas" +
+  porcentaje `limitePct` + barra de progreso delgada (v1.5).
+- **Empty state con CTA potente**: icono grande, burbuja de ejemplo con `{nombre}` y botón
+  "✨ Crear plantilla" (v1.4).
+- **Tarjetas tipo burbuja WhatsApp** (v1.5): fondo azul claro, esquinas asimétricas,
+  cabecera con icono 💬 y número, y footer con botones 📋 Copiar / ✏️ Editar / 🗑️ Eliminar
+  con borde y colores suaves (verde / índigo / rojo), área táctil ≥ 44px.
+- **Vista previa en vivo** en el modal (v1.4): burbuja verde que reemplaza `{nombre}` por
+  "María Pérez" mientras escribes.
+- **Copiar al portapapeles** con fallback (v1.4).
 - Modal con los mismos campos y el helper de inserción de `{nombre}`.
 - Toast centrado en la parte inferior (encima del `nav-bottom`).
 

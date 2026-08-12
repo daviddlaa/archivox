@@ -465,16 +465,24 @@ async function cargarUltimasGestiones() {
             var principal = esLider
                 ? (g.agente_nombre || g.agente_username || 'Agente')
                 : (g.nombre || 'Sin nombre');
-            var detalle = (g.tipo_gestion || '—') + ' · ' + fecha;
-            if (!esLider) {
-                detalle = '#' + g.solicitud_id + (g.cedula ? ' · 🆔 ' + truncarTexto(g.cedula, 15) : '') + ' · ' + detalle;
-            }
+            // Misma riqueza que el widget de escritorio: #id · cliente (líder) o #id · 🆔 cédula
+            var linea = esLider
+                ? '#' + g.solicitud_id + (g.cliente_nombre ? ' · ' + truncarTexto(g.cliente_nombre, 24) : '')
+                : '#' + g.solicitud_id + (g.cedula ? ' · 🆔 ' + truncarTexto(g.cedula, 15) : '');
+            // Observación recortada (90 chars) + CSS clamp de 2 líneas para no agrandar la tarjeta
+            var obs = g.observacion ? truncarTexto(g.observacion, 90) : '';
+            var tipo = (g.tipo_gestion || '—');
 
             html += '<a class="campana-widget-item" href="' + hrefTodas + '">' +
                 '<span class="campana-widget-icon" style="background:' + color + ';">📝</span>' +
                 '<span class="campana-widget-info">' +
                 '<span class="campana-widget-name">' + escapeHtmlMovil(truncarTexto(principal, 26)) + '</span>' +
-                '<span class="ges-widget-meta">' + escapeHtmlMovil(truncarTexto(detalle, 40)) + '</span>' +
+                '<span class="ges-widget-meta">' + escapeHtmlMovil(linea) + '</span>' +
+                '<span class="campana-widget-badges">' +
+                '<span class="campana-widget-badge-tipo" style="background:' + color + ';">' + escapeHtmlMovil(tipo) + '</span>' +
+                '<span class="campana-widget-fecha">⏱️ ' + escapeHtmlMovil(fecha) + '</span>' +
+                '</span>' +
+                (obs ? '<span class="campana-widget-obs">' + escapeHtmlMovil(obs) + '</span>' : '') +
                 '</span>' +
                 '<span class="campana-widget-chevron">›</span>' +
                 '</a>';

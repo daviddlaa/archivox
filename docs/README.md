@@ -199,7 +199,7 @@ ARCHIVOX/
 │   ├── README.md                   # Este archivo
 │   ├── feature-rediseño-semaforo-campañas.md  # Rediseño del indicador de estado v6.1 (Agosto 2026)
 │   ├── feature-ux-comportamiento-campanas.md  # UX de progreso y prioridad v2.0 (Agosto 2026)
-│   ├── feature-plantillas-mensajes.md         # Plantillas de mensajes personalizadas (Agosto 2026)
+│   ├── feature-plantillas-mensajes.md         # Plantillas de mensajes personalizadas v1.5 (rediseño móvil) (Agosto 2026)
 │   ├── feature-panel-lateral-solicitudes.md   # Panel lateral de detalle/edición en Solicitudes (Agosto 2026)
 │   ├── feature-panel-lateral-agentes.md       # Panel lateral de gestión de agentes del equipo (Agosto 2026)
 │   ├── feature-tarjeta-solicitudes-escritorio.md  # Tarjeta Solicitudes Desktop: sin Llamar, cédula+teléfono, fix checkbox, limpieza CSS (Agosto 2026)
@@ -208,6 +208,8 @@ ARCHIVOX/
 │   ├── feature-filtros-movil-solicitudes.md   # Filtros móviles compactos: selects + auto-aplicar (Agosto 2026)
 │   ├── informe-fix-filtros-fecha-solicitudes.md      # Fix filtros de fecha/vendedor + caché cliente (Agosto 2026)
 │   ├── informe-fix-widgets-dashboard-movil.md        # Fix widgets dashboard móvil: truncado de nombres y slide (Agosto 2026)
+│   ├── informe-armonia-widgets-movil.md              # Armonía widgets móvil: 3 widgets como tarjeta igual (4 registros, min-height 62px) (Agosto 2026)
+│   ├── feature-filtros-fecha-todos-solicitudes.md    # Filtros de fecha (Desde/Hasta) para todos en Solicitudes desktop; vendedor solo líderes (Agosto 2026)
 │   ├── feature-buscador-inline-campanas-movil.md     # Buscador inline en Campañas móvil: reemplaza bottom sheet (Agosto 2026)
 │   ├── informe-semaforo-tarjetas-movil.md            # Selector de semáforo con color real + tarjetas más compactas (Agosto 2026)
 │   ├── feature-historial-campana.md                  # Historial general de campaña: botón "🕘 Últimas gestiones" (Agosto 2026)
@@ -227,7 +229,7 @@ ARCHIVOX/
 │   ├── fix-500-solicitudes-created_at.md             # Fix 500 en /api/admin/solicitudes: columna created_at + mecanismo SCHEMA_VERSION (Agosto 2026)
 │   ├── feature-backup-dump-superadmin.md             # Superadmin: backup de BD con un clic (dump SQL portable PG/SQLite) (Agosto 2026)
 │   ├── feature-admin-campanas-sistema.md             # Superadmin: campañas "Asignadas por el sistema" (checkbox + modal + badge es_sistema) (Agosto 2026)
-│   ├── feature-calendario-recordatorios.md           # Calendario mes + lista del día de recordatorios (Agosto 2026)
+│   ├── feature-calendario-recordatorios.md           # Calendario mes + lista del día de recordatorios v2: modal posponer, toast, swipe (Agosto 2026)
 │   ├── demo/                                        # Archivos de ejemplo (Excel demo para video)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
@@ -1047,21 +1049,23 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
     26 y cédula a 15 (helper `truncarTexto()` con `…`); la cédula se envuelve en
     `.sol-widget-cedula` con ellipsis. Evita que el contenido desborde el slide y rompa el snap
     (ver `docs/informe-fix-widgets-dashboard-movil.md`).
-  - **Campañas activas:** las 3 campañas activas más recientes (`.campanas-widget`) con nombre,
+  - **Campañas activas:** las campañas activas (`.campanas-widget`) con nombre,
     barra de progreso `completadas/total · %` y enlace "Ver todas" → `/m/gestion-lote`. Cada
     tarjeta navega a `/m/gestion-lote?id=ID`. Carga vía `GET /api/gestiones-maestro` en
-    `cargarCampañasActivas()`.
-  - **Últimas solicitudes:** las 3 solicitudes más recientes del usuario logueado
-    (`cargarUltimasSolicitudes()` → `GET /api/excel/solicitudes?limite=3`), cada fila con nombre,
+    `cargarCampañasActivas()`; el contenedor se limita a **4 tarjetas visibles** (`max-height`).
+  - **Últimas solicitudes:** las 4 solicitudes más recientes del usuario logueado
+    (`cargarUltimasSolicitudes()` → `GET /api/excel/solicitudes?limite=4`), cada fila con nombre,
     badge de estado coloreado (`.sol-widget-badge`, colores del mapa de `solicitudes.js`) y cédula;
-    enlace "Ver todas" y tarjetas → `/m/solicitudes`. Vacío: "No hay solicitudes".
-  - **Últimas gestiones (Agosto 2026):** las últimas 5 gestiones en timeline "últimas
-    actividades" (`.ges-widget-*`: punto + línea, nombre, `#solicitud`, badge de tipo coloreado,
-    fecha relativa `Hoy/Ayer/El día/Hace N semanas/meses`, observación truncada). Líder: gestiones
-    de su equipo con nombre del agente (`cargarUltimasGestiones()` → `GET /api/equipos/:id/gestiones?limite=5`)
-    y "Ver todas" → `/m/equipo`; resto de usuarios: sus propias gestiones
-    (`GET /api/excel/gestiones/todas?limite=5`) y "Ver todas" → `/m/gestiones`.
-    (Ver `docs/feature-widget-ultimas-gestiones-dashboard.md`.)
+    enlace "Ver todas" y tarjetas → `/m/solicitudes`.
+  - **Últimas gestiones (tarjeta unificada, Agosto 2026):** misma tarjeta que los otros
+    widgets (📝 icono + nombre + detalle + chevron ›, `.campana-widget-item` con
+    `min-height: 62px`), **4 registros** — los 3 slides de la pasarela quedaron armónicos.
+    Detalle: `tipo · fecha` (líder, con nombre del agente) o `tipo · #solicitud · 🆔 cédula ·
+    fecha` (resto de usuarios, con nombre del cliente). Carga: `GET /api/equipos/:id/gestiones?limite=4`
+    (líder) o `GET /api/excel/gestiones/todas?limite=4`; "Ver todas" → `/m/equipo` o
+    `/m/gestiones`. Se eliminó el timeline `.ges-widget-*` (CSS muerto). Los 3 widgets tienen
+    **empty state con CTA potente** (`.campanas-widget-cta`). Ver
+    `docs/informe-armonia-widgets-movil.md` y `docs/feature-widget-ultimas-gestiones-dashboard.md`.
 - **Dashboard escritorio en carrusel (Agosto 2026):** mismo patrón que el móvil. El bloque de
   bienvenida con los botones ⚙️ Gestiones / 🔄 Historial se eliminó (las rutas siguen
   accesibles desde el menú lateral). El contenido se organiza en un carrusel de 4 slides
@@ -1212,6 +1216,12 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
   el menú abre hacia abajo si hay espacio o hacia arriba con clamp, y
   nunca se corta ni se desposiciona. Ver
   `docs/feature-filtros-buscador-movil-solicitudes.md`.
+- **Filtros de fecha para todos (escritorio, Agosto 2026):** los inputs 📅 Desde / 📅 Hasta
+  están **siempre visibles** para cualquier usuario: se movieron de `#filtrosLider` a un
+  `#filtrosFecha` permanente, el JS los envía siempre en la búsqueda y el backend los aplica
+  sin restricción de rol (`excel.controller.js`, `listarSolicitudes` + `buscarSolicitudes` +
+  sus COUNTs). El filtro 👤 Vendedor sigue siendo **solo Líder+** (nivel ≥ 30), protegido en
+  UI y servidor. Ver `docs/feature-filtros-fecha-todos-solicitudes.md`.
 - **UX "Agregar a Campaña" (escritorio + móvil):** el modal de agregar
   solicitudes seleccionadas a una campaña existente tiene ahora el botón
   confirmar **arriba, junto al título** (misma posición en ambas
@@ -1387,8 +1397,36 @@ La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tabla
 - Pantallas desktop (grid de tarjetas) y móvil (lista), modal crear/editar con contador de caracteres (2000) e inserción rápida de `{nombre}`
 - Contador de uso con barra de progreso y empty state
 - **Integración con WhatsApp Directo** de Gestión por Lotes: las plantillas del usuario reemplazan los mensajes fijos (fallback al mensaje predeterminado si no hay plantillas); la variable `{nombre}` se reemplaza al abrir el modal; en móvil el icono 💬 de cada tarjeta abre este modal (v1.3)
+- **UX móvil (v1.4):** FAB flotante ✨ como acción de crear, campana 🔔 en el header, estado
+  vacío con CTA potente, botón 📋 Copiar (clipboard + fallback) y **vista previa en vivo** en
+  el modal (burbuja tipo WhatsApp que reemplaza `{nombre}` por "María Pérez" mientras
+  escribes); botones ≥ 44px.
+- **Rediseño móvil (v1.5):** el botón inline "✨ Nueva" se eliminó (el FAB es la única
+  acción); bloque de uso con porcentaje (`limitePct`) + barra de progreso delgada; tarjetas
+  tipo **burbuja WhatsApp** (fondo azul claro, esquinas asimétricas) con botones de borde
+  suave (verde copiar / índigo editar / rojo eliminar).
 - Navegación por drawer y deep link (`plantillas`)
 - Ver `docs/feature-plantillas-mensajes.md` para documentación completa (Agosto 2026)
+
+---
+
+### 11.13 Calendario de Recordatorios
+
+**Ruta:** `/calendario-recordatorios` (desktop), `/m/calendario-recordatorios` (móvil)
+**Archivos:** `gestionesMaestro.controller.js` (`listarRecordatorios`), `public/desktop/js/calendario-recordatorios.js`, `public/movil/calendario-recordatorios.html`, `public/css/calendario-recordatorios.css`, `public/movil/css/calendario-recordatorios.css`
+
+- Calendario **mensual** con conteos por día (puntos por canal / vencidos) y KPIs del mes
+  (vencidos / hoy / próximos); al seleccionar un día se lista con secciones
+  Vencidos / Hoy / Del día. Sin librería externa.
+- Acciones: ✅ Hecho, ⏰ Posponer, ❌ Cancelar, Ir a campaña. Scope = campañas visibles
+  (`buildGestionAccessWhere`).
+- **UX v2 (Agosto 2026):** modal de posponer con atajos **+30 min / +1 hora / +1 día** +
+  `datetime-local` precargado (reemplaza `prompt()`); toast `cal-toast` (reemplaza `alert()`);
+  **auto-scroll suave** al panel del día (móvil); **swipe horizontal** para cambiar de mes
+  (móvil, umbral 70px, `touch-action: pan-y`); badge 📅 Hoy; hover con elevación (desktop).
+- API: `GET /api/gestiones-maestro/recordatorios?desde=&hasta=&estado=`, reutiliza
+  `PUT /:id/recordatorios/:rid/estado` y `PUT /:id/recordatorios/:rid/posponer`.
+- Ver `docs/feature-calendario-recordatorios.md` (Agosto 2026).
 
 ---
 

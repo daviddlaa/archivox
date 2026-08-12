@@ -5,7 +5,7 @@
    ============================================================ */
 
 .plantillas-container {
-    padding: 16px 16px 96px;
+    padding: 16px 16px 88px;
 }
 
 /* ============================================================
@@ -392,36 +392,42 @@
 }
 
 /* ============================================================
-   FAB NUEVA PLANTILLA (acción principal)
+   BOTÓN "✨ NUEVA PLANTILLA" (en el flujo, nunca en el footer)
+   Sustituye al FAB flotante que se superponía con el nav-bottom
+   (safe-area iOS) y parecía un acceso del footer.
    ============================================================ */
-.fab-nueva-plantilla {
-    position: fixed;
-    bottom: 84px;
-    right: 18px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
+.btn-nueva-plantilla {
+    width: 100%;
+    margin-top: 14px;
+    min-height: 48px;
+    padding: 0 16px;
     border: none;
+    border-radius: 14px;
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color: white;
-    font-size: 26px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.45);
-    cursor: pointer;
-    z-index: 900;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    gap: 6px;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
-.fab-nueva-plantilla:active {
-    transform: scale(0.9);
+.btn-nueva-plantilla:active {
+    transform: scale(0.97);
 }
 
-.fab-nueva-plantilla.fab-limit {
-    opacity: 0.45;
+.btn-nueva-plantilla:disabled {
+    background: linear-gradient(135deg, #9ca3af, #6b7280);
+    box-shadow: none;
     cursor: not-allowed;
-    pointer-events: none;
+    opacity: 0.8;
 }
 
 /* ============================================================
