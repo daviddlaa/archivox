@@ -452,7 +452,7 @@ async function cargarCampañasActivas() {
             html += '<a class="campana-widget-item" href="/gestion-lote?id=' + encodeURIComponent(g.id) + '">' +
                 '<span class="campana-widget-icon">📋</span>' +
                 '<span class="campana-widget-info">' +
-                '<span class="campana-widget-name">' + escapeHtml(g.nombre || 'Campaña #' + g.id) + '</span>' +
+                '<span class="campana-widget-name">' + escapeHtml(truncarTexto(g.nombre || 'Campaña #' + g.id, 30)) + '</span>' +
                 '<span class="campana-widget-semaforo">' + segSemaforo + '</span>' +
                 '<span class="campana-widget-stats">' + comp + ' de ' + total + ' · ' + pct + '%</span>' +
                 '</span>' +
@@ -509,10 +509,10 @@ async function cargarUltimasSolicitudes() {
             html += '<a class="campana-widget-item" href="/solicitudes">' +
                 '<span class="campana-widget-icon">📋</span>' +
                 '<span class="campana-widget-info">' +
-                '<span class="campana-widget-name">' + escapeHtml(s.nombre || 'Sin nombre') + '</span>' +
+                '<span class="campana-widget-name">' + escapeHtml(truncarTexto(s.nombre || 'Sin nombre', 26)) + '</span>' +
                 '<span class="sol-widget-meta">' +
                 '<span class="sol-widget-badge" style="background:' + color + ';">' + escapeHtml(estado) + '</span>' +
-                (s.cedula ? ' · ' + escapeHtml(s.cedula) : '') +
+                (s.cedula ? '<span class="sol-widget-cedula">· ' + escapeHtml(truncarTexto(s.cedula, 15)) + '</span>' : '') +
                 '</span>' +
                 '</span>' +
                 '<span class="campana-widget-chevron">›</span>' +
@@ -526,10 +526,10 @@ async function cargarUltimasSolicitudes() {
 }
 
 // ============================================================================
-// WIDGET ÚLTIMAS GESTIONES (historial de las últimas 5 gestiones)
+// WIDGET ÚLTIMAS GESTIONES (últimas 4 gestiones, tarjeta igual a las demás)
 // Líder: últimas gestiones de su equipo (con nombre del agente).
 // Resto de usuarios: sus propias últimas gestiones.
-// Estilo: timeline "últimas actividades" (ver docs/feature-historial-campana.md).
+// Estilo: tarjeta .campana-widget-item (ver docs/informe-armonia-widgets-movil.md).
 // ============================================================================
 var coloresTipoGestion = {
     'Pendiente': '#fef3c7',
@@ -584,12 +584,12 @@ async function cargarUltimasGestiones() {
 
         var lista;
         if (esLider && equipoId) {
-            var res = await fetch('/api/equipos/' + equipoId + '/gestiones?limite=5');
+            var res = await fetch('/api/equipos/' + equipoId + '/gestiones?limite=4');
             if (!res.ok) throw new Error('status ' + res.status);
             var result = await res.json();
             lista = Array.isArray(result) ? result : (result.data || []);
         } else {
-            var res2 = await fetch('/api/excel/gestiones/todas?limite=5');
+            var res2 = await fetch('/api/excel/gestiones/todas?limite=4');
             if (!res2.ok) throw new Error('status ' + res2.status);
             var result2 = await res2.json();
             lista = Array.isArray(result2) ? result2 : (result2.data || []);
@@ -608,10 +608,12 @@ async function cargarUltimasGestiones() {
             return;
         }
 
+        // Tarjeta igual a campañas/solicitudes (icono + nombre + meta + chevron)
+        var verTodas = document.getElementById('ultimas-gestiones-link');
+        var hrefTodas = verTodas ? verTodas.href : '/gestiones';
         var html = '';
         for (var i = 0; i < lista.length; i++) {
             var g = lista[i];
-            var isLast = i === lista.length - 1;
             var color = coloresTipoGestion[g.tipo_gestion] || '#f3f4f6';
             var fecha = formatearFechaWidget(g.fecha_gestion);
             var principal = esLider
@@ -621,24 +623,21 @@ async function cargarUltimasGestiones() {
                 ? '#' + g.solicitud_id + (g.cliente_nombre ? ' · ' + truncarTexto(g.cliente_nombre, 24) : '')
                 : '#' + g.solicitud_id + (g.cedula ? ' · 🆔 ' + truncarTexto(g.cedula, 18) : '');
             var obs = g.observacion ? truncarTexto(g.observacion, 90) : '';
+            var tipo = (g.tipo_gestion || '—');
 
-            html += '<div class="ges-widget-item">' +
-                '<div class="ges-widget-rail">' +
-                '<span class="ges-widget-dot" style="background:' + color + ';"></span>' +
-                (isLast ? '' : '<span class="ges-widget-line"></span>') +
-                '</div>' +
-                '<div class="ges-widget-body">' +
-                '<div class="ges-widget-top">' +
-                '<span class="ges-widget-name">' + escapeHtml(truncarTexto(principal, 28)) + '</span>' +
-                '</div>' +
-                '<div class="ges-widget-meta">' + escapeHtml(linea) + '</div>' +
-                '<div class="ges-widget-badges">' +
-                '<span class="ges-widget-badge" style="background:' + color + ';">' + escapeHtml(g.tipo_gestion || '—') + '</span>' +
-                '<span class="ges-widget-fecha">⏱️ ' + escapeHtml(fecha) + '</span>' +
-                '</div>' +
-                (obs ? '<div class="ges-widget-obs">' + escapeHtml(obs) + '</div>' : '') +
-                '</div>' +
-                '</div>';
+            html += '<a class="campana-widget-item" href="' + hrefTodas + '">' +
+                '<span class="campana-widget-icon" style="background:' + color + ';">📝</span>' +
+                '<span class="campana-widget-info">' +
+                '<span class="campana-widget-name">' + escapeHtml(truncarTexto(principal, 28)) + '</span>' +
+                '<span class="ges-widget-meta">' + escapeHtml(linea) + '</span>' +
+                '<span class="campana-widget-badges">' +
+                '<span class="campana-widget-badge-tipo" style="background:' + color + ';">' + escapeHtml(tipo) + '</span>' +
+                '<span class="campana-widget-fecha">⏱️ ' + escapeHtml(fecha) + '</span>' +
+                '</span>' +
+                (obs ? '<span class="campana-widget-obs">' + escapeHtml(obs) + '</span>' : '') +
+                '</span>' +
+                '<span class="campana-widget-chevron">›</span>' +
+                '</a>';
         }
         container.innerHTML = html;
         igualarAlturaDashdWidgetsSlides();

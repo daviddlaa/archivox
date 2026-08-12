@@ -368,6 +368,14 @@
         background: #c7d2fe;
     }
 
+    /* Sin campaña asignada: indicador muted (no es un enlace) */
+    .card-fila-4 .campana-link.campana-link-vacia {
+        background: #f3f4f6;
+        border: 1.5px dashed #d1d5db;
+        color: #6b7280;
+        pointer-events: none;
+    }
+
     /* Botón 👎 "No aplica" (solo icono, junto al link de campaña) */
     .card-fila-4 .noaplica-icon-btn {
         display: inline-flex;

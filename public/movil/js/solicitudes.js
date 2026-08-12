@@ -781,6 +781,9 @@ function renderizarCards(datos) {
         html += '  <div class="card-fila-4">';
         if (item.campana_id && item.nombre_campana) {
             html += '    <a class="campana-link" href="/m/gestion-lote?id=' + encodeURIComponent(item.campana_id) + '&card=' + encodeURIComponent(id) + '" onclick="event.stopPropagation()"><span>📢 ' + escaparParaHTMLMovil(item.nombre_campana) + ' →</span></a>';
+        } else {
+            // Sin campaña: indicarlo en vez de dejar el hueco vacío
+            html += '    <span class="campana-link campana-link-vacia"><span>📭 Sin campaña</span></span>';
         }
         html += '    <button type="button" class="noaplica-icon-btn' + (noAplica ? ' activo' : '') + '" onclick="event.stopPropagation(); confirmarNoAplicaCreditoMovil(\'' + id + '\', ' + (noAplica ? 1 : 0) + ', ' + (item.campana_id ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '" aria-label="No aplica para crédito">👎</button>';
         html += '  </div>';

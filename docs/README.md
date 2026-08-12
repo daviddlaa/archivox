@@ -1094,11 +1094,14 @@ Al iniciar el servidor, las notificaciones ya leídas pasan a Archivadas
   - **Últimas Solicitudes:** 3 solicitudes más recientes del usuario (`cargarUltimasSolicitudes()`
     → `GET /api/excel/solicitudes?limite=3`), cada fila con nombre, badge de estado coloreado
     (`.sol-widget-badge`) y cédula; "Ver todas" y tarjetas → `/solicitudes`.
-  - **Últimas Gestiones:** mismo timeline `.ges-widget-*` que el móvil (`cargarUltimasGestiones()`).
-    Líder: gestiones de su equipo con nombre del agente
-    (`GET /api/equipos/:id/gestiones?limite=5`) y "Ver todas" → `/equipo`; resto de usuarios:
-    sus propias gestiones (`GET /api/excel/gestiones/todas?limite=5`) y "Ver todas" →
-    `/gestiones`. (Ver `docs/feature-widget-ultimas-gestiones-dashboard.md`.)
+  - **Últimas Gestiones:** tarjeta unificada `.campana-widget-item` (igual a los otros 2
+    widgets, con `min-height: 62px`): 📝 icono + nombre truncado + `#id · cliente` +
+    píldora de tipo + `⏱️ fecha` + observación (máx. 2 líneas) + chevron ›. Líder: gestiones
+    de su equipo con nombre del agente (`GET /api/equipos/:id/gestiones?limite=4`) y
+    "Ver todas" → `/equipo`; resto de usuarios: sus propias gestiones
+    (`GET /api/excel/gestiones/todas?limite=4`) y "Ver todas" → `/gestiones`. Se eliminó el
+    timeline `.ges-widget-*`. (Ver `docs/informe-armonia-widgets-movil.md` y
+    `docs/feature-widget-ultimas-gestiones-dashboard.md`.)
 
 ### 11.2 Solicitudes
 
