@@ -71,6 +71,16 @@
 
                 <div class="campana-workspace" id="campana-workspace">
                     <div class="campana-main" id="campana-main">
+                        <!-- Búsqueda global: solicitud en todas las campañas (solo modo landing) -->
+                        <div class="campanas-buscador-global" id="campanas-buscador-global" style="display:none;">
+                            <div class="campanas-buscador-field">
+                                <span class="campanas-buscador-icon" aria-hidden="true">🔍</span>
+                                <input type="search" id="campanas-buscador-input" placeholder="Buscar solicitud en todas las campañas (cédula, nombre, teléfono o ID)…" autocomplete="off" enterkeyhint="search" aria-label="Buscar solicitud en todas las campañas">
+                                <button type="button" class="campanas-buscador-clear" id="campanas-buscador-clear" onclick="limpiarBusquedaGlobalCampanas()" aria-label="Limpiar búsqueda" title="Limpiar búsqueda" hidden>✕</button>
+                            </div>
+                            <div class="campanas-buscador-results" id="campanas-buscador-results" hidden></div>
+                        </div>
+
                         <div class="filtros-row" id="filtros-row" style="display: none;">
                             <input type="text" id="busqueda" placeholder="🔍 Buscar por id, cédula, nombre o teléfono...">
                             <select id="filtro-estado">

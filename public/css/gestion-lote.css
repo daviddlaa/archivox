@@ -2702,6 +2702,143 @@ body {
     font-weight: 600;
 }
 
+/* ===== BÚSQUEDA GLOBAL DE SOLICITUDES EN TODAS LAS CAMPAÑAS (landing) ===== */
+.campanas-buscador-global {
+    position: relative;
+    margin: 0 0 20px;
+}
+.campanas-buscador-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.campanas-buscador-icon {
+    position: absolute;
+    left: 14px;
+    font-size: 15px;
+    color: #94a3b8;
+    pointer-events: none;
+}
+.campanas-buscador-field input {
+    width: 100%;
+    padding: 12px 44px 12px 40px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    outline: none;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.campanas-buscador-field input::placeholder {
+    color: #94a3b8;
+}
+.campanas-buscador-field input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, .15);
+}
+.campanas-buscador-clear {
+    position: absolute;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+.campanas-buscador-clear:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+.campanas-buscador-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 60;
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 6px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, .14);
+}
+.campanas-buscador-count {
+    padding: 6px 10px 8px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+.campanas-buscar-resultado {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: background .12s ease;
+}
+.campanas-buscar-resultado:hover,
+.campanas-buscar-resultado:focus-visible {
+    background: #f5f3ff;
+    outline: none;
+}
+.campanas-buscar-resultado-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.campanas-buscar-resultado-main strong {
+    color: #1e293b;
+    font-size: 13px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.campanas-buscar-resultado-main small {
+    color: #64748b;
+    font-size: 11.5px;
+}
+.campanas-buscar-resultado-campana {
+    flex: 0 0 auto;
+    max-width: 45%;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.campanas-buscador-state {
+    padding: 18px 14px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+}
+.campanas-buscador-error {
+    color: #dc2626;
+}
+
 /* ===== GUÍA DIDÁCTICA AL ENTRAR A UNA CAMPAÑA (una sola vez) ===== */
 .guia-campana {
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;

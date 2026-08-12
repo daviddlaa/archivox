@@ -120,6 +120,16 @@
     <div id="agregar-solicitudes-container" style="display: none;" aria-hidden="true"></div>
     <div id="exportar-excel-container" style="display: none;" aria-hidden="true"></div>
 
+    <!-- Búsqueda global: solicitud en todas las campañas (solo modo landing) -->
+    <div class="campanas-buscador-global" id="campanas-buscador-global" style="display:none;">
+        <div class="campanas-buscador-field">
+            <span class="campanas-buscador-icon" aria-hidden="true">🔍</span>
+            <input type="search" id="campanas-buscador-input" placeholder="Buscar solicitud en todas las campañas…" autocomplete="off" enterkeyhint="search" aria-label="Buscar solicitud en todas las campañas">
+            <button type="button" class="campanas-buscador-clear" id="campanas-buscador-clear" onclick="limpiarBusquedaGlobalCampanas()" aria-label="Limpiar búsqueda" title="Limpiar búsqueda" hidden>✕</button>
+        </div>
+        <div class="campanas-buscador-results" id="campanas-buscador-results" hidden></div>
+    </div>
+
     <!-- Lista de Solicitudes -->
     <div class="sol-list" id="lista-solicitudes">
         <div class="sin-campana">

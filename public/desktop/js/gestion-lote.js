@@ -240,6 +240,18 @@ async function init() {
         console.log('[init] Cargando datos de gestión:', gestionId);
         await cargarDatosGestion();
         marcarCampañaActiva(gestionId);
+        // Deep link: saltar a la tarjeta de la solicitud (búsqueda global / historial / calendario)
+        var urlParamsDL = new URLSearchParams(window.location.search);
+        var cardTarget = urlParamsDL.get('card');
+        if (cardTarget) {
+            setTimeout(function() { navegarACardDesktop(cardTarget); }, 300);
+            // Limpiar el parámetro: si el usuario recarga, que no vuelva a saltar
+            try {
+                urlParamsDL.delete('card');
+                var qsDL = urlParamsDL.toString();
+                history.replaceState(null, '', window.location.pathname + (qsDL ? '?' + qsDL : ''));
+            } catch (e) {}
+        }
         console.log('[init] Carga completa');
     } else {
         console.log('[init] No hay ID en URL, mostrando grid de campañas');
@@ -247,9 +259,133 @@ async function init() {
     }
 }
 
+// ============================================================================
+// BÚSQUEDA GLOBAL: solicitud en TODAS las campañas (modo landing)
+// Reutiliza GET /api/excel/solicitudes/buscar (devuelve campana_id + nombre_campana)
+// ============================================================================
+var _buscadorGlobalTimer = null;
+var _buscadorGlobalAbort = null;
+var _buscadorGlobalInit = false;
+
+function initBuscadorGlobalCampanas() {
+    if (_buscadorGlobalInit) return;
+    _buscadorGlobalInit = true;
+    var input = document.getElementById('campanas-buscador-input');
+    if (!input) return;
+    input.addEventListener('input', onInputBusquedaGlobalCampanas);
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            e.stopPropagation();
+            limpiarBusquedaGlobalCampanas();
+        }
+    });
+    document.addEventListener('click', function(e) {
+        var cont = document.getElementById('campanas-buscador-global');
+        var results = document.getElementById('campanas-buscador-results');
+        if (results && cont && !cont.contains(e.target) && !results.hidden) {
+            results.hidden = true;
+        }
+    });
+}
+
+function onInputBusquedaGlobalCampanas() {
+    var input = document.getElementById('campanas-buscador-input');
+    var clear = document.getElementById('campanas-buscador-clear');
+    var q = (input ? input.value : '').trim();
+    if (clear) clear.hidden = !q;
+    if (_buscadorGlobalTimer) clearTimeout(_buscadorGlobalTimer);
+    if (q.length < 2) {
+        var results = document.getElementById('campanas-buscador-results');
+        if (results) results.hidden = true;
+        return;
+    }
+    _buscadorGlobalTimer = setTimeout(function() { buscarGlobalCampanas(q); }, 280);
+}
+
+async function buscarGlobalCampanas(q) {
+    var results = document.getElementById('campanas-buscador-results');
+    if (!results) return;
+    results.hidden = false;
+    results.innerHTML = '<div class="campanas-buscador-state">🔍 Buscando…</div>';
+    if (_buscadorGlobalAbort) _buscadorGlobalAbort.abort();
+    var controller = new AbortController();
+    _buscadorGlobalAbort = controller;
+    try {
+        var res = await fetch('/api/excel/solicitudes/buscar?q=' + encodeURIComponent(q) + '&limite=50', {
+            credentials: 'include',
+            signal: controller.signal
+        });
+        if (!res.ok) throw new Error('Status ' + res.status);
+        var data = await res.json();
+        var lista = (data && data.data) || [];
+        var enCampanas = lista.filter(function(s) { return s.campana_id; });
+        renderResultadosBusquedaGlobal(enCampanas);
+    } catch (e) {
+        if (e.name === 'AbortError') return;
+        console.error('[buscador-global] Error:', e);
+        results.innerHTML = '<div class="campanas-buscador-state campanas-buscador-error">⚠️ No se pudo buscar. Intenta de nuevo.</div>';
+    }
+}
+
+function renderResultadosBusquedaGlobal(lista) {
+    var results = document.getElementById('campanas-buscador-results');
+    if (!results) return;
+    if (!lista.length) {
+        var input = document.getElementById('campanas-buscador-input');
+        var q = (input ? input.value : '').trim();
+        results.innerHTML = '<div class="campanas-buscador-state">Sin solicitudes en campañas para «' + escaparParaHTML(q) + '»</div>';
+        return;
+    }
+    var html = '<div class="campanas-buscador-count">' + lista.length + ' solicitud' + (lista.length === 1 ? '' : 'es') + ' en campañas</div>';
+    for (var i = 0; i < lista.length; i++) {
+        var s = lista[i];
+        var campanaIdNum = Number(s.campana_id);
+        if (!campanaIdNum) continue;
+        var nombre = s.nombre || 'Sin nombre';
+        var campana = s.nombre_campana || ('Campaña #' + campanaIdNum);
+        var detalle = '🆔 ' + (s.cedula ? s.cedula : '—');
+        if (s.celular) detalle += ' · 📱 ' + s.celular;
+        html += '<button type="button" class="campanas-buscar-resultado" onclick="irACampanaDesdeBusqueda(' + campanaIdNum + ', \'' + escaparParaAtributo(String(s.id_solicitud)) + '\')" title="Abrir ' + escaparParaAtributo(campana) + ' en la tarjeta de ' + escaparParaAtributo(nombre) + '">' +
+            '<span class="campanas-buscar-resultado-main">' +
+                '<strong>' + escaparParaHTML(nombre) + '</strong>' +
+                '<small>' + escaparParaHTML(detalle) + '</small>' +
+            '</span>' +
+            '<span class="campanas-buscar-resultado-campana">📢 ' + escaparParaHTML(campana) + '</span>' +
+        '</button>';
+    }
+    results.innerHTML = html;
+}
+
+function irACampanaDesdeBusqueda(campanaId, solicitudId) {
+    var base = (window.location.pathname.indexOf('/m/') === 0) ? '/m/gestion-lote' : '/gestion-lote';
+    window.location.href = base + '?id=' + encodeURIComponent(campanaId) + '&card=' + encodeURIComponent(solicitudId);
+}
+
+function resetBusquedaGlobalCampanas() {
+    var input = document.getElementById('campanas-buscador-input');
+    var results = document.getElementById('campanas-buscador-results');
+    var clear = document.getElementById('campanas-buscador-clear');
+    if (input) input.value = '';
+    if (results) results.hidden = true;
+    if (clear) clear.hidden = true;
+    if (_buscadorGlobalTimer) clearTimeout(_buscadorGlobalTimer);
+}
+
+function limpiarBusquedaGlobalCampanas() {
+    resetBusquedaGlobalCampanas();
+    var input = document.getElementById('campanas-buscador-input');
+    if (input) input.focus();
+}
+
 function renderizarGridCampanasLanding() {
     var container = document.getElementById('lista-solicitudes');
     if (!container) return;
+
+    // Búsqueda global visible solo en el modo landing
+    var buscadorGlobal = document.getElementById('campanas-buscador-global');
+    if (buscadorGlobal) buscadorGlobal.style.display = 'block';
+    initBuscadorGlobalCampanas();
+    resetBusquedaGlobalCampanas();
 
     var filtrosRow = document.getElementById('filtros-row');
     if (filtrosRow) filtrosRow.style.display = 'none';
@@ -268,6 +404,8 @@ function renderizarGridCampanasLanding() {
     if (estadoEl) estadoEl.hidden = true;
 
     if (!campañas || campañas.length === 0) {
+        var buscadorVacio = document.getElementById('campanas-buscador-global');
+        if (buscadorVacio) buscadorVacio.style.display = 'none';
         container.innerHTML = '<div class="empty campanas-landing-empty">' +
             '<p>No hay campañas.</p>' +
             '<p>Ve a <a href="/solicitudes">Solicitudes</a> para crear una.</p>' +
@@ -534,6 +672,11 @@ async function cargarDatosGestion() {
         // Mostrar workspace: lista + rail + filtros
         var filtrosRow = document.getElementById('filtros-row');
         if (filtrosRow) filtrosRow.style.display = 'flex';
+
+        // Ocultar la búsqueda global del landing
+        var buscadorGlobal = document.getElementById('campanas-buscador-global');
+        if (buscadorGlobal) buscadorGlobal.style.display = 'none';
+        resetBusquedaGlobalCampanas();
 
         var kpiStrip = document.getElementById('header-kpi-strip');
         if (kpiStrip) kpiStrip.hidden = false;
@@ -833,19 +976,19 @@ function antiguedadSinSeguimiento(sol) {
 // se conserva en el tooltip title).
 function textoTiempoSinSeguimientoCorto(sol) {
     var map = {
-        'Sin gestiones': 'Sin gestiones',
+        'Sin gestiones': 'Sin gestión',
         'Recién gestionada': 'Recién',
         'Menos de una hora sin seguimiento': '~1 h',
         'Hoy mismo': 'Hoy',
         'Desde ayer': 'Ayer',
         'Anteayer': 'Anteayer',
         'Menos de una semana sin seguimiento': 'Esta semana',
-        'Más de una semana sin seguimiento': '+1 semana',
-        'Más de quince días sin seguimiento': '+15 días',
-        'Más de un mes sin seguimiento': '+1 mes',
-        'Más de dos meses sin seguimiento': '+2 meses'
+        'Más de una semana sin seguimiento': 'Sin gestión 1 sem',
+        'Más de quince días sin seguimiento': 'Sin gestión 15 días',
+        'Más de un mes sin seguimiento': 'Sin gestión 1 mes',
+        'Más de dos meses sin seguimiento': 'Sin gestión 2 meses'
     };
-    return map[textoTiempoSinSeguimiento(sol)] || 'Sin gestiones';
+    return map[textoTiempoSinSeguimiento(sol)] || 'Sin gestión';
 }
 
 // Texto descriptivo completo del badge de tiempo (usado en el tooltip).

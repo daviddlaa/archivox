@@ -28,7 +28,7 @@ Además:
 
 - **Toast informativo** al aplicar el filtro: *"✓ ⏱️ Priorizadas: las solicitudes con más
   tiempo sin seguimiento"* (reutiliza los toasts existentes `.campana-toast` / `.campana-toast-mobile`).
-- **Badge de tiempo** en cada tarjeta activa: muestra `⏱️ Sin gestiones` en rojo para las
+- **Badge de tiempo** en cada tarjeta activa: muestra `⏱️ Sin gestión` en rojo para las
   que nunca se gestionaron, y para el resto un **rango psicológico de urgencia escalonada**
   en vez del conteo exacto (ver §2.4), visible siempre para identificar la prioridad de un
   vistazo.
@@ -87,17 +87,24 @@ diccionario (`textoTiempoSinSeguimientoCorto[Movil]` → `textoTiempoSinSeguimie
 
 | Tiempo real | Texto visible (corto) | Tooltip (completo) |
 |-------------|----------------------|--------------------|
-| Sin `fecha_gestion` | `Sin gestiones` (rojo) | `Sin gestiones` |
+| Sin `fecha_gestion` | `Sin gestión` (rojo) | `Sin gestiones` |
 | Menos de 1 minuto | `Recién` | `Recién gestionada` |
 | Menos de 1 hora | `~1 h` | `Menos de una hora sin seguimiento` |
 | Menos de 24 h | `Hoy` | `Hoy mismo` |
 | 1 día | `Ayer` | `Desde ayer` |
 | 2 días | `Anteayer` | `Anteayer` |
 | 3–6 días | `Esta semana` | `Menos de una semana sin seguimiento` |
-| 7–14 días | `+1 semana` | `Más de una semana sin seguimiento` |
-| 15–29 días | `+15 días` | `Más de quince días sin seguimiento` |
-| 30–59 días | `+1 mes` | `Más de un mes sin seguimiento` |
-| 60+ días | `+2 meses` | `Más de dos meses sin seguimiento` |
+| 7–14 días | `Sin gestión 1 sem` | `Más de una semana sin seguimiento` |
+| 15–29 días | `Sin gestión 15 días` | `Más de quince días sin seguimiento` |
+| 30–59 días | `Sin gestión 1 mes` | `Más de un mes sin seguimiento` |
+| 60+ días | `Sin gestión 2 meses` | `Más de dos meses sin seguimiento` |
+
+**Ajuste de texto (Agosto 2026):** los rangos `+1 semana`, `+15 días`, `+1 mes` y
+`+2 meses` resultaban crípticos (el `+` no dejaba claro el significado). Ahora el badge
+aclara explícitamente que es **tiempo sin gestión**: `Sin gestión 1 sem`, `Sin gestión 15 días`,
+`Sin gestión 1 mes`, `Sin gestión 2 meses`; y `Sin gestiones` pasa a `Sin gestión`. Los textos
+amigables de gestión reciente (`Recién`, `~1 h`, `Hoy`, `Ayer`, `Anteayer`, `Esta semana`)
+se conservan tal cual.
 
 **Badge de destacar solo icono (móvil, Agosto 2026):** en móvil el badge de destacar
 muestra solo el fuego `🔥` (28×28 circular): dorado y animado si está destacado, gris
