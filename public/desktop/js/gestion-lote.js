@@ -1118,6 +1118,29 @@ async function abrirHistorialCampanaDesktop() {
                 if (g.vendedor) contenido += '<span style="font-size:11px;color:#2563eb;font-weight:600;">🏷️ ' + escaparParaHTML(g.vendedor) + '</span>';
                 contenido += '<span style="font-size:11px;color:#9ca3af;">' + fecha + '</span>';
                 contenido += '</div>';
+                if (g.resultado && g.tipo_gestion === 'Llamada') {
+                    var resLabels = {
+                        'no_contesta': '📵 No contestó', 'numero_invalido': '📛 Número incorrecto',
+                        'no_interesado': '🙅 No interesado', 'interesado': '👍 Interesado',
+                        'derivado': '🤝 Derivado a vendedor', 'venta': '💰 Venta',
+                        'descalificado': '🚫 Descalificado', 'seguimiento': '🔄 Seguimiento', 'otro': '📝 Otro'
+                    };
+                    var resLabel = resLabels[g.resultado] || g.resultado;
+                    var resColores = {
+                        'no_contesta': '#e5e7eb', 'numero_invalido': '#fef3c7', 'no_interesado': '#fee2e2',
+                        'interesado': '#d1fae5', 'derivado': '#dbeafe', 'venta': '#bbf7d0',
+                        'descalificado': '#f3e8ff', 'seguimiento': '#dbeafe', 'otro': '#f9fafb'
+                    };
+                    var resBg = resColores[g.resultado] || '#f3f4f6';
+                    contenido += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
+                    contenido += '<span style="background:' + resBg + ';padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;color:#374151;">📞 ' + escaparParaHTML(resLabel) + '</span>';
+                    if (g.duracion_seg != null) {
+                        var durM = Math.floor(g.duracion_seg / 60);
+                        var durS = g.duracion_seg % 60;
+                        contenido += '<span style="font-size:11px;color:#9ca3af;">⏱️ ' + (durM < 10 ? '0' : '') + durM + ':' + (durS < 10 ? '0' : '') + durS + '</span>';
+                    }
+                    contenido += '</div>';
+                }
                 contenido += '<div style="background:#f9fafb;padding:10px 12px;border-radius:8px;font-size:13px;color:#374151;line-height:1.5;">' + escaparParaHTML(g.observacion || 'Sin observación') + '</div>';
                 contenido += '</div>';
                 contenido += '</div>';
@@ -1948,6 +1971,29 @@ async function verHistorial(solicitudId) {
                 if (g.vendedor) contenido += '<span style="font-size:11px;color:#2563eb;font-weight:600;">🏷️ ' + escaparParaHTML(g.vendedor) + '</span>';
                 contenido += '<span style="font-size:11px;color:#9ca3af;">' + fecha + '</span>';
                 contenido += '</div>';
+                if (g.resultado && g.tipo_gestion === 'Llamada') {
+                    var resLabels2 = {
+                        'no_contesta': '📵 No contestó', 'numero_invalido': '📛 Número incorrecto',
+                        'no_interesado': '🙅 No interesado', 'interesado': '👍 Interesado',
+                        'derivado': '🤝 Derivado a vendedor', 'venta': '💰 Venta',
+                        'descalificado': '🚫 Descalificado', 'seguimiento': '🔄 Seguimiento', 'otro': '📝 Otro'
+                    };
+                    var resLabel2 = resLabels2[g.resultado] || g.resultado;
+                    var resColores2 = {
+                        'no_contesta': '#e5e7eb', 'numero_invalido': '#fef3c7', 'no_interesado': '#fee2e2',
+                        'interesado': '#d1fae5', 'derivado': '#dbeafe', 'venta': '#bbf7d0',
+                        'descalificado': '#f3e8ff', 'seguimiento': '#dbeafe', 'otro': '#f9fafb'
+                    };
+                    var resBg2 = resColores2[g.resultado] || '#f3f4f6';
+                    contenido += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
+                    contenido += '<span style="background:' + resBg2 + ';padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;color:#374151;">📞 ' + escaparParaHTML(resLabel2) + '</span>';
+                    if (g.duracion_seg != null) {
+                        var dm2 = Math.floor(g.duracion_seg / 60);
+                        var ds2 = g.duracion_seg % 60;
+                        contenido += '<span style="font-size:11px;color:#9ca3af;">⏱️ ' + (dm2 < 10 ? '0' : '') + dm2 + ':' + (ds2 < 10 ? '0' : '') + ds2 + '</span>';
+                    }
+                    contenido += '</div>';
+                }
                 contenido += '<div style="background:#f9fafb;padding:10px 12px;border-radius:8px;font-size:13px;color:#374151;line-height:1.5;">' + escaparParaHTML(g.observacion || 'Sin observación') + '</div>';
                 contenido += '</div>';
                 contenido += '</div>';

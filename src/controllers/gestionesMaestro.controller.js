@@ -554,7 +554,7 @@ async function getHistorialSolicitudCampana(req, res) {
         }
 
         const result = await pool.query(
-            `SELECT id, solicitud_id, tipo_gestion, observacion, fecha_gestion, usuario_id, gestion_maestro_id
+            `SELECT id, solicitud_id, tipo_gestion, observacion, fecha_gestion, usuario_id, resultado, duracion_seg, gestion_maestro_id
              FROM gestiones
              WHERE solicitud_id = ?
                AND (gestion_maestro_id = ? OR gestion_maestro_id IS NULL)
@@ -600,6 +600,8 @@ async function getHistorialGeneralCampana(req, res) {
                    g.observacion,
                    g.fecha_gestion,
                    g.usuario_id,
+                   g.resultado,
+                   g.duracion_seg,
                    u.username AS vendedor,
                    s.nombre AS nombre_cliente,
                    s.cedula,

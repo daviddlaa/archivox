@@ -4,6 +4,8 @@
 **Fecha:** Julio 2026
 **Propósito:** Sistema de gestión de solicitudes, relaciones y equipos para operaciones comerciales.
 
+> 🚀 **¿Te pierdes en la documentación?** Empieza por [`ESTADO-PROYECTO.md`](ESTADO-PROYECTO.md): una sola página con **qué está implementado** y **qué está pendiente**, con enlaces a cada documento.
+
 ---
 
 ## Índice
@@ -193,10 +195,9 @@ ARCHIVOX/
 ├── app.js                          # Punto de entrada del servidor Express
 ├── package.json                    # Dependencias y scripts
 ├── .env                            # Variables de entorno (no trackeado)
-├── commit_push.bat                 # Script de deploy (Windows)
-│
-├── docs/                           # Documentación del sistema
+├── commit_push.bat                 # Script de deploy (Windows)│   ├── docs/                           # Documentación del sistema
 │   ├── README.md                   # Este archivo
+│   ├── ESTADO-PROYECTO.md          # 🗺️ Estado del proyecto: implementado vs pendiente (Agosto 2026)
 │   ├── feature-rediseño-semaforo-campañas.md  # Rediseño del indicador de estado v6.1 (Agosto 2026)
 │   ├── feature-ux-comportamiento-campanas.md  # UX de progreso y prioridad v2.0 (Agosto 2026)
 │   ├── feature-plantillas-mensajes.md         # Plantillas de mensajes personalizadas v1.5 (rediseño móvil) (Agosto 2026)

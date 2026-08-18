@@ -1697,6 +1697,29 @@ async function cargarHistorialGestionesDesktop(id) {
             html += '<span style="font-weight:600; font-size:13px;">📋 ' + (g.tipo_gestion || '') + '</span>';
             html += '<span style="font-size:11px; color:#6b7280;">' + fecha + '</span>';
             html += '</div>';
+            if (g.resultado && g.tipo_gestion === 'Llamada') {
+                var resLabels = {
+                    'no_contesta': '📵 No contestó', 'numero_invalido': '📛 Número incorrecto',
+                    'no_interesado': '🙅 No interesado', 'interesado': '👍 Interesado',
+                    'derivado': '🤝 Derivado a vendedor', 'venta': '💰 Venta',
+                    'descalificado': '🚫 Descalificado', 'seguimiento': '🔄 Seguimiento', 'otro': '📝 Otro'
+                };
+                var resLabel = resLabels[g.resultado] || g.resultado;
+                var resColores = {
+                    'no_contesta': '#e5e7eb', 'numero_invalido': '#fef3c7', 'no_interesado': '#fee2e2',
+                    'interesado': '#d1fae5', 'derivado': '#dbeafe', 'venta': '#bbf7d0',
+                    'descalificado': '#f3e8ff', 'seguimiento': '#dbeafe', 'otro': '#f9fafb'
+                };
+                var resBg = resColores[g.resultado] || '#f3f4f6';
+                html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
+                html += '<span style="background:' + resBg + ';padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;color:#374151;">📞 ' + resLabel + '</span>';
+                if (g.duracion_seg != null) {
+                    var durM = Math.floor(g.duracion_seg / 60);
+                    var durS = g.duracion_seg % 60;
+                    html += '<span style="font-size:11px;color:#9ca3af;">⏱️ ' + (durM < 10 ? '0' : '') + durM + ':' + (durS < 10 ? '0' : '') + durS + '</span>';
+                }
+                html += '</div>';
+            }
             if (g.observacion) html += '<div style="font-size:13px; color:#374151;">' + g.observacion + '</div>';
             html += '</div>';
         }

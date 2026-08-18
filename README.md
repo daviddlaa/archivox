@@ -389,6 +389,8 @@ El servidor detecta User-Agent y sirve la version correspondiente:
 
 Ver `docs/README.md` para documentacion completa del sistema (1375+ lineas), incluyendo esquema de tablas detallado, todos los endpoints, y diagramas de arquitectura.
 
+> 🗺️ **¿Qué está implementado y qué falta?** Consulta [`docs/ESTADO-PROYECTO.md`](docs/ESTADO-PROYECTO.md) — resumen único de lo hecho y lo pendiente.
+
 ### Features Recientes
 
 | Feature | Fecha | Documento |
