@@ -75,6 +75,13 @@
         var obsEl = document.getElementById('observacion-modal');
         var observacion = obsEl ? obsEl.value.trim() : '';
         var btn = document.querySelector('.btn-guardar');
+        var tl = window.TemporizadorLlamada;
+
+        // Nudge 1 (fricción por diseño): no guardar con una llamada en curso
+        if (tl && tl.estaActivo('campana')) {
+            alert('📞 Hay una llamada en curso. Presiona "✓ Finalizar llamada" para guardar la duración.');
+            return;
+        }
 
         if (tipo !== 'Recordatorio' && !observacion) {
             alert('Por favor escriba una observación');
@@ -107,11 +114,17 @@
                 return;
             }
 
+            var extra = (tl ? tl.obtenerPayload('campana', tipo) : {});
             var body = {
                 solicitud_id: opciones.solicitudId,
                 tipo_gestion: tipo,
                 observacion: observacion,
-                gestion_maestro_id: opciones.gestionId || null
+                gestion_maestro_id: opciones.gestionId || null,
+                duracion_seg: extra.duracion_seg || null,
+                llamada_inicio: extra.llamada_inicio || null,
+                llamada_fin: extra.llamada_fin || null,
+                resultado: extra.resultado || null,
+                metodo_duracion: extra.metodo_duracion || null
             };
             var response = await fetch('/api/excel/gestiones', {
                 method: 'POST',
@@ -162,6 +175,7 @@
                 'Seguimiento': 'Seguimiento registrado',
                 'Cobranza': 'Cobranza registrada',
                 'Completada': 'Solicitud completada',
+                'Llamada': '📞 Llamada registrada' + (extra.duracion_seg ? ' (' + tl.formatear(extra.duracion_seg) + ')' : ''),
                 'Recordatorio': '⏰ Recordatorio programado'
             };
             opciones.onConfirmar(msgs[tipo] || 'Gestión guardada');

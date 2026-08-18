@@ -393,6 +393,8 @@ Ver `docs/README.md` para documentacion completa del sistema (1375+ lineas), inc
 
 | Feature | Fecha | Documento |
 |---------|-------|-----------|
+| Temporizador de llamada + resultado estructurado en gestiones (Fase 1 métricas): cronómetro en vivo con nudges psicológicos (Guardar/Cancelar bloqueados durante la llamada, confirmación al cerrar, duración estimada anti-olvido) y columnas `duracion_seg`/`llamada_inicio`/`llamada_fin`/`resultado`/`metodo_duracion` en `gestiones`. Modales de campaña (desktop+móvil, con nueva opción 📞 Llamada) y Solicitudes desktop | Agosto 2026 | `docs/plan-metricas-llamadas-semaforo.md` |
+| Auditoría de producción (solo lectura) de la gestión de `daviddlaa`: 411 gestiones, embudo comercial, 15 ventas atribuibles y capacidad operativa real | Agosto 2026 | `docs/informe-auditoria-produccion-daviddlaa.md` |
 | Guía didáctica de clasificación al crear/entrar a una campaña (una sola vez por usuario): semáforo explicado (Seguimiento/Encaminadas/En espera), llamar antes que mensaje y botón copiar contacto | Agosto 2026 | `docs/feature-guia-clasificacion-campanas.md` |
 | Catálogos globales en Nueva Solicitud: los listados de Estado y Segmento muestran valores de toda la aplicación (todos los usuarios), no solo los del usuario autenticado | Agosto 2026 | `docs/feature-catalogos-globales-nueva-solicitud.md` |
 | Rediseño de la tarjeta móvil de Solicitudes: compacta, Gestiones = historial del cliente, Completar/Editar fusionado, ⋮→🗑️ Eliminar, link a la campaña y checkbox de selección en fila 1 | Agosto 2026 | `docs/feature-rediseno-tarjeta-movil-solicitudes.md` |

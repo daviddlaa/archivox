@@ -1247,8 +1247,8 @@ function abrirGestion(solicitudId, tipo) {
         console.warn('Error marcando campaña activa:', e);
     }
 
-    var opciones = ['Seguimiento', 'Cobranza', 'Completada', 'Recordatorio'];
-    var iconosTipo = { 'Seguimiento': '📋', 'Cobranza': '💰', 'Completada': '✅', 'Recordatorio': '⏰' };
+    var opciones = ['Seguimiento', 'Cobranza', 'Completada', 'Llamada', 'Recordatorio'];
+    var iconosTipo = { 'Seguimiento': '📋', 'Cobranza': '💰', 'Completada': '✅', 'Llamada': '📞', 'Recordatorio': '⏰' };
     var pillsHtml = '';
     for (var i = 0; i < opciones.length; i++) {
         var activa = opciones[i] === tipo ? ' activo' : '';
@@ -1269,6 +1269,9 @@ function abrirGestion(solicitudId, tipo) {
     contenido += '<input type="hidden" id="tipo-gestion-modal" value="' + escaparParaAtributo(tipo) + '">';
     contenido += '<label id="label-observacion-modal">📝 Observación:</label>';
     contenido += '<textarea id="observacion-modal" rows="4" placeholder="Escriba su observación..."></textarea>';
+    
+    // Temporizador de llamada + resultado estructurado (Fase 1 métricas)
+    if (window.TemporizadorLlamada) contenido += window.TemporizadorLlamada.html('campana');
     
     // Campos extra para el modo recordatorio
     contenido += '<div id="recordatorio-fields" style="display:none;margin-bottom:12px;">';

@@ -237,6 +237,8 @@ ARCHIVOX/
 │   ├── informe-correccion-flujo-seguimiento-campanas.md # Corrección del flujo de guardado de seguimientos en campañas: contador gestionadas, control de acceso, módulo GestionCampana (Agosto 2026)
 │   ├── feature-rediseno-equipo-movil.md              # Rediseño del panel del líder móvil: 3 tabs, detalle de agente en pantalla completa, campañas clicables, actividad por día (Agosto 2026)
 │   ├── feature-cedula-tarjeta-movil-solicitudes.md   # Cédula visible en la tarjeta móvil de Solicitudes (🆔 debajo del nombre) + nombre siempre en una línea con ellipsis (Agosto 2026)
+│   ├── informe-auditoria-produccion-daviddlaa.md     # Auditoría de producción (solo lectura) de la gestión de daviddlaa: actividad, llamadas, embudo, ventas (Agosto 2026)
+│   ├── plan-metricas-llamadas-semaforo.md            # Plan de instrumentación de métricas: temporizador de llamadas + historial de semáforo (Fase 1 implementada, Fases 2-3 pendientes) (Agosto 2026)
 │   ├── demo/                                        # Archivos de ejemplo (Excel demo para video)
 │   └── anteriores/                 # Documentación histórica
 │       ├── informe-arquitectura-multi-equipo.md
@@ -517,6 +519,11 @@ El wrapper en `db.js` se encarga automáticamente de:
 | fecha_gestion | TIMESTAMP/TEXT | Fecha de gestión |
 | created_at | TIMESTAMP/TEXT | Fecha de creación |
 | updated_at | TIMESTAMP/TEXT | Fecha de actualización |
+| duracion_seg | INTEGER | Duración de la llamada en segundos (Fase 1 métricas) |
+| llamada_inicio | TIMESTAMP/TEXT | Inicio del temporizador de llamada |
+| llamada_fin | TIMESTAMP/TEXT | Fin del temporizador de llamada |
+| resultado | TEXT | Resultado estructurado: no_contesta, numero_invalido, no_interesado, interesado, derivado, venta, descalificado, seguimiento, otro |
+| metodo_duracion | TEXT | Origen de la duración: temporizador, estimada, manual |
 
 #### `gestiones_maestro` (Campañas)
 | Columna | Tipo | Descripción |

@@ -189,6 +189,29 @@ db.exec(`
     )
 `);
 
+// ================================================================
+// FASE 1 MÉTRICAS: duración de llamada y resultado estructurado
+// (docs/plan-metricas-llamadas-semaforo.md)
+// ================================================================
+const gestionesCols = db.prepare('PRAGMA table_info(gestiones)').all().map(c => c.name);
+const nuevasColsGestiones = {
+    'duracion_seg': 'INTEGER',
+    'llamada_inicio': 'TEXT',
+    'llamada_fin': 'TEXT',
+    'resultado': 'TEXT',
+    'metodo_duracion': 'TEXT'
+};
+for (const [col, tipo] of Object.entries(nuevasColsGestiones)) {
+    if (!gestionesCols.includes(col)) {
+        try {
+            db.exec(`ALTER TABLE gestiones ADD COLUMN ${col} ${tipo}`);
+            console.log('[DB] Columna gestiones.' + col + ' agregada');
+        } catch (e) {
+            console.log('[DB] Columna gestiones.' + col + ' ya existe (ignorado)');
+        }
+    }
+}
+
 // Nueva tabla: Gestion maestro (gestión por lotes de solicitudes)
 db.exec(`
     CREATE TABLE IF NOT EXISTS gestiones_maestro (

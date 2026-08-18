@@ -1648,7 +1648,7 @@ function abrirGestion(solicitudId, tipo) {
     }
     
     var opcionesDropdown = '';
-    var opciones = ['Seguimiento', 'Cobranza', 'Completada', 'Recordatorio'];
+    var opciones = ['Seguimiento', 'Cobranza', 'Completada', 'Llamada', 'Recordatorio'];
     
     for (var i = 0; i < opciones.length; i++) {
         var selected = opciones[i] === tipo ? 'selected' : '';
@@ -1675,6 +1675,9 @@ function abrirGestion(solicitudId, tipo) {
     
     contenido += '<label id="label-observacion-modal">📝 Observación:</label>';
     contenido += '<textarea id="observacion-modal" rows="4" placeholder="Escriba su observación..."></textarea>';
+    
+    // Temporizador de llamada + resultado estructurado (Fase 1 métricas)
+    if (window.TemporizadorLlamada) contenido += window.TemporizadorLlamada.html('campana');
     
     // Campos extra para el modo recordatorio
     contenido += '<div id="recordatorio-fields" style="display:none;margin-bottom:12px;">';

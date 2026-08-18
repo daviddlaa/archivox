@@ -468,11 +468,31 @@ exports.crearGestion = async (req, res) => {
         return res.status(401).json({ error: 'No autenticado' });
     }
     
-    const { solicitud_id, tipo_gestion, observacion, gestion_maestro_id } = req.body;
+    const { solicitud_id, tipo_gestion, observacion, gestion_maestro_id, duracion_seg, llamada_inicio, llamada_fin, resultado, metodo_duracion } = req.body;
     
     if (!solicitud_id || !tipo_gestion) {
         return res.status(400).json({ error: 'solicitud_id y tipo_gestion son requeridos' });
     }
+
+    // ============================================================
+    // FASE 1 MÉTRICAS: duración de llamada y resultado estructurado
+    // (docs/plan-metricas-llamadas-semaforo.md). Validación estricta:
+    // valores no reconocidos se descartan (nunca se rompe el guardado
+    // por un dato de métrica inválido).
+    // ============================================================
+    const RESULTADOS_VALIDOS = ['no_contesta', 'numero_invalido', 'no_interesado', 'interesado', 'derivado', 'venta', 'descalificado', 'seguimiento', 'otro'];
+    const METODOS_VALIDOS = ['temporizador', 'estimada', 'manual'];
+
+    let duracionOk = null;
+    if (typeof duracion_seg === 'number' && isFinite(duracion_seg) && duracion_seg >= 0) {
+        duracionOk = Math.round(duracion_seg);
+    } else if (typeof duracion_seg === 'string' && /^\d+$/.test(duracion_seg)) {
+        duracionOk = parseInt(duracion_seg, 10);
+    }
+    const resultadoOk = RESULTADOS_VALIDOS.indexOf(resultado) !== -1 ? resultado : null;
+    const metodoOk = METODOS_VALIDOS.indexOf(metodo_duracion) !== -1 ? metodo_duracion : null;
+    const inicioOk = (typeof llamada_inicio === 'string' && llamada_inicio) ? llamada_inicio : null;
+    const finOk = (typeof llamada_fin === 'string' && llamada_fin) ? llamada_fin : null;
     
     try {
         // Validar que la solicitud existe (la propiedad se exige solo cuando NO viene de una campaña)
@@ -515,10 +535,12 @@ exports.crearGestion = async (req, res) => {
         }
 
         const result = await pool.query(
-            `INSERT INTO gestiones (solicitud_id, usuario_id, tipo_gestion, observacion, gestion_maestro_id)
-             VALUES (?, ?, ?, ?, ?)
+            `INSERT INTO gestiones (solicitud_id, usuario_id, tipo_gestion, observacion, gestion_maestro_id,
+                                    duracion_seg, llamada_inicio, llamada_fin, resultado, metodo_duracion)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              RETURNING *`,
-            [solicitud_id, usuarioId, tipo_gestion, observacion || '', gestion_maestro_id || null]
+            [solicitud_id, usuarioId, tipo_gestion, observacion || '', gestion_maestro_id || null,
+             duracionOk, inicioOk, finOk, resultadoOk, metodoOk]
         );
 
         // Recalcular el contador real de la campaña (solicitudes gestionadas, no filas)

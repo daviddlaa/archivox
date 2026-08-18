@@ -8,7 +8,7 @@
 // ~100 queries a 2. Subir SCHEMA_VERSION solo cuando se agregue/mofici un DDL
 // o seed nuevo en este archivo.
 // ============================================================================
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 
 const initTables = async () => {
     const client = await pool.connect();
@@ -169,6 +169,21 @@ const initTables = async () => {
                 FOREIGN KEY (gestion_maestro_id) REFERENCES gestiones_maestro(id)
             )
         `);
+
+        // ================================================================
+        // FASE 1 MÉTRICAS: duración de llamada y resultado estructurado
+        // (docs/plan-metricas-llamadas-semaforo.md)
+        // ================================================================
+        for (const [col, tipo] of Object.entries({
+            'duracion_seg': 'INTEGER',
+            'llamada_inicio': 'TIMESTAMP',
+            'llamada_fin': 'TIMESTAMP',
+            'resultado': 'TEXT',
+            'metodo_duracion': 'TEXT'
+        })) {
+            await client.query(`ALTER TABLE gestiones ADD COLUMN IF NOT EXISTS ${col} ${tipo}`);
+        }
+        console.log('   ✅ gestiones: columnas de métricas de llamada verificadas');
 
         // Nueva tabla: Gestion maestro (gestión por lotes de solicitudes)
         await client.query(`
