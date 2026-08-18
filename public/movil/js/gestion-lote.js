@@ -1096,7 +1096,7 @@ function renderizarSolicitudes(lista, sinEntrada) {
         html += '<div class="sol-datos">';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.cedula || '') + '\', \'cédula\')" title="Copiar cédula">🆔 ' + (sol.cedula || '—') + '</span>';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.celular || '') + '\', \'teléfono\')" title="Copiar teléfono">📱 ' + (sol.celular || '—') + '</span>';
-        html += '<button type="button" class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + (sol.celular || "") + '\')" title="Llamar">📞</button>';
+        html += '<button type="button" class="btn-sol btn-sol-call" onclick="llamarDesdeGestionLote(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.celular || '') + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')" title="Llamar">📞</button>';
         html += '<span class="sol-chat-icon" onclick="abrirGestionWhatsApp(\'' + escaparParaAtributo(sol.id_solicitud) + '\', \'' + escaparParaAtributo(sol.celular || '') + '\')" title="Enviar WhatsApp con plantilla">💬</span>';
         html += '</div>';
 
@@ -1218,14 +1218,21 @@ function copiarTexto(texto, etiqueta) {
     alert(etiqueta.charAt(0).toUpperCase() + etiqueta.slice(1) + ' copiada');
 }
 
-function llamarDesdeGestionLote(celular) {
-    if (!celular) {
+function llamarDesdeGestionLote(solicitudId, celular, nombre) {
+    var numeroLimpio = String(celular || '').replace(/\D/g, '');
+    if (!numeroLimpio) {
         alert('No hay número de celular');
         return;
     }
-    var numeroLimpio = String(celular).replace(/\D/g, '');
-    if (!numeroLimpio) {
-        alert('No hay número de celular');
+    if (window.TemporizadorLlamada) {
+        // Popup de llamada con contador (Fase 1 v2): al guardar, refresca la campaña
+        window.TemporizadorLlamada.abrirLlamada({
+            solicitudId: solicitudId,
+            celular: celular,
+            nombre: nombre || '',
+            gestionId: gestionId,
+            onGuardada: function() { cargarDatosGestionMovil(); }
+        });
         return;
     }
     window.location.href = 'tel:' + numeroLimpio;
@@ -1247,8 +1254,10 @@ function abrirGestion(solicitudId, tipo) {
         console.warn('Error marcando campaña activa:', e);
     }
 
-    var opciones = ['Seguimiento', 'Cobranza', 'Completada', 'Llamada', 'Recordatorio'];
-    var iconosTipo = { 'Seguimiento': '📋', 'Cobranza': '💰', 'Completada': '✅', 'Llamada': '📞', 'Recordatorio': '⏰' };
+    // En móvil las llamadas se registran solo con el popup 📞 de la tarjeta (con temporizador y resultado),
+    // por eso el modal de gestión no ofrece la opción "Llamada".
+    var opciones = ['Seguimiento', 'Cobranza', 'Completada', 'Recordatorio'];
+    var iconosTipo = { 'Seguimiento': '📋', 'Cobranza': '💰', 'Completada': '✅', 'Recordatorio': '⏰' };
     var pillsHtml = '';
     for (var i = 0; i < opciones.length; i++) {
         var activa = opciones[i] === tipo ? ' activo' : '';
@@ -1269,9 +1278,6 @@ function abrirGestion(solicitudId, tipo) {
     contenido += '<input type="hidden" id="tipo-gestion-modal" value="' + escaparParaAtributo(tipo) + '">';
     contenido += '<label id="label-observacion-modal">📝 Observación:</label>';
     contenido += '<textarea id="observacion-modal" rows="4" placeholder="Escriba su observación..."></textarea>';
-    
-    // Temporizador de llamada + resultado estructurado (Fase 1 métricas)
-    if (window.TemporizadorLlamada) contenido += window.TemporizadorLlamada.html('campana');
     
     // Campos extra para el modo recordatorio
     contenido += '<div id="recordatorio-fields" style="display:none;margin-bottom:12px;">';

@@ -1,23 +1,30 @@
 /**
- * Temporizador de llamada — Fase 1 de instrumentación de métricas.
- * Ver: docs/plan-metricas-llamadas-semaforo.md
+ * Temporizador de llamada — Fase 1 v2 (docs/plan-metricas-llamadas-semaforo.md §8).
  *
- * Registra la duración real de la llamada (segundos) y un resultado estructurado
- * (buckets del embudo comercial), usando "nudges" psicológicos para garantizar
- * que se presione el botón "Finalizar llamada":
+ * Popup tipo SweetAlert (overlay + diálogo centrado) que se abre desde el botón
+ * 📞 de cada tarjeta. Flujo:
  *
- *   1. Fricción por diseño  : mientras el cronómetro corre, los botones
- *                             Guardar/Cancelar del modal quedan deshabilitados.
- *   2. Presión visual       : cronómetro grande en vivo ("EN LLAMADA") y
- *                             confirmación obligatoria al cerrar con llamada activa.
- *   3. Refuerzo positivo    : mensaje "Llamada de MM:SS registrada" al finalizar.
- *   4. Anti-olvido          : si se guarda una gestión tipo "Llamada" sin
- *                             duración, pide una duración estimada (metodo='estimada').
+ *   1. Al tocar 📞: se abre el popup con el contador corriendo y se marca el número.
+ *   2. La llamada ocurre fuera del navegador; al volver, el contador muestra el
+ *      tiempo REAL transcurrido (wall-clock: Date.now() − inicio, con refresco en
+ *      visibilitychange/pageshow — no depende de que setInterval siga latiendo en
+ *      segundo plano).
+ *   3. "✓ Terminar llamada": se detiene el contador, se muestra la duración y se
+ *      permite elegir el RESULTADO de la gestión telefónica (buckets del embudo)
+ *      más una observación opcional.
+ *   4. "💾 Guardar": crea la gestión tipo "Llamada" vía POST /api/excel/gestiones
+ *      con duracion_seg, llamada_inicio/fin, resultado y metodo_duracion='temporizador'.
  *
- * Uso:
- *   - Insertar el bloque:  window.TemporizadorLlamada.html('campana')
- *   - Al guardar:          window.TemporizadorLlamada.obtenerPayload('campana', tipo)
- *   - Antes de guardar:    window.TemporizadorLlamada.estaActivo('campana')
+ * Nudges psicológicos:
+ *   - Contador grande en vivo ("presión visual").
+ *   - Cancelar/cerrar (botón, click fuera o Escape) con llamada en curso → confirmación.
+ *   - Refuerzo positivo: toast "📞 Llamada de MM:SS registrada" al guardar.
+ *   - Si el usuario no usa este flujo y registra "Llamada" desde el modal de gestión,
+ *     el backend igualmente persiste el resultado; la duración queda pendiente
+ *     (visible para el líder en la Fase 3).
+ *
+ * Autónomo: no depende de modal.js ni de crearModalMovil (cada página móvil tiene
+ * el suyo); el módulo construye y destruye su propio overlay.
  */
 (function (window) {
     'use strict';
@@ -34,13 +41,9 @@
         { v: 'otro', l: '📝 Otro' }
     ];
 
-    // Estado por instancia de modal (clave = idPrefijo: 'campana' | 'solicitud')
-    var estados = {};
-    var guardiaInstalada = false;
-
-    function crearEstado() {
-        return { inicio: null, fin: null, seg: 0, metodo: null, timer: null, activo: false };
-    }
+    var actual = null;      // llamada activa o recién finalizada
+    var overlayEl = null;
+    var limpiezas = [];     // funciones para quitar listeners
 
     function formatear(seg) {
         seg = Math.max(0, Math.round(seg || 0));
@@ -49,171 +52,263 @@
         return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
     }
 
-    function opcionesResultadoHtml() {
-        var html = '';
+    function escapar(texto) {
+        return String(texto == null ? '' : texto)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function numeroLimpio(celular) {
+        return String(celular || '').replace(/\D/g, '');
+    }
+
+    function segActual() {
+        if (!actual || !actual.inicio) return 0;
+        return Math.max(0, Math.round((Date.now() - actual.inicio) / 1000));
+    }
+
+    // ------------------------------------------------------------------ popup
+
+    function crearOverlay() {
+        if (overlayEl) { overlayEl.remove(); }
+
+        overlayEl = document.createElement('div');
+        overlayEl.id = 'llamada-popup-overlay';
+        overlayEl.style.cssText = [
+            'position:fixed;top:0;left:0;width:100%;height:100%;',
+            'background:rgba(17,24,39,0.55);z-index:10000;',
+            'display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;'
+        ].join('');
+
+        var dialogo = document.createElement('div');
+        dialogo.id = 'llamada-popup-dialogo';
+        dialogo.style.cssText = [
+            'background:#fff;border-radius:16px;max-width:420px;width:100%;',
+            'padding:22px;box-sizing:border-box;text-align:center;',
+            'box-shadow:0 25px 50px -12px rgba(0,0,0,0.45);',
+            'font-family:inherit;color:#111827;'
+        ].join('');
+        overlayEl.appendChild(dialogo);
+        document.body.appendChild(overlayEl);
+
+        // Cerrar con click fuera o Escape → pasa por cancelar() (confirmación si hay llamada)
+        var onClickOverlay = function (e) { if (e.target === overlayEl) cancelar(); };
+        var onEscape = function (e) { if (e.key === 'Escape') cancelar(); };
+        var onVisibilidad = function () { if (document.visibilityState === 'visible') actualizarTimer(); };
+        var onPageShow = function () { actualizarTimer(); };
+
+        overlayEl.addEventListener('click', onClickOverlay);
+        document.addEventListener('keydown', onEscape);
+        document.addEventListener('visibilitychange', onVisibilidad);
+        window.addEventListener('pageshow', onPageShow);
+
+        limpiezas.push(function () {
+            overlayEl.removeEventListener('click', onClickOverlay);
+            document.removeEventListener('keydown', onEscape);
+            document.removeEventListener('visibilitychange', onVisibilidad);
+            window.removeEventListener('pageshow', onPageShow);
+        });
+    }
+
+    function dialogHtml(contenido) {
+        return '<div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:2px;">📞 Llamada a</div>'
+            + '<div style="font-size:18px;font-weight:700;color:#111827;margin-bottom:2px;">' + escapar(actual.nombre || '—') + '</div>'
+            + '<div style="font-size:13px;color:#6b7280;margin-bottom:14px;">📱 ' + escapar(actual.celular || '—') + '</div>'
+            + contenido;
+    }
+
+    function renderEnLlamada() {
+        var d = document.getElementById('llamada-popup-dialogo');
+        if (!d) return;
+        d.innerHTML = dialogHtml(
+            '<div id="llamada-timer" style="font-size:42px;font-weight:800;color:#dc2626;font-variant-numeric:tabular-nums;line-height:1.1;">00:00</div>'
+            + '<div id="llamada-estado" style="font-size:13px;font-weight:700;color:#dc2626;margin:4px 0 16px;">🔴 EN LLAMADA</div>'
+            + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">'
+            + '<button type="button" onclick="TemporizadorLlamada.marcarDeNuevo()" style="padding:10px 14px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;">📞 Marcar de nuevo</button>'
+            + '<button type="button" onclick="TemporizadorLlamada.finalizar()" style="padding:10px 14px;background:#dc2626;color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;">✓ Terminar llamada</button>'
+            + '<button type="button" onclick="TemporizadorLlamada.cancelar()" style="padding:10px 14px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-weight:600;cursor:pointer;">✕ Cancelar</button>'
+            + '</div>'
+        );
+    }
+
+    function renderResultado() {
+        var d = document.getElementById('llamada-popup-dialogo');
+        if (!d) return;
+
+        var pills = '';
         for (var i = 0; i < RESULTADOS.length; i++) {
-            html += '<option value="' + RESULTADOS[i].v + '">' + RESULTADOS[i].l + '</option>';
-        }
-        return html;
-    }
-
-    // HTML del bloque temporizador + resultado (se inserta en los modales de gestión)
-    function html(idPrefijo) {
-        return '<div id="' + idPrefijo + '-llamada-bloque" style="border:2px solid #2563eb;border-radius:8px;padding:12px;margin-bottom:12px;background:#eff6ff;">'
-            + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">'
-            + '<span id="' + idPrefijo + '-llamada-timer" style="font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:#dc2626;">00:00</span>'
-            + '<div style="display:flex;gap:8px;">'
-            + '<button type="button" id="' + idPrefijo + '-btn-iniciar" onclick="TemporizadorLlamada.iniciar(this)" data-id="' + idPrefijo + '" style="padding:8px 14px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">📞 Iniciar llamada</button>'
-            + '<button type="button" id="' + idPrefijo + '-btn-finalizar" onclick="TemporizadorLlamada.finalizar(this)" data-id="' + idPrefijo + '" style="padding:8px 14px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;display:none;">✓ Finalizar llamada</button>'
-            + '</div></div>'
-            + '<div id="' + idPrefijo + '-llamada-duracion" style="display:none;font-size:13px;font-weight:600;color:#166534;margin-bottom:8px;"></div>'
-            + '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:12px;color:#374151;">🏷️ Resultado:</label>'
-            + '<select id="' + idPrefijo + '-resultado" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;background:#fff;">'
-            + '<option value="">— Sin clasificar —</option>' + opcionesResultadoHtml()
-            + '</select></div>';
-    }
-
-    // Botones del modal actual que deben bloquearse durante la llamada
-    function botonesModal(desde) {
-        var overlay = desde && desde.closest ? desde.closest('.modal-overlay') : null;
-        if (!overlay) return { guardar: [], cancelar: [] };
-        var guardar = overlay.querySelectorAll('.btn-guardar, button[onclick^="guardarGestionDesktop"]');
-        var cancelar = overlay.querySelectorAll('button[onclick*="cerrarModal"]');
-        return { guardar: Array.prototype.slice.call(guardar), cancelar: Array.prototype.slice.call(cancelar) };
-    }
-
-    function setBotones(desde, deshabilitar) {
-        var b = botonesModal(desde);
-        b.guardar.forEach(function (btn) { btn.disabled = deshabilitar; });
-        b.cancelar.forEach(function (btn) { btn.disabled = deshabilitar; });
-    }
-
-    function actualizarTimer(idPrefijo) {
-        var e = estados[idPrefijo];
-        var el = document.getElementById(idPrefijo + '-llamada-timer');
-        if (!e || !el) return;
-        el.textContent = formatear((Date.now() - new Date(e.inicio).getTime()) / 1000);
-    }
-
-    function iniciar(boton) {
-        var idPrefijo = boton.getAttribute('data-id');
-        var e = estados[idPrefijo] || (estados[idPrefijo] = crearEstado());
-        if (e.activo) return;
-
-        e.inicio = new Date().toISOString();
-        e.activo = true;
-        e.metodo = null;
-        e.seg = 0;
-
-        var btnIniciar = document.getElementById(idPrefijo + '-btn-iniciar');
-        var btnFinalizar = document.getElementById(idPrefijo + '-btn-finalizar');
-        var dur = document.getElementById(idPrefijo + '-llamada-duracion');
-        if (btnIniciar) btnIniciar.style.display = 'none';
-        if (btnFinalizar) btnFinalizar.style.display = 'inline-block';
-        if (dur) dur.style.display = 'none';
-
-        if (e.timer) clearInterval(e.timer);
-        e.timer = setInterval(function () { actualizarTimer(idPrefijo); }, 1000);
-        actualizarTimer(idPrefijo);
-
-        // Fricción por diseño: no se puede guardar/cancelar con la llamada en curso
-        setBotones(boton, true);
-    }
-
-    function finalizarPorId(idPrefijo, desde) {
-        var e = estados[idPrefijo];
-        if (!e || !e.activo) return;
-        e.fin = new Date().toISOString();
-        e.seg = Math.max(0, Math.round((new Date(e.fin).getTime() - new Date(e.inicio).getTime()) / 1000));
-        e.metodo = 'temporizador';
-        e.activo = false;
-        if (e.timer) { clearInterval(e.timer); e.timer = null; }
-        if (desde) setBotones(desde, false);
-    }
-
-    function finalizar(boton) {
-        var idPrefijo = boton.getAttribute('data-id');
-        finalizarPorId(idPrefijo, boton);
-
-        var e = estados[idPrefijo];
-        var dur = document.getElementById(idPrefijo + '-llamada-duracion');
-        if (dur && e) {
-            dur.textContent = '✅ Llamada de ' + formatear(e.seg) + ' registrada';
-            dur.style.display = 'block';
-        }
-        var btnIniciar = document.getElementById(idPrefijo + '-btn-iniciar');
-        var btnFinalizar = document.getElementById(idPrefijo + '-btn-finalizar');
-        if (btnFinalizar) btnFinalizar.style.display = 'none';
-        if (btnIniciar) btnIniciar.style.display = 'inline-block';
-    }
-
-    function estaActivo(idPrefijo) {
-        var e = estados[idPrefijo];
-        return !!(e && e.activo);
-    }
-
-    // Payload a enviar al backend + nudge anti-olvido (duración estimada)
-    function obtenerPayload(idPrefijo, tipo) {
-        var e = estados[idPrefijo] || (estados[idPrefijo] = crearEstado());
-
-        if (String(tipo || '') === 'Llamada' && !e.seg && !e.activo) {
-            var mins = window.prompt('📞 No se registró la duración de la llamada. ¿Cuántos minutos duró aproximadamente? (déjalo vacío para omitir)');
-            if (mins !== null && mins !== '' && !isNaN(Number(mins)) && Number(mins) > 0) {
-                e.seg = Math.round(Number(mins) * 60);
-                e.metodo = 'estimada';
-            }
+            pills += '<button type="button" data-val="' + RESULTADOS[i].v + '" onclick="TemporizadorLlamada.elegirResultado(\'' + RESULTADOS[i].v + '\')" style="display:inline-block;margin:3px;padding:8px 12px;border:2px solid #e5e7eb;border-radius:20px;background:#f9fafb;color:#374151;font-size:13px;font-weight:600;cursor:pointer;">' + RESULTADOS[i].l + '</button>';
         }
 
-        var sel = document.getElementById(idPrefijo + '-resultado');
-        var resultado = sel ? sel.value : '';
-        return {
-            duracion_seg: e.seg || null,
-            llamada_inicio: e.inicio,
-            llamada_fin: e.fin,
-            resultado: resultado || null,
-            metodo_duracion: e.metodo || (e.seg ? 'temporizador' : null)
-        };
+        d.innerHTML = dialogHtml(
+            '<div style="font-size:34px;font-weight:800;color:#059669;font-variant-numeric:tabular-nums;line-height:1.1;">' + formatear(actual.seg) + '</div>'
+            + '<div style="font-size:13px;font-weight:600;color:#059669;margin:2px 0 14px;">✅ Llamada finalizada</div>'
+            + '<div style="text-align:left;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">🏷️ Resultado de la gestión telefónica:</div>'
+            + '<div id="llamada-resultado-pills" style="margin-bottom:12px;">' + pills + '</div>'
+            + '<textarea id="llamada-obs" rows="2" placeholder="Observación (opcional)..." style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:14px;font-family:inherit;"></textarea>'
+            + '<div style="display:flex;gap:8px;justify-content:center;">'
+            + '<button type="button" id="llamada-btn-guardar" onclick="TemporizadorLlamada.guardar()" style="padding:11px 18px;background:#059669;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;">💾 Guardar</button>'
+            + '<button type="button" onclick="TemporizadorLlamada.cancelar()" style="padding:11px 18px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-weight:600;cursor:pointer;">✕ Cancelar</button>'
+            + '</div>'
+        );
     }
 
-    // Guardia de cierre: si hay una llamada en curso, pedir confirmación
-    // antes de cerrar el modal (cubre botón Cancelar, overlay y tecla Escape).
-    function instalarGuardia() {
-        if (guardiaInstalada) return;
-        guardiaInstalada = true;
+    function actualizarTimer() {
+        var el = document.getElementById('llamada-timer');
+        if (el && actual && actual.activo) el.textContent = formatear(segActual());
+    }
 
-        var origCerrar = window.cerrarModal;
-        var wrapper = function () {
-            var activos = [];
-            Object.keys(estados).forEach(function (k) { if (estados[k].activo) activos.push(k); });
-            if (activos.length) {
-                var k = activos[0];
-                var e = estados[k];
-                var seg = Math.floor((Date.now() - new Date(e.inicio).getTime()) / 1000);
-                if (!window.confirm('📞 Llamada en curso (' + formatear(seg) + '). ¿Cancelar la llamada sin guardar y cerrar?')) {
-                    return;
-                }
-                finalizarPorId(k);
-                delete estados[k];
-            }
-            if (origCerrar) origCerrar();
+    // ------------------------------------------------------------------ API
+
+    function abrirLlamada(opciones) {
+        opciones = opciones || {};
+        if (actual && actual.activo) {
+            alert('📞 Ya hay una llamada en curso para otra solicitud. Termínala primero.');
+            return;
+        }
+        if (!opciones.solicitudId) return;
+
+        actual = {
+            solicitudId: String(opciones.solicitudId),
+            celular: opciones.celular || '',
+            gestionId: opciones.gestionId || null,
+            nombre: opciones.nombre || '',
+            onGuardada: opciones.onGuardada || null,
+            inicio: Date.now(),
+            fin: null,
+            seg: 0,
+            activo: true,
+            resultado: null,
+            observacion: '',
+            timer: null
         };
 
-        window.cerrarModal = wrapper;
+        crearOverlay();
+        renderEnLlamada();
+        actual.timer = setInterval(actualizarTimer, 1000);
+        actualizarTimer();
+
+        marcarDeNuevo();
+    }
+
+    function marcarDeNuevo() {
+        if (!actual) return;
+        var numero = numeroLimpio(actual.celular);
+        if (!numero) { alert('No hay número de celular'); return; }
+        window.location.href = 'tel:' + numero;
+    }
+
+    function finalizar() {
+        if (!actual || !actual.activo) return;
+        if (actual.timer) { clearInterval(actual.timer); actual.timer = null; }
+        actual.fin = Date.now();
+        actual.seg = segActual();
+        actual.activo = false;
+        renderResultado();
+    }
+
+    function elegirResultado(valor) {
+        if (!actual) return;
+        actual.resultado = valor;
+        var pills = document.querySelectorAll('#llamada-resultado-pills button[data-val]');
+        for (var i = 0; i < pills.length; i++) {
+            var activo = pills[i].getAttribute('data-val') === valor;
+            pills[i].style.borderColor = activo ? '#059669' : '#e5e7eb';
+            pills[i].style.background = activo ? '#d1fae5' : '#f9fafb';
+            pills[i].style.color = activo ? '#065f46' : '#374151';
+        }
+    }
+
+    async function guardar() {
+        if (!actual) return;
+        if (!actual.resultado) {
+            alert('Selecciona el resultado de la llamada antes de guardar.');
+            return;
+        }
+        var obsEl = document.getElementById('llamada-obs');
+        var observacion = obsEl ? obsEl.value.trim() : '';
+        var btn = document.getElementById('llamada-btn-guardar');
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+
+        var body = {
+            solicitud_id: actual.solicitudId,
+            tipo_gestion: 'Llamada',
+            observacion: observacion,
+            gestion_maestro_id: actual.gestionId || null,
+            duracion_seg: (typeof actual.seg === 'number' && actual.seg >= 0) ? actual.seg : null,
+            llamada_inicio: new Date(actual.inicio).toISOString(),
+            llamada_fin: new Date(actual.fin || actual.inicio).toISOString(),
+            resultado: actual.resultado,
+            metodo_duracion: 'temporizador'
+        };
+
         try {
-            if (window.Modal && typeof window.Modal.cerrar === 'function') {
-                window.Modal.cerrar = wrapper;
+            var response = await fetch('/api/excel/gestiones', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            var resultado = await response.json().catch(function () { return {}; });
+            if (!response.ok || resultado.error) {
+                alert('Error: ' + (resultado.error || 'No se pudo guardar la gestión'));
+                if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar'; }
+                return;
             }
-        } catch (e) { /* silencioso */ }
+            var data = resultado.data || {};
+            mostrarToast('📞 Llamada de ' + formatear(actual.seg) + ' registrada');
+            var cb = actual.onGuardada;
+            var solicitudId = actual.solicitudId;
+            cerrar();
+            if (typeof cb === 'function') { try { cb(data, solicitudId); } catch (e) { console.error('[TemporizadorLlamada] onGuardada:', e); } }
+        } catch (error) {
+            console.error('[TemporizadorLlamada] Error guardando:', error);
+            alert('Error al guardar la gestión: ' + error.message);
+            if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar'; }
+        }
+    }
+
+    function cancelar() {
+        if (!actual) return;
+        if (actual.activo) {
+            var ok = window.confirm('📞 Llamada en curso (' + formatear(segActual()) + '). ¿Cancelar la llamada sin guardar y cerrar?');
+            if (!ok) return;
+        }
+        cerrar();
+    }
+
+    function cerrar() {
+        if (actual && actual.timer) { clearInterval(actual.timer); actual.timer = null; }
+        for (var i = 0; i < limpiezas.length; i++) { try { limpiezas[i](); } catch (e) { /* silencioso */ } }
+        limpiezas = [];
+        if (overlayEl) { overlayEl.remove(); overlayEl = null; }
+        actual = null;
+    }
+
+    function mostrarToast(mensaje) {
+        var toast = document.createElement('div');
+        toast.textContent = mensaje;
+        toast.style.cssText = [
+            'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);',
+            'background:#111827;color:#fff;padding:12px 20px;border-radius:12px;',
+            'font-size:14px;font-weight:600;z-index:10001;box-shadow:0 10px 25px -5px rgba(0,0,0,0.4);'
+        ].join('');
+        document.body.appendChild(toast);
+        setTimeout(function () {
+            toast.style.transition = 'opacity 0.4s';
+            toast.style.opacity = '0';
+            setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 420);
+        }, 3200);
     }
 
     window.TemporizadorLlamada = {
-        html: html,
-        iniciar: iniciar,
+        abrirLlamada: abrirLlamada,
+        marcarDeNuevo: marcarDeNuevo,
         finalizar: finalizar,
-        estaActivo: estaActivo,
-        obtenerPayload: obtenerPayload,
+        elegirResultado: elegirResultado,
+        guardar: guardar,
+        cancelar: cancelar,
         formatear: formatear
     };
-
-    instalarGuardia();
 })(window);

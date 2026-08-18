@@ -1,7 +1,7 @@
 # 🎯 Plan — Instrumentación de métricas de gestión: temporizador de llamadas + historial de semáforo
 
 > **Contexto:** derivado de `docs/informe-auditoria-produccion-daviddlaa.md`. La auditoría mostró que el sistema **no registra duración de llamadas, ni resultado estructurado, ni ventas vinculadas**; el embudo hoy se reconstruye clasificando texto libre. Este plan instrumenta las métricas para que se midan solas.
-> **Estado:** propuesta para revisión — NO implementado aún.
+> **Estado:** ✅ **Fase 1 v2 implementada y verificada (17/08/2026):** el frontend de la Fase 1 v1 (temporizador dentro del modal de gestión) se reemplazó por un **popup de llamada desde el botón 📞 de cada tarjeta** (sección 8). Backend y migraciones de la v1 se mantienen. Fases 2–4 pendientes.
 
 ---
 
@@ -129,7 +129,7 @@ Contador diario por agente: llamadas, minutos hablados, % con duración registra
 
 | Fase | Contenido | Esfuerzo |
 |---|---|---|
-| **1 (P0)** | Columnas en `gestiones` + temporizador con nudges + resultado estructurado (web y móvil) | 1–2 días |
+| **1 (P0)** | Columnas en `gestiones` + temporizador con nudges + resultado estructurado (web y móvil) | ✅ Implementada |
 | **2 (P1)** | Tabla `ventas` + derivación estructurada (modal y listados) | 2–3 días |
 | **3 (P2)** | `semaforo_historial` + panel de métricas por campaña + dashboard líder | 2–3 días |
 | **4** | Export Excel de métricas por campaña | 1–2 días |
@@ -138,4 +138,92 @@ Contador diario por agente: llamadas, minutos hablados, % con duración registra
 
 ---
 
-*Documento de planificación — pendiente de aprobación para pasar a implementación.*
+## 7. Estado de implementación
+
+### ✅ Fase 1 — Implementada (17/08/2026)
+
+**Migración** (idempotente, aditiva):
+- SQLite: `src/config/initDb.js` (`ALTER TABLE gestiones ADD COLUMN` con guard `PRAGMA table_info`).
+- PostgreSQL: `src/config/initDb.pg.js` (`SCHEMA_VERSION` 6→7, `ADD COLUMN IF NOT EXISTS` × 5).
+
+**Backend:** `src/controllers/excel.controller.js` → `crearGestion` (`POST /api/excel/gestiones`) persiste y valida `duracion_seg` (entero ≥0), `llamada_inicio`, `llamada_fin`, `resultado` (whitelist de 9 buckets) y `metodo_duracion` (temporizador|estimada|manual). Un valor inválido se descarta, nunca rompe el guardado.
+
+**Frontend:** nuevo módulo compartido `public/js/temporizador-llamada.js` (incluido tras `modal.js` en `public/desktop/gestion-lote.html`, `public/movil/gestion-lote.html` y `public/desktop/solicitudes.html`), integrado en:
+- Modal de campaña desktop (`abrirGestion` en `public/desktop/js/gestion-lote.js`): opción 📞 Llamada añadida + bloque temporizador.
+- Modal de campaña móvil (`abrirGestion` en `public/movil/js/gestion-lote.js`): pill 📞 Llamada + bloque temporizador.
+- Modal de Solicitudes desktop (`abrirGestionesCard`/`guardarGestionDesktop` en `public/desktop/js/solicitudes.js`).
+- Guardado compartido de campañas: `public/js/gestion-campana.js` (`guardarGestionIndividual`).
+
+**Nudges implementados:** ① fricción (Guardar/Cancelar deshabilitados con llamada en curso), ② cronómetro en vivo + guardia sobre `cerrarModal`/`Modal.cerrar` (confirmación al cerrar con llamada activa, cubre Cancelar/overlay/Escape), ③ refuerzo positivo (mensaje "📞 Llamada registrada (MM:SS)" al guardar), ④ anti-olvido (gestión tipo Llamada sin duración → prompt de minutos estimados, `metodo_duracion='estimada'`).
+
+**Verificación:** `node --check` en los 8 archivos JS modificados · migración + INSERT validados sobre copia de la BD · smoke test end-to-end local (app forzada a SQLite — nunca conectó a producción —, login real + `POST /api/excel/gestiones` con los 5 campos → fila persistida correctamente) · BD local restaurada a su estado original y producción intacta.
+
+### ⏳ Pendiente
+- Contador diario del nudge ③ ("Hoy: X llamadas · Y min" en dashboard) y accountability del líder: se entregan con el panel de métricas de la **Fase 3**.
+- Fases 2 (ventas vinculadas + derivación estructurada), 3 (`semaforo_historial` + métricas por campaña) y 4 (export Excel): pendientes de aprobación.
+
+---
+
+## 8. 🔄 Rediseño (v2) — SweetAlert de llamada desde el botón 📞 de la tarjeta
+
+> Decisión del dueño del producto (17/08/2026): el temporizador no va dentro del modal de gestión. Va en un **SweetAlert** que se abre al presionar el botón **📞 Llamar de cada tarjeta**: el contador corre mientras se hace la llamada (fuera del navegador) y, al volver, en ese mismo SweetAlert se detiene, se escoge el **resultado de la gestión telefónica** y se guarda.
+
+### 8.1 Puntos de entrada (botones 📞 existentes) — decisiones cerradas (17/08/2026)
+
+| Tarjeta | Hoy | Cambio |
+|---|---|---|
+| Campaña móvil (`btn-sol-call` → `llamarDesdeGestionLote(celular)`) | marca `tel:` directo | ✅ Reemplazar por el popup de llamada (recibe `id_solicitud` + `celular` + `gestionId` global) |
+| Solicitudes móvil (`btn-llamar` → `llamarCliente(celular)`) | marca `tel:` directo | ✅ Reemplazar por el popup de llamada (recibe `id_solicitud` + `celular`) |
+| Campaña escritorio | **no tiene botón 📞** (la función `llamarDesdeGestionLoteDesktop` existe sin uso) | ❌ Sin cambios (decisión: solo móvil) |
+| Solicitudes escritorio | botón 📞 eliminado por decisión previa (`feature-tarjeta-solicitudes-escritorio.md`) | ❌ Sin cambios (decisión) |
+
+### 8.2 Flujo
+
+```
+[📞 en la tarjeta]
+      │
+      ▼
+SweetAlert abierto: nombre + teléfono + contador en vivo (00:00)
+      │  (se dispara tel: automáticamente — la llamada ocurre fuera del navegador)
+      │
+[usuario vuelve al navegador]  → el contador se refresca con el tiempo REAL
+      │                          (wall-clock: Date.now() − inicio, sin depender de setInterval)
+      ▼
+[✓ Terminar llamada]  → contador se detiene · muestra "Duración: 03:24"
+      ▼
+Resultado (pills de los 9 buckets) + observación opcional
+      ▼
+[💾 Guardar]  → POST /api/excel/gestiones { tipo_gestion:'Llamada', duracion_seg,
+                    resultado, observacion, gestion_maestro_id, metodo_duracion:'temporizador' }
+      ▼
+Toast "📞 Llamada de 03:24 registrada" → cierra → la tarjeta se marca como gestionada
+```
+
+### 8.3 Detalles técnicos
+
+- **Componente (decisión cerrada):** popup tipo SweetAlert (overlay + diálogo centrado) construido por el **propio módulo** (`temporizador-llamada.js`), sin depender de `modal.js` ni de `crearModalMovil` — las páginas móviles no cargan `modal.js`. **No** se agrega SweetAlert2 CDN.
+- **Módulo:** se reescribió `public/js/temporizador-llamada.js` → API: `abrirLlamada({ solicitudId, celular, nombre, gestionId, onGuardada })` (abre el popup, arranca el contador y marca `tel:`), `finalizar()` (detiene el contador y muestra duración + resultado + observación), `elegirResultado(valor)`, `guardar()` (POST y cierra), `cancelar()` (confirma antes de cerrar con llamada en curso). Se conservan los buckets de `resultado`, el formateo y la guardia de confirmación al cerrar.
+- **Contador por wall-clock:** `duracion = Date.now() − inicio` en cada render (setInterval cada 1s + refresco en `visibilitychange`/`pageshow`). Así el tiempo es correcto aunque el navegador suspenda el `setInterval` en segundo plano.
+- **Backend:** sin cambios — `POST /api/excel/gestiones` ya acepta y valida `duracion_seg`, `llamada_inicio`, `llamada_fin`, `resultado`, `metodo_duracion` (sección 7).
+- **Migraciones:** sin cambios — las 5 columnas de `gestiones` ya existen (sección 7).
+- **Revertir de la v1:** bloque temporizador dentro de los modales de gestión (campaña desktop/móvil y Solicitudes desktop), el código nudge en `guardarGestionIndividual`/`guardarGestionDesktop`. La opción 📞 Llamada **se elimina del modal de campaña móvil** (en móvil las llamadas solo se registran por el popup de la tarjeta, con temporizador y resultado) y **se conserva en el modal de campaña escritorio** (única vía para registrar llamadas, sin temporizador).
+- **Opcional (v2.1):** persistir "llamada en curso" en `sessionStorage` para restaurar el SweetAlert si la página recarga durante la llamada.
+
+### 8.4 ✅ Implementación v2 (17/08/2026)
+
+- **Botones 📞 conectados (solo móvil):** `llamarDesdeGestionLote(id, celular, nombre)` en `public/movil/js/gestion-lote.js` (Campaña móvil, `gestionId` global de la campaña; al guardar refresca con `cargarDatosGestionMovil()`) y `llamarCliente(id, celular, nombre)` en `public/movil/js/solicitudes.js` (Solicitudes móvil, `gestionId = campana_id` de la solicitud si existe; al guardar refresca con `buscarEnServidor(true)`). Ambos con `tel:` como fallback si el módulo no está cargado.
+- **Revertido de la v1:** bloque temporizador dentro de los modales de gestión (campaña desktop/móvil y Solicitudes desktop), código nudge en `guardarGestionIndividual` (`public/js/gestion-campana.js`) y `guardarGestionDesktop` (`public/desktop/js/solicitudes.js`), e includes del script en `public/desktop/gestion-lote.html` y `public/desktop/solicitudes.html`.
+- **Opción 📞 Llamada en el modal (decisión 17/08/2026):** se **eliminó del modal de campaña móvil** (en móvil las llamadas se registran solo por el popup de la tarjeta, con temporizador y resultado — evita el segundo camino que se guardaría sin métricas). Se **conserva en el modal de campaña escritorio**, que es la única vía para registrar una llamada (el escritorio no tiene botón 📞 en las tarjetas).
+- **Corrección de bug detectada en verificación:** `duracion_seg: actual.seg || null` convertía 0 (llamada de <1 s) en `null`; ahora se envía 0 como número.
+- **Verificación:** `node --check` en los 6 archivos JS · cero referencias residuales a la API v1 (`html(`, `estaActivo`, `obtenerPayload`) · **smoke test funcional del popup con DOM simulado**: abrir → `tel:` marcado → finalizar → elegir resultado → POST `/api/excel/gestiones` con los 5 campos de métrica correctos → `onGuardada` ejecutado → overlay cerrado (`✅ SMOKE TEST POPUP OK`). Producción intacta.
+
+### 8.5 Criterios de aceptación
+
+1. Al tocar 📞 en una tarjeta se abre el SweetAlert con contador corriendo y se marca el número.
+2. Al volver al navegador, el contador muestra el tiempo real transcurrido (no se pierde por estar en segundo plano).
+3. "Terminar llamada" muestra la duración y el selector de resultado (9 buckets).
+4. "Guardar" crea la gestión `Llamada` con `duracion_seg`, `resultado` y `metodo_duracion='temporizador'`, y la tarjeta se actualiza.
+5. Cerrar/cancelar con llamada en curso pide confirmación.
+6. Verificación: `node --check`, smoke test local (SQLite forzada, producción intacta) y prueba manual del flujo del SweetAlert.
+
+*Documento de planificación — Fase 1 v2 implementada (17/08/2026); Fases 2–4 pendientes de aprobación.*

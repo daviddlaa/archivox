@@ -771,7 +771,7 @@ function renderizarCards(datos) {
 
         // FILA 3: Botones compactos (Llamar · Gestiones · Completar · WhatsApp · Eliminar)
         html += '  <div class="card-fila-3">';
-        html += '    <button class="card-btn btn-llamar" onclick="event.stopPropagation(); llamarCliente(\'' + escaparParaAtributo(item.celular || '') + '\')"><span class="btn-icon">📞</span><span class="btn-label">Llamar</span></button>';
+        html += '    <button class="card-btn btn-llamar" onclick="event.stopPropagation(); llamarCliente(\'' + id + '\', \'' + escaparParaAtributo(item.celular || '') + '\', \'' + escaparParaAtributo(item.nombre || '') + '\')"><span class="btn-icon">📞</span><span class="btn-label">Llamar</span></button>';
         html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesMovil(\'' + id + '\')"><span class="btn-icon">📋</span><span class="btn-label">Gestiones</span></button>';
         html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletarInfoMovil(\'' + id + '\')"><span class="btn-icon">✏️</span><span class="btn-label">Completar</span></button>';
         html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); abrirWhatsAppChatMovil(\'' + escaparParaAtributo(item.celular || '') + '\')"><span class="btn-icon">💬</span><span class="btn-label">WhatsApp</span></button>';
@@ -850,14 +850,26 @@ function recrearSentinel() {
 
 // ================== LLAMADA Y WHATSAPP ==================
 
-// Función para llamar al cliente
-function llamarCliente(celular) {
-    if (!celular) {
+// Función para llamar al cliente (abre el popup con contador si el módulo está disponible)
+function llamarCliente(solicitudId, celular, nombre) {
+    var numeroLimpio = String(celular || '').replace(/\D/g, '');
+    if (!numeroLimpio) {
         alert('No hay número de celular');
         return;
     }
-    // Limpiar el número - remover cualquier carácter que no sea dígito
-    var numeroLimpio = celular.replace(/\D/g, '');
+    if (window.TemporizadorLlamada) {
+        // Popup de llamada con contador (Fase 1 v2): la gestión se crea en la
+        // campaña de la solicitud si existe; al guardar, refresca la lista.
+        var sol = datosFilas[solicitudId] || null;
+        window.TemporizadorLlamada.abrirLlamada({
+            solicitudId: solicitudId,
+            celular: celular,
+            nombre: nombre || '',
+            gestionId: (sol && sol.campana_id) || null,
+            onGuardada: function() { buscarEnServidor(true); }
+        });
+        return;
+    }
     window.location.href = 'tel:' + numeroLimpio;
 }
 

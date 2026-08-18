@@ -1651,8 +1651,6 @@ function abrirGestionesCard(id) {
     contenido += '<select id="tipo-gestion-desktop" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; font-size:14px; margin-bottom:12px;">' + opcionesDropdown + '</select>';
     contenido += '<label style="display:block; font-weight:600; margin-bottom:4px; font-size:13px;">📝 Observación:</label>';
     contenido += '<textarea id="observacion-gestion-desktop" rows="3" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; font-size:14px; margin-bottom:12px; box-sizing:border-box;"></textarea>';
-    // Temporizador de llamada + resultado estructurado (Fase 1 métricas)
-    if (window.TemporizadorLlamada) contenido += window.TemporizadorLlamada.html('solicitud');
     contenido += '<button onclick="guardarGestionDesktop(\'' + id + '\')" style="padding:12px 24px; background:#2563eb; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">💾 Guardar Gestión</button>';
     contenido += '</div>';
 
@@ -1715,26 +1713,13 @@ function guardarGestionDesktop(id) {
     var observacion = document.getElementById('observacion-gestion-desktop');
     if (!tipo || !observacion) { alert('Error en el formulario'); return; }
 
-    var tl = window.TemporizadorLlamada;
-    // Nudge 1 (fricción por diseño): no guardar con una llamada en curso
-    if (tl && tl.estaActivo('solicitud')) {
-        alert('📞 Hay una llamada en curso. Presiona "✓ Finalizar llamada" para guardar la duración.');
-        return;
-    }
-
     var btn = document.querySelector('button[onclick="guardarGestionDesktop(\'' + id + '\')"]');
     if (btn) { btn.textContent = '⏳ Guardando...'; btn.disabled = true; }
 
-    var extra = (tl ? tl.obtenerPayload('solicitud', tipo.value) : {});
     var body = {
         solicitud_id: id,
         tipo_gestion: tipo.value,
-        observacion: observacion.value.trim(),
-        duracion_seg: extra.duracion_seg || null,
-        llamada_inicio: extra.llamada_inicio || null,
-        llamada_fin: extra.llamada_fin || null,
-        resultado: extra.resultado || null,
-        metodo_duracion: extra.metodo_duracion || null
+        observacion: observacion.value.trim()
     };
 
     fetch('/api/excel/gestiones', {
@@ -1747,11 +1732,7 @@ function guardarGestionDesktop(id) {
         if (resultado && !resultado.error) {
             document.getElementById('observacion-gestion-desktop').value = '';
             cargarHistorialGestionesDesktop(id);
-            var msj = 'Gestión guardada';
-            if (tipo.value === 'Llamada' && extra.duracion_seg) {
-                msj += ' · 📞 ' + tl.formatear(extra.duracion_seg);
-            }
-            alert(msj);
+            alert('Gestión guardada');
         } else {
             alert('Error: ' + (resultado.error || 'Error desconocido'));
         }

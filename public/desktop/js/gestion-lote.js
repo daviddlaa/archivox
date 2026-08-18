@@ -1676,9 +1676,6 @@ function abrirGestion(solicitudId, tipo) {
     contenido += '<label id="label-observacion-modal">📝 Observación:</label>';
     contenido += '<textarea id="observacion-modal" rows="4" placeholder="Escriba su observación..."></textarea>';
     
-    // Temporizador de llamada + resultado estructurado (Fase 1 métricas)
-    if (window.TemporizadorLlamada) contenido += window.TemporizadorLlamada.html('campana');
-    
     // Campos extra para el modo recordatorio
     contenido += '<div id="recordatorio-fields" style="display:none;margin-bottom:12px;">';
     contenido += '<label>📱 Canal:</label>';
