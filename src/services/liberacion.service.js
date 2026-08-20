@@ -4,7 +4,9 @@
 // Detecta solicitudes en estado 'APROBADA PARA LIBERACIÓN' que llevan más de
 // 6 meses (según fecha_solicitud) y que NO tienen una relación activa (ALTA)
 // con su usuario en la tabla `relaciones`. Cuando eso ocurre, si el cliente
-// compra la venta NO se refleja en el usuario. Este servicio permite:
+// compra la venta NO se refleja en el usuario. Las solicitudes separadas con
+// la bandera "ya no aplica para crédito" (no_aplica_credito = 0) se excluyen.
+// Este servicio permite:
 //   1. Contar y listar esas solicitudes (banner + listado).
 //   2. Crear una campaña (gestiones_maestro) para reactivarlas.
 //   3. Activarlas en lote (estado -> 'ACTIVADA') sin exigir una compra.
@@ -57,6 +59,7 @@ function buildWhereLiberacion(alias, paramIndex, sinUsuario) {
         AND ${a}.fecha_solicitud IS NOT NULL
         AND ${a}.fecha_solicitud != ''
         AND ${a}.fecha_solicitud < $${paramsUsed + 1}
+        AND COALESCE(${a}.no_aplica_credito, 1) = 1
         AND NOT EXISTS (
             SELECT 1 FROM relaciones r
             WHERE r.usuario_id = ${a}.usuario_id
@@ -151,11 +154,12 @@ async function activarSinCompra(usuarioId, payload) {
     const crearCampana = !!(payload && payload.crear_campana);
     const nombreCampana = (payload && payload.nombre_campana ? String(payload.nombre_campana).trim() : '');
 
-    // Solo solicitudes del usuario, actualmente en estado APROBADA
+    // Solo solicitudes del usuario, actualmente en estado APROBADA y que aún
+    // aplican para crédito (no separadas con la bandera "ya no aplica").
     const placeholders = ids.map(function() { return '?'; }).join(',');
     const existentes = await pool.query(
         `SELECT id_solicitud, estado FROM solicitudes
-         WHERE usuario_id = ? AND estado = ? AND id_solicitud IN (${placeholders})`,
+         WHERE usuario_id = ? AND estado = ? AND COALESCE(no_aplica_credito, 1) = 1 AND id_solicitud IN (${placeholders})`,
         [usuarioId, ESTADO_APROBADA].concat(ids)
     );
     const validos = getRows(existentes).map(function(r) { return Number(r.id_solicitud); });

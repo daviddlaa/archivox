@@ -59,6 +59,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 - UX "Agregar a Campaña" — [`feature-ux-agregar-campana-solicitudes.md`](feature-ux-agregar-campana-solicitudes.md)
 - Columna "vendedor" en solicitudes — [`feature-columna-vendedor-solicitudes.md`](feature-columna-vendedor-solicitudes.md)
 - Importación Excel protegida (nunca toca registros ajenos) — [`fix-importacion-proteccion-datos-usuarios.md`](fix-importacion-proteccion-datos-usuarios.md)
+- Reactivación sin compra de solicitudes liberadas (>6 meses sin relación, banner + listado + campaña; excluye las separadas con 👎) — [`feature-liberacion-reactivacion-sin-compra.md`](feature-liberacion-reactivacion-sin-compra.md)
 
 ### 👥 Equipos / Panel del líder
 - Rediseño del panel del líder móvil (3 tabs, detalle de agente) — [`feature-rediseno-equipo-movil.md`](feature-rediseno-equipo-movil.md)
@@ -123,6 +124,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 | `feature-historial-campana.md` | Historial general de campaña |
 | `feature-limite-texto-seguimiento-tarjetas.md` | Límite de texto en tarjetas |
 | `feature-login-movil-compacto.md` | Login móvil compacto |
+| `feature-liberacion-reactivacion-sin-compra.md` | Reactivación sin compra (>6 meses, excluye 👎) |
 | `feature-no-aplica-credito.md` | Flag "Ya no aplica para crédito" |
 | `feature-panel-lateral-agentes.md` | Panel lateral de agentes |
 | `feature-panel-lateral-solicitudes.md` | Panel lateral de solicitudes |
