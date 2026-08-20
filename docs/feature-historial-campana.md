@@ -1,10 +1,11 @@
 # Feature: Historial general de campaña — botón "🕘 Últimas gestiones"
 
-**Fecha:** Agosto 2026
+**Fecha:** Agosto 2026 (original) · **18/08/2026** (actualización: resultado de llamada en historial)
 **Ámbito:** `src/controllers/gestionesMaestro.controller.js`, `src/routes/gestionesMaestro.routes.js`,
 `public/movil/gestion-lote.html`, `public/movil/js/gestion-lote.js`,
 `public/desktop/gestion-lote.html`, `public/desktop/js/gestion-lote.js`,
-`public/css/gestion-lote.css`
+`public/css/gestion-lote.css`,
+`public/movil/js/solicitudes.js`, `public/desktop/js/solicitudes.js`
 **Solicitud:** Poder consultar el historial completo de gestiones de una campaña (todas sus
 solicitudes) tanto en móvil como en escritorio, con un botón único "🕘 Últimas gestiones".
 
@@ -34,8 +35,21 @@ de ancho completo que abre el mismo modal. El usuario aprobó unificar el texto 
 - **Ruta:** `router.get('/:id/historial', ...)` en `src/routes/gestionesMaestro.routes.js`.
 - **Respuesta:** `{ gestion, gestiones }` donde `gestion` es la campaña (para su nombre) y
   `gestiones` es la lista de gestiones de la campaña (todas sus solicitudes), cada una con
-  `solicitud_id`, `tipo_gestion`, `fecha_gestion`, `observacion` y datos de la solicitud.
+  `solicitud_id`, `tipo_gestion`, `fecha_gestion`, `observacion`, **`resultado`**, **`duracion_seg`**
+  y datos de la solicitud.
 - Sin sesión devuelve 401 (ruta protegida por `requiresAuth`).
+
+### 2.2 Endpoint `GET /api/gestiones-maestro/:id/solicitudes/:solicitudId/historial`
+
+- **Controlador:** `getHistorialSolicitudCampana` (mismo archivo).
+- **Respuesta:** array de gestiones de la solicitud, cada una con `resultado` y `duracion_seg`
+  (además de los campos originales).
+
+### 2.3 Endpoint `GET /api/excel/gestiones/:solicitud_id`
+
+- **Controlador:** `getGestiones` en `src/controllers/excel.controller.js`.
+- **Nota:** ya usaba `SELECT *`, por lo que `resultado` y `duracion_seg` siempre estuvieron
+  disponibles; el fix fue solo en los endpoints de historial de campaña que usaban SELECT explícito.
 
 ---
 
@@ -74,14 +88,47 @@ de ancho completo que abre el mismo modal. El usuario aprobó unificar el texto 
 
 ---
 
-## 4. Qué NO cambió
+## 4. Resultado de llamada en historial (18/08/2026)
+
+### 4.1 Problema
+Al finalizar una llamada con el temporizador, el usuario elige uno de los 9 resultados
+(No contestó, Interesado, Venta, etc.). El `resultado` se guardaba en la tabla `gestiones`
+pero **no se mostraba** en ningún historial (campaña, por solicitud, ni en Solicitudes).
+
+### 4.2 Solución
+- **Backend:** se agregaron `g.resultado` y `g.duracion_seg` al SELECT de los endpoints
+  `getHistorialGeneralCampana` y `getHistorialSolicitudCampana`.
+- **Frontend:** cuando `tipo_gestion === 'Llamada'` y `resultado` existe, se muestra un
+  **badge con emoji + label legible** y la duración formateada (ej: `📞 👍 Interesado ⏱️ 03:24`).
+- **Archivos modificados:**
+  - `src/controllers/gestionesMaestro.controller.js` — SELECT ampliado
+  - `public/movil/js/gestion-lote.js` — historial de campaña + por solicitud
+  - `public/desktop/js/gestion-lote.js` — idem escritorio
+  - `public/movil/js/solicitudes.js` — historial de gestiones de solicitudes
+  - `public/desktop/js/solicitudes.js` — idem escritorio
+
+### 4.3 Mapa de resultados y colores
+
+| Resultado | Emoji | Label | Color de fondo |
+|-----------|-------|-------|----------------|
+| `no_contesta` | 📵 | No contestó | Gris `#e5e7eb` |
+| `numero_invalido` | 📛 | Número incorrecto | Amarillo `#fef3c7` |
+| `no_interesado` | 🙅 | No interesado | Rojo claro `#fee2e2` |
+| `interesado` | 👍 | Interesado | Verde claro `#d1fae5` |
+| `derivado` | 🤝 | Derivado a vendedor | Azul claro `#dbeafe` |
+| `venta` | 💰 | Venta | Verde brillante `#bbf7d0` |
+| `descalificado` | 🚫 | Descalificado | Morado `#f3e8ff` |
+| `seguimiento` | 🔄 | Seguimiento | Azul `#dbeafe` |
+| `otro` | 📝 | Otro | Gris claro `#f9fafb` |
+
+### 4.4 Qué NO cambió
 
 | Elemento | Estado |
 |----------|--------|
-| Historial contextual por solicitud (`/api/gestiones-maestro/:id/solicitudes/:solicitudId/historial`) | Sin cambios |
 | Modales existentes de Campañas (WhatsApp, Gestionar, Ver gestión) | Sin cambios |
 | Carrusel del semáforo móvil (orden fijo — ver `docs/fix-semaforo-movil-orden-fijo.md`) | Sin cambios |
 | `crearModal` / `escaparParaHTML` / `formatearFechaHistorial` (compartidos) | Sin cambios |
+| Historial de relaciones (`gestiones_relaciones`) | Sin cambios — tabla diferente, sin campo `resultado` |
 
 ---
 
@@ -89,14 +136,17 @@ de ancho completo que abre el mismo modal. El usuario aprobó unificar el texto 
 
 - ✅ Endpoint verificado en producción: `GET /api/gestiones-maestro/53/historial` → 200 con 5
   gestiones (campaña "Recuperación").
-- ✅ `node --check` en `public/desktop/js/gestion-lote.js` y `public/movil/js/gestion-lote.js`.
+- ✅ `node --check` en los 5 archivos JS modificados.
 - ✅ Producción sirve el JS nuevo (presentes `abrirHistorialCampanaDesktop` y
   `mostrarBotonHistorialCampanaDesktop`; ausente `actualizarSiguienteAccion`).
+- ✅ `resultado` visible en historial de campaña, por solicitud y en páginas de Solicitudes.
 - ⏳ Prueba visual: abrir el modal desde móvil y desde el rail desktop.
 
 ## Documentación relacionada
 
 - `docs/README.md` — estructura del proyecto (§11.5 Gestión por Lotes, §12.6 Campañas v2).
 - `docs/fix-semaforo-movil-orden-fijo.md` — orden fijo del semáforo móvil.
+- `docs/plan-metricas-llamadas-semaforo.md` — Fase 1 del plan de métricas (temporizador de llamadas).
+- `docs/ESTADO-PROYECTO.md` — estado general del proyecto.
 - `docs/feature-ux-comportamiento-campanas.md` — UX de progreso y recomendaciones.
 - `README.md` — tabla de Features Recientes.

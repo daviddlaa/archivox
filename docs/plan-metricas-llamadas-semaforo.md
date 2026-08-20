@@ -1,7 +1,7 @@
 # 🎯 Plan — Instrumentación de métricas de gestión: temporizador de llamadas + historial de semáforo
 
 > **Contexto:** derivado de `docs/informe-auditoria-produccion-daviddlaa.md`. La auditoría mostró que el sistema **no registra duración de llamadas, ni resultado estructurado, ni ventas vinculadas**; el embudo hoy se reconstruye clasificando texto libre. Este plan instrumenta las métricas para que se midan solas.
-> **Estado:** ✅ **Fase 1 v2 implementada y verificada (17/08/2026):** el frontend de la Fase 1 v1 (temporizador dentro del modal de gestión) se reemplazó por un **popup de llamada desde el botón 📞 de cada tarjeta** (sección 8). Backend y migraciones de la v1 se mantienen. Fases 2–4 pendientes.
+> **Estado:** ✅ **Fase 1 v2 implementada y verificada (17/08/2026):** el frontend de la Fase 1 v1 (temporizador dentro del modal de gestión) se reemplazó por un **popup de llamada desde el botón 📞 de cada tarjeta** (sección 8). Backend y migraciones de la v1 se mantienen. **Actualización 18/08/2026:** el `resultado` de la llamada ahora se muestra como badge en los historiales (campaña, por solicitud y páginas de Solicitudes). Fases 2–4 pendientes.
 
 ---
 
@@ -224,6 +224,7 @@ Toast "📞 Llamada de 03:24 registrada" → cierra → la tarjeta se marca como
 3. "Terminar llamada" muestra la duración y el selector de resultado (9 buckets).
 4. "Guardar" crea la gestión `Llamada` con `duracion_seg`, `resultado` y `metodo_duracion='temporizador'`, y la tarjeta se actualiza.
 5. Cerrar/cancelar con llamada en curso pide confirmación.
-6. Verificación: `node --check`, smoke test local (SQLite forzada, producción intacta) y prueba manual del flujo del SweetAlert.
+6. El `resultado` se muestra como badge en los historiales (campaña, por solicitud y páginas de Solicitudes).
+7. Verificación: `node --check`, smoke test local (SQLite forzada, producción intacta) y prueba manual del flujo del SweetAlert.
 
 *Documento de planificación — Fase 1 v2 implementada (17/08/2026); Fases 2–4 pendientes de aprobación.*

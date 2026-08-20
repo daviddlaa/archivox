@@ -2263,9 +2263,206 @@ async function eliminarSolicitudMovil(id) {
     }
 }
 
+// ============================================================================
+// LIBERACIÓN / REACTIVACIÓN SIN COMPRA (MÓVIL)
+// Solicitudes en APROBADA PARA LIBERACIÓN con más de 6 meses y sin relación
+// activa. Banner + listado modal + activación en lote (con o sin campaña).
+// ============================================================================
+var liberacionDatosMovil = [];
+var liberacionSeleccionMovil = new Set();
+
+async function cargarBannerLiberacionMovil() {
+    try {
+        var res = await fetch('/api/liberacion/contar');
+        var data = await res.json();
+        var total = (data && data.total) || 0;
+        var banner = document.getElementById('liberacion-banner');
+        if (!banner) return;
+        var countEl = document.getElementById('liberacion-count');
+        if (countEl) countEl.textContent = total;
+        if (total > 0) banner.classList.add('visible');
+        else banner.classList.remove('visible');
+    } catch (e) {
+        console.error('[Liberación] Error cargando banner:', e);
+    }
+}
+
+async function cargarDatosLiberacionMovil() {
+    var res = await fetch('/api/liberacion?limite=500');
+    var data = await res.json();
+    liberacionDatosMovil = (data && data.data) || [];
+    liberacionSeleccionMovil = new Set();
+    return liberacionDatosMovil;
+}
+
+function renderFilaLiberacionMovil(s) {
+    var id = Number(s.id_solicitud);
+    var sel = liberacionSeleccionMovil.has(id);
+    return '<div class="liberacion-fila' + (sel ? ' seleccionada' : '') + '" data-id="' + id + '" onclick="toggleLiberacionSelMovil(' + id + ', this)">' +
+        '<input type="checkbox" ' + (sel ? 'checked' : '') + '>' +
+        '<div class="liberacion-fila-info">' +
+            '<div class="liberacion-fila-nombre">#' + id + ' · ' + escaparParaHTMLMovil(s.nombre || 'Sin nombre') + '</div>' +
+            '<div class="liberacion-fila-meta">' +
+                '<span>🆔 ' + escaparParaHTMLMovil(s.cedula || '-') + '</span>' +
+                '<span>📱 ' + escaparParaHTMLMovil(s.celular || '-') + '</span>' +
+                '<span>📅 ' + escaparParaHTMLMovil(String(s.fecha_solicitud || '').slice(0, 10)) + '</span>' +
+                (s.segmento ? '<span class="liberacion-fila-segmento">' + escaparParaHTMLMovil(s.segmento) + '</span>' : '') +
+            '</div>' +
+        '</div>' +
+    '</div>';
+}
+
+async function abrirListadoLiberacionMovil() {
+    crearModalMovil('<div style="padding:16px;font-family:inherit;">' +
+        '<div class="liberacion-modal-header" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
+            '<h2 style="margin:0;font-size:18px;color:#1f2937;">⚠️ Liberadas por reactivar</h2>' +
+            '<button onclick="cerrarModal()" style="background:#f3f4f6;border:none;border-radius:8px;padding:6px 12px;font-size:14px;font-weight:600;cursor:pointer;">✕ Cerrar</button>' +
+        '</div>' +
+        '<p style="color:#6b7280;font-size:13px;margin:8px 0 12px;">APROBADA PARA LIBERACIÓN con más de 6 meses y sin relación activa. Si compran, la venta no se refleja.</p>' +
+        '<div class="liberacion-toolbar" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;">' +
+            '<span id="liberacion-total-seleccion" style="font-size:13px;color:#374151;font-weight:600;">0 seleccionadas</span>' +
+            '<button class="liberacion-btn-select-all" onclick="seleccionarTodasLiberacionMovil()">✓ Seleccionar todo</button>' +
+        '</div>' +
+        '<div class="liberacion-lista" id="liberacion-lista" style="max-height:50vh;">' +
+            '<div class="liberacion-vacio">⏳ Cargando...</div>' +
+        '</div>' +
+        '<div class="liberacion-modal-acciones" style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px;">' +
+            '<button class="liberacion-btn liberacion-btn-cancelar" onclick="cerrarModal()">Cancelar</button>' +
+            '<button class="liberacion-btn liberacion-btn-activar" onclick="confirmarActivacionLiberacionMovil(false)">✅ Activar sin compra</button>' +
+            '<button class="liberacion-btn liberacion-btn-crear" onclick="confirmarActivacionLiberacionMovil(true)">🚀 Crear campaña</button>' +
+        '</div>' +
+    '</div>');
+    try {
+        await cargarDatosLiberacionMovil();
+        var lista = document.getElementById('liberacion-lista');
+        if (!lista) return;
+        if (liberacionDatosMovil.length === 0) {
+            lista.innerHTML = '<div class="liberacion-vacio">🎉 No hay solicitudes para reactivar.</div>';
+        } else {
+            lista.innerHTML = liberacionDatosMovil.map(renderFilaLiberacionMovil).join('');
+        }
+        actualizarContadorLiberacionMovil();
+    } catch (e) {
+        console.error('[Liberación] Error cargando listado:', e);
+    }
+}
+
+function toggleLiberacionSelMovil(id, filaEl) {
+    if (liberacionSeleccionMovil.has(id)) {
+        liberacionSeleccionMovil.delete(id);
+        if (filaEl) filaEl.classList.remove('seleccionada');
+    } else {
+        liberacionSeleccionMovil.add(id);
+        if (filaEl) filaEl.classList.add('seleccionada');
+    }
+    if (filaEl) {
+        var cb = filaEl.querySelector('input[type=checkbox]');
+        if (cb) cb.checked = liberacionSeleccionMovil.has(id);
+    }
+    actualizarContadorLiberacionMovil();
+}
+
+function seleccionarTodasLiberacionMovil() {
+    var todas = liberacionDatosMovil.map(function(s) { return Number(s.id_solicitud); });
+    var yaTodas = todas.length > 0 && todas.every(function(id) { return liberacionSeleccionMovil.has(id); });
+    if (yaTodas) {
+        liberacionSeleccionMovil = new Set();
+    } else {
+        liberacionSeleccionMovil = new Set(todas);
+    }
+    var lista = document.getElementById('liberacion-lista');
+    if (lista) lista.innerHTML = liberacionDatosMovil.map(renderFilaLiberacionMovil).join('');
+    actualizarContadorLiberacionMovil();
+}
+
+function actualizarContadorLiberacionMovil() {
+    var el = document.getElementById('liberacion-total-seleccion');
+    if (el) el.textContent = liberacionSeleccionMovil.size + ' seleccionadas';
+}
+
+function confirmarActivacionLiberacionMovil(crearCampana) {
+    if (liberacionSeleccionMovil.size === 0) {
+        alert('Selecciona al menos una solicitud');
+        return;
+    }
+    var ids = Array.from(liberacionSeleccionMovil);
+    if (!crearCampana) {
+        if (!confirm('¿Activar ' + ids.length + ' solicitud(es) sin compra? Se cambiarán a ACTIVADA y volverán a reflejar la venta.')) return;
+        ejecutarActivacionLiberacionMovil(ids, false, null);
+        return;
+    }
+    abrirModalNombreCampanaLiberacionMovil(ids);
+}
+
+function abrirModalNombreCampanaLiberacionMovil(ids) {
+    crearModalMovil('<div style="padding:16px;font-family:inherit;">' +
+        '<h2 style="margin:0;font-size:18px;color:#1f2937;">🚀 Crear campaña de activación</h2>' +
+        '<p style="color:#6b7280;font-size:13px;margin:8px 0 12px;">Se creará una campaña con <strong>' + ids.length + '</strong> solicitudes y se activarán sin compra (estado → ACTIVADA).</p>' +
+        '<label style="display:block;font-weight:600;margin-bottom:4px;font-size:13px;color:#374151;">📝 Nombre de la campaña:</label>' +
+        '<input type="text" id="liberacion-nombre-campana" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:10px;" placeholder="Ej: Activación sin compra - liberadas">' +
+        '<div class="liberacion-modal-acciones" style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">' +
+            '<button class="liberacion-btn liberacion-btn-cancelar" onclick="cerrarModal()">Cancelar</button>' +
+            '<button class="liberacion-btn liberacion-btn-crear" onclick="ejecutarActivacionLiberacionMovil(' + JSON.stringify(ids) + ', true, document.getElementById(\'liberacion-nombre-campana\').value)">🚀 Crear y activar</button>' +
+        '</div>' +
+    '</div>');
+    setTimeout(function() {
+        var input = document.getElementById('liberacion-nombre-campana');
+        if (input) input.focus();
+    }, 150);
+}
+
+async function ejecutarActivacionLiberacionMovil(ids, crearCampana, nombreCampana) {
+    if (crearCampana && !String(nombreCampana || '').trim()) {
+        alert('El nombre de la campaña es requerido');
+        return;
+    }
+    try {
+        var res = await fetch('/api/liberacion/activar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ids: ids,
+                crear_campana: crearCampana ? true : false,
+                nombre_campana: crearCampana ? String(nombreCampana).trim() : null
+            })
+        });
+        var data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Error desconocido'));
+            return;
+        }
+        cerrarModal();
+        alert(data.mensaje);
+        if (data.campana_id) {
+            window.location.href = '/m/gestion-lote?id=' + data.campana_id;
+        } else {
+            cargarBannerLiberacionMovil();
+        }
+    } catch (e) {
+        console.error('[Liberación] Error ejecutando activación:', e);
+        alert('Error al activar: ' + e.message);
+    }
+}
+
+// Acción directa desde el banner: usar todas las solicitudes detectadas
+async function abrirModalCrearCampanaLiberacionMovil() {
+    try {
+        await cargarDatosLiberacionMovil();
+    } catch (e) {
+        liberacionDatosMovil = [];
+    }
+    if (liberacionDatosMovil.length === 0) {
+        alert('No hay solicitudes para reactivar');
+        return;
+    }
+    var ids = liberacionDatosMovil.map(function(s) { return Number(s.id_solicitud); });
+    abrirModalNombreCampanaLiberacionMovil(ids);
+}
+
 // Iniciar al cargar página
 window.addEventListener('DOMContentLoaded', function() {
     init();
+    cargarBannerLiberacionMovil();
     
     // Auto-abrir modal si viene del dashboard
     if (sessionStorage.getItem('abrirNuevaSolicitud') === 'true') {
@@ -2274,4 +2471,12 @@ window.addEventListener('DOMContentLoaded', function() {
             abrirModalNuevaSolicitudMovil();
         }, 500);
     }
+
+    // Deep link: ?liberacion=1 abre el listado de liberación
+    try {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('liberacion') === '1') {
+            setTimeout(abrirListadoLiberacionMovil, 500);
+        }
+    } catch (e) { /* ignore */ }
 });

@@ -371,6 +371,9 @@ app.use('/api/plantillas', require('./src/routes/plantillas.routes'));
 // Catálogos dinámicos (estados, segmentos, etc.)
 app.use('/api/catalogos', require('./src/routes/catalog.routes'));
 
+// 🆕 Liberación / Reactivación sin compra (solicitudes APROBADA >6 meses sin relación)
+app.use('/api/liberacion', require('./src/routes/liberacion.routes'));
+
 // SEGURIDAD: Bloquear acceso directo a archivos HTML por estáticos.
 // Las páginas se sirven SOLO a través de las rutas protegidas con requireAuthPage.
 // Sin esto, cualquiera podría descargar el HTML/JS de cada pantalla sin loguearse.
@@ -417,4 +420,12 @@ try {
     iniciarRecordatorioScheduler();
 } catch (e) {
     console.error('[RecordatorioScheduler] No se pudo iniciar:', e.message);
+}
+
+// 🆕 Alertas de solicitudes liberadas sin relación (reactivar sin compra)
+try {
+    const { iniciarLiberacionScheduler } = require('./src/services/liberacionScheduler');
+    iniciarLiberacionScheduler();
+} catch (e) {
+    console.error('[LiberaciónScheduler] No se pudo iniciar:', e.message);
 }

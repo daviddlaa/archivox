@@ -1,7 +1,7 @@
 # 🗺️ Estado del Proyecto — Archivox (Implementado vs Pendiente)
 
 > **Propósito de este documento:** que no te pierdas. Aquí está el resumen de **qué ya está implementado** y **qué falta por hacer**, con enlaces a la documentación de cada cosa.
-> **Última actualización:** 17/08/2026
+> **Última actualización:** 18/08/2026
 
 ---
 
@@ -92,7 +92,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 | 5 | **Dashboard del líder: contador diario** | P2 | "Hoy: X llamadas · Y min" por agente + "llamadas sin duración" (accountability). (Plan §1.5 nudge ③/⑤, Fase 3) |
 | 6 | **Export Excel de métricas por campaña** | P3 | Aprovecha `excel.service.js` ya existente. (Plan §5.4, Fase 4) |
 | 7 | **Motivo de no interés / origen del lead** | P3 | Columna `motivo` en gestiones con resultado `no_interesado`/`descalificado`. (Plan §4) |
-| 8 | **Mostrar el `resultado` de la llamada en el historial** | P3 | Hoy el resultado se guarda pero no se muestra en la UI. (Fase 1 v2, pendiente menor) |
+| ~~8~~ | ~~**Mostrar el `resultado` de la llamada en el historial**~~ | ~~P3~~ | ✅ **Completado (18/08/2026):** badge con emoji + label legible en historial de campaña, por solicitud y en páginas de Solicitudes. Ver `feature-historial-campana.md` §4. |
 | 9 | **Migración de hosting Render → Hetzner + Coolify** | ⚠️ | Plan completo en [`MIGRACION_HOSPEDAJE.md`](MIGRACION_HOSPEDAJE.md). La app sigue en Render (`archivox.onrender.com`) — **confirmar si ya se ejecutó**. |
 | 10 | **Restaurar popup de llamada si la página recarga** | Opcional | Persistir "llamada en curso" en `sessionStorage` (Plan §8.3, v2.1). |
 

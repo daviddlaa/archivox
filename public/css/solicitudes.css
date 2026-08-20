@@ -781,3 +781,218 @@
         flex-wrap: wrap;
     }
 }
+
+/* ==========================================================================
+   LIBERACIÓN / REACTIVACIÓN SIN COMPRA
+   Banner de alerta + listado modal de solicitudes APROBADA >6 meses sin
+   relación activa. Compartido entre escritorio y móvil.
+   ========================================================================== */
+.liberacion-banner {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    margin: 12px 0 4px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border: 2px solid #f59e0b;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+    font-size: 14px;
+    color: #78350f;
+}
+.liberacion-banner.visible {
+    display: flex;
+}
+.liberacion-banner-icono {
+    font-size: 26px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.liberacion-banner-texto {
+    flex: 1;
+    min-width: 0;
+}
+.liberacion-banner-texto strong {
+    color: #92400e;
+}
+.liberacion-banner-botones {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.liberacion-btn {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+.liberacion-btn-ver {
+    background: #f59e0b;
+    color: #fff;
+}
+.liberacion-btn-ver:hover {
+    background: #d97706;
+}
+.liberacion-btn-crear {
+    background: #2563eb;
+    color: #fff;
+}
+.liberacion-btn-crear:hover {
+    background: #1d4ed8;
+}
+.liberacion-btn-cerrar-banner {
+    background: transparent;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+    padding: 6px 10px;
+}
+
+/* Listado modal de liberación */
+.liberacion-modal {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 90px);
+    padding: 20px;
+}
+.liberacion-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+.liberacion-modal-header h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 20px;
+}
+.liberacion-modal-sub {
+    margin: 0 0 12px;
+    color: #6b7280;
+    font-size: 13px;
+}
+.liberacion-lista {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    margin-bottom: 14px;
+}
+.liberacion-fila {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.liberacion-fila:hover {
+    background: #f8fafc;
+}
+.liberacion-fila.seleccionada {
+    background: #eef2ff;
+}
+.liberacion-fila:last-child {
+    border-bottom: none;
+}
+.liberacion-fila input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    accent-color: #2563eb;
+}
+.liberacion-fila-info {
+    flex: 1;
+    min-width: 0;
+}
+.liberacion-fila-nombre {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.liberacion-fila-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+.liberacion-fila-segmento {
+    background: #e0e7ff;
+    color: #3730a3;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 11px;
+}
+.liberacion-vacio {
+    padding: 40px 20px;
+    text-align: center;
+    color: #6b7280;
+}
+.liberacion-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+.liberacion-toolbar .liberacion-btn-select-all {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.liberacion-modal-acciones {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+.liberacion-btn-activar {
+    background: #059669;
+    color: #fff;
+}
+.liberacion-btn-activar:hover {
+    background: #047857;
+}
+.liberacion-btn-cancelar {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/* Móvil: banner a pantalla completa de ancho */
+@media (max-width: 640px) {
+    .liberacion-banner {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: left;
+    }
+    .liberacion-banner-botones {
+        justify-content: stretch;
+    }
+    .liberacion-banner-botones .liberacion-btn {
+        flex: 1;
+        text-align: center;
+    }
+    .liberacion-modal {
+        padding: 12px;
+    }
+}

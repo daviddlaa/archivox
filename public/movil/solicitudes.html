@@ -28,6 +28,19 @@
         </div>
     </header>
 
+    <!-- Banner de alerta: solicitudes liberadas >6 meses sin relación -->
+    <div id="liberacion-banner" class="liberacion-banner" role="alert">
+        <span class="liberacion-banner-icono">⚠️</span>
+        <div class="liberacion-banner-texto">
+            <strong><span id="liberacion-count">0</span> solicitudes en APROBADA PARA LIBERACIÓN con más de 6 meses.</strong><br>
+            Ya no tienen relación activa: si compran, la venta <strong>no se refleja</strong>.
+        </div>
+        <div class="liberacion-banner-botones">
+            <button type="button" class="liberacion-btn liberacion-btn-ver" onclick="abrirListadoLiberacionMovil()">📋 Ver listado</button>
+            <button type="button" class="liberacion-btn liberacion-btn-crear" onclick="abrirModalCrearCampanaLiberacionMovil()">🚀 Crear campaña de activación</button>
+        </div>
+    </div>
+
     <!-- Stats -->
     <div class="stats-grid-unificado">
         <div class="stat-card-compacto stat-total-unif">

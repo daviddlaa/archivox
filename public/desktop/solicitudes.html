@@ -55,6 +55,20 @@
                     </div>
                 </div>
 
+                <!-- Banner de alerta: solicitudes liberadas >6 meses sin relación -->
+                <div id="liberacion-banner" class="liberacion-banner" role="alert">
+                    <span class="liberacion-banner-icono">⚠️</span>
+                    <div class="liberacion-banner-texto">
+                        <strong>Tienes <span id="liberacion-count">0</span> solicitudes en APROBADA PARA LIBERACIÓN con más de 6 meses.</strong><br>
+                        Ya no tienen relación activa: si ese cliente compra, la venta <strong>no se refleja</strong>. Créales una campaña para activarlas sin compra.
+                    </div>
+                    <div class="liberacion-banner-botones">
+                        <button type="button" class="liberacion-btn liberacion-btn-ver" onclick="abrirListadoLiberacion()">📋 Ver listado</button>
+                        <button type="button" class="liberacion-btn liberacion-btn-crear" onclick="abrirModalCrearCampanaLiberacion()">🚀 Crear campaña de activación</button>
+                        <button type="button" class="liberacion-btn liberacion-btn-cerrar-banner" onclick="ocultarBannerLiberacion()" title="Ocultar esta alerta" aria-label="Ocultar alerta">✕</button>
+                    </div>
+                </div>
+
                 <!-- Toolbar única: búsqueda + todos los filtros visibles -->
                 <div class="toolbar-filtros">
                     <div class="toolbar-busqueda">
