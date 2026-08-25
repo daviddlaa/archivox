@@ -117,12 +117,16 @@ ARCHIVOX/
 │   │   ├── relacionesGestion.routes.js  # /api/relaciones/gestiones/*
 │   │   ├── gestionesMaestro.routes.js   # /api/gestiones-maestro/*
 │   │   ├── catalog.routes.js       # /api/catalogos/*
+│   │   ├── liberacion.routes.js    # /api/liberacion/* (reactivación sin compra)
 │   │   └── debug.routes.js         # /api/debug/*
 │   │
 │   └── services/
 │       ├── excel.service.js        # Procesamiento Excel (solicitudes)
 │       ├── relaciones.service.js   # Procesamiento Excel (relaciones)
 │       ├── catalog.service.js      # Catalogos globales (estados/segmentos de toda la app)
+│       ├── liberacion.service.js   # Reactivación sin compra (>6 meses sin relación)
+│       ├── liberacionScheduler.js  # Alertas periódicas de liberación (cada 6h, dedup 24h)
+│       ├── recordatorioScheduler.js# Recordatorios de llamadas/mensajes (cada 60s)
 │       └── notificationBus.js      # SSE Bus (EventEmitter)
 │
 ├── public/                         # Frontend (estatico)
@@ -275,6 +279,16 @@ Optimizados para las consultas mas frecuentes: listado por usuario, dashboard po
 | GET | `/api/catalogos/estados` | Estados disponibles (toda la aplicacion, todos los usuarios) |
 | GET | `/api/catalogos/segmentos` | Segmentos disponibles (toda la aplicacion, todos los usuarios) |
 
+### Liberacion (`/api/liberacion`) — Reactivacion sin compra
+
+Detecta solicitudes en `APROBADA PARA LIBERACION` con mas de 6 meses (desde `fecha_solicitud`), sin relacion activa (ALTA) y que siguen aplicando para credito (`no_aplica_credito = 1`, excluye las separadas con la bandera "ya no aplica").
+
+| Metodo | Ruta | Auth | Descripcion |
+|--------|------|------|-------------|
+| GET | `/api/liberacion/contar` | Si | Total de solicitudes que cumplen el criterio (banner) |
+| GET | `/api/liberacion` | Si | Listado paginado (`?limite=` max 500, `?offset=`, `?q=` id/cedula/nombre/celular) |
+| POST | `/api/liberacion/activar` | Si | Activar en lote: `{ ids, crear_campana, nombre_campana }`; con `crear_campana:true` crea la campana y devuelve `campana_id` |
+
 ### Debug (`/api/debug`)
 
 | Metodo | Ruta | Descripcion |
@@ -395,6 +409,7 @@ Ver `docs/README.md` para documentacion completa del sistema (1375+ lineas), inc
 
 | Feature | Fecha | Documento |
 |---------|-------|-----------|
+| Reactivación sin compra de solicitudes liberadas: banner + listado modal + campaña/activación en lote para solicitudes `APROBADA PARA LIBERACIÓN` con más de 6 meses y sin relación activa; **excluye** las separadas con la bandera "ya no aplica" (`no_aplica_credito = 0`); alerta in-app cada 6h (dedup 24h) con deep link `?liberacion=1` | Agosto 2026 | `docs/feature-liberacion-reactivacion-sin-compra.md` |
 | Temporizador de llamada + resultado estructurado en gestiones (Fase 1 métricas): **popup con cronómetro en vivo** que se abre desde el botón 📞 de cada tarjeta (móvil: campañas y solicitudes) — marca el número, al volver muestra el tiempo real y guarda la gestión `Llamada` con duración + resultado del embudo (9 buckets); confirmación al cerrar con llamada en curso. Columnas `duracion_seg`/`llamada_inicio`/`llamada_fin`/`resultado`/`metodo_duracion` en `gestiones`. En escritorio la llamada se registra por el modal de campaña (sin temporizador) | Agosto 2026 | `docs/plan-metricas-llamadas-semaforo.md` |
 | Auditoría de producción (solo lectura) de la gestión de `daviddlaa`: 411 gestiones, embudo comercial, 15 ventas atribuibles y capacidad operativa real | Agosto 2026 | `docs/informe-auditoria-produccion-daviddlaa.md` |
 | Guía didáctica de clasificación al crear/entrar a una campaña (una sola vez por usuario): semáforo explicado (Seguimiento/Encaminadas/En espera), llamar antes que mensaje y botón copiar contacto | Agosto 2026 | `docs/feature-guia-clasificacion-campanas.md` |

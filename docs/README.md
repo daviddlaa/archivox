@@ -1646,6 +1646,19 @@ La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tabla
 | PUT | `/api/plantillas/:id` | ✅ | Actualizar plantilla propia |
 | DELETE | `/api/plantillas/:id` | ✅ | Eliminar plantilla propia |
 
+### 12.14 Liberación (`/api/liberacion`) — Reactivación sin compra (Agosto 2026)
+
+Detecta solicitudes en `APROBADA PARA LIBERACIÓN` con más de 6 meses (desde `fecha_solicitud`),
+sin relación activa (ALTA) y que **siguen aplicando para crédito** (`COALESCE(no_aplica_credito,1)=1`,
+excluye las separadas con la bandera 👎). Banner + listado + campaña/activación en lote + alerta
+in-app cada 6h. Ver `docs/feature-liberacion-reactivacion-sin-compra.md`.
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/api/liberacion/contar` | ✅ | `{ total }` de solicitudes que cumplen el criterio (banner) |
+| GET | `/api/liberacion` | ✅ | Listado paginado (`?limite=` máx 500, `?offset=`, `?q=` id/cédula/nombre/celular) |
+| POST | `/api/liberacion/activar` | ✅ | `{ ids, crear_campana, nombre_campana }` → activa en lote (estado → `ACTIVADA` + historial); con `crear_campana:true` crea la campaña (`gestiones_maestro`) y devuelve `campana_id` |
+
 ---
 
 ## 13. 📱 Renderizado Responsivo
