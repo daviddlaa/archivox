@@ -50,9 +50,12 @@ los tres consumidores (contar, listar, resumen por usuario) comparten el mismo W
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| `GET` | `/api/liberacion/contar` | `requiresAuth` | `{ total }` de solicitudes que cumplen el criterio (banner) |
+| `GET` | `/api/liberacion/contar` | `requiresAuth` | `{ total, campana_automatica: { id, total_solicitudes } | null }` — total + info de campaña automática si existe |
 | `GET` | `/api/liberacion` | `requiresAuth` | Listado paginado (`?limite=` máx 500, `?offset=`, `?q=` búsqueda por id/cédula/nombre/celular) |
 | `POST` | `/api/liberacion/activar` | `requiresAuth` | `{ ids, crear_campana, nombre_campana }` → activa en lote; con `crear_campana:true` crea la campaña y devuelve `campana_id` |
+
+> **Nota:** El endpoint `/contar` retorna `campana_automatica` con el ID de la campaña automática
+> del usuario (si existe y está activa). El frontend usa esto para decidir qué banner mostrar.
 
 ### 3.2 Reglas de activación
 
@@ -89,21 +92,27 @@ los tres consumidores (contar, listar, resumen por usuario) comparten el mismo W
 
 ### 4.1 Escritorio (`public/desktop/`)
 
-- **Banner** `#liberacion-banner` sobre el toolbar (hidden por CSS, se muestra con `.visible`
-  cuando `total > 0`): "Tienes N solicitudes en APROBADA PARA LIBERACIÓN con más de 6 meses…",
-  con botones **📋 Ver listado**, **🚀 Crear campaña de activación** y **✕** para ocultar.
+- **Banner dinámico** con dos estados:
+  - **Sin campaña automática** (`#liberacion-banner`): amarillo, "⚠️ Tienes N solicitudes en APROBADA PARA LIBERACIÓN con más de 6 meses…", con botones **📋 Ver listado**, **🚀 Crear campaña ahora** y **✕** para ocultar.
+  - **Con campaña automática** (`#liberacion-banner-con-campana`): verde, "✅ Ya se creó la campaña semanal con N solicitudes por reactivar. La campaña se actualiza automáticamente cada semana.", con botones **🔄 Ver campaña** (enlace a `/gestion-lote?id=<campanaId>`) y **📋 Ver listado**.
+  - `cargarBannerLiberacion()` lee `campana_automatica` de `GET /api/liberacion/contar` y muestra el banner correspondiente.
 - **Listado modal** vía `Modal.abrir(html, { ancho: 'wide' })`: filas con checkbox, nombre,
   cédula, celular, fecha y segmento; "✓ Seleccionar todo"; acciones **✅ Activar sin compra** y
   **🚀 Crear campaña y activar** (pide nombre en un segundo modal, redirige a
-  `/gestion-lote?id=<campana_id>`).
+  `/gestion-lote?id=<campana_id>`). Estas acciones son **manuales** y **sí cambian** el estado a `ACTIVADA`.
 - Deep link `?liberacion=1` en la URL abre el listado al cargar.
 - Escape de datos con el helper local `panelEscapeHtml`.
 
+> **Importante:** El scheduler **NO** cambia el estado. Solo crea la campaña automática.
+> El botón "✅ Activar sin compra" (manual) es el que cambia el estado a `ACTIVADA`.
+
 ### 4.2 Móvil (`public/movil/`)
 
-- Mismo banner (sin botón ✕) y listado modal, pero con la API propia de la página:
-  `crearModalMovil(contenido)` / `cerrarModal()`. No usa `Modal` de `modal.js`.
-- Redirige a `/m/gestion-lote?id=<campana_id>`.
+- Mismo patrón de banner dinámico (sin botón ✕): `#liberacion-banner` (amarillo, sin campaña) y
+  `#liberacion-banner-con-campana` (verde, con campaña). El botón "🔄 Ver campaña" lleva a
+  `/m/gestion-lote?id=<campanaId>`.
+- Listado modal con la API propia de la página: `crearModalMovil(contenido)` / `cerrarModal()`.
+  No usa `Modal` de `modal.js`.
 - Escape con `escaparParaHTMLMovil`.
 
 ### 4.3 CSS
@@ -111,6 +120,10 @@ los tres consumidores (contar, listar, resumen por usuario) comparten el mismo W
 Estilos en el compartido `public/css/solicitudes.css` (`.liberacion-*`), cargado por ambas
 plataformas, con media query para móvil. Respetar la convención
 `docs/convencion-css-solicitudes.md`: overrides de plataforma por especificidad.
+
+- `.liberacion-banner-exito`: variante verde del banner (campaña automática creada).
+- `.liberacion-btn-campana`: botón-verde para enlace a la campaña automática (estilo `<a>` con
+  apariencia de botón).
 
 ---
 

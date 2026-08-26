@@ -17,13 +17,17 @@ function getUsuarioId(req) {
     return req.session && req.session.usuario ? req.session.usuario.id : null;
 }
 
-// GET /api/liberacion/contar - Cantidad para el banner de alerta
+// GET /api/liberacion/contar - Cantidad para el banner de alerta + campaña automática
 router.get('/contar', requiresAuth, async (req, res) => {
     try {
         const usuarioId = getUsuarioId(req);
         if (!usuarioId) return res.status(401).json({ error: 'No autenticado' });
         const total = await liberacionService.contarSolicitudesLiberacion(usuarioId);
-        res.json({ total: total });
+        const campana = await liberacionService.getCampanaAutomatica(usuarioId);
+        res.json({
+            total: total,
+            campana_automatica: campana ? { id: campana.id, total_solicitudes: campana.total_solicitudes } : null
+        });
     } catch (err) {
         console.error('[Liberación] Error contar:', err);
         res.status(500).json({ error: err.message });

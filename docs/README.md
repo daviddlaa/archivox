@@ -1656,7 +1656,7 @@ semanal que crea/reutiliza campaña automática y notifica con enlace. Ver `docs
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| GET | `/api/liberacion/contar` | ✅ | `{ total }` de solicitudes que cumplen el criterio (banner) |
+| GET | `/api/liberacion/contar` | ✅ | `{ total, campana_automatica: { id, total_solicitudes } \| null }` — total + info de campaña automática si existe |
 | GET | `/api/liberacion` | ✅ | Listado paginado (`?limite=` máx 500, `?offset=`, `?q=` id/cédula/nombre/celular) |
 | POST | `/api/liberacion/activar` | ✅ | `{ ids, crear_campana, nombre_campana }` → activa en lote (estado → `ACTIVADA` + historial); con `crear_campana:true` crea la campaña (`gestiones_maestro`) y devuelve `campana_id` |
 

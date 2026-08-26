@@ -239,11 +239,29 @@ async function activarSinCompra(usuarioId, payload) {
     return { activadas: activadas, campana_id: campana_id };
 }
 
+// ============================================================================
+// CAMPAÑA AUTOMÁTICA (es_sistema = 1, nombre fijo, estado activa)
+// ============================================================================
+const NOMBRE_CAMPANA_AUTO = 'solicitudes con mas de seis meses en estado aprobado para liberacion';
+
+async function getCampanaAutomatica(usuarioId) {
+    const result = await pool.query(
+        `SELECT id, nombre, total_solicitudes, created_at FROM gestiones_maestro
+         WHERE usuario_id = ? AND es_sistema = 1
+           AND nombre = ?
+           AND estado = 'activa'
+         ORDER BY id DESC LIMIT 1`,
+        [usuarioId, NOMBRE_CAMPANA_AUTO]
+    );
+    return getFirstRow(result);
+}
+
 module.exports = {
     ESTADO_APROBADA,
     ESTADO_ACTIVADA,
     MESES_CORTE,
     getFechaCorte,
+    getCampanaAutomatica,
     contarSolicitudesLiberacion,
     getSolicitudesLiberacion,
     getResumenPorUsuario,

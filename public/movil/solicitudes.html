@@ -37,7 +37,20 @@
         </div>
         <div class="liberacion-banner-botones">
             <button type="button" class="liberacion-btn liberacion-btn-ver" onclick="abrirListadoLiberacionMovil()">📋 Ver listado</button>
-            <button type="button" class="liberacion-btn liberacion-btn-crear" onclick="abrirModalCrearCampanaLiberacionMovil()">🚀 Crear campaña de activación</button>
+            <button type="button" class="liberacion-btn liberacion-btn-crear" onclick="abrirModalCrearCampanaLiberacionMovil()">🚀 Crear campaña ahora</button>
+        </div>
+    </div>
+
+    <!-- Banner dinámico: campaña automática semanal ya creada -->
+    <div id="liberacion-banner-con-campana" class="liberacion-banner liberacion-banner-exito" role="alert" style="display:none;">
+        <span class="liberacion-banner-icono">✅</span>
+        <div class="liberacion-banner-texto">
+            <strong>Ya se creó la campaña semanal con <span id="liberacion-campana-total">0</span> solicitudes por reactivar.</strong><br>
+            La campaña se actualiza automáticamente cada semana.
+        </div>
+        <div class="liberacion-banner-botones">
+            <a id="liberacion-campana-link" href="#" class="liberacion-btn liberacion-btn-ver liberacion-btn-campana">🔄 Ver campaña</a>
+            <button type="button" class="liberacion-btn liberacion-btn-ver" onclick="abrirListadoLiberacionMovil()">📋 Ver listado</button>
         </div>
     </div>
 

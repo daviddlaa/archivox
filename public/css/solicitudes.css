@@ -852,6 +852,31 @@
     border: 1px solid #f59e0b;
     padding: 6px 10px;
 }
+.liberacion-banner-exito {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border-color: #10b981;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+    color: #065f46;
+}
+.liberacion-banner-exito .liberacion-banner-texto strong {
+    color: #065f46;
+}
+.liberacion-banner-exito .liberacion-btn-cerrar-banner {
+    color: #065f46;
+    border-color: #10b981;
+}
+.liberacion-btn-campana {
+    background: #10b981;
+    color: #fff;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+.liberacion-btn-campana:hover {
+    background: #059669;
+    color: #fff;
+    text-decoration: none;
+}
 
 /* Listado modal de liberación */
 .liberacion-modal {

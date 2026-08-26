@@ -2276,12 +2276,32 @@ async function cargarBannerLiberacionMovil() {
         var res = await fetch('/api/liberacion/contar');
         var data = await res.json();
         var total = (data && data.total) || 0;
+        var campana = data && data.campana_automatica;
         var banner = document.getElementById('liberacion-banner');
+        var bannerCampana = document.getElementById('liberacion-banner-con-campana');
         if (!banner) return;
-        var countEl = document.getElementById('liberacion-count');
-        if (countEl) countEl.textContent = total;
-        if (total > 0) banner.classList.add('visible');
-        else banner.classList.remove('visible');
+
+        if (total === 0) {
+            banner.classList.remove('visible');
+            if (bannerCampana) bannerCampana.style.display = 'none';
+            return;
+        }
+
+        if (campana && campana.id) {
+            banner.classList.remove('visible');
+            if (bannerCampana) {
+                var countCampana = document.getElementById('liberacion-campana-total');
+                if (countCampana) countCampana.textContent = campana.total_solicitudes || total;
+                var linkCampana = document.getElementById('liberacion-campana-link');
+                if (linkCampana) linkCampana.href = '/m/gestion-lote?id=' + campana.id;
+                bannerCampana.style.display = '';
+            }
+        } else {
+            if (bannerCampana) bannerCampana.style.display = 'none';
+            var countEl = document.getElementById('liberacion-count');
+            if (countEl) countEl.textContent = total;
+            banner.classList.add('visible');
+        }
     } catch (e) {
         console.error('[Liberación] Error cargando banner:', e);
     }
