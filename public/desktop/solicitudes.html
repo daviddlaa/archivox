@@ -179,15 +179,14 @@
                             <thead>
                                 <tr>
                                     <th class="col-check"><input type="checkbox" class="checkbox-fila" id="check-all-table" onchange="toggleFilaCheckboxTodosTabla(this)"></th>
-                                    <th class="col-id">ID</th>
-                                    <th class="col-nombre">Nombre</th>
-                                    <th class="col-cedula">Cédula</th>
-                                    <th class="col-estado">Estado</th>
-                                    <th class="col-segmento">Segmento</th>
-                                    <th class="col-producto">Producto</th>
-                                    <th class="col-fecha">Fecha</th>
-                                    <th class="col-vendedor" id="col-vendedor-th">Vendedor</th>
-                                    <th class="col-campana">Campaña</th>
+                                    <th class="col-nombre" data-sort="nombre" onclick="ordenarTabla('nombre')">Nombre <span class="sort-indicator" id="sort-nombre"></span></th>
+                                    <th class="col-cedula" data-sort="cedula" onclick="ordenarTabla('cedula')">Cédula <span class="sort-indicator" id="sort-cedula"></span></th>
+                                    <th class="col-estado" data-sort="estado" onclick="ordenarTabla('estado')">Estado <span class="sort-indicator" id="sort-estado"></span></th>
+                                    <th class="col-segmento" data-sort="segmento" onclick="ordenarTabla('segmento')">Segmento <span class="sort-indicator" id="sort-segmento"></span></th>
+                                    <th class="col-producto" data-sort="producto" onclick="ordenarTabla('producto')">Producto <span class="sort-indicator" id="sort-producto"></span></th>
+                                    <th class="col-fecha" data-sort="fecha_solicitud" onclick="ordenarTabla('fecha_solicitud')">Fecha <span class="sort-indicator" id="sort-fecha_solicitud"></span></th>
+                                    <th class="col-vendedor" id="col-vendedor-th" data-sort="vendedor" onclick="ordenarTabla('vendedor')">Vendedor <span class="sort-indicator" id="sort-vendedor"></span></th>
+                                    <th class="col-campana" data-sort="nombre_campana" onclick="ordenarTabla('nombre_campana')">Campaña <span class="sort-indicator" id="sort-nombre_campana"></span></th>
                                     <th class="col-acciones">Acciones</th>
                                 </tr>
                             </thead>

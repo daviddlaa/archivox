@@ -43,6 +43,8 @@ let fechaHastaActual = sessionStorage.getItem('sol_fecha_hasta') || '';
 let vendedorActual = sessionStorage.getItem('sol_vendedor') || '';
 let campanaActual = sessionStorage.getItem('sol_campana') || '';
 let vistaActual = sessionStorage.getItem('sol_vista') || 'cards';
+let sortColumn = sessionStorage.getItem('sol_sort_col') || '';
+let sortDirection = sessionStorage.getItem('sol_sort_dir') || 'asc';
 var TAMANO_LOTE = CONFIG.TAMANO_LOTE;
 
 // Cache de consultas
@@ -102,6 +104,55 @@ function cambiarVista(tipo) {
     renderizarVistaActual(todosDatos);
 }
 
+// ============================================================================
+// SORTING DE TABLA
+// ============================================================================
+function ordenarTabla(columna) {
+    if (sortColumn === columna) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortColumn = columna;
+        sortDirection = 'asc';
+    }
+    try {
+        sessionStorage.setItem('sol_sort_col', sortColumn);
+        sessionStorage.setItem('sol_sort_dir', sortDirection);
+    } catch (e) { /* ignore */ }
+    actualizarIndicadoresSort();
+    renderizarVistaActual(todosDatos);
+}
+
+function aplicarSort(datos) {
+    if (!sortColumn || !datos || !datos.length) return datos;
+    var arr = datos.slice();
+    var col = sortColumn;
+    var dir = sortDirection === 'asc' ? 1 : -1;
+    arr.sort(function(a, b) {
+        var va = a[col] || '';
+        var vb = b[col] || '';
+        if (col === 'fecha_solicitud') {
+            var da = va ? new Date(va) : new Date(0);
+            var db = vb ? new Date(vb) : new Date(0);
+            return (da - db) * dir;
+        }
+        return String(va).localeCompare(String(vb), 'es') * dir;
+    });
+    return arr;
+}
+
+function actualizarIndicadoresSort() {
+    var columnas = ['nombre', 'cedula', 'estado', 'segmento', 'producto', 'fecha_solicitud', 'vendedor', 'nombre_campana'];
+    columnas.forEach(function(col) {
+        var el = document.getElementById('sort-' + col);
+        if (!el) return;
+        if (col === sortColumn) {
+            el.textContent = sortDirection === 'asc' ? '▲' : '▼';
+        } else {
+            el.textContent = '';
+        }
+    });
+}
+
 function renderizarVistaActual(datos) {
     if (vistaActual === 'tabla') {
         renderizarTabla(datos);
@@ -115,10 +166,13 @@ function renderizarTabla(datos) {
     if (!tbody) return;
 
     if (!datos || !datos.length) {
-        tbody.innerHTML = '<tr><td colspan="11" class="tabla-vacio">📋 No hay solicitudes</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="tabla-vacio">📋 No hay solicitudes</td></tr>';
         actualizarContador();
         return;
     }
+
+    // Aplicar sort si hay columna activa
+    datos = aplicarSort(datos);
 
     var coloresEstado = {
         'ACTIVADA': '#dcfce7', 'RECHAZADA': '#fee2e2', 'DEVUELTA': '#fef3c7',
@@ -143,9 +197,6 @@ function renderizarTabla(datos) {
         html += '<td class="col-check" onclick="event.stopPropagation()">';
         html += '<input type="checkbox" class="checkbox-fila card-checkbox" value="' + id + '" onchange="toggleFilaCheckbox(this)" ' + (seleccionado ? 'checked' : '') + '>';
         html += '</td>';
-
-        // ID
-        html += '<td class="col-id">' + id + '</td>';
 
         // Nombre
         html += '<td class="col-nombre">' + panelEscapeHtml(item.nombre || 'Sin nombre') + '</td>';
@@ -217,7 +268,7 @@ function recrearSentinelTabla() {
     }
     var sentinel = document.createElement('tr');
     sentinel.id = 'infinite-scroll-sentinel-table';
-    sentinel.innerHTML = '<td colspan="11" style="text-align:center; padding:20px; color:#6b7280; font-size:14px;">' +
+    sentinel.innerHTML = '<td colspan="10" style="text-align:center; padding:20px; color:#6b7280; font-size:14px;">' +
         (hasMoreData ? '📜 Desliza para cargar más...' : '✅ No hay más registros') + '</td>';
     panel.querySelector('tbody').appendChild(sentinel);
 }
@@ -283,6 +334,7 @@ async function init() {
         configurarEventosCheckboxes();
         actualizarInfoPanel();
         restaurarFiltrosUI();
+        actualizarIndicadoresSort();
 
         // Re-aplicar filtros persistidos para que la lista coincida con la UI restaurada
         if (estadoActual || segmentoActual || campanaActual || fechaDesdeActual || fechaHastaActual || vendedorActual) {
@@ -437,7 +489,7 @@ async function cargarMasSolicitudes() {
     var sentinel = document.getElementById('infinite-scroll-sentinel');
     var sentinelTabla = document.getElementById('infinite-scroll-sentinel-table');
     if (sentinel) sentinel.innerHTML = '<span class="loader-text">⏳ Cargando más...</span>';
-    if (sentinelTabla) sentinelTabla.innerHTML = '<td colspan="11" style="text-align:center; padding:20px; color:#6b7280;">⏳ Cargando más...</td>';
+    if (sentinelTabla) sentinelTabla.innerHTML = '<td colspan="10" style="text-align:center; padding:20px; color:#6b7280;">⏳ Cargando más...</td>';
     try {
         var nuevoOffset = currentOffset;
         var response = await fetch('/api/excel/solicitudes?limite=' + CONFIG.TAMANO_LOTE + '&offset=' + nuevoOffset);
@@ -458,7 +510,7 @@ async function cargarMasSolicitudes() {
         isLoading = false;
         var msg = hasMoreData ? '📜 Scroll para cargar más...' : '✅ No hay más registros';
         if (sentinel) sentinel.innerHTML = '<span class="loader-text">' + msg + '</span>';
-        if (sentinelTabla) sentinelTabla.innerHTML = '<td colspan="11" style="text-align:center; padding:20px; color:#6b7280; font-size:14px;">' + msg + '</td>';
+        if (sentinelTabla) sentinelTabla.innerHTML = '<td colspan="10" style="text-align:center; padding:20px; color:#6b7280; font-size:14px;">' + msg + '</td>';
     }
 }
 

@@ -2531,7 +2531,11 @@ body .solicitud-card.seleccionada::after {
     padding: 8px 12px;
     border-bottom: 1px solid #f0f0f0;
     vertical-align: middle;
-    max-width: 220px;
+}
+
+.solicitudes-table tbody td.col-nombre,
+.solicitudes-table tbody td.col-campana {
+    max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -2542,7 +2546,6 @@ body .solicitud-card.seleccionada::after {
 
 /* Column widths */
 .solicitudes-table .col-check { width: 40px; }
-.solicitudes-table .col-id { width: 55px; }
 .solicitudes-table .col-nombre { min-width: 140px; }
 .solicitudes-table .col-cedula { width: 90px; }
 .solicitudes-table .col-estado { min-width: 130px; }
@@ -2551,7 +2554,33 @@ body .solicitud-card.seleccionada::after {
 .solicitudes-table .col-fecha { width: 90px; }
 .solicitudes-table .col-vendedor { width: 100px; }
 .solicitudes-table .col-campana { min-width: 120px; }
-.solicitudes-table .col-acciones { white-space: nowrap; }
+
+/* Acciones: sticky right para que siempre sea visible */
+.solicitudes-table thead th.col-acciones {
+    position: sticky;
+    right: 0;
+    background: #f9fafb;
+    z-index: 2;
+    min-width: 120px;
+    white-space: nowrap;
+}
+
+.solicitudes-table tbody td.col-acciones {
+    position: sticky;
+    right: 0;
+    background: white;
+    z-index: 1;
+    min-width: 120px;
+    white-space: nowrap;
+}
+
+.solicitudes-table tbody tr:hover td.col-acciones {
+    background: #f0f7ff;
+}
+
+.solicitudes-table tbody tr.seleccionada td.col-acciones {
+    background: #eff6ff;
+}
 
 /* Estado badge in table */
 .tabla-estado-badge {
@@ -2621,4 +2650,40 @@ body .solicitud-card.seleccionada::after {
 /* Sentinel inside table */
 .table-view-panel #infinite-scroll-sentinel-table {
     height: 1px;
+}
+
+/* ============================================================================
+   SORTING HEADERS
+   ========================================================================== */
+.solicitudes-table thead th[data-sort] {
+    cursor: pointer;
+    user-select: none;
+}
+
+.solicitudes-table thead th[data-sort]:hover {
+    background: #eef2ff;
+}
+
+.sort-indicator {
+    font-size: 10px;
+    margin-left: 4px;
+    color: #2563eb;
+    font-weight: 700;
+}
+
+/* ============================================================================
+   RESPONSIVE TABLE — ocultar columnas secundarias, acciones siempre visible
+   ========================================================================== */
+@media (max-width: 1200px) {
+    .solicitudes-table .col-vendedor,
+    .solicitudes-table .col-segmento {
+        display: none;
+    }
+}
+
+@media (max-width: 900px) {
+    .solicitudes-table .col-producto,
+    .solicitudes-table .col-cedula {
+        display: none;
+    }
 }
