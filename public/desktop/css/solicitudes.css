@@ -902,40 +902,6 @@ body .solicitud-card {
     border-color: #c7d2fe;
 }
 
-/* ===== FILA 2.5: Cédula + Teléfono (números explícitos, uno al lado del otro) ===== */
-.card-fila-contacto {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-    flex-wrap: nowrap;
-    overflow: hidden;
-    min-width: 0;
-}
-
-.card-fila-contacto .card-contacto-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: #f8fafc;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 4px 10px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #1f2937;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
-    flex: 1 1 auto;
-}
-
-.card-fila-contacto .card-contacto-item span {
-    font-weight: 700;
-    color: #111827;
-}
-
 /* ===== FIX: Ocultar el checkmark superpuesto (::after) solo en escritorio =====
    El checkbox real a la izquierda + el borde azul ya indican la selección.
    En móvil se mantiene porque ahí la selección es tocando la tarjeta (sin checkbox).

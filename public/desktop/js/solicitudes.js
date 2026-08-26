@@ -915,7 +915,7 @@ async function marcarNoAplicaCreditoDesktop(id, valor) {
 }
 
 // ============================================================================
-// RENDERIZAR CARDS
+// RENDERIZAR CARDS (estructura unificada móvil-escritorio)
 // ============================================================================
 function renderizarCards(datos) {
     var container = document.getElementById('cards-container');
@@ -933,6 +933,13 @@ function renderizarCards(datos) {
         if (d && d.id_solicitud) datosFilas[d.id_solicitud] = d;
     });
 
+    var coloresEstado = {
+        'ACTIVADA': '#dcfce7',
+        'RECHAZADA': '#fee2e2',
+        'DEVUELTA': '#fef3c7',
+        'APROBADA PARA LIBERACIÓN': '#d1fae5'
+    };
+
     var html = '';
     for (var i = 0; i < datos.length; i++) {
         var item = datos[i];
@@ -940,29 +947,7 @@ function renderizarCards(datos) {
         var id = item.id_solicitud || '';
         var seleccionado = filasSeleccionadas.indexOf(id) > -1 ? 'seleccionada' : '';
         var estadoClase = 'estado-' + (item.estado || '').replace(/\s+/g, '').toUpperCase();
-
-        // Colores para estado badge
-        var coloresEstado = {
-            'ACTIVADA': '#dcfce7',
-            'RECHAZADA': '#fee2e2',
-            'DEVUELTA': '#fef3c7',
-            'APROBADA PARA LIBERACIÓN': '#d1fae5'
-        };
         var colorEstado = coloresEstado[item.estado] || '#f3f4f6';
-
-        // Colores para tipo de gestión
-        var coloresGestion = {
-            'Seguimiento': '#dbeafe',
-            'Cobranza': '#fee2e2',
-            'Llamada': '#d1fae5',
-            'WhatsApp': '#dcfce7',
-            'Reclamo': '#fef3c7',
-            'Cita': '#e0e7ff',
-            'Completada': '#bbf7d0',
-            'Otro': '#f3f4f6'
-        };
-        var colorGestion = coloresGestion[item.ultima_gestion_tipo] || '#f3f4f6';
-        var fechaGestion = item.ultima_gestion_fecha ? new Date(item.ultima_gestion_fecha).toLocaleString('es-ES') : '';
         var noAplica = item.no_aplica_credito == 0;
 
         html += '<div class="solicitud-card ' + seleccionado + (noAplica ? ' no-aplica-credito' : '') + '" data-id="' + id + '" onclick="toggleCardDesktop(\'' + id + '\', event)">';
@@ -977,48 +962,36 @@ function renderizarCards(datos) {
         if (noAplica) html += '    <span class="noaplica-mini-badge">👎 No aplica</span>';
         html += '  </div>';
 
-        // FILA 2: Nombre
-        html += '  <div class="card-fila-2" title="' + (item.nombre || 'Sin nombre') + '">';
-        html +=      (item.nombre || 'Sin nombre');
+        // FILA 2: Nombre + Cédula (columna)
+        html += '  <div class="card-fila-2">';
+        html += '    <span class="card-fila-2-nombre">' + panelEscapeHtml(item.nombre || 'Sin nombre') + '</span>';
+        html += '    <span class="card-fila-2-cedula">🆔 ' + panelEscapeHtml(item.cedula || 'Sin cédula') + '</span>';
         html += '  </div>';
 
-        // FILA 2.5: Cédula + Teléfono (números explícitos, uno al lado del otro)
-        html += '  <div class="card-fila-contacto">';
-        html += '    <span class="card-contacto-item" title="Cédula: ' + (item.cedula || '') + '">🪪 <span>' + (item.cedula || '—') + '</span></span>';
-        html += '    <span class="card-contacto-item" title="Teléfono: ' + (item.celular || '') + '">📞 <span>' + (item.celular || '—') + '</span></span>';
-        html += '  </div>';
-
-        // FILA 3: Botones de acción
+        // FILA 3: Botones de acción (sin Llamar)
         html += '  <div class="card-fila-3">';
         html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesCard(' + id + ')">📋 Gestiones</button>';
+        html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletarInfoCard(' + id + ')">✏️ Completar</button>';
         html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); whatsAppClienteDesktop(\'' + (item.celular || '') + '\', \'' + escaparParaAtributoDesktop(item.nombre || '') + '\')">💬 WhatsApp</button>';
-        html += '    <button class="card-btn btn-no-aplica' + (noAplica ? ' activo' : '') + '" onclick="event.stopPropagation(); confirmarNoAplicaCreditoDesktop(' + id + ', ' + (noAplica ? 1 : 0) + ', ' + (item.campana_id ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '">' + (noAplica ? '👍' : '👎') + '</button>';
+        html += '    <button class="card-btn btn-eliminar" onclick="event.stopPropagation(); confirmarEliminarSolicitudDesktop(' + id + ')">🗑️ Eliminar</button>';
         html += '  </div>';
 
-        // FILA 4: Seguimiento (última gestión)
-        if (item.ultima_gestion_tipo) {
-            html += '  <div class="card-fila-4">';
-            html += '    <div class="seguimiento-header">';
-            html += '      <span class="seguimiento-badge" style="background:' + colorGestion + ';">📋 ' + item.ultima_gestion_tipo + '</span>';
-            if (fechaGestion) html += '      <span class="seguimiento-fecha">' + fechaGestion + '</span>';
-            html += '    </div>';
-            if (item.ultima_gestion_obs) {
-                html += '    <div class="seguimiento-obs" title="' + escaparParaAtributoDesktop(item.ultima_gestion_obs) + '">' + item.ultima_gestion_obs + '</div>';
-            }
-            html += '  </div>';
+        // FILA 4: Link a campaña + toggle No-aplica
+        html += '  <div class="card-fila-4">';
+        if (item.campana_id && item.nombre_campana) {
+            html += '    <a class="campana-link" href="/gestion-lote?id=' + encodeURIComponent(item.campana_id) + '&card=' + encodeURIComponent(id) + '" onclick="event.stopPropagation()"><span>📢 ' + panelEscapeHtml(item.nombre_campana) + ' →</span></a>';
         } else {
-            html += '  <div class="card-fila-4 vacia">Sin gestiones</div>';
+            html += '    <span class="campana-link campana-link-vacia"><span>📭 Sin campaña</span></span>';
         }
+        html += '    <button type="button" class="noaplica-icon-btn' + (noAplica ? ' activo' : '') + '" onclick="event.stopPropagation(); confirmarNoAplicaCreditoDesktop(' + id + ', ' + (noAplica ? 1 : 0) + ', ' + (item.campana_id ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '" aria-label="No aplica para crédito">👎</button>';
+        html += '  </div>';
 
-        // FILA 5: Producto + Fecha + Vendedor + Campaña
+        // FILA 5: Producto + Fecha + Vendedor
         html += '  <div class="card-fila-5">';
         html += '    <span class="card-tag">📦 <span>' + (item.producto || '—') + '</span></span>';
         html += '    <span class="card-tag">📅 <span>' + (item.fecha_solicitud || '—') + '</span></span>';
         if (_esLider && item.vendedor) {
             html += '    <span class="card-tag vendedor-badge">👤 <span>' + item.vendedor + '</span></span>';
-        }
-        if (item.nombre_campana) {
-            html += '    <span class="card-tag campana-badge">📢 <span>' + item.nombre_campana + '</span></span>';
         }
         html += '  </div>';
 

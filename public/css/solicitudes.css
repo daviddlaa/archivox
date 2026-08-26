@@ -301,18 +301,37 @@
 .card-fila-1 .card-badge.badge-estado.estado-ACTIVADA { background: #dcfce7; color: #065f46; }
 
 /* ========================================================================
-   FILA 2: Nombre de la solicitud
+   FILA 2: Nombre + Cédula del cliente
    ======================================================================== */
 .card-fila-2 {
-    font-size: 14px;
-    font-weight: 600;
-    color: #1f2937;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
     margin-bottom: 8px;
-    line-height: 1.3;
+    min-width: 0;
     cursor: pointer;
 }
-.card-fila-2:hover {
-    color: #2563eb;
+.card-fila-2-nombre {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    max-width: 100%;
+}
+.card-fila-2-cedula {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    max-width: 100%;
 }
 
 /* ========================================================================
@@ -370,6 +389,11 @@
     box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.25);
     animation: none;
 }
+.card-fila-3 .btn-eliminar {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.card-fila-3 .btn-eliminar:hover { background: #fecaca; }
 
 @keyframes pulse-llamar {
     0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
@@ -378,46 +402,67 @@
 }
 
 /* ========================================================================
-   FILA 4: Seguimiento (última gestión)
+   FILA 4: Link a campaña + toggle No-aplica
    ======================================================================== */
 .card-fila-4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 8px;
-    padding: 6px 8px;
-    background: #f9fafb;
-    border-radius: 6px;
-    border-left: 3px solid #22c55e;
-    font-size: 11px;
 }
-.card-fila-4.vacia {
-    border-left-color: #d1d5db;
-    color: #9ca3af;
-    font-style: italic;
-}
-.card-fila-4 .seguimiento-header {
+.card-fila-4 .campana-link {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: 2px;
+    flex: 1;
+    min-width: 0;
+    background: #eef2ff;
+    border: 1.5px solid #c7d2fe;
+    color: #4338ca;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease;
 }
-.card-fila-4 .seguimiento-badge {
-    padding: 1px 7px;
-    border-radius: 8px;
-    font-size: 9px;
-    font-weight: 600;
-    white-space: nowrap;
+.card-fila-4 .campana-link:hover {
+    background: #dde5ff;
 }
-.card-fila-4 .seguimiento-fecha {
-    font-size: 9px;
-    color: #6b7280;
-}
-.card-fila-4 .seguimiento-obs {
-    font-size: 10px;
-    color: #374151;
-    margin-top: 2px;
-    font-style: italic;
+.card-fila-4 .campana-link > span {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+.card-fila-4 .campana-link.campana-link-vacia {
+    background: #f3f4f6;
+    border: 1.5px dashed #d1d5db;
+    color: #6b7280;
+    pointer-events: none;
+}
+.card-fila-4 .noaplica-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    border: 1.5px solid #e5e7eb;
+    background: #f9fafb;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.card-fila-4 .noaplica-icon-btn:hover {
+    background: #f3f4f6;
+}
+.card-fila-4 .noaplica-icon-btn.activo {
+    background: #fef2f2;
+    border-color: #fca5a5;
 }
 
 /* ========================================================================
