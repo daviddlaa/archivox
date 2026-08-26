@@ -112,7 +112,8 @@ exports.listarSolicitudes = async (req, res) => {
         cargarMas = 'false',
         fecha_desde,
         fecha_hasta,
-        vendedor
+        vendedor,
+        campana
     } = req.query;
 
     // Obtener ID del usuario de la sesión
@@ -217,6 +218,13 @@ exports.listarSolicitudes = async (req, res) => {
         }
     }
 
+    // Filtro de campaña
+    if (campana === 'con_campana') {
+        sql += ' AND s.campana_id IS NOT NULL';
+    } else if (campana === 'sin_campana') {
+        sql += ' AND s.campana_id IS NULL';
+    }
+
     // Ordenamiento seguro (solo columnas permitidas)
     const columnaOrden = columnasPermitidas[orden] || 's.id';
     const direccionOrden = direccion === 'ASC' ? 'ASC' : 'DESC';
@@ -245,6 +253,9 @@ exports.listarSolicitudes = async (req, res) => {
                 if (isLeader) {
                     if (vendedor && vendedor.trim() !== '') { countSql += ' AND LOWER(s.vendedor) LIKE LOWER($' + countIdx++ + ')'; countParams.push('%' + vendedor.trim() + '%'); }
                 }
+                // Filtro de campaña
+                if (campana === 'con_campana') { countSql += ' AND s.campana_id IS NOT NULL'; }
+                else if (campana === 'sin_campana') { countSql += ' AND s.campana_id IS NULL'; }
                 return pool.query(countSql, countParams);
             })()
         ]);
@@ -1445,7 +1456,8 @@ exports.buscarSolicitudes = async (req, res) => {
         offset = 0,
         fecha_desde,
         fecha_hasta,
-        vendedor
+        vendedor,
+        campana
     } = req.query;
 
     // Verificar si el usuario es Lider+ (nivel >= 30)
@@ -1523,6 +1535,13 @@ exports.buscarSolicitudes = async (req, res) => {
             }
         }
 
+        // Filtro de campaña
+        if (campana === 'con_campana') {
+            sql += ` AND s.campana_id IS NOT NULL`;
+        } else if (campana === 'sin_campana') {
+            sql += ` AND s.campana_id IS NULL`;
+        }
+
         // Paginación con parámetros seguros
         const limitVal = parseInt(limite) || 50;
         const offsetVal = parseInt(offset) || 0;
@@ -1564,6 +1583,9 @@ exports.buscarSolicitudes = async (req, res) => {
                 if (isLeader) {
                     if (vendedor && vendedor.trim() !== '') { countSql += ` AND LOWER(s.vendedor) LIKE LOWER($${cIdx++})`; countParams.push('%' + vendedor.trim() + '%'); }
                 }
+                // Filtro de campaña
+                if (campana === 'con_campana') { countSql += ` AND s.campana_id IS NOT NULL`; }
+                else if (campana === 'sin_campana') { countSql += ` AND s.campana_id IS NULL`; }
                 
                 return pool.query(countSql, countParams);
             })()

@@ -41,6 +41,7 @@ let segmentoActual = sessionStorage.getItem('sol_segmento') || '';
 let fechaDesdeActual = sessionStorage.getItem('sol_fecha_desde') || '';
 let fechaHastaActual = sessionStorage.getItem('sol_fecha_hasta') || '';
 let vendedorActual = sessionStorage.getItem('sol_vendedor') || '';
+let campanaActual = sessionStorage.getItem('sol_campana') || '';
 var TAMANO_LOTE = CONFIG.TAMANO_LOTE;
 
 // Cache de consultas
@@ -53,11 +54,11 @@ let campanaSeleccionadaNombre = '';
 // ============================================================================
 // UTILIDADES
 // ============================================================================
-function getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor) {
-    return `${q}|${estado}|${segmento}|${offset}|${fechaDesde}|${fechaHasta}|${vendedor}`;
+function getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor, campana) {
+    return `${q}|${estado}|${segmento}|${offset}|${fechaDesde}|${fechaHasta}|${vendedor}|${campana}`;
 }
-function getFromCache(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor) {
-    const key = getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor);
+function getFromCache(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor, campana) {
+    const key = getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor, campana);
     const entry = queryCache.get(key);
     if (entry && Date.now() - entry.timestamp < CONFIG.CACHE_TTL) {
         return entry.data;
@@ -65,8 +66,8 @@ function getFromCache(q, estado, segmento, offset, fechaDesde, fechaHasta, vende
     queryCache.delete(key);
     return null;
 }
-function setCache(q, estado, segmento, offset, data, fechaDesde, fechaHasta, vendedor) {
-    const key = getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor);
+function setCache(q, estado, segmento, offset, data, fechaDesde, fechaHasta, vendedor, campana) {
+    const key = getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor, campana);
     queryCache.set(key, { data, timestamp: Date.now() });
 }
 function persistirEstado() {
@@ -76,6 +77,7 @@ function persistirEstado() {
         sessionStorage.setItem('sol_fecha_desde', fechaDesdeActual);
         sessionStorage.setItem('sol_fecha_hasta', fechaHastaActual);
         sessionStorage.setItem('sol_vendedor', vendedorActual);
+        sessionStorage.setItem('sol_campana', campanaActual);
     } catch (e) { /* ignore */ }
 }
 
@@ -118,7 +120,7 @@ async function init() {
         restaurarFiltrosUI();
 
         // Re-aplicar filtros persistidos para que la lista coincida con la UI restaurada
-        if (estadoActual || segmentoActual || fechaDesdeActual || fechaHastaActual || vendedorActual) {
+        if (estadoActual || segmentoActual || campanaActual || fechaDesdeActual || fechaHastaActual || vendedorActual) {
             buscarEnServidor(true);
         }
     } catch (error) {
@@ -158,10 +160,10 @@ async function buscarEnServidor(resetOffset, extraOffset) {
 
     const inputBusqueda = document.getElementById('cedula');
     const termino = inputBusqueda ? inputBusqueda.value.trim() : '';
-    const tieneFiltros = !!(termino || estadoActual || segmentoActual);
+    const tieneFiltros = !!(termino || estadoActual || segmentoActual || campanaActual);
     const nuevoOffset = (extraOffset !== null) ? extraOffset : (resetOffset ? 0 : currentOffset);
 
-    const cached = resetOffset ? getFromCache(termino, estadoActual, segmentoActual, 0, fechaDesdeActual, fechaHastaActual, vendedorActual) : null;
+    const cached = resetOffset ? getFromCache(termino, estadoActual, segmentoActual, 0, fechaDesdeActual, fechaHastaActual, vendedorActual, campanaActual) : null;
     if (cached) {
         todosDatos = cached;
         currentOffset = cached.length;
@@ -182,6 +184,8 @@ async function buscarEnServidor(resetOffset, extraOffset) {
             if (fechaHastaActual) url += `&fecha_hasta=${encodeURIComponent(fechaHastaActual)}`;
             // Filtro de vendedor solo para Lider+
             if (_esLider && vendedorActual) url += `&vendedor=${encodeURIComponent(vendedorActual)}`;
+            // Filtro de campaña
+            if (campanaActual) url += `&campana=${encodeURIComponent(campanaActual)}`;
 
             const response = await fetch(url, { signal });
             const result = await response.json();
@@ -192,7 +196,7 @@ async function buscarEnServidor(resetOffset, extraOffset) {
                 todosDatos = datosRecibidos;
                 currentOffset = datosRecibidos.length;
                 datosRecibidos.total = total;
-                setCache(termino, estadoActual, segmentoActual, 0, datosRecibidos, fechaDesdeActual, fechaHastaActual, vendedorActual);
+                setCache(termino, estadoActual, segmentoActual, 0, datosRecibidos, fechaDesdeActual, fechaHastaActual, vendedorActual, campanaActual);
             } else {
                 for (let i = 0; i < datosRecibidos.length; i++) todosDatos.push(datosRecibidos[i]);
                 currentOffset += datosRecibidos.length;
@@ -1150,6 +1154,15 @@ function configurarEventosCheckboxes() {
         };
     }
 
+    var selectCampana = document.getElementById('filtro-campana-select');
+    if (selectCampana) {
+        selectCampana.onchange = function() {
+            campanaActual = this.value;
+            persistirEstado();
+            buscarEnServidor(true);
+        };
+    }
+
     // Filtros de líder (Fecha Desde/Hasta y Vendedor): se aplican al cambiar
     var fd = document.getElementById('fechaDesde');
     var fh = document.getElementById('fechaHasta');
@@ -1227,6 +1240,9 @@ function restaurarFiltrosUI() {
     var fh = document.getElementById('fechaHasta');
     if (fd && fechaDesdeActual) fd.value = fechaDesdeActual;
     if (fh && fechaHastaActual) fh.value = fechaHastaActual;
+    // Restaurar select de campaña
+    var selCampana = document.getElementById('filtro-campana-select');
+    if (selCampana && campanaActual) selCampana.value = campanaActual;
     actualizarInfoPanel();
 }
 
@@ -1315,13 +1331,16 @@ function marcarSeleccionadas() {
 function limpiarFiltros() {
     estadoActual = '';
     segmentoActual = '';
+    campanaActual = '';
     persistirEstado();
 
     // Reset selects de estado y segmento
     var selectEstado = document.getElementById('filtro-estado-select');
     var selectSegmento = document.getElementById('filtro-segmento-select');
+    var selectCampana = document.getElementById('filtro-campana-select');
     if (selectEstado) selectEstado.value = '';
     if (selectSegmento) selectSegmento.value = '';
+    if (selectCampana) selectCampana.value = '';
 
     // Reset filtros de líder (fechas y vendedor)
     var fd = document.getElementById('fechaDesde');
@@ -1336,6 +1355,7 @@ function limpiarFiltros() {
     sessionStorage.removeItem('sol_fecha_desde');
     sessionStorage.removeItem('sol_fecha_hasta');
     sessionStorage.removeItem('sol_vendedor');
+    sessionStorage.removeItem('sol_campana');
 
     var inputBusqueda = document.getElementById('cedula');
     if (inputBusqueda) inputBusqueda.value = '';

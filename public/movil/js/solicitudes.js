@@ -10,7 +10,7 @@ let todosDatos = [];
 let datosFilas = {};
 let filasSeleccionadas = [];
 let idsVisibles = [];
-let filtros = { estado: '', segmento: '', busqueda: '' };
+let filtros = { estado: '', segmento: '', busqueda: '', campana: sessionStorage.getItem('sol_campana') || '' };
 let fechaDesdeActual = sessionStorage.getItem('sol_fecha_desde') || '';
 let fechaHastaActual = sessionStorage.getItem('sol_fecha_hasta') || '';
 let vendedorActual = sessionStorage.getItem('sol_vendedor') || '';
@@ -170,18 +170,18 @@ let activeController = null;
 const queryCache = new Map();
 const CACHE_TTL = 30000;
 
-function getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor) {
-    return q + '|' + estado + '|' + segmento + '|' + offset + '|' + fechaDesde + '|' + fechaHasta + '|' + vendedor;
+function getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor, campana) {
+    return q + '|' + estado + '|' + segmento + '|' + offset + '|' + fechaDesde + '|' + fechaHasta + '|' + vendedor + '|' + campana;
 }
-function getFromCache(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor) {
-    const key = getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor);
+function getFromCache(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor, campana) {
+    const key = getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor, campana);
     const entry = queryCache.get(key);
     if (entry && Date.now() - entry.timestamp < CACHE_TTL) return entry.data;
     queryCache.delete(key);
     return null;
 }
-function setCache(q, estado, segmento, offset, data, fechaDesde, fechaHasta, vendedor) {
-    const key = getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor);
+function setCache(q, estado, segmento, offset, data, fechaDesde, fechaHasta, vendedor, campana) {
+    const key = getCacheKey(q, estado, segmento, offset, fechaDesde, fechaHasta, vendedor, campana);
     queryCache.set(key, { data: data, timestamp: Date.now() });
 }
 
@@ -246,7 +246,7 @@ async function init() {
         renderizarFiltros();
 
         // Re-aplicar filtros persistidos para que la lista coincida con la UI restaurada
-        if (filtros.estado || filtros.segmento || fechaDesdeActual || fechaHastaActual || vendedorActual) {
+        if (filtros.estado || filtros.segmento || filtros.campana || fechaDesdeActual || fechaHastaActual || vendedorActual) {
             await buscarEnServidor(true);
         }
 
@@ -375,6 +375,12 @@ function renderizarFiltros() {
         if (filtros.segmento) segmentoSelect.value = filtros.segmento;
     }
 
+    // Campaña (select estático)
+    var campanaSelect = document.getElementById('filtro-campana-select');
+    if (campanaSelect && filtros.campana) {
+        campanaSelect.value = filtros.campana;
+    }
+
     // Adjuntar eventos
     adjuntarEventos();
 }
@@ -462,10 +468,13 @@ function limpiarFiltrosLider() {
     // Limpiar selects de Estado y Segmento
     filtros.estado = '';
     filtros.segmento = '';
+    filtros.campana = '';
     var selEstado = document.getElementById('filtro-estado-select');
     var selSegmento = document.getElementById('filtro-segmento-select');
+    var selCampana = document.getElementById('filtro-campana-select');
     if (selEstado) selEstado.value = '';
     if (selSegmento) selSegmento.value = '';
+    if (selCampana) selCampana.value = '';
 
     // Limpiar fechas y vendedor
     var fd = document.getElementById('fechaDesde');
@@ -480,6 +489,7 @@ function limpiarFiltrosLider() {
     sessionStorage.removeItem('sol_fecha_desde');
     sessionStorage.removeItem('sol_fecha_hasta');
     sessionStorage.removeItem('sol_vendedor');
+    sessionStorage.removeItem('sol_campana');
 
     // Limpiar también el buscador (reset total)
     var inputBusqueda = document.getElementById('cedula');
@@ -533,11 +543,11 @@ async function buscarEnServidor(resetOffset = false, extraOffset = null) {
     try {
         var inputBusqueda = document.getElementById('cedula');
         var termino = inputBusqueda ? inputBusqueda.value.trim() : '';
-        var tieneFiltros = !!(termino || filtros.estado || filtros.segmento);
+        var tieneFiltros = !!(termino || filtros.estado || filtros.segmento || filtros.campana);
         var nuevoOffset = (extraOffset !== null) ? extraOffset : (resetOffset ? 0 : currentOffset);
         
         // Verificar cache
-        var cached = resetOffset ? getFromCache(termino, filtros.estado, filtros.segmento, 0, fechaDesdeActual, fechaHastaActual, vendedorActual) : null;
+        var cached = resetOffset ? getFromCache(termino, filtros.estado, filtros.segmento, 0, fechaDesdeActual, fechaHastaActual, vendedorActual, filtros.campana) : null;
         if (cached) {
             todosDatos = cached;
             currentOffset = cached.length;
@@ -557,6 +567,8 @@ async function buscarEnServidor(resetOffset = false, extraOffset = null) {
             if (fechaHastaActual) url += '&fecha_hasta=' + encodeURIComponent(fechaHastaActual);
             // Vendedor: solo Lider+ (el grupo no se muestra a otros roles)
             if (vendedorActual) url += '&vendedor=' + encodeURIComponent(vendedorActual);
+            // Campaña
+            if (filtros.campana) url += '&campana=' + encodeURIComponent(filtros.campana);
             
             var response = await fetch(url, { signal: signal });
             var result = await response.json();
@@ -567,7 +579,7 @@ async function buscarEnServidor(resetOffset = false, extraOffset = null) {
                 todosDatos = datosRecibidos;
                 currentOffset = datosRecibidos.length;
                 datosRecibidos.total = total;
-                setCache(termino, filtros.estado, filtros.segmento, 0, datosRecibidos, fechaDesdeActual, fechaHastaActual, vendedorActual);
+                setCache(termino, filtros.estado, filtros.segmento, 0, datosRecibidos, fechaDesdeActual, fechaHastaActual, vendedorActual, filtros.campana);
             } else {
                 for (var i = 0; i < datosRecibidos.length; i++) todosDatos.push(datosRecibidos[i]);
                 currentOffset += datosRecibidos.length;
@@ -617,6 +629,16 @@ function adjuntarEventos() {
     if (selSegmento) {
         selSegmento.onchange = function() {
             filtros.segmento = this.value;
+            buscarEnServidor(true); // Reset offset al cambiar filtro
+        };
+    }
+
+    // Select de Campaña: aplica al cambiar
+    var selCampana = document.getElementById('filtro-campana-select');
+    if (selCampana) {
+        selCampana.onchange = function() {
+            filtros.campana = this.value;
+            sessionStorage.setItem('sol_campana', filtros.campana);
             buscarEnServidor(true); // Reset offset al cambiar filtro
         };
     }
