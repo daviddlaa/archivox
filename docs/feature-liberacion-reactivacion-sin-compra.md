@@ -1,6 +1,6 @@
 # Feature: Reactivación sin compra de solicitudes liberadas (>6 meses sin relación)
 
-**Fecha:** Agosto 2026
+**Fecha:** Agosto 2026 | **Actualización:** 26/08/2026
 **Ámbito:** `src/services/liberacion.service.js`, `src/routes/liberacion.routes.js`,
 `src/services/liberacionScheduler.js`, `app.js`,
 `public/desktop/solicitudes.html`, `public/desktop/js/solicitudes.js`,
@@ -10,6 +10,7 @@
 `fecha_solicitud`) y ya no tiene una relación activa con el usuario, si el cliente compra la
 venta NO se refleja. Se necesita avisar al usuario (banner + notificación in-app), listarlas y
 permitir reactivarlas creando una campaña (estado → `ACTIVADA`) sin exigir una compra.
+El scheduler ahora crea campañas automáticamente de forma semanal.
 
 ---
 
@@ -18,8 +19,10 @@ permitir reactivarlas creando una campaña (estado → `ACTIVADA`) sin exigir un
 Se creó un banner de alerta en la página de Solicitudes (desktop y móvil) que cuenta las
 solicitudes de liberación caducadas; un listado modal con selección múltiple; y dos acciones:
 **"Activar sin compra"** (cambia el estado a `ACTIVADA`) y **"Crear campaña y activar"**
-(crea una `gestiones_maestro` con esas solicitudes y las activa). Un scheduler periódico (cada
-6h) genera una notificación in-app (dedup 24h por usuario) con deep link `?liberacion=1`.
+(crea una `gestiones_maestro` con esas solicitudes y las activa). Un **scheduler semanal** crea
+o reutiliza automáticamente una campaña (`es_sistema = 1`) para cada usuario con solicitudes
+que califican, mueve las solicitudes de otras campañas hacia la automática, y genera una
+notificación in-app (dedup 6 días) con enlace directo a la campaña.
 
 ---
 
@@ -62,13 +65,23 @@ los tres consumidores (contar, listar, resumen por usuario) comparten el mismo W
 
 ### 3.3 Scheduler `src/services/liberacionScheduler.js`
 
-- Se arranca al final de `app.js` (`iniciarLiberacionScheduler()`), intervalo **6h**.
+- Se arranca al final de `app.js` (`iniciarLiberacionScheduler()`), intervalo **semanal** (7 días).
+- **Campaña automática:** por cada usuario con solicitudes que califican:
+  1. Busca una campaña existente con `es_sistema = 1`, nombre fijo y estado `activa`.
+  2. Si existe → la reusa. Si no → crea una nueva (`gestiones_maestro` con `es_sistema = 1`).
+  3. **Mueve** solicitudes de otras campañas (cualquier estado) hacia la automática: limpia el
+     JSON `solicitudes_ids`, el puente `gestiones_maestro_solicitudes` y `solicitudes.campana_id`
+     de la campaña antigua antes de agregar a la nueva.
+- **No cambia el estado** de las solicitudes (siguen en `APROBADA PARA LIBERACIÓN`).
 - Dedup: solo crea la notificación si no existe otra con el título fijo
-  `'⚠️ Solicitudes liberadas por reactivar'` en las últimas 24h para ese usuario.
-- `accion_url: '/solicitudes?liberacion=1'`, tipo `warning`, prioridad `alta`, emite eventos SSE
+  `'⚠️ Solicitudes liberadas por reactivar'` en las últimas **6 días** para ese usuario.
+- `accion_url: '/gestion-lote?id=<campanaId>'`, tipo `warning`, prioridad `alta`, emite eventos SSE
   `notification.created` y `count.updated`.
+- Invalida caché: `invalidateDashboard`, `invalidateCatalogosUsuario`, `invalidateAllCampanas`.
 - Reintenta el primer pase si la tabla de notificaciones aún no existe (Postgres crea el esquema
   en background).
+- `getFechaCorte()` se exporta desde `liberacion.service.js` para reutilizar el cálculo de fecha
+  de corte (hoy − 6 meses).
 
 ---
 
@@ -103,10 +116,14 @@ plataformas, con media query para móvil. Respetar la convención
 
 ## 5. Pruebas (SQLite local, `DATABASE_URL= NODE_ENV=development`)
 
-- `GET /api/liberacion/contar` → `74` para el usuario 1 (sin filas separadas localmente).
-- Al marcar una fila con `no_aplica_credito = 0` → el conteo baja a `73`, la fila desaparece del
+- `GET /api/liberacion/contar` → devuelve el total de solicitudes que cumplen el criterio.
+- Al marcar una fila con `no_aplica_credito = 0` → el conteo baja, la fila desaparece del
   listado, y `POST /api/liberacion/activar` con su id devuelve `"No hay solicitudes válidas"`.
 - Flujo feliz: activar una fila válida sin campaña cambia su estado a `ACTIVADA` (revertido tras
   la prueba).
+- **Scheduler semanal:** al ejecutar `procesarAlertasLiberacion()`, se crea una campaña automática
+  (`es_sistema = 1`, nombre fijo) por cada usuario con solicitudes que califican. Al ejecutar de
+  nuevo, reutiliza la campaña existente y agrega las nuevas solicitudes. Las solicitudes en otras
+  campañas se mueven a la automática.
 - Con `NODE_ENV=production` (cargado por `.env`) la cookie de sesión no se emite por HTTP:
   **siempre** probar con `NODE_ENV=development`.

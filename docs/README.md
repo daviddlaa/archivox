@@ -302,6 +302,7 @@ ARCHIVOX/
 │       ├── relaciones.service.js   # Procesamiento de archivos Excel (relaciones)
 │       ├── notificationBus.js      # SSE Bus - Notificaciones en tiempo real
 │       └── recordatorioScheduler.js # Scheduler de recordatorios vencidos (cada 60s)
+│       └── liberacionScheduler.js   # Scheduler semanal: campaña automática de liberación
 │
 ├── public/                         # CÓDIGO FRONTEND (estático)
 │   ├── index.html                  # Entry point (redirección a login)
@@ -1650,8 +1651,8 @@ La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tabla
 
 Detecta solicitudes en `APROBADA PARA LIBERACIÓN` con más de 6 meses (desde `fecha_solicitud`),
 sin relación activa (ALTA) y que **siguen aplicando para crédito** (`COALESCE(no_aplica_credito,1)=1`,
-excluye las separadas con la bandera 👎). Banner + listado + campaña/activación en lote + alerta
-in-app cada 6h. Ver `docs/feature-liberacion-reactivacion-sin-compra.md`.
+excluye las separadas con la bandera 👎). Banner + listado + campaña/activación en lote + scheduler
+semanal que crea/reutiliza campaña automática y notifica con enlace. Ver `docs/feature-liberacion-reactivacion-sin-compra.md`.
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|

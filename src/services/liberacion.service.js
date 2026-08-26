@@ -243,6 +243,7 @@ module.exports = {
     ESTADO_APROBADA,
     ESTADO_ACTIVADA,
     MESES_CORTE,
+    getFechaCorte,
     contarSolicitudesLiberacion,
     getSolicitudesLiberacion,
     getResumenPorUsuario,
