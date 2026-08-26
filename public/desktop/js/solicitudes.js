@@ -42,6 +42,7 @@ let fechaDesdeActual = sessionStorage.getItem('sol_fecha_desde') || '';
 let fechaHastaActual = sessionStorage.getItem('sol_fecha_hasta') || '';
 let vendedorActual = sessionStorage.getItem('sol_vendedor') || '';
 let campanaActual = sessionStorage.getItem('sol_campana') || '';
+let vistaActual = sessionStorage.getItem('sol_vista') || 'cards';
 var TAMANO_LOTE = CONFIG.TAMANO_LOTE;
 
 // Cache de consultas
@@ -82,6 +83,154 @@ function persistirEstado() {
 }
 
 // ============================================================================
+// CAMBIO DE VISTA (Cards / Tabla)
+// ============================================================================
+function cambiarVista(tipo) {
+    vistaActual = tipo;
+    try { sessionStorage.setItem('sol_vista', tipo); } catch (e) { /* ignore */ }
+
+    var btnCards = document.getElementById('btn-vista-cards');
+    var btnTabla = document.getElementById('btn-vista-tabla');
+    var panelCards = document.getElementById('cards-panel');
+    var panelTabla = document.getElementById('tabla-panel');
+
+    if (btnCards) btnCards.classList.toggle('active', tipo === 'cards');
+    if (btnTabla) btnTabla.classList.toggle('active', tipo === 'tabla');
+    if (panelCards) panelCards.style.display = tipo === 'cards' ? '' : 'none';
+    if (panelTabla) panelTabla.style.display = tipo === 'tabla' ? '' : 'none';
+
+    renderizarVistaActual(todosDatos);
+}
+
+function renderizarVistaActual(datos) {
+    if (vistaActual === 'tabla') {
+        renderizarTabla(datos);
+    } else {
+        renderizarCards(datos);
+    }
+}
+
+function renderizarTabla(datos) {
+    var tbody = document.getElementById('tabla-body');
+    if (!tbody) return;
+
+    if (!datos || !datos.length) {
+        tbody.innerHTML = '<tr><td colspan="11" class="tabla-vacio">📋 No hay solicitudes</td></tr>';
+        actualizarContador();
+        return;
+    }
+
+    var coloresEstado = {
+        'ACTIVADA': '#dcfce7', 'RECHAZADA': '#fee2e2', 'DEVUELTA': '#fef3c7',
+        'APROBADA PARA LIBERACIÓN': '#d1fae5'
+    };
+
+    var html = '';
+    for (var i = 0; i < datos.length; i++) {
+        var item = datos[i];
+        if (!item) continue;
+        var id = item.id_solicitud || '';
+        var seleccionado = filasSeleccionadas.indexOf(id) > -1;
+        var noAplica = item.no_aplica_credito == 0;
+        var colorEstado = coloresEstado[item.estado] || '#f3f4f6';
+
+        var rowClass = seleccionado ? 'seleccionada' : '';
+        if (noAplica) rowClass += ' no-aplica-row';
+
+        html += '<tr class="' + rowClass.trim() + '" data-id="' + id + '" onclick="toggleRowDesktop(\'' + id + '\', event)">';
+
+        // Checkbox
+        html += '<td class="col-check" onclick="event.stopPropagation()">';
+        html += '<input type="checkbox" class="checkbox-fila card-checkbox" value="' + id + '" onchange="toggleFilaCheckbox(this)" ' + (seleccionado ? 'checked' : '') + '>';
+        html += '</td>';
+
+        // ID
+        html += '<td class="col-id">' + id + '</td>';
+
+        // Nombre
+        html += '<td class="col-nombre">' + panelEscapeHtml(item.nombre || 'Sin nombre') + '</td>';
+
+        // Cédula
+        html += '<td class="col-cedula">' + panelEscapeHtml(item.cedula || '—') + '</td>';
+
+        // Estado (badge)
+        html += '<td class="col-estado">';
+        html += '<span class="tabla-estado-badge" style="background:' + colorEstado + ';">' + (item.estado || '—') + '</span>';
+        if (noAplica) html += ' <span class="tabla-noaplica-badge" title="No aplica para crédito">👎</span>';
+        html += '</td>';
+
+        // Segmento
+        html += '<td class="col-segmento">' + (item.segmento || '—') + '</td>';
+
+        // Producto
+        html += '<td class="col-producto">' + (item.producto || '—') + '</td>';
+
+        // Fecha
+        html += '<td class="col-fecha">' + (item.fecha_solicitud || '—') + '</td>';
+
+        // Vendedor (solo Lider+)
+        if (_esLider) {
+            html += '<td class="col-vendedor">' + (item.vendedor || '—') + '</td>';
+        }
+
+        // Campaña
+        html += '<td class="col-campana">';
+        if (item.campana_id && item.nombre_campana) {
+            html += '<a class="tabla-campana-link" href="/gestion-lote?id=' + encodeURIComponent(item.campana_id) + '&card=' + encodeURIComponent(id) + '" onclick="event.stopPropagation()">📢 ' + panelEscapeHtml(item.nombre_campana) + '</a>';
+        } else {
+            html += '<span class="tabla-campana-vacia">📭 Sin campaña</span>';
+        }
+        html += '</td>';
+
+        // Acciones
+        html += '<td class="col-acciones" onclick="event.stopPropagation()">';
+        html += '<div class="tabla-acciones">';
+        html += '<button class="tabla-acciones-btn" onclick="abrirGestionesCard(' + id + ')" title="Gestiones">📋</button>';
+        html += '<button class="tabla-acciones-btn" onclick="abrirCompletarInfoCard(' + id + ')" title="Completar info">✏️</button>';
+        html += '<button class="tabla-acciones-btn" onclick="whatsAppClienteDesktop(\'' + (item.celular || '') + '\', \'' + escaparParaAtributoDesktop(item.nombre || '') + '\')" title="WhatsApp">💬</button>';
+        html += '<button class="tabla-acciones-btn btn-eliminar-tabla" onclick="confirmarEliminarSolicitudDesktop(' + id + ')" title="Eliminar">🗑️</button>';
+        html += '</div>';
+        html += '</td>';
+
+        html += '</tr>';
+    }
+
+    tbody.innerHTML = html;
+    recrearSentinelTabla();
+    actualizarContador();
+}
+
+function toggleRowDesktop(id, event) {
+    if (event && event.target && (event.target.tagName === 'BUTTON' || event.target.tagName === 'A' || event.target.tagName === 'INPUT')) return;
+    toggleCardDesktop(id, event);
+}
+
+function recrearSentinelTabla() {
+    var panel = document.getElementById('tabla-panel');
+    if (!panel) return;
+    var existing = document.getElementById('infinite-scroll-sentinel-table');
+    if (existing) {
+        existing.innerHTML = isLoading ? '<span class="loader-text">⏳ Cargando más...</span>'
+            : hasMoreData ? '<span class="loader-text">📜 Desliza para cargar más...</span>'
+            : '<span class="loader-text">✅ No hay más registros</span>';
+        return;
+    }
+    var sentinel = document.createElement('tr');
+    sentinel.id = 'infinite-scroll-sentinel-table';
+    sentinel.innerHTML = '<td colspan="11" style="text-align:center; padding:20px; color:#6b7280; font-size:14px;">' +
+        (hasMoreData ? '📜 Desliza para cargar más...' : '✅ No hay más registros') + '</td>';
+    panel.querySelector('tbody').appendChild(sentinel);
+}
+
+function toggleFilaCheckboxTodosTabla(checkbox) {
+    var checks = document.querySelectorAll('#tabla-body .card-checkbox');
+    checks.forEach(function(ch) {
+        ch.checked = checkbox.checked;
+        toggleFilaCheckbox(ch);
+    });
+}
+
+// ============================================================================
 // INICIALIZACIÓN CONSOLIDADA
 // ============================================================================
 async function init() {
@@ -101,6 +250,22 @@ async function init() {
                 if (_esLider) mostrarFiltrosLider();
             }
         } catch (e) { console.error('[Solicitudes] Error cargando sesión:', e); }
+
+        // Restaurar vista persistida (cards/tabla)
+        var btnCards = document.getElementById('btn-vista-cards');
+        var btnTabla = document.getElementById('btn-vista-tabla');
+        var panelCards = document.getElementById('cards-panel');
+        var panelTabla = document.getElementById('tabla-panel');
+        if (btnCards) btnCards.classList.toggle('active', vistaActual === 'cards');
+        if (btnTabla) btnTabla.classList.toggle('active', vistaActual === 'tabla');
+        if (panelCards) panelCards.style.display = vistaActual === 'cards' ? '' : 'none';
+        if (panelTabla) panelTabla.style.display = vistaActual === 'tabla' ? '' : 'none';
+
+        // Ocultar columna vendedor si no es Lider+
+        if (!_esLider) {
+            var colVendedorTh = document.getElementById('col-vendedor-th');
+            if (colVendedorTh) colVendedorTh.style.display = 'none';
+        }
 
         // Cargar datos y dashboard en paralelo (2 requests en lugar de 4+)
         await Promise.all([
@@ -143,7 +308,7 @@ async function cargarLoteInicial() {
         hasMoreData = currentOffset < total;
         document.getElementById('totalRegistros').textContent = total;
         document.getElementById('mostrando').textContent = todosDatos.length;
-        renderizarCards(todosDatos);
+        renderizarVistaActual(todosDatos);
     } catch (error) {
         console.error('[Solicitudes] Error cargando lote inicial:', error);
     } finally {
@@ -170,7 +335,7 @@ async function buscarEnServidor(resetOffset, extraOffset) {
         hasMoreData = currentOffset < (cached.total || 0);
         document.getElementById('totalRegistros').textContent = cached.total || cached.length;
         document.getElementById('mostrando').textContent = cached.length;
-        renderizarCards(cached);
+        renderizarVistaActual(cached);
         return;
     }
 
@@ -205,7 +370,7 @@ async function buscarEnServidor(resetOffset, extraOffset) {
             busquedaActiva = true;
             document.getElementById('totalRegistros').textContent = total;
             document.getElementById('mostrando').textContent = todosDatos.length;
-            renderizarCards(todosDatos);
+            renderizarVistaActual(todosDatos);
         } else {
             busquedaActiva = false;
             if (resetOffset) { currentOffset = 0; todosDatos = []; await cargarLoteInicial(); }
@@ -239,6 +404,7 @@ function initInfiniteScroll() {
 }
 
 function recrearSentinel() {
+    if (vistaActual === 'tabla') return recrearSentinelTabla();
     var container = document.getElementById('cards-container');
     if (!container) return;
     var sentinel = document.getElementById('infinite-scroll-sentinel');
@@ -258,7 +424,7 @@ function recrearSentinel() {
 
 async function cargarMas() {
     if (isLoading || !hasMoreData) return;
-    if (busquedaActiva || estadoActual || segmentoActual) {
+    if (busquedaActiva || estadoActual || segmentoActual || campanaActual) {
         await buscarEnServidor(false, currentOffset);
         return;
     }
@@ -269,7 +435,9 @@ async function cargarMasSolicitudes() {
     if (isLoading || !hasMoreData) return;
     isLoading = true;
     var sentinel = document.getElementById('infinite-scroll-sentinel');
+    var sentinelTabla = document.getElementById('infinite-scroll-sentinel-table');
     if (sentinel) sentinel.innerHTML = '<span class="loader-text">⏳ Cargando más...</span>';
+    if (sentinelTabla) sentinelTabla.innerHTML = '<td colspan="11" style="text-align:center; padding:20px; color:#6b7280;">⏳ Cargando más...</td>';
     try {
         var nuevoOffset = currentOffset;
         var response = await fetch('/api/excel/solicitudes?limite=' + CONFIG.TAMANO_LOTE + '&offset=' + nuevoOffset);
@@ -288,9 +456,9 @@ async function cargarMasSolicitudes() {
         console.error('[Solicitudes] Error cargando más datos:', error);
     } finally {
         isLoading = false;
-        if (sentinel) {
-            sentinel.innerHTML = hasMoreData ? '<span class="loader-text">📜 Scroll para cargar más...</span>' : '<span class="loader-text">✅ No hay más registros</span>';
-        }
+        var msg = hasMoreData ? '📜 Scroll para cargar más...' : '✅ No hay más registros';
+        if (sentinel) sentinel.innerHTML = '<span class="loader-text">' + msg + '</span>';
+        if (sentinelTabla) sentinelTabla.innerHTML = '<td colspan="11" style="text-align:center; padding:20px; color:#6b7280; font-size:14px;">' + msg + '</td>';
     }
 }
 
@@ -1252,7 +1420,7 @@ function restaurarFiltrosUI() {
 function aplicarFiltros() {
     // Esta función se llama después de cargar más datos
     // Para mantener consistencia, renderizamos todo de nuevo
-    renderizarCards(todosDatos);
+    renderizarVistaActual(todosDatos);
     document.getElementById('mostrando').textContent = todosDatos.length;
 }
 
@@ -1393,7 +1561,7 @@ function borrarTodas() {
             hasMoreData = false;
             document.getElementById('totalRegistros').textContent = '0';
             document.getElementById('mostrando').textContent = '0';
-            renderizarCards([]);
+            renderizarVistaActual([]);
         } else {
             alert('Error: ' + (resultado.error || 'Error desconocido'));
         }
@@ -2080,7 +2248,7 @@ function confirmarEliminarSolicitudDesktop(id) {
             todosDatos = todosDatos.filter(function(d) { return d.id_solicitud != id; });
             filasSeleccionadas = filasSeleccionadas.filter(function(f) { return f != id; });
             delete datosFilas[id];
-            renderizarCards(todosDatos);
+            renderizarVistaActual(todosDatos);
             document.getElementById('totalRegistros').textContent = todosDatos.length;
             document.getElementById('mostrando').textContent = todosDatos.length;
             cargarTotales();

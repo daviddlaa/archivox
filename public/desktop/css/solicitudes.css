@@ -2435,3 +2435,190 @@ body .solicitud-card.seleccionada::after {
         justify-content: flex-start;
     }
 }
+
+/* ============================================================================
+   VIEW TOGGLE (Cards / Tabla)
+   ========================================================================== */
+.view-toggle {
+    display: flex;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.view-toggle-btn {
+    padding: 6px 10px;
+    border: none;
+    background: #f3f4f6;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    transition: all 0.2s;
+    border-right: 1px solid #e5e7eb;
+    color: #6b7280;
+}
+
+.view-toggle-btn:last-child {
+    border-right: none;
+}
+
+.view-toggle-btn:hover {
+    background: #e5e7eb;
+}
+
+.view-toggle-btn.active {
+    background: #2563eb;
+    color: white;
+}
+
+/* ============================================================================
+   TABLA DE SOLICITUDES
+   ========================================================================== */
+.table-view-panel {
+    overflow: hidden;
+}
+
+.table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.solicitudes-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.solicitudes-table thead th {
+    background: #f9fafb;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    user-select: none;
+}
+
+.solicitudes-table thead th.col-check {
+    text-align: center;
+    width: 40px;
+}
+
+.solicitudes-table tbody tr {
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.solicitudes-table tbody tr:hover {
+    background: #f0f7ff;
+}
+
+.solicitudes-table tbody tr.seleccionada {
+    background: #eff6ff;
+}
+
+.solicitudes-table tbody tr.no-aplica-row {
+    opacity: 0.6;
+}
+
+.solicitudes-table tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.solicitudes-table tbody td.col-check {
+    text-align: center;
+}
+
+/* Column widths */
+.solicitudes-table .col-check { width: 40px; }
+.solicitudes-table .col-id { width: 55px; }
+.solicitudes-table .col-nombre { min-width: 140px; }
+.solicitudes-table .col-cedula { width: 90px; }
+.solicitudes-table .col-estado { min-width: 130px; }
+.solicitudes-table .col-segmento { width: 90px; }
+.solicitudes-table .col-producto { width: 100px; }
+.solicitudes-table .col-fecha { width: 90px; }
+.solicitudes-table .col-vendedor { width: 100px; }
+.solicitudes-table .col-campana { min-width: 120px; }
+.solicitudes-table .col-acciones { white-space: nowrap; }
+
+/* Estado badge in table */
+.tabla-estado-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* No-aplica mini badge */
+.tabla-noaplica-badge {
+    display: inline-block;
+    font-size: 12px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+/* Campaign link in table */
+.tabla-campana-link {
+    color: #2563eb;
+    text-decoration: none;
+    font-size: 12px;
+}
+.tabla-campana-link:hover {
+    text-decoration: underline;
+}
+.tabla-campana-vacia {
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+/* Action buttons in table (compact) */
+.tabla-acciones {
+    display: flex;
+    gap: 2px;
+}
+
+.tabla-acciones-btn {
+    padding: 4px 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 4px;
+    transition: background 0.15s;
+    line-height: 1;
+}
+
+.tabla-acciones-btn:hover {
+    background: #e5e7eb;
+}
+
+.tabla-acciones-btn.btn-eliminar-tabla:hover {
+    background: #fee2e2;
+}
+
+/* Table empty state */
+.tabla-vacio {
+    padding: 40px;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+/* Sentinel inside table */
+.table-view-panel #infinite-scroll-sentinel-table {
+    height: 1px;
+}

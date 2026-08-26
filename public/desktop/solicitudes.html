@@ -129,6 +129,10 @@
                     </div>
                     <div class="toolbar-acciones">
                         <button type="button" class="toolbar-btn toolbar-btn-seleccionar" onclick="marcarSeleccionadas()">✓ Seleccionar todo</button>
+                        <div class="view-toggle" id="view-toggle">
+                            <button type="button" class="view-toggle-btn active" id="btn-vista-cards" onclick="cambiarVista('cards')" title="Vista tarjetas">🗂️</button>
+                            <button type="button" class="view-toggle-btn" id="btn-vista-tabla" onclick="cambiarVista('tabla')" title="Vista tabla">📋</button>
+                        </div>
                         <button type="button" class="toolbar-btn toolbar-btn-limpiar" onclick="limpiarFiltros()" title="Limpiar filtros">✕</button>
                     </div>
                     <!-- Checkbox oculto para compatibilidad con seleccionarTodos() -->
@@ -163,9 +167,33 @@
                 </div>
 
                 <!-- Contenedor de Cards -->
-                <div class="table-panel">
+                <div class="table-panel" id="cards-panel">
                     <!-- Contenedor de Cards unificado -->
                     <div id="cards-container" class="cards-grid-unificado"></div>
+                </div>
+
+                <!-- Tabla de solicitudes (vista alternativa) -->
+                <div class="table-panel table-view-panel" id="tabla-panel" style="display:none;">
+                    <div class="table-scroll">
+                        <table class="solicitudes-table" id="solicitudes-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-check"><input type="checkbox" class="checkbox-fila" id="check-all-table" onchange="toggleFilaCheckboxTodosTabla(this)"></th>
+                                    <th class="col-id">ID</th>
+                                    <th class="col-nombre">Nombre</th>
+                                    <th class="col-cedula">Cédula</th>
+                                    <th class="col-estado">Estado</th>
+                                    <th class="col-segmento">Segmento</th>
+                                    <th class="col-producto">Producto</th>
+                                    <th class="col-fecha">Fecha</th>
+                                    <th class="col-vendedor" id="col-vendedor-th">Vendedor</th>
+                                    <th class="col-campana">Campaña</th>
+                                    <th class="col-acciones">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-body"></tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Floating Action Panel - Aparece al seleccionar + hacer scroll -->
