@@ -235,6 +235,8 @@ ARCHIVOX/
 │   ├── feature-limite-texto-seguimiento-tarjetas.md  # Límite del texto de seguimiento en tarjetas de campaña: 2 líneas móvil (tap para expandir) / 4 líneas escritorio (Agosto 2026)
 │   ├── feature-buscador-global-campanas.md           # Búsqueda global de solicitudes en todas las campañas (landing) + deep link ?card= en escritorio (Agosto 2026)
 │   ├── feature-guia-clasificacion-campanas.md        # Guía didáctica de clasificación al entrar a campaña (una sola vez por usuario) (Agosto 2026)
+│   ├── feature-guia-solicitudes-tour.md              # Tour interactivo de la página de Solicitudes (6 pasos, una vez por usuario) (Agosto 2026)
+│   ├── feature-compactar-campanas-escritorio.md      # Tarjetas compactas de campaña + menú ⋯ (escritorio) (Agosto 2026)
 │   ├── informe-correccion-flujo-seguimiento-campanas.md # Corrección del flujo de guardado de seguimientos en campañas: contador gestionadas, control de acceso, módulo GestionCampana (Agosto 2026)
 │   ├── feature-rediseno-equipo-movil.md              # Rediseño del panel del líder móvil: 3 tabs, detalle de agente en pantalla completa, campañas clicables, actividad por día (Agosto 2026)
 │   ├── feature-cedula-tarjeta-movil-solicitudes.md   # Cédula visible en la tarjeta móvil de Solicitudes (🆔 debajo del nombre) + nombre siempre en una línea con ellipsis (Agosto 2026)
@@ -317,7 +319,8 @@ ARCHIVOX/
 │   │   ├── notificaciones.css      # Estilos de notificaciones
 │   │   ├── perfil.css              # Estilos de perfil
 │   │   ├── importar.css            # Estilos de importación
-│   │   └── gestion-lote.css        # Estilos de gestión por lotes
+│   │   ├── gestion-lote.css        # Estilos de gestión por lotes
+│   │   └── guia-solicitudes.css    # Estilos del tour de Solicitudes (Agosto 2026)
 │   │
 │   ├── js/                         # JavaScript compartido
 │   │   ├── login.js                # Lógica de login/registro
@@ -327,7 +330,8 @@ ARCHIVOX/
 │   │   ├── modal.js                # Sistema de modales
 │   │   ├── notificaciones-dashboard.js  # Widget de notificaciones
 │   │   ├── perfil.js               # Lógica de perfil de usuario
-│   │   └── gestion-campana.js      # Guardado único de gestiones/recordatorios en campañas (gestion-lote desktop y móvil) (Agosto 2026)
+│   │   ├── gestion-campana.js      # Guardado único de gestiones/recordatorios en campañas (gestion-lote desktop y móvil) (Agosto 2026)
+│   │   └── guia-solicitudes.js     # Tour interactivo de la página de Solicitudes (una vez por usuario) (Agosto 2026)
 │   │
 │   ├── desktop/                    # VERSIÓN ESCRITORIO
 │   │   ├── login.html              # Login (escritorio)
@@ -750,6 +754,7 @@ El frontend está construido con **HTML + CSS + Vanilla JavaScript** (sin framew
 | `notificaciones-dashboard.js` | Widget de notificaciones en tiempo real (SSE) |
 | `perfil.js` | Gestión de perfil de usuario |
 | `guia-campana.js` | Guía didáctica de clasificación en campañas (una sola vez por usuario, `localStorage` `campana_guia_v1_<usuarioId>`) |
+| `guia-solicitudes.js` | Tour interactivo de la página de Solicitudes (6 pasos, una vez por usuario, `localStorage` `guia_solicitudes_v1_<usuarioId>`) (Agosto 2026) |
 | `gestion-campana.js` | Guardado único de gestión/recordatorio en campañas (compartido por gestion-lote desktop y móvil): valida, aplica update local de la tarjeta, aísla el destacar y muestra toast por tipo (Agosto 2026) |
 
 ### 7.3 Características del Cliente

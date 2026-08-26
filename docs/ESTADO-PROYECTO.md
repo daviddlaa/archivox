@@ -1,7 +1,7 @@
 # 🗺️ Estado del Proyecto — Archivox (Implementado vs Pendiente)
 
 > **Propósito de este documento:** que no te pierdas. Aquí está el resumen de **qué ya está implementado** y **qué falta por hacer**, con enlaces a la documentación de cada cosa.
-> **Última actualización:** 18/08/2026
+> **Última actualización:** 26/08/2026
 
 ---
 
@@ -40,6 +40,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 - Campaña completada sale del semáforo — [`feature-semaforo-campana-completada.md`](feature-semaforo-campana-completada.md)
 - Guía didáctica de clasificación (una vez por usuario) — [`feature-guia-clasificacion-campanas.md`](feature-guia-clasificacion-campanas.md)
 - Límite de líneas del texto de seguimiento en tarjetas — [`feature-limite-texto-seguimiento-tarjetas.md`](feature-limite-texto-seguimiento-tarjetas.md)
+- Tarjetas compactas de campaña + menú ⋯ (escritorio) — [`feature-compactar-campanas-escritorio.md`](feature-compactar-campanas-escritorio.md)
 
 ### 📞 Métricas de gestión (Fase 1 del plan)
 - **Popup de llamada con contador** desde el botón 📞 de cada tarjeta (móvil): duración real + resultado estructurado (9 buckets) — [`plan-metricas-llamadas-semaforo.md`](plan-metricas-llamadas-semaforo.md) §8
@@ -52,6 +53,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 - Header unificado + filtros con auto-aplicar (desktop) — [`feature-header-filtros-solicitudes-desktop.md`](feature-header-filtros-solicitudes-desktop.md)
 - Filtros móviles compactos — [`feature-filtros-movil-solicitudes.md`](feature-filtros-movil-solicitudes.md)
 - Filtros de fecha (Desde/Hasta) para todos — [`feature-filtros-fecha-todos-solicitudes.md`](feature-filtros-fecha-todos-solicitudes.md)
+- Filtro de campaña (En campaña / Sin campaña) — backend + frontend desktop y móvil
 - Rediseño tarjeta móvil (compacta, Gestiones = historial, ⋮→🗑️) — [`feature-rediseno-tarjeta-movil-solicitudes.md`](feature-rediseno-tarjeta-movil-solicitudes.md)
 - Cédula visible en tarjeta móvil — [`feature-cedula-tarjeta-movil-solicitudes.md`](feature-cedula-tarjeta-movil-solicitudes.md)
 - Flag "Ya no aplica para crédito" (👍👎) — [`feature-no-aplica-credito.md`](feature-no-aplica-credito.md)
@@ -60,6 +62,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 - Columna "vendedor" en solicitudes — [`feature-columna-vendedor-solicitudes.md`](feature-columna-vendedor-solicitudes.md)
 - Importación Excel protegida (nunca toca registros ajenos) — [`fix-importacion-proteccion-datos-usuarios.md`](fix-importacion-proteccion-datos-usuarios.md)
 - Reactivación sin compra de solicitudes liberadas (>6 meses sin relación, banner + listado + campaña; excluye las separadas con 👎). **Scheduler semanal:** crea/reutiliza campaña automática, mueve de otras campañas, notifica con enlace — [`feature-liberacion-reactivacion-sin-compra.md`](feature-liberacion-reactivacion-sin-compra.md)
+- Guía de Solicitudes — tour interactivo de 6 pasos (una vez por usuario) — [`feature-guia-solicitudes-tour.md`](feature-guia-solicitudes-tour.md)
 
 ### 👥 Equipos / Panel del líder
 - Rediseño del panel del líder móvil (3 tabs, detalle de agente) — [`feature-rediseno-equipo-movil.md`](feature-rediseno-equipo-movil.md)
@@ -120,6 +123,8 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 | `feature-filtros-movil-solicitudes.md` | Rediseño filtros móvil |
 | `feature-grid-campanas-landing.md` | Landing de campañas |
 | `feature-guia-clasificacion-campanas.md` | Guía didáctica de clasificación |
+| `feature-guia-solicitudes-tour.md` | Tour interactivo de la página de Solicitudes |
+| `feature-compactar-campanas-escritorio.md` | Tarjetas compactas de campaña + menú ⋯ (escritorio) |
 | `feature-header-filtros-solicitudes-desktop.md` | Header + filtros desktop |
 | `feature-historial-campana.md` | Historial general de campaña |
 | `feature-limite-texto-seguimiento-tarjetas.md` | Límite de texto en tarjetas |

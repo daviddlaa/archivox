@@ -18,54 +18,65 @@
         <main class="contenido">
             <div class="container container-campana">
                 <div class="page-header page-header-campana">
-                    <div class="page-header-left">
-                        <p class="page-kicker">🚀 Campañas</p>
-                        <h1 id="gestion-nombre">Selecciona una campaña</h1>
-                        <span class="campaña-badge-sistema" id="gestion-badge-sistema" hidden>🤖 Asignada por el sistema</span>
-                        <div class="gestion-estado" id="gestion-estado" hidden></div>
-                        <div class="header-kpi-strip" id="header-kpi-strip" hidden aria-live="polite">
-                            <strong id="avance-porcentaje">0%</strong>
-                            <span class="kpi-dot" aria-hidden="true">·</span>
-                            <span id="avance-resumen">0 de 0</span>
-                            <span class="kpi-dot" aria-hidden="true">·</span>
-                            <span id="avance-restante">Sin solicitudes</span>
-                            <div class="avance-track header-avance-track" role="progressbar" aria-label="Progreso de la campaña" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="avance-fill"></span></div>
-                            <span class="header-pausa-badge" id="header-pausa-badge" hidden>Campaña en pausa</span>
+                    <!-- Fila principal: título + KPIs + acciones -->
+                    <div class="hero-row">
+                        <div class="hero-left">
+                            <p class="page-kicker">🚀 Campañas</p>
+                            <div class="hero-titulo-row">
+                                <h1 id="gestion-nombre">Selecciona una campaña</h1>
+                                <span class="campaña-badge-sistema" id="gestion-badge-sistema" hidden>🤖 Sistema</span>
+                                <span class="gestion-estado-pill" id="gestion-estado" hidden></span>
+                            </div>
                         </div>
-                        <div class="actividad-campana" id="actividad-campana" hidden>
-                            <span class="actividad-label">Última actividad</span>
-                            <strong id="ultima-actividad">Sin actividad registrada</strong>
-                            <span id="actividad-detalle">Cuando registres una gestión, aparecerá aquí.</span>
+                        <div class="hero-center">
+                            <div class="header-kpi-strip" id="header-kpi-strip" hidden aria-live="polite">
+                                <strong id="avance-porcentaje">0%</strong>
+                                <span class="kpi-dot" aria-hidden="true">·</span>
+                                <span id="avance-resumen">0 de 0</span>
+                                <span class="kpi-dot" aria-hidden="true">·</span>
+                                <span id="avance-restante">Sin solicitudes</span>
+                                <div class="avance-track header-avance-track" role="progressbar" aria-label="Progreso de la campaña" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="avance-fill"></span></div>
+                                <span class="header-pausa-badge" id="header-pausa-badge" hidden>⏸ Pausa</span>
+                            </div>
+                        </div>
+                        <div class="hero-right">
+                            <div class="hero-search" id="hero-search" style="display:none;">
+                                <span class="hero-search-icon">🔍</span>
+                                <input type="search" id="busqueda" placeholder="Buscar..." autocomplete="off" aria-label="Buscar por id, cédula, nombre o teléfono">
+                                <button type="button" class="hero-search-clear" id="hero-search-clear" onclick="limpiarBusquedaHero()" hidden title="Limpiar">✕</button>
+                            </div>
+                            <div class="campañas-selector" id="campañas-selector">
+                                <button type="button" class="btn-header btn-header-primary" id="btn-campañas" onclick="CampanasPopover.toggle(event)" aria-haspopup="true" aria-expanded="false" aria-controls="campañas-popover">
+                                    📋 Campañas <span class="campañas-count" id="campañas-count"></span>
+                                    <span class="campañas-chevron" aria-hidden="true">▾</span>
+                                </button>
+                                <div class="campañas-popover" id="campañas-popover" role="menu" hidden>
+                                    <div class="campañas-popover-header">
+                                        <span>Seleccionar campaña</span>
+                                    </div>
+                                    <div class="campañas-popover-list" id="lista-campañas">
+                                        <div class="loading">Cargando campañas...</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-header btn-header-secondary rail-toggle-btn" id="btn-rail-toggle" hidden onclick="CampanaRail.toggle()" aria-controls="campana-rail" aria-expanded="true" title="Estado">📊</button>
+                            <div class="campana-more" id="campana-more" hidden>
+                                <button type="button" class="btn-header btn-header-secondary campana-more-btn" id="btn-campana-more" onclick="CampanaMoreMenu.toggle(event)" aria-haspopup="true" aria-expanded="false" aria-controls="campana-more-menu" title="Másacciones">⋯</button>
+                                <div class="campana-more-menu" id="campana-more-menu" role="menu" hidden>
+                                    <button type="button" class="campana-more-item" id="btn-exportar-excel" role="menuitem" onclick="CampanaMoreMenu.close(); exportarExcelGestionLote()">📥 Exportar Excel</button>
+                                    <button type="button" class="campana-more-item" id="btn-agregar-solicitudes-menu" role="menuitem" onclick="CampanaMoreMenu.close(); abrirModalAgregarSolicitudes()">➕ Agregar solicitudes</button>
+                                    <a href="/solicitudes" class="campana-more-item" role="menuitem">← Volver a Solicitudes</a>
+                                </div>
+                            </div>
+                            <div id="agregar-solicitudes-container" style="display:none" aria-hidden="true"></div>
+                            <button class="notif-bell-usuario" onclick="abrirPanelNotificacionesWidget()" title="Notificaciones">
+                                🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
+                            </button>
                         </div>
                     </div>
-                    <div class="page-header-right">
-                        <div class="campañas-selector" id="campañas-selector">
-                            <button type="button" class="btn-header btn-header-primary" id="btn-campañas" onclick="CampanasPopover.toggle(event)" aria-haspopup="true" aria-expanded="false" aria-controls="campañas-popover">
-                                📋 Campañas <span class="campañas-count" id="campañas-count"></span>
-                                <span class="campañas-chevron" aria-hidden="true">▾</span>
-                            </button>
-                            <div class="campañas-popover" id="campañas-popover" role="menu" hidden>
-                                <div class="campañas-popover-header">
-                                    <span>Seleccionar campaña</span>
-                                </div>
-                                <div class="campañas-popover-list" id="lista-campañas">
-                                    <div class="loading">Cargando campañas...</div>
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" class="btn-header btn-header-secondary rail-toggle-btn" id="btn-rail-toggle" hidden onclick="CampanaRail.toggle()" aria-controls="campana-rail" aria-expanded="true" title="Mostrar u ocultar panel de estado">Estado</button>
-                        <div class="campana-more" id="campana-more" hidden>
-                            <button type="button" class="btn-header btn-header-secondary campana-more-btn" id="btn-campana-more" onclick="CampanaMoreMenu.toggle(event)" aria-haspopup="true" aria-expanded="false" aria-controls="campana-more-menu" title="Más acciones">⋯</button>
-                            <div class="campana-more-menu" id="campana-more-menu" role="menu" hidden>
-                                <button type="button" class="campana-more-item" id="btn-exportar-excel" role="menuitem" onclick="CampanaMoreMenu.close(); exportarExcelGestionLote()">📥 Exportar Excel</button>
-                                <button type="button" class="campana-more-item" id="btn-agregar-solicitudes-menu" role="menuitem" onclick="CampanaMoreMenu.close(); abrirModalAgregarSolicitudes()">➕ Agregar solicitudes</button>
-                                <a href="/solicitudes" class="campana-more-item" role="menuitem">← Volver a Solicitudes</a>
-                            </div>
-                        </div>
-                        <div id="agregar-solicitudes-container" style="display:none" aria-hidden="true"></div>
-                        <button class="notif-bell-usuario" onclick="abrirPanelNotificacionesWidget()" title="Notificaciones">
-                            🔔 <span id="notifBadgeUsuario" class="notif-badge-usuario" style="display:none">0</span>
-                        </button>
+                    <!-- Fila de actividad (sutil, debajo) -->
+                    <div class="hero-activity" id="actividad-campana" hidden>
+                        <span>📝 <strong id="ultima-actividad">Sin actividad</strong> · <span id="actividad-detalle">Cuando registres una gestión, aparecerá aquí.</span></span>
                     </div>
                 </div>
 
@@ -82,7 +93,6 @@
                         </div>
 
                         <div class="filtros-row" id="filtros-row" style="display: none;">
-                            <input type="text" id="busqueda" placeholder="🔍 Buscar por id, cédula, nombre o teléfono...">
                             <select id="filtro-estado">
                                 <option value="">Todos los estados</option>
                                 <option value="Pendiente">Pendiente</option>

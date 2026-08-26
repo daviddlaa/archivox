@@ -257,6 +257,7 @@ async function init() {
         console.log('[init] No hay ID en URL, mostrando grid de campañas');
         renderizarGridCampanasLanding();
     }
+    configurarHeroSearch();
 }
 
 // ============================================================================
@@ -377,6 +378,25 @@ function limpiarBusquedaGlobalCampanas() {
     if (input) input.focus();
 }
 
+// Búsqueda integrada en el hero
+function limpiarBusquedaHero() {
+    var input = document.getElementById('busqueda');
+    if (input) { input.value = ''; input.focus(); }
+    var clearBtn = document.getElementById('hero-search-clear');
+    if (clearBtn) clearBtn.hidden = true;
+    renderizarSolicitudes(todasLasSolicitudes);
+}
+
+// Mostrar/ocultar botón clear del hero search
+function configurarHeroSearch() {
+    var input = document.getElementById('busqueda');
+    var clearBtn = document.getElementById('hero-search-clear');
+    if (!input || !clearBtn) return;
+    input.addEventListener('input', function() {
+        clearBtn.hidden = !input.value;
+    });
+}
+
 function renderizarGridCampanasLanding() {
     var container = document.getElementById('lista-solicitudes');
     if (!container) return;
@@ -389,6 +409,8 @@ function renderizarGridCampanasLanding() {
 
     var filtrosRow = document.getElementById('filtros-row');
     if (filtrosRow) filtrosRow.style.display = 'none';
+    var heroSearch = document.getElementById('hero-search');
+    if (heroSearch) heroSearch.style.display = 'none';
     var kpiStrip = document.getElementById('header-kpi-strip');
     if (kpiStrip) kpiStrip.hidden = true;
     var campanaMore = document.getElementById('campana-more');
@@ -402,6 +424,9 @@ function renderizarGridCampanasLanding() {
     if (titulo) titulo.textContent = 'Selecciona una campaña';
     var estadoEl = document.getElementById('gestion-estado');
     if (estadoEl) estadoEl.hidden = true;
+    // Ocultar actividad en landing
+    var actividadEl = document.getElementById('actividad-campana');
+    if (actividadEl) actividadEl.hidden = true;
 
     if (!campañas || campañas.length === 0) {
         var buscadorVacio = document.getElementById('campanas-buscador-global');
@@ -669,9 +694,11 @@ async function cargarDatosGestion() {
         var badgeSistema = document.getElementById('gestion-badge-sistema');
         if (badgeSistema) badgeSistema.hidden = !datosGestion.es_sistema;
         
-        // Mostrar workspace: lista + rail + filtros
+        // Mostrar workspace: lista + rail + filtros + búsqueda hero
         var filtrosRow = document.getElementById('filtros-row');
         if (filtrosRow) filtrosRow.style.display = 'flex';
+        var heroSearch = document.getElementById('hero-search');
+        if (heroSearch) heroSearch.style.display = 'flex';
 
         // Ocultar la búsqueda global del landing
         var buscadorGlobal = document.getElementById('campanas-buscador-global');
