@@ -40,7 +40,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 - Campaña completada sale del semáforo — [`feature-semaforo-campana-completada.md`](feature-semaforo-campana-completada.md)
 - Guía didáctica de clasificación (una vez por usuario) — [`feature-guia-clasificacion-campanas.md`](feature-guia-clasificacion-campanas.md)
 - Límite de líneas del texto de seguimiento en tarjetas — [`feature-limite-texto-seguimiento-tarjetas.md`](feature-limite-texto-seguimiento-tarjetas.md)
-- Tarjetas compactas de campaña + menú ⋯ (escritorio) — [`feature-compactar-campanas-escritorio.md`](feature-compactar-campanas-escritorio.md)
+- Rediseño escritorio campañas: hero compacto (1 fila, tamaño fijo) + búsqueda integrada + tarjetas compactas + menú ⋯ — [`feature-compactar-campanas-escritorio.md`](feature-compactar-campanas-escritorio.md)
 
 ### 📞 Métricas de gestión (Fase 1 del plan)
 - **Popup de llamada con contador** desde el botón 📞 de cada tarjeta (móvil): duración real + resultado estructurado (9 buckets) — [`plan-metricas-llamadas-semaforo.md`](plan-metricas-llamadas-semaforo.md) §8
@@ -124,7 +124,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 | `feature-grid-campanas-landing.md` | Landing de campañas |
 | `feature-guia-clasificacion-campanas.md` | Guía didáctica de clasificación |
 | `feature-guia-solicitudes-tour.md` | Tour interactivo de la página de Solicitudes |
-| `feature-compactar-campanas-escritorio.md` | Tarjetas compactas de campaña + menú ⋯ (escritorio) |
+| `feature-compactar-campanas-escritorio.md` | Rediseño escritorio campañas: hero compacto + búsqueda integrada + tarjetas + menú ⋯ |
 | `feature-header-filtros-solicitudes-desktop.md` | Header + filtros desktop |
 | `feature-historial-campana.md` | Historial general de campaña |
 | `feature-limite-texto-seguimiento-tarjetas.md` | Límite de texto en tarjetas |

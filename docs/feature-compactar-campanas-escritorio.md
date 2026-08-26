@@ -1,4 +1,4 @@
-# 📋 Feature: Tarjetas Compactas de Campaña + Menú ⋯ (Escritorio)
+# 📋 Feature: Rediseño Escritorio Campañas — Hero Compacto + Tarjetas + Menú ⋯
 
 **Estado:** ✅ Implementada  
 **Fecha:** 26/08/2026  
@@ -8,11 +8,60 @@
 
 ## Descripción
 
-Rediseño de las tarjetas de solicitud en la vista de campañas (desktop) para optimizar el uso del espacio vertical. Las tarjetas eran demasiado altas por la acumulación de badges, semáforo, última gestión y 5-6 botones de acción.
+Rediseño completo de la página de gestión por lotes en escritorio:
+1. **Hero compacto de una sola fila** — nunca cambia de tamaño
+2. **Búsqueda integrada en el hero** — input inline en el header
+3. **Tarjetas de solicitud compactas** — menos padding y espacios
+4. **Menú ⋯ de acciones secundarias** — dropdown en lugar de botones sueltos
 
-## Cambios Realizados
+---
 
-### 1. Compactación General
+## 1. Hero Compacto (Una Fila)
+
+### Antes
+- Hero apilado verticalmente: título + badge + estado + KPI strip (3 textos + barra) + última actividad (bloque de 76px)
+- Al seleccionar campaña el hero crecía ~120px
+- Búsqueda separada como bloque full-width debajo del hero
+
+### Después
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ 🚀 Campañas  │  Devueltos  🤖 Sistema  En curso  │  47% · 9/19 ·   │
+│              │                                  │  10 pendientes    │
+│              │                                  │  ████████░░  ⏸️   │
+├──────────────────────────────────────────────────────────────────────┤
+│ 📝 Seguimiento registrada en la campaña · Hace 18 días              │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+- **Fila principal (`.hero-row`):** título + KPIs + búsqueda + botones — todo en una línea
+- **Fila de actividad (`.hero-activity`):** línea sutil debajo del hero, solo visible con campaña seleccionada
+- **El hero nunca cambia de tamaño** — en landing muestra "Selecciona una campaña", al seleccionar misma altura
+
+### Estructura HTML
+
+```html
+<div class="page-header page-header-campana">
+  <div class="hero-row">
+    <div class="hero-left">          <!-- Título + badge -->
+    <div class="hero-center">        <!-- KPIs inline -->
+    <div class="hero-right">         <!-- Búsqueda + botones -->
+  </div>
+  <div class="hero-activity">        <!-- Actividad sutil -->
+  </div>
+</div>
+```
+
+### Búsqueda Integrada
+
+- Input de 200px en el hero-right (se expande a 280px al enfocar)
+- Solo visible cuando hay campaña seleccionada
+- Botón ✕ para limpiar
+- En landing se oculta (no hay nada que buscar)
+
+---
+
+## 2. Compactación de Tarjetas
 
 | Elemento | Antes | Después |
 |----------|-------|---------|
@@ -26,7 +75,7 @@ Rediseño de las tarjetas de solicitud en la vista de campañas (desktop) para o
 | Botones acción padding | `8px 12px` | `5px 10px` |
 | Botones acción font | `13px` | `12px` |
 
-### 2. Semáforo Switch Más Compacto
+### Semáforo Switch Más Compacto
 
 | Elemento | Antes | Después |
 |----------|-------|---------|
@@ -38,7 +87,9 @@ Rediseño de las tarjetas de solicitud en la vista de campañas (desktop) para o
 | Border radius | `10px` | `8px` |
 | Margen inferior | `14px` | `8px` |
 
-### 3. Menú ⋯ de Acciones Secundarias
+---
+
+## 3. Menú ⋯ de Acciones Secundarias
 
 Los botones secundarios se movieron de estar visibles individualmente a un dropdown ⋯:
 
@@ -52,35 +103,51 @@ Los botones secundarios se movieron de estar visibles individualmente a un dropd
 - 👍/👎 Aplica/No aplica crédito
 - ❌ Quitar de campaña
 
-### 4. Comportamiento del Menú
-
+### Comportamiento
 - Se abre con clic en el botón ⋯
 - Se cierra con clic en cualquier opción del menú
 - Se cierra con clic fuera del menú
 - Animación de fade-in al abrir
 - Posicionado arriba-derecha sobre la tarjeta (evita overflow)
 
+---
+
 ## Archivos Modificados
 
 | Archivo | Cambios |
 |---------|---------|
-| `public/css/gestion-lote.css` | Compactación + estilos del menú ⋯ |
-| `public/desktop/js/gestion-lote.js` | Renderizado del menú + funciones `toggleSolMenu`, `closeSolMenus` |
+| `public/desktop/gestion-lote.html` | Hero reestructurado a una fila + búsqueda integrada |
+| `public/css/gestion-lote.css` | Estilos hero compacto + compactación tarjetas + menú ⋯ + responsive |
+| `public/desktop/js/gestion-lote.js` | Mostrar/ocultar hero-search + `limpiarBusquedaHero()` + `configurarHeroSearch()` |
 
 ## Funciones JS Nuevas
 
 ```javascript
-// Toggle menú ⋯ de una tarjeta
-toggleSolMenu(btn)
+// Búsqueda integrada en el hero
+limpiarBusquedaHero()      // Limpia el input y re-renderiza
+configurarHeroSearch()     // Configura el botón clear del hero search
 
-// Cerrar todos los menús abiertos
-closeSolMenus()
-
-// Se cierra automáticamente al hacer clic fuera (event listener en document)
+// Menú ⋯ de tarjetas
+toggleSolMenu(btn)         // Toggle menú ⋯ de una tarjeta
+closeSolMenus()            // Cerrar todos los menús abiertos
 ```
 
-## Notas
+## Comportamiento Landing vs Campaña
 
-- El menú ⋯ usa `position: absolute` con `bottom: calc(100% + 4px)` para aparecer arriba del botón, evitando que se salga de la pantalla.
-- Los botones del menú tienen `event.stopPropagation()` para no activar el click de la tarjeta.
-- El botón de "Quitar" tiene estilo rojo diferenciado en el menú.
+| Elemento | Landing (sin ID) | Campaña seleccionada |
+|----------|-------------------|---------------------|
+| Título | "Selecciona una campaña" | Nombre de la campaña |
+| Badge sistema | Oculto | Visible si `es_sistema` |
+| Estado pill | Oculto | Visible con color |
+| KPI strip | Oculto | Visible (%, resumen, barra, pausa) |
+| Hero search | Oculto | Visible |
+| Actividad | Oculto | Visible (línea sutil) |
+| Botón ⋯ | Oculto | Visible |
+| Botón Estado (rail) | Oculto | Visible |
+| Grid cards | Landing grid | Lista de solicitudes |
+| Rail semáforo | Oculto | Visible |
+
+## Responsive
+
+- **≤900px:** hero-row se envuelve, KPIs pasan a nueva fila, search se reduce
+- **≤640px:** hero-row en columna, search full-width

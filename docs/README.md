@@ -236,7 +236,7 @@ ARCHIVOX/
 │   ├── feature-buscador-global-campanas.md           # Búsqueda global de solicitudes en todas las campañas (landing) + deep link ?card= en escritorio (Agosto 2026)
 │   ├── feature-guia-clasificacion-campanas.md        # Guía didáctica de clasificación al entrar a campaña (una sola vez por usuario) (Agosto 2026)
 │   ├── feature-guia-solicitudes-tour.md              # Tour interactivo de la página de Solicitudes (6 pasos, una vez por usuario) (Agosto 2026)
-│   ├── feature-compactar-campanas-escritorio.md      # Tarjetas compactas de campaña + menú ⋯ (escritorio) (Agosto 2026)
+│   ├── feature-compactar-campanas-escritorio.md      # Rediseño escritorio campañas: hero compacto + búsqueda integrada + tarjetas + menú ⋯ (Agosto 2026)
 │   ├── informe-correccion-flujo-seguimiento-campanas.md # Corrección del flujo de guardado de seguimientos en campañas: contador gestionadas, control de acceso, módulo GestionCampana (Agosto 2026)
 │   ├── feature-rediseno-equipo-movil.md              # Rediseño del panel del líder móvil: 3 tabs, detalle de agente en pantalla completa, campañas clicables, actividad por día (Agosto 2026)
 │   ├── feature-cedula-tarjeta-movil-solicitudes.md   # Cédula visible en la tarjeta móvil de Solicitudes (🆔 debajo del nombre) + nombre siempre en una línea con ellipsis (Agosto 2026)
