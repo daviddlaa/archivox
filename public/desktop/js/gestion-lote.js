@@ -1545,21 +1545,25 @@ function renderizarSolicitudes(lista) {
             html += '<div class="sol-ultima-gestion vacia"><strong>Sin gestión registrada</strong><span>Esta solicitud aún no tiene una gestión.</span></div>';
         }
         
-        // Acciones (desktop: sin botón Llamar)
+        // Acciones (desktop: primarias + menú ⋯)
         html += '<div class="sol-acciones">';
         
         html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
         html += "<button class=\"btn-accion btn-whatsapp-img\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
         
-        html += '<button class="btn-accion tertiary" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button>';
-        
+        // Menú ⋯ de acciones secundarias
+        html += '<div class="sol-acciones-menu-wrap">';
+        html += '<button type="button" class="sol-acciones-menu-btn" onclick="event.stopPropagation(); toggleSolMenu(this)" title="Más acciones" aria-label="Más acciones">⋯</button>';
+        html += '<div class="sol-acciones-dropdown">';
+        html += '<button type="button" class="sol-acciones-dropdown-item" onclick="event.stopPropagation(); closeSolMenus(); verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button>';
         if (sol.recordatorio_id) {
-            html += '<button class="btn-accion btn-recordatorio" onclick="verRecordatorio(\'' + sol.id_solicitud + '\')">⏰ Recordatorio</button>';
+            html += '<button type="button" class="sol-acciones-dropdown-item" onclick="event.stopPropagation(); closeSolMenus(); verRecordatorio(\'' + sol.id_solicitud + '\')">⏰ Recordatorio</button>';
         }
-        
-        html += '<button class="btn-accion btn-quitar-solicitud" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar</button>';
-        
-        html += '<button type="button" class="btn-accion btn-no-aplica' + (noAplica ? ' activo' : '') + '" onclick="event.stopPropagation(); confirmarMarcarNoAplicaCredito(\'' + sol.id_solicitud + '\', ' + (noAplica ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '">' + (noAplica ? '👍' : '👎') + '</button>';
+        html += '<button type="button" class="sol-acciones-dropdown-item" onclick="event.stopPropagation(); closeSolMenus(); confirmarMarcarNoAplicaCredito(\'' + sol.id_solicitud + '\', ' + (noAplica ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '">' + (noAplica ? '👍 Aplica crédito' : '👎 No aplica') + '</button>';
+        html += '<div class="sol-acciones-dropdown-sep"></div>';
+        html += '<button type="button" class="sol-acciones-dropdown-item btn-quitar-solicitud" onclick="event.stopPropagation(); closeSolMenus(); confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar de campaña</button>';
+        html += '</div>';
+        html += '</div>';
         
         html += '</div>';
         
@@ -1601,6 +1605,33 @@ function toggleCompletadasDesktop(button) {
     button.setAttribute('aria-expanded', String(!abierta));
     button.classList.toggle('open', !abierta);
 }
+
+// --- Menú de acciones secundarias (⋯) por tarjeta ---
+function toggleSolMenu(btn) {
+    var wrap = btn.closest('.sol-acciones-menu-wrap');
+    if (!wrap) return;
+    var dropdown = wrap.querySelector('.sol-acciones-dropdown');
+    if (!dropdown) return;
+    var abierto = dropdown.classList.contains('abierto');
+    closeSolMenus();
+    if (!abierto) {
+        dropdown.classList.add('abierto');
+    }
+}
+
+function closeSolMenus() {
+    var abiertos = document.querySelectorAll('.sol-acciones-dropdown.abierto');
+    for (var i = 0; i < abiertos.length; i++) {
+        abiertos[i].classList.remove('abierto');
+    }
+}
+
+// Cerrar menús al hacer clic fuera
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.sol-acciones-menu-wrap')) {
+        closeSolMenus();
+    }
+});
 
 function escaparParaAtributo(texto) {
     return String(texto || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");

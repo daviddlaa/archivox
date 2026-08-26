@@ -2502,9 +2502,24 @@ async function abrirModalCrearCampanaLiberacionMovil() {
 }
 
 // Iniciar al cargar página
+async function intentarMostrarGuiaSolicitudesMovil() {
+    try {
+        var sesionRes = await fetch('/api/auth/sesion');
+        var sesion = await sesionRes.json();
+        if (!sesion.autenticado || !sesion.usuario) return;
+        if (typeof window.mostrarGuiaSolicitudesSiPrimeraVez !== 'function') return;
+        window.mostrarGuiaSolicitudesSiPrimeraVez({
+            usuarioId: sesion.usuario.id
+        });
+    } catch (e) {
+        console.error('[guia-solicitudes] Error al intentar mostrar la guía:', e);
+    }
+}
+
 window.addEventListener('DOMContentLoaded', function() {
     init();
     cargarBannerLiberacionMovil();
+    intentarMostrarGuiaSolicitudesMovil();
     
     // Auto-abrir modal si viene del dashboard
     if (sessionStorage.getItem('abrirNuevaSolicitud') === 'true') {

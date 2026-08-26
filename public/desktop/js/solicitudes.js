@@ -2930,9 +2930,24 @@ async function abrirModalCrearCampanaLiberacion() {
 // ============================================================================
 // INICIALIZACIÓN - LLAMAR A init() CUANDO EL DOM ESTÉ LISTO
 // ============================================================================
+async function intentarMostrarGuiaSolicitudes() {
+    try {
+        var sesionRes = await fetch('/api/auth/sesion');
+        var sesion = await sesionRes.json();
+        if (!sesion.autenticado || !sesion.usuario) return;
+        if (typeof window.mostrarGuiaSolicitudesSiPrimeraVez !== 'function') return;
+        window.mostrarGuiaSolicitudesSiPrimeraVez({
+            usuarioId: sesion.usuario.id
+        });
+    } catch (e) {
+        console.error('[guia-solicitudes] Error al intentar mostrar la guía:', e);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     init();
     cargarBannerLiberacion();
+    intentarMostrarGuiaSolicitudes();
     try {
         var params = new URLSearchParams(window.location.search);
         if (params.get('liberacion') === '1') {

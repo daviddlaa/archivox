@@ -296,14 +296,14 @@ body {
 .lista-solicitudes {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+    gap: 12px;
 }
 
 /* Cards de Solicitudes — Premium clean */
 .sol-card {
     background: var(--bg-card);
     border-radius: var(--radius-md);
-    padding: 14px 16px;
+    padding: 10px 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.03);
     border: 1px solid transparent;
     transition: box-shadow 0.25s ease, transform 0.2s ease;
@@ -319,7 +319,7 @@ body {
 /* ===== TARJETAS — Subtle gradient background (V3) ===== */
 .sol-card {
     position: relative;
-    padding-top: 14px;
+    padding-top: 10px;
     transition: box-shadow 0.25s ease, transform 0.2s ease, background 0.3s ease;
 }
 
@@ -472,8 +472,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
-    gap: 8px;
+    margin-bottom: 6px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
@@ -492,14 +492,14 @@ body {
 }
 
 .sol-info {
-    margin-bottom: 10px;
+    margin-bottom: 6px;
 }
 
 .sol-nombre {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--text-dark);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .sol-nombre-copy {
@@ -515,9 +515,9 @@ body {
 
 .sol-datos {
     display: flex;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
-    font-size: 13px;
+    font-size: 12px;
     color: var(--text-muted);
 }
 
@@ -540,11 +540,11 @@ body {
 }
 
 .sol-observacion {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-muted);
-    padding: 8px 0 0 0;
+    padding: 6px 0 0 0;
     margin-bottom: 0;
-    line-height: 1.5;
+    line-height: 1.4;
     border-top: 1px solid rgba(0,0,0,0.04);
 }
 
@@ -569,11 +569,11 @@ body {
 }
 
 .btn-accion {
-    padding: 8px 12px;
+    padding: 5px 10px;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     background: #f1f5f9;
     color: #475569;
@@ -1954,27 +1954,27 @@ body {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     width: 100%;
-    gap: 3px;
-    margin: 0 0 14px;
-    padding: 3px;
+    gap: 2px;
+    margin: 0 0 8px;
+    padding: 2px;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
+    border-radius: 8px;
     background: #f8fafc;
 }
 
 .sol-semaforo-switch-segment {
     display: flex;
-    min-height: 32px;
+    min-height: 26px;
     align-items: center;
     justify-content: center;
-    gap: 5px;
-    padding: 5px 4px;
+    gap: 4px;
+    padding: 3px 4px;
     border: 1px solid transparent;
-    border-radius: 7px;
+    border-radius: 6px;
     background: transparent;
     color: #94a3b8;
     cursor: pointer;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
     line-height: 1.1;
     transition: background .2s ease, color .2s ease, box-shadow .2s ease, transform .2s ease;
@@ -1988,9 +1988,9 @@ body {
 .sol-semaforo-switch-segment.rojo.active { background: #f2d2cc; color: #a03d35; border-color: #e1aaa0; }
 
 .sol-semaforo-switch-dot {
-    width: 7px;
-    height: 7px;
-    flex: 0 0 7px;
+    width: 6px;
+    height: 6px;
+    flex: 0 0 6px;
     border-radius: 50%;
     background: #94a3b8;
 }
@@ -2009,12 +2009,12 @@ body {
     display: flex;
     width: 100%;
     flex-direction: column;
-    gap: 6px;
-    margin: 2px 0 14px;
-    padding: 12px 13px;
+    gap: 3px;
+    margin: 0 0 8px;
+    padding: 8px 10px;
     border: 1px solid #e5e7eb;
     border-left: 3px solid #94a3b8;
-    border-radius: 10px;
+    border-radius: 8px;
     background: #f8fafc;
     color: #334155;
     cursor: pointer;
@@ -2055,8 +2055,98 @@ body {
 .sol-ultima-gestion.vacia span { color: #94a3b8; font-size: 11px; }
 
 .sol-acciones {
-    gap: 7px;
-    padding-top: 2px;
+    gap: 5px;
+    padding-top: 0;
+    align-items: center;
+}
+
+/* --- Menú de acciones secundarias (⋯) --- */
+.sol-acciones-menu-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.sol-acciones-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1;
+}
+
+.sol-acciones-menu-btn:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #334155;
+}
+
+.sol-acciones-dropdown {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 4px);
+    right: 0;
+    min-width: 160px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    z-index: 100;
+    padding: 4px;
+    animation: solMenuFadeIn 0.15s ease;
+}
+
+.sol-acciones-dropdown.abierto {
+    display: block;
+}
+
+@keyframes solMenuFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.sol-acciones-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 7px 10px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: #374151;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s ease;
+    white-space: nowrap;
+}
+
+.sol-acciones-dropdown-item:hover {
+    background: #f3f4f6;
+}
+
+.sol-acciones-dropdown-item.btn-quitar-solicitud {
+    color: #dc2626;
+}
+.sol-acciones-dropdown-item.btn-quitar-solicitud:hover {
+    background: #fef2f2;
+}
+
+.sol-acciones-dropdown-sep {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 3px 6px;
 }
 
 @media (max-width: 900px) and (min-width: 769px) {
