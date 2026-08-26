@@ -2507,7 +2507,8 @@ body .solicitud-card.seleccionada::after {
 
 .solicitudes-table thead th.col-check {
     text-align: center;
-    width: 40px;
+    width: 28px;
+    padding: 10px 4px;
 }
 
 .solicitudes-table tbody tr {
@@ -2542,10 +2543,11 @@ body .solicitud-card.seleccionada::after {
 
 .solicitudes-table tbody td.col-check {
     text-align: center;
+    padding: 8px 4px;
 }
 
 /* Column widths */
-.solicitudes-table .col-check { width: 40px; }
+.solicitudes-table .col-check { width: 28px; }
 .solicitudes-table .col-nombre { min-width: 140px; }
 .solicitudes-table .col-cedula { width: 90px; }
 .solicitudes-table .col-estado { min-width: 130px; }
