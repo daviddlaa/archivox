@@ -970,10 +970,10 @@ function renderizarCards(datos) {
 
         // FILA 3: Botones de acción (sin Llamar)
         html += '  <div class="card-fila-3">';
-        html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesCard(' + id + ')">📋 Gestiones</button>';
-        html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletarInfoCard(' + id + ')">✏️ Completar</button>';
-        html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); whatsAppClienteDesktop(\'' + (item.celular || '') + '\', \'' + escaparParaAtributoDesktop(item.nombre || '') + '\')">💬 WhatsApp</button>';
-        html += '    <button class="card-btn btn-eliminar" onclick="event.stopPropagation(); confirmarEliminarSolicitudDesktop(' + id + ')">🗑️ Eliminar</button>';
+        html += '    <button class="card-btn btn-gestiones" onclick="event.stopPropagation(); abrirGestionesCard(' + id + ')"><span class="btn-icon">📋</span><span class="btn-label">Gestiones</span></button>';
+        html += '    <button class="card-btn btn-completar" onclick="event.stopPropagation(); abrirCompletarInfoCard(' + id + ')"><span class="btn-icon">✏️</span><span class="btn-label">Completar</span></button>';
+        html += '    <button class="card-btn btn-whatsapp" onclick="event.stopPropagation(); whatsAppClienteDesktop(\'' + (item.celular || '') + '\', \'' + escaparParaAtributoDesktop(item.nombre || '') + '\')"><span class="btn-icon">💬</span><span class="btn-label">WhatsApp</span></button>';
+        html += '    <button class="card-btn btn-eliminar" onclick="event.stopPropagation(); confirmarEliminarSolicitudDesktop(' + id + ')"><span class="btn-icon">🗑️</span><span class="btn-label">Eliminar</span></button>';
         html += '  </div>';
 
         // FILA 4: Link a campaña + toggle No-aplica
