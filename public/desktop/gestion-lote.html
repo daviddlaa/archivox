@@ -60,6 +60,17 @@
                                 </div>
                             </div>
                             <button type="button" class="btn-header btn-header-secondary rail-toggle-btn" id="btn-rail-toggle" hidden onclick="CampanaRail.toggle()" aria-controls="campana-rail" aria-expanded="true" title="Estado">📊</button>
+                            <div class="hero-filtro-estado" id="hero-filtro-estado" style="display:none;">
+                                <select id="filtro-estado" class="hero-select-estado" aria-label="Filtrar por estado">
+                                    <option value="">📋 Todos</option>
+                                    <option value="Pendiente">⏳ Pendiente</option>
+                                    <option value="Seguimiento">🔄 Seguimiento</option>
+                                    <option value="Cobranza">💰 Cobranza</option>
+                                    <option value="Completada">✅ Completada</option>
+                                    <option value="Recordatorio">🔔 Recordatorio</option>
+                                </select>
+                                <button type="button" class="semaforo-clear filtro-semaforo-chip" id="btn-filtro-semaforo-chip" onclick="setFiltroSemaforo(null)" style="display:none;"></button>
+                            </div>
                             <div class="campana-more" id="campana-more" hidden>
                                 <button type="button" class="btn-header btn-header-secondary campana-more-btn" id="btn-campana-more" onclick="CampanaMoreMenu.toggle(event)" aria-haspopup="true" aria-expanded="false" aria-controls="campana-more-menu" title="Másacciones">⋯</button>
                                 <div class="campana-more-menu" id="campana-more-menu" role="menu" hidden>
@@ -92,17 +103,7 @@
                             <div class="campanas-buscador-results" id="campanas-buscador-results" hidden></div>
                         </div>
 
-                        <div class="filtros-row" id="filtros-row" style="display: none;">
-                            <select id="filtro-estado">
-                                <option value="">Todos los estados</option>
-                                <option value="Pendiente">Pendiente</option>
-                                <option value="Seguimiento">Seguimiento</option>
-                                <option value="Cobranza">Cobranza</option>
-                                <option value="Completada">Completada</option>
-                                <option value="Recordatorio">Recordatorio</option>
-                            </select>
-                            <button type="button" class="semaforo-clear filtro-semaforo-chip" id="btn-filtro-semaforo-chip" onclick="setFiltroSemaforo(null)" style="display:none;"></button>
-                        </div>
+                        <div class="filtros-row" id="filtros-row" style="display: none;" hidden></div>
 
                         <div class="lista-solicitudes" id="lista-solicitudes">
                             <div class="empty">

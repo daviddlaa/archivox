@@ -409,6 +409,8 @@ function renderizarGridCampanasLanding() {
 
     var filtrosRow = document.getElementById('filtros-row');
     if (filtrosRow) filtrosRow.style.display = 'none';
+    var heroFiltroEstado = document.getElementById('hero-filtro-estado');
+    if (heroFiltroEstado) heroFiltroEstado.style.display = 'none';
     var heroSearch = document.getElementById('hero-search');
     if (heroSearch) heroSearch.style.display = 'none';
     var kpiStrip = document.getElementById('header-kpi-strip');
@@ -697,6 +699,8 @@ async function cargarDatosGestion() {
         // Mostrar workspace: lista + rail + filtros + búsqueda hero
         var filtrosRow = document.getElementById('filtros-row');
         if (filtrosRow) filtrosRow.style.display = 'flex';
+        var heroFiltroEstado = document.getElementById('hero-filtro-estado');
+        if (heroFiltroEstado) heroFiltroEstado.style.display = 'flex';
         var heroSearch = document.getElementById('hero-search');
         if (heroSearch) heroSearch.style.display = 'flex';
 
