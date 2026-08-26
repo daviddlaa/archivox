@@ -760,6 +760,17 @@ async function createGestionMaestro(req, res) {
         } catch (e) {
             console.error('[gestiones-maestro] Error insertando semáforo:', e.message);
         }
+
+        // Vincular campana_id en las solicitudes (consistencia con admin y liberación)
+        try {
+            const placeholders = solicitudes_ids.map(function() { return '?'; }).join(',');
+            await pool.query(
+                `UPDATE solicitudes SET campana_id = ? WHERE id_solicitud IN (` + placeholders + `)`,
+                [gestion_id].concat(solicitudes_ids)
+            );
+        } catch (e) {
+            console.error('[gestiones-maestro] Error actualizando campana_id:', e.message);
+        }
         
         console.log('[gestiones-maestro] Gestion creada exitosamente, ID:', gestion_id);
 

@@ -843,4 +843,29 @@ try {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_historial_usuario_fecha ON historial_actualizaciones(usuario_id, fecha_actualizacion DESC)`);
 } catch (e) { /* ignorar */ }
 
+// ================================================================
+// BACKFILL: sincronizar campana_id en solicitudes existentes
+// ================================================================
+// Campañas creadas antes de 26/08/2026 no seteaban solicitudes.campana_id.
+// Este UPDATE una sola vez sincroniza el FK basándose en el JSON solicitudes_ids.
+try {
+    const bfResult = db.prepare(`
+        UPDATE solicitudes s
+        SET campana_id = (
+            SELECT gm.id FROM gestiones_maestro gm
+            WHERE s.usuario_id = gm.usuario_id
+              AND (',' || gm.solicitudes_ids || ',') LIKE ('%,' || s.id_solicitud || ',%')
+        )
+        WHERE s.campana_id IS NULL
+          AND EXISTS (
+            SELECT 1 FROM gestiones_maestro gm
+            WHERE s.usuario_id = gm.usuario_id
+              AND (',' || gm.solicitudes_ids || ',') LIKE ('%,' || s.id_solicitud || ',%')
+          )
+    `).run();
+    if (bfResult.changes > 0) {
+        console.log('[initDb] Backfill campana_id: ' + bfResult.changes + ' solicitudes sincronizadas');
+    }
+} catch (e) { /* ignorar — tabla aún no existe o sin datos */ }
+
 module.exports = db;

@@ -835,6 +835,31 @@ const initTables = async () => {
             console.log('   ⏩ Error en auto-seed multi-equipo (posiblemente ya hay datos):', e.message.substring(0, 80));
         }
 
+        // ================================================================
+        // BACKFILL: sincronizar campana_id en solicitudes existentes
+        // ================================================================
+        // Campañas creadas antes de 26/08/2026 no seteaban solicitudes.campana_id.
+        // Este UPDATE una sola vez sincroniza el FK basándose en el JSON solicitudes_ids.
+        try {
+            const bfResult = await client.query(`
+                UPDATE solicitudes s
+                SET campana_id = (
+                    SELECT gm.id FROM gestiones_maestro gm
+                    WHERE s.usuario_id = gm.usuario_id
+                      AND (',' || gm.solicitudes_ids || ',') LIKE ('%,' || s.id_solicitud || ',%')
+                )
+                WHERE s.campana_id IS NULL
+                  AND EXISTS (
+                    SELECT 1 FROM gestiones_maestro gm
+                    WHERE s.usuario_id = gm.usuario_id
+                      AND (',' || gm.solicitudes_ids || ',') LIKE ('%,' || s.id_solicitud || ',%')
+                  )
+            `);
+            if (bfResult.rowCount > 0) {
+                console.log('[initDb] Backfill campana_id: ' + bfResult.rowCount + ' solicitudes sincronizadas');
+            }
+        } catch (e) { /* ignorar — tabla aún no existe o sin datos */ }
+
         console.log('✅ Todas las tablas e índices creados en PostgreSQL');
 
         // Registrar versión del esquema (solo si todo el bloque terminó OK)
