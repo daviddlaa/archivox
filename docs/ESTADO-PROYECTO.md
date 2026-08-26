@@ -1,7 +1,7 @@
 # 🗺️ Estado del Proyecto — Archivox (Implementado vs Pendiente)
 
 > **Propósito de este documento:** que no te pierdas. Aquí está el resumen de **qué ya está implementado** y **qué falta por hacer**, con enlaces a la documentación de cada cosa.
-> **Última actualización:** 26/08/2026
+> **Última actualización:** 26/08/2026 (docs: hero-botones-fix + selector-estados-hero)
 
 ---
 
@@ -41,6 +41,8 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 - Guía didáctica de clasificación (una vez por usuario) — [`feature-guia-clasificacion-campanas.md`](feature-guia-clasificacion-campanas.md)
 - Límite de líneas del texto de seguimiento en tarjetas — [`feature-limite-texto-seguimiento-tarjetas.md`](feature-limite-texto-seguimiento-tarjetas.md)
 - Rediseño escritorio campañas: hero compacto (1 fila, tamaño fijo) + búsqueda integrada + tarjetas compactas + menú ⋯ — [`feature-compactar-campanas-escritorio.md`](feature-compactar-campanas-escritorio.md)
+- Fix estilos botones hero (btn-header) en gestión por lote — [`feature-hero-botones-estilos-fix.md`](feature-hero-botones-estilos-fix.md)
+- Selector de estados integrado en el hero (desktop) — [`feature-selector-estados-hero.md`](feature-selector-estados-hero.md)
 
 ### 📞 Métricas de gestión (Fase 1 del plan)
 - **Popup de llamada con contador** desde el botón 📞 de cada tarjeta (móvil): duración real + resultado estructurado (9 buckets) — [`plan-metricas-llamadas-semaforo.md`](plan-metricas-llamadas-semaforo.md) §8
@@ -125,6 +127,8 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 | `feature-guia-clasificacion-campanas.md` | Guía didáctica de clasificación |
 | `feature-guia-solicitudes-tour.md` | Tour interactivo de la página de Solicitudes |
 | `feature-compactar-campanas-escritorio.md` | Rediseño escritorio campañas: hero compacto + búsqueda integrada + tarjetas + menú ⋯ |
+| `feature-hero-botones-estilos-fix.md` | Fix estilos botones hero (btn-header) en gestión por lote |
+| `feature-selector-estados-hero.md` | Selector de estados integrado en el hero (desktop) |
 | `feature-header-filtros-solicitudes-desktop.md` | Header + filtros desktop |
 | `feature-historial-campana.md` | Historial general de campaña |
 | `feature-limite-texto-seguimiento-tarjetas.md` | Límite de texto en tarjetas |

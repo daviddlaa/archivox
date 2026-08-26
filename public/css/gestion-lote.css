@@ -2265,8 +2265,10 @@ body {
 }
 
 .hero-left {
-    flex: 0 1 auto;
+    flex: 1 1 0;
     min-width: 0;
+    max-width: 35%;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -3279,6 +3281,7 @@ body {
     }
     .hero-left, .hero-center, .hero-right {
         flex: 1 1 100%;
+        max-width: none;
     }
     .hero-right {
         flex-wrap: wrap;
