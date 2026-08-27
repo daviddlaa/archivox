@@ -17,6 +17,7 @@
 
 const pool = require('../config/db');
 const cache = require('../config/cache');
+const { obtenerEquipoIdValido } = require('../utils/equipo');
 
 const ESTADO_APROBADA = 'APROBADA PARA LIBERACIÓN';
 const ESTADO_ACTIVADA = 'ACTIVADA';
@@ -167,10 +168,13 @@ async function activarSinCompra(usuarioId, payload) {
         if (!nombreCampana) {
             throw new Error('El nombre de la campaña es requerido');
         }
+        // Equipo validado en tiempo real (la sesión puede intentar un equipo
+        // borrado o una membresía dada de baja → FK gestiones_maestro_equipo_id_fkey).
+        const equipoIdValido = await obtenerEquipoIdValido(usuarioId, payload && payload.equipo_id);
         const resultGM = await pool.query(
             `INSERT INTO gestiones_maestro (nombre, descripcion, usuario_id, equipo_id, total_solicitudes, gestionadas, fecha_limite, solicitudes_ids)
              VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
-            [nombreCampana, payload.descripcion || 'Activación sin compra de solicitudes liberadas', usuarioId, payload.equipo_id || null, validos.length, payload.fecha_limite || null, JSON.stringify(validos)]
+            [nombreCampana, payload.descripcion || 'Activación sin compra de solicitudes liberadas', usuarioId, equipoIdValido, validos.length, payload.fecha_limite || null, JSON.stringify(validos)]
         );
         campana_id = resultGM.lastInsertRowid;
         if (!campana_id) {

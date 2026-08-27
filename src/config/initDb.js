@@ -228,6 +228,9 @@ db.exec(`
         fecha_fin DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        equipo_id INTEGER,
+        asignado_a INTEGER,
+        es_sistema INTEGER DEFAULT 0,
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     )
 `);
@@ -250,6 +253,14 @@ db.exec(`
 try {
     db.exec(`ALTER TABLE gestiones_maestro ADD COLUMN es_sistema INTEGER DEFAULT 0`);
     console.log('[DB] Columna gestiones_maestro.es_sistema agregada');
+} catch (e) {
+    // Columna ya existe, ignorar
+}
+
+// Migración: columna asignado_a en gestiones_maestro (campañas asignadas a agentes)
+try {
+    db.exec(`ALTER TABLE gestiones_maestro ADD COLUMN asignado_a INTEGER`);
+    console.log('[DB] Columna gestiones_maestro.asignado_a agregada');
 } catch (e) {
     // Columna ya existe, ignorar
 }

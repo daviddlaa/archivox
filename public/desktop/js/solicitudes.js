@@ -918,7 +918,7 @@ async function crearGestionLote() {
             cerrarModal();
             window.location.href = '/gestion-lote?id=' + resultado.id;
         } else {
-            alert('Error: ' + ((resultado && resultado.error) || 'Error desconocido'));
+            alert('Error: ' + ((resultado && resultado.error) || 'Error desconocido') + ((resultado && resultado.detalle) ? '\n' + resultado.detalle : ''));
         }
     } catch (error) {
         console.error('[crearGestionLote] Error:', error);

@@ -1368,7 +1368,7 @@ async function crearGestionLoteMovil() {
             // Navegar a la vista de gestión por lotes (intentar ruta móvil primero)
             try { window.location.href = '/m/gestion-lote?id=' + resultado.id; } catch (e) { window.location.href = '/gestion-lote?id=' + resultado.id; }
         } else {
-            alert('Error: ' + (resultado.error || 'Error desconocido'));
+            alert('Error: ' + (resultado.error || 'Error desconocido') + (resultado.detalle ? '\n' + resultado.detalle : ''));
         }
     } catch (error) {
         console.error('Error creando gestión móvil:', error);

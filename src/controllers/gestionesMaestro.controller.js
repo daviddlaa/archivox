@@ -1,6 +1,7 @@
 // Dynamic database - SQLite for local, PostgreSQL for production
 const pool = require('../config/db');
 const cache = require('../config/cache.js');
+const { obtenerEquipoIdValido } = require('../utils/equipo');
 
 // Helper para obtener resultado de queries (compatible con SQLite y PostgreSQL)
 function getRows(result) {
@@ -684,7 +685,7 @@ async function createGestionMaestro(req, res) {
             return res.status(401).json({ error: 'No autenticado', detalle: 'Sesión no válida' });
         }
         
-        const { nombre, descripcion, fecha_limite, solicitudes_ids, agente_id } = req.body;
+        let { nombre, descripcion, fecha_limite, solicitudes_ids, agente_id } = req.body;
         console.log('[gestiones-maestro] Datos recibidos:', { nombre, descripcion, fecha_limite, solicitudes_ids: solicitudes_ids?.length, agente_id });
         
         if (!nombre) {
@@ -696,9 +697,12 @@ async function createGestionMaestro(req, res) {
             return res.status(400).json({ error: 'Se requiere al menos una solicitud válida' });
         }
         
-        // Obtener equipo_id de la sesión del usuario
+        // Obtener equipo_id valido en tiempo real: la sesión puede traer un
+        // equipo borrado o del que el usuario fue dado de baja, lo que rompería
+        // la FK gestiones_maestro_equipo_id_fkey al insertar. Todo usuario,
+        // indistinto de rol o membresía, debe poder crear una campaña.
         const user = req.session.usuario;
-        const equipo_id = user?.equipo_id || null;
+        const equipo_id = await obtenerEquipoIdValido(usuario_id, user && user.equipo_id);
         
         let asignado_a = null;
         
@@ -1140,7 +1144,7 @@ async function agregarSolicitudesACampana(req, res) {
         }
 
         const { id } = req.params;
-        const { solicitudes_ids } = req.body;
+        let { solicitudes_ids } = req.body;
 
         solicitudes_ids = normalizarIdsSolicitud(solicitudes_ids);
         if (solicitudes_ids.length === 0) {
