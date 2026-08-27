@@ -1561,7 +1561,6 @@ function renderizarSolicitudes(lista) {
         html += '<div class="sol-datos">';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.cedula || '') + '\', \'cédula\')" title="Copiar cédula">🆔 ' + (sol.cedula || '—') + '</span>';
         html += '<span class="sol-dato-copy" onclick="copiarTexto(\'' + escaparParaAtributo(sol.celular || '') + '\', \'teléfono\')" title="Copiar teléfono">📱 ' + (sol.celular || '—') + '</span>';
-        html += '<span class="sol-chat-icon" onclick="abrirWhatsAppDesktop(\'' + escaparParaAtributo(sol.celular || '') + '\', \'\')" title="Abrir chat WhatsApp">💬</span>';
         html += '</div>';
         html += '</div>';
         
@@ -1579,8 +1578,9 @@ function renderizarSolicitudes(lista) {
         // Acciones (desktop: primarias + icon-buttons secundarias)
         html += '<div class="sol-acciones">';
         
-        html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
-        html += "<button class=\"btn-accion btn-whatsapp-img\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
+        html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')" title="Registrar seguimiento"><span class="sol-accion-icon">📋</span><span>Seguimiento</span></button>';
+        html += '<button class="btn-accion btn-whatsapp-img" onclick="abrirGestionWhatsApp(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.celular || '') + '\')" title="Abrir gestión directa por WhatsApp"><span class="sol-accion-icon">💬</span><span>Directo</span></button>';
+        html += '<button type="button" class="sol-accion-icon-btn btn-chat-whatsapp" onclick="event.stopPropagation(); abrirWhatsAppDesktop(\'' + escaparParaAtributo(sol.celular || '') + '\', \'\')" title="Abrir chat WhatsApp"><span class="sol-accion-icon">📱</span><span>Chat</span></button>';
         
         // Icon-buttons visibles: Historial, No aplica, Quitar de campaña
         html += '<button type="button" class="sol-accion-icon-btn" onclick="event.stopPropagation(); verHistorial(\'' + sol.id_solicitud + '\')" title="Ver historial de gestiones"><span class="sol-accion-icon">📋</span><span>Historial</span></button>';

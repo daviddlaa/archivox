@@ -622,12 +622,23 @@ body {
 }
 
 .btn-accion.btn-seguimiento {
-    background: #dbeafe;
+    background: #eff6ff;
     color: #1d4ed8;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 5px 8px;
+    font-size: 10px;
+    line-height: 1.2;
+    min-width: 44px;
+}
+.btn-accion.btn-seguimiento .sol-accion-icon {
+    font-size: 16px;
+    line-height: 1;
 }
 
 .btn-accion.btn-seguimiento:hover {
-    background: #bfdbfe;
+    background: #dbeafe;
 }
 
 /* Botón Llamar - PROMINENTE */
@@ -650,27 +661,35 @@ body {
     100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
-/* Botón WhatsApp - SECUNDARIO */
+/* Botón WhatsApp (gestión directa) - estilo icon-btn */
 .btn-accion.btn-whatsapp-img {
-    background: #f3f4f6;
-    color: #6b7280;
-    border: 1px solid #e5e7eb;
+    background: #f0fdf4;
+    color: #16a34a;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 5px 8px;
+    font-size: 10px;
+    line-height: 1.2;
+    min-width: 44px;
+}
+.btn-accion.btn-whatsapp-img .sol-accion-icon {
+    font-size: 16px;
+    line-height: 1;
 }
 .btn-accion.btn-whatsapp-img:hover {
-    background: #e5e7eb;
-    color: #4b5563;
+    background: #dcfce7;
+    color: #15803d;
 }
 
-/* Icono Ver Chat (WhatsApp directo sin guardar) - junto al teléfono */
-.sol-datos .sol-chat-icon {
-    cursor: pointer;
-    font-size: 14px;
-    color: #25D366;
-    transition: transform 0.2s ease;
+/* Botón Chat WhatsApp en la cinta de acciones */
+.sol-accion-icon-btn.btn-chat-whatsapp {
+    color: #16a34a;
+    background: #f0fdf4;
 }
-
-.sol-datos .sol-chat-icon:hover {
-    transform: scale(1.25);
+.sol-accion-icon-btn.btn-chat-whatsapp:hover {
+    background: #dcfce7;
+    color: #15803d;
 }
 
 /* ===== TÍTULO DE CAMPAÑA ACTIVA ===== */
