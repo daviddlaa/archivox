@@ -86,6 +86,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 - Fix 500 en `/api/admin/solicitudes` + mecanismo `SCHEMA_VERSION` — [`fix-500-solicitudes-created_at.md`](fix-500-solicitudes-created_at.md)
 - Fix validación de IDs numéricos en campañas + eliminación de filtro `relaciones` en liberación — [`fix-validacion-ids-campana.md`](fix-validacion-ids-campana.md)
 - Fix creación de campañas (reasignación de `const` → 500 "Error al crear gestión") + `equipo_id` validado en tiempo real para que **todos los usuarios, indistintos de rol o equipo, puedan crear campañas** — [`fix-crear-campanas-error-constante.md`](fix-crear-campanas-error-constante.md)
+- Campañas en vivo: SSE `campanas.updated` al crear/renombrar/eliminar (grid desktop y móvil se actualiza sin recargar) — [`fix-campanas-actualizacion-en-vivo.md`](fix-campanas-actualizacion-en-vivo.md)
 
 ---
 
@@ -156,6 +157,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 | `feature-widget-ultimas-gestiones-dashboard.md` | Widget últimas gestiones |
 | `fix-500-solicitudes-created_at.md` | Fix 500 admin solicitudes |
 | `fix-crear-campanas-error-constante.md` | Fix creación de campañas (const + equipo_id) |
+| `fix-campanas-actualizacion-en-vivo.md` | Campañas en vivo (SSE crear/renombrar/eliminar) |
 | `fix-importacion-proteccion-datos-usuarios.md` | Importación protegida |
 | `fix-semaforo-movil-orden-fijo.md` | Semáforo móvil orden fijo |
 | `progreso-correccion-sistema.md` | Corrección líderes/equipo (✅) |

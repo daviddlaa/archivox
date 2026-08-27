@@ -1,6 +1,7 @@
 // Dynamic database - SQLite for local, PostgreSQL for production
 const pool = require('../config/db');
 const cache = require('../config/cache.js');
+const notificationBus = require('../services/notificationBus');
 const { obtenerEquipoIdValido } = require('../utils/equipo');
 
 // Helper para obtener resultado de queries (compatible con SQLite y PostgreSQL)
@@ -780,6 +781,12 @@ async function createGestionMaestro(req, res) {
         console.log('[gestiones-maestro] Gestion creada exitosamente, ID:', gestion_id);
 
         cache.invalidateAllCampanas();
+        notificationBus.emitir('campanas.updated', {
+            accion: 'creada',
+            id: gestion_id,
+            nombre: nombre,
+            timestamp: new Date().toISOString()
+        });
         
         res.json({ 
             id: gestion_id, 
@@ -836,6 +843,12 @@ async function updateGestionMaestro(req, res) {
         }
         
         cache.invalidateAllCampanas();
+        notificationBus.emitir('campanas.updated', {
+            accion: 'renombrada',
+            id: Number(id),
+            nombre: nombre !== undefined ? nombre : null,
+            timestamp: new Date().toISOString()
+        });
         res.json({ mensaje: 'Gestión actualizada correctamente' });
     } catch (error) {
         console.error('Error en updateGestionMaestro:', error);
@@ -908,6 +921,11 @@ async function deleteGestionMaestro(req, res) {
         `, [id]);
         
         cache.invalidateAllCampanas();
+        notificationBus.emitir('campanas.updated', {
+            accion: 'eliminada',
+            id: Number(id),
+            timestamp: new Date().toISOString()
+        });
         res.json({ mensaje: 'Campaña eliminada correctamente. El historial de gestiones de las solicitudes se conserva.' });
     } catch (error) {
         console.error('Error en deleteGestionMaestro:', error);

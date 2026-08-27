@@ -251,6 +251,33 @@ function iniciarSSE() {
             }
         });
 
+        // Campañas creadas/renombradas/eliminadas → refresco en vivo de la grid
+        // (desktop y móvil comparten este script; cada uno define cargarListaCampanas)
+        es.addEventListener('campanas.updated', function(e) {
+            try {
+                const data = JSON.parse(e.data);
+                console.log('[Notificaciones] campanas.updated:', data.accion || '?', data.id);
+
+                // Si la campaña abierta (detalle) fue eliminada, salir a la landing
+                if (data.accion === 'eliminada' && typeof window.gestionId !== 'undefined' && window.gestionId !== null && String(window.gestionId) === String(data.id)) {
+                    const base = window.location.pathname.indexOf('/m/') === 0 ? '/m/gestion-lote' : '/gestion-lote';
+                    window.location.href = base;
+                    return;
+                }
+
+                // Refrescar la grid en vivo (debounce: coalescer ráfagas de eventos)
+                if (typeof cargarListaCampanas === 'function') {
+                    if (notifState._campanasRefreshTimer) return;
+                    notifState._campanasRefreshTimer = setTimeout(function() {
+                        notifState._campanasRefreshTimer = null;
+                        cargarListaCampanas();
+                    }, 150);
+                }
+            } catch (err) {
+                console.error('[Notificaciones] Error parsing campanas.updated:', err);
+            }
+        });
+
         // Ping keep-alive
         es.addEventListener('ping', function(e) {
             // No hacer nada, solo mantiene la conexión viva
