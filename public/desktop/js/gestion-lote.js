@@ -2672,12 +2672,13 @@ async function eliminarCampaña(id) {
         if (response.ok && !resultado.error) {
             alert('✅ Campaña eliminada correctamente');
             cerrarModal();
+            CampanasPopover.close(); // Cerrar popover de campañas si está abierto
             
             // Si era la campaña activa, redirigir
             if (String(gestionId) === String(id)) {
                 window.location.href = '/gestion-lote';
             } else {
-                cargarListaCampanas();
+                await cargarListaCampanas();
             }
         } else {
             alert('Error: ' + (resultado.error || 'Error al eliminar'));

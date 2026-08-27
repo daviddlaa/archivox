@@ -2284,6 +2284,7 @@ async function eliminarCampañaMovil(id) {
         if (response.ok && !resultado.error) {
             alert('✅ Campaña eliminada correctamente');
             cerrarModalEliminarCampanaMovil();
+            closeCampanasSheet(); // Cerrar también el bottom sheet de campañas
             
             // Si era la campaña activa, recargar sin ID
             if (String(gestionId) === String(id)) {

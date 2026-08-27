@@ -16,7 +16,7 @@ if (process.env.DATABASE_URL) {
         ssl: { rejectUnauthorized: false },
         max: poolMax,               // Máximo de conexiones concurrentes (6 por defecto)
         idleTimeoutMillis: 30000,   // Cerrar conexiones inactivas después de 30s
-        connectionTimeoutMillis: 5000, // Timeout de conexión: 5s
+        connectionTimeoutMillis: 15000, // Timeout de conexión: 15s (cold start de Render puede tardar)
     });
 
     // Monitoreo básico del pool (cada 5 min en producción)

@@ -1,7 +1,7 @@
 # 🗺️ Estado del Proyecto — Archivox (Implementado vs Pendiente)
 
 > **Propósito de este documento:** que no te pierdas. Aquí está el resumen de **qué ya está implementado** y **qué falta por hacer**, con enlaces a la documentación de cada cosa.
-> **Última actualización:** 27/08/2026 (docs: uniformar-botones-acciones-tarjeta)
+> **Última actualización:** 28/08/2026 (fix: validacion-ids-campana + liberacion-sin-relaciones)
 
 ---
 
@@ -65,7 +65,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 - UX "Agregar a Campaña" — [`feature-ux-agregar-campana-solicitudes.md`](feature-ux-agregar-campana-solicitudes.md)
 - Columna "vendedor" en solicitudes — [`feature-columna-vendedor-solicitudes.md`](feature-columna-vendedor-solicitudes.md)
 - Importación Excel protegida (nunca toca registros ajenos) — [`fix-importacion-proteccion-datos-usuarios.md`](fix-importacion-proteccion-datos-usuarios.md)
-- Reactivación sin compra de solicitudes liberadas (>6 meses sin relación, banner + listado + campaña; excluye las separadas con 👎). **Scheduler semanal:** crea/reutiliza campaña automática, mueve de otras campañas, notifica con enlace — [`feature-liberacion-reactivacion-sin-compra.md`](feature-liberacion-reactivacion-sin-compra.md)
+- Reactivación sin compra de solicitudes liberadas (>6 meses, banner + listado + campaña; excluye las separadas con 👎). **Scheduler semanal:** crea/reutiliza campaña automática, mueve de otras campañas, notifica con enlace — [`feature-liberacion-reactivacion-sin-compra.md`](feature-liberacion-reactivacion-sin-compra.md)
 - Guía de Solicitudes — tour interactivo de 6 pasos (una vez por usuario) — [`feature-guia-solicitudes-tour.md`](feature-guia-solicitudes-tour.md)
 
 ### 👥 Equipos / Panel del líder
@@ -84,6 +84,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 - Login móvil compacto — [`feature-login-movil-compacto.md`](feature-login-movil-compacto.md)
 - Fix rate limiting + reconexión SSE — [`informe-rate-limit-conexiones.md`](informe-rate-limit-conexiones.md)
 - Fix 500 en `/api/admin/solicitudes` + mecanismo `SCHEMA_VERSION` — [`fix-500-solicitudes-created_at.md`](fix-500-solicitudes-created_at.md)
+- Fix validación de IDs numéricos en campañas + eliminación de filtro `relaciones` en liberación — [`fix-validacion-ids-campana.md`](fix-validacion-ids-campana.md)
 
 ---
 
