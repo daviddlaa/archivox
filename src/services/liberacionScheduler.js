@@ -2,7 +2,7 @@
 // SCHEDULER DE LIBERACIÓN - Campaña automática semanal
 // ============================================================================
 // Revisa semanalmente las solicitudes en 'APROBADA PARA LIBERACIÓN' con más
-// de 6 meses (fecha_solicitud) y sin relación activa (ALTA) con su usuario.
+// de 6 meses (fecha_solicitud) y que aún aplican para crédito.
 //
 // Por cada usuario afectado:
 //   1. Crea o reutiliza una campaña automática (es_sistema = 1).
@@ -50,13 +50,7 @@ async function getSolicitudesValidas(usuarioId) {
            AND s.fecha_solicitud IS NOT NULL
            AND s.fecha_solicitud != ''
            AND s.fecha_solicitud < $3
-           AND COALESCE(s.no_aplica_credito, 1) = 1
-           AND NOT EXISTS (
-               SELECT 1 FROM relaciones r
-               WHERE r.usuario_id = s.usuario_id
-                 AND r.identificacion = s.cedula
-                 AND r.estado_relacion = 'ALTA'
-           )`,
+           AND COALESCE(s.no_aplica_credito, 1) = 1`,
         params
     );
     return getRows(result).map(function(r) { return Number(r.id_solicitud); });

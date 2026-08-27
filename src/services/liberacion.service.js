@@ -2,10 +2,9 @@
 // SERVICIO DE LIBERACIÓN / REACTIVACIÓN SIN COMPRA
 // ============================================================================
 // Detecta solicitudes en estado 'APROBADA PARA LIBERACIÓN' que llevan más de
-// 6 meses (según fecha_solicitud) y que NO tienen una relación activa (ALTA)
-// con su usuario en la tabla `relaciones`. Cuando eso ocurre, si el cliente
-// compra la venta NO se refleja en el usuario. Las solicitudes separadas con
-// la bandera "ya no aplica para crédito" (no_aplica_credito = 0) se excluyen.
+// 6 meses (según fecha_solicitud) y que aún aplican para crédito.
+// Las solicitudes separadas con la bandera "ya no aplica para crédito"
+// (no_aplica_credito = 0) se excluyen.
 // Este servicio permite:
 //   1. Contar y listar esas solicitudes (banner + listado).
 //   2. Crear una campaña (gestiones_maestro) para reactivarlas.
@@ -43,10 +42,10 @@ function getFechaCorte() {
 }
 
 // ============================================================================
-// WHERE COMÚN: solicitudes liberadas caducadas sin relación activa
+// WHERE COMÚN: solicitudes liberadas caducadas
 // ============================================================================
-// Una relación BAJA o inexistente se considera "sin relación": solo una
-// relación en estado ALTA (por usuario + cédula) evita la alerta.
+// Solicitudes en APROBADA PARA LIBERACIÓN con más de 6 meses y que aún
+// aplican para crédito (no_aplica_credito = 1).
 // Si sinUsuario es true, se omite la cláusula usuario_id (para resúmenes
 // globales por usuario en el scheduler).
 // ============================================================================
@@ -59,13 +58,7 @@ function buildWhereLiberacion(alias, paramIndex, sinUsuario) {
         AND ${a}.fecha_solicitud IS NOT NULL
         AND ${a}.fecha_solicitud != ''
         AND ${a}.fecha_solicitud < $${paramsUsed + 1}
-        AND COALESCE(${a}.no_aplica_credito, 1) = 1
-        AND NOT EXISTS (
-            SELECT 1 FROM relaciones r
-            WHERE r.usuario_id = ${a}.usuario_id
-              AND r.identificacion = ${a}.cedula
-              AND r.estado_relacion = 'ALTA'
-        )`;
+        AND COALESCE(${a}.no_aplica_credito, 1) = 1`;
 }
 
 // ============================================================================

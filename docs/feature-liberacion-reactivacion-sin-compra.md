@@ -33,9 +33,7 @@ Una solicitud entra en la alerta si **todas** las condiciones se cumplen:
 1. `estado = 'APROBADA PARA LIBERACIÓN'`.
 2. `fecha_solicitud` es de hace **más de 6 meses** (corte = hoy − 6 meses, se calcula en JS como
    `YYYY-MM-DD` y se compara lexicográficamente).
-3. **Sin relación activa**: `NOT EXISTS` una relación en `relaciones` con el mismo `usuario_id`
-   y `identificacion = cedula` en estado `ALTA` (BAJA o inexistente = sin relación).
-4. **Sigue aplicando para crédito**: `COALESCE(no_aplica_credito, 1) = 1`. Las solicitudes
+3. **Sigue aplicando para crédito**: `COALESCE(no_aplica_credito, 1) = 1`. Las solicitudes
    separadas con la bandera 👎 **"ya no aplica"** (`no_aplica_credito = 0`) se **excluyen**
    del conteo, del listado y de las alertas del scheduler.
 

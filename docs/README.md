@@ -1654,8 +1654,8 @@ La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tabla
 
 ### 12.14 Liberación (`/api/liberacion`) — Reactivación sin compra (Agosto 2026)
 
-Detecta solicitudes en `APROBADA PARA LIBERACIÓN` con más de 6 meses (desde `fecha_solicitud`),
-sin relación activa (ALTA) y que **siguen aplicando para crédito** (`COALESCE(no_aplica_credito,1)=1`,
+Detecta solicitudes en `APROBADA PARA LIBERACIÓN` con más de 6 meses (desde `fecha_solicitud`)
+que **siguen aplicando para crédito** (`COALESCE(no_aplica_credito,1)=1`,
 excluye las separadas con la bandera 👎). Banner + listado + campaña/activación en lote + scheduler
 semanal que crea/reutiliza campaña automática y notifica con enlace. Ver `docs/feature-liberacion-reactivacion-sin-compra.md`.
 

@@ -691,8 +691,9 @@ async function createGestionMaestro(req, res) {
             return res.status(400).json({ error: 'El nombre es requerido' });
         }
         
-        if (!solicitudes_ids || !Array.isArray(solicitudes_ids) || solicitudes_ids.length === 0) {
-            return res.status(400).json({ error: 'Se requiere al menos una solicitud' });
+        solicitudes_ids = normalizarIdsSolicitud(solicitudes_ids);
+        if (solicitudes_ids.length === 0) {
+            return res.status(400).json({ error: 'Se requiere al menos una solicitud válida' });
         }
         
         // Obtener equipo_id de la sesión del usuario
@@ -1141,8 +1142,9 @@ async function agregarSolicitudesACampana(req, res) {
         const { id } = req.params;
         const { solicitudes_ids } = req.body;
 
-        if (!solicitudes_ids || !Array.isArray(solicitudes_ids) || solicitudes_ids.length === 0) {
-            return res.status(400).json({ error: 'Se requiere al menos un ID de solicitud' });
+        solicitudes_ids = normalizarIdsSolicitud(solicitudes_ids);
+        if (solicitudes_ids.length === 0) {
+            return res.status(400).json({ error: 'Se requiere al menos un ID de solicitud válido' });
         }
 
         // Obtener la campaña actual con control de acceso
