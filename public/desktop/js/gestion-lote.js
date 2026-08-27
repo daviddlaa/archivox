@@ -1576,25 +1576,26 @@ function renderizarSolicitudes(lista) {
             html += '<div class="sol-ultima-gestion vacia"><strong>Sin gestión registrada</strong><span>Esta solicitud aún no tiene una gestión.</span></div>';
         }
         
-        // Acciones (desktop: primarias + menú ⋯)
+        // Acciones (desktop: primarias + icon-buttons secundarias)
         html += '<div class="sol-acciones">';
         
         html += '<button class="btn-accion btn-seguimiento" onclick="abrirGestion(\'' + sol.id_solicitud + '\', \'Seguimiento\')">📋 Seguimiento</button>';
         html += "<button class=\"btn-accion btn-whatsapp-img\" onclick=\"abrirGestionWhatsApp('" + sol.id_solicitud + "', '" + escaparParaAtributo(sol.celular || '') + "')\">💬 Directo</button>";
         
-        // Menú ⋯ de acciones secundarias
-        html += '<div class="sol-acciones-menu-wrap">';
-        html += '<button type="button" class="sol-acciones-menu-btn" onclick="event.stopPropagation(); toggleSolMenu(this)" title="Más acciones" aria-label="Más acciones">⋯</button>';
-        html += '<div class="sol-acciones-dropdown">';
-        html += '<button type="button" class="sol-acciones-dropdown-item" onclick="event.stopPropagation(); closeSolMenus(); verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button>';
+        // Icon-buttons visibles: Historial, No aplica, Quitar de campaña
+        html += '<button type="button" class="sol-accion-icon-btn" onclick="event.stopPropagation(); verHistorial(\'' + sol.id_solicitud + '\')" title="Ver historial de gestiones"><span class="sol-accion-icon">📋</span><span>Historial</span></button>';
+        html += '<button type="button" class="sol-accion-icon-btn btn-no-aplica' + (noAplica ? ' activo' : '') + '" onclick="event.stopPropagation(); confirmarMarcarNoAplicaCredito(\'' + sol.id_solicitud + '\', ' + (noAplica ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '"><span class="sol-accion-icon">' + (noAplica ? '👍' : '👎') + '</span><span>' + (noAplica ? 'Aplica' : 'No aplica') + '</span></button>';
+        html += '<button type="button" class="sol-accion-icon-btn btn-quitar-solicitud" onclick="event.stopPropagation(); confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')" title="Quitar solicitud de la campaña"><span class="sol-accion-icon">❌</span><span>Quitar</span></button>';
+        
+        // Menú ⋯ solo si hay recordatorio
         if (sol.recordatorio_id) {
-            html += '<button type="button" class="sol-acciones-dropdown-item" onclick="event.stopPropagation(); closeSolMenus(); verRecordatorio(\'' + sol.id_solicitud + '\')">⏰ Recordatorio</button>';
+            html += '<div class="sol-acciones-menu-wrap">';
+            html += '<button type="button" class="sol-acciones-menu-btn" onclick="event.stopPropagation(); toggleSolMenu(this)" title="Recordatorio" aria-label="Recordatorio">⏰</button>';
+            html += '<div class="sol-acciones-dropdown">';
+            html += '<button type="button" class="sol-acciones-dropdown-item" onclick="event.stopPropagation(); closeSolMenus(); verRecordatorio(\'' + sol.id_solicitud + '\')">⏰ Ver recordatorio</button>';
+            html += '</div>';
+            html += '</div>';
         }
-        html += '<button type="button" class="sol-acciones-dropdown-item" onclick="event.stopPropagation(); closeSolMenus(); confirmarMarcarNoAplicaCredito(\'' + sol.id_solicitud + '\', ' + (noAplica ? 1 : 0) + ')" title="' + (noAplica ? 'Restaurar: aplica para crédito' : 'Marcar: ya no aplica para crédito') + '">' + (noAplica ? '👍 Aplica crédito' : '👎 No aplica') + '</button>';
-        html += '<div class="sol-acciones-dropdown-sep"></div>';
-        html += '<button type="button" class="sol-acciones-dropdown-item btn-quitar-solicitud" onclick="event.stopPropagation(); closeSolMenus(); confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar de campaña</button>';
-        html += '</div>';
-        html += '</div>';
         
         html += '</div>';
         
@@ -1624,7 +1625,7 @@ function renderizarTarjetaCompletada(sol) {
         '<div class="sol-nombre-row"><div class="sol-nombre">' + nombre + '</div><span class="sol-segmento">' + (sol.segmento || 'Sin segmento') + '</span></div>' +
         '<div class="sol-datos"><span>🆔 ' + (sol.cedula || '—') + '</span><span>📱 ' + (sol.celular || '—') + '</span></div>' +
         '<div class="completada-card-gestion"><strong>' + (sol.tipo_gestion || 'Completada') + '</strong><span>' + observacion + '</span></div>' +
-        '<div class="sol-acciones"><button class="btn-accion tertiary" onclick="verGestion(\'' + sol.id_solicitud + '\')">📋 Ver gestión</button><button class="btn-accion tertiary" onclick="verHistorial(\'' + sol.id_solicitud + '\')">📋 Historial</button><button class="btn-accion btn-quitar-solicitud" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')">❌ Quitar</button></div>' +
+        '<div class="sol-acciones"><button class="btn-accion tertiary" onclick="verGestion(\'' + sol.id_solicitud + '\')">📋 Ver gestión</button><button type="button" class="sol-accion-icon-btn" onclick="verHistorial(\'' + sol.id_solicitud + '\')" title="Ver historial"><span class="sol-accion-icon">📋</span><span>Historial</span></button><button type="button" class="sol-accion-icon-btn btn-quitar-solicitud" onclick="confirmarQuitarSolicitud(\'' + sol.id_solicitud + '\', \'' + escaparParaAtributo(sol.nombre || '') + '\')" title="Quitar de campaña"><span class="sol-accion-icon">❌</span><span>Quitar</span></button></div>' +
         '</article>';
 }
 

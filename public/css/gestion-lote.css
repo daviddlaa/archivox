@@ -2086,6 +2086,61 @@ body {
     margin: 3px 6px;
 }
 
+/* --- Botones de acción verticales (icono arriba, label abajo) --- */
+.sol-accion-icon-btn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 5px 8px;
+    border: none;
+    border-radius: 6px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1.2;
+    min-width: 44px;
+}
+
+.sol-accion-icon-btn .sol-accion-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.sol-accion-icon-btn:hover {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.sol-accion-icon-btn.btn-quitar-solicitud {
+    color: #991b1b;
+    background: #fef2f2;
+}
+.sol-accion-icon-btn.btn-quitar-solicitud:hover {
+    background: #fee2e2;
+    color: #7f1d1d;
+}
+
+.sol-accion-icon-btn.btn-no-aplica {
+    color: #92400e;
+    background: #fffbeb;
+}
+.sol-accion-icon-btn.btn-no-aplica:hover {
+    background: #fef3c7;
+    color: #78350f;
+}
+
+.sol-accion-icon-btn.btn-no-aplica.activo {
+    color: #991b1b;
+    background: #fee2e2;
+}
+.sol-accion-icon-btn.btn-no-aplica.activo:hover {
+    background: #fecaca;
+}
+
 @media (max-width: 900px) and (min-width: 769px) {
     .sol-semaforo-switch-text { display: none; }
 }
