@@ -592,7 +592,7 @@ async function agentesConLider(req, res) {
              INNER JOIN equipos e ON eu.equipo_id = e.id
              WHERE eu.fecha_salida IS NULL
                AND eu.es_lider = 0
-               AND u.is_active = 1
+               AND u.is_active = TRUE
                AND u.id != $1
                AND EXISTS (
                    SELECT 1 FROM equipo_usuarios eu3
