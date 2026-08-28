@@ -697,6 +697,47 @@ try {
 } catch (e) { /* ignorar */ }
 
 // ================================================================
+// 🆕 TABLA: envios_solicitudes (trazabilidad de envíos entre agentes)
+// Un agente sin líder envía solicitudes a un agente con líder. Cada fila
+// es UN envío de UNA solicitud. La reasignación del líder conserva el
+// destino original (destino_id) y registra nuevo_destino_id.
+// ================================================================
+try {
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS envios_solicitudes (
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            solicitud_id        INTEGER NOT NULL,
+            remitente_id        INTEGER NOT NULL,
+            destino_id          INTEGER NOT NULL,
+            comentario          TEXT,
+            equipo_id           INTEGER NOT NULL,
+            campana_id          INTEGER NOT NULL,
+            fecha_envio         TEXT DEFAULT (datetime('now')),
+            gestionada          INTEGER DEFAULT 0,
+            fecha_gestion       TEXT,
+            gestionada_por      INTEGER,
+            reasignada          INTEGER DEFAULT 0,
+            nuevo_destino_id    INTEGER,
+            reasignada_por      INTEGER,
+            fecha_reasignacion  TEXT,
+            FOREIGN KEY (remitente_id) REFERENCES usuarios(id),
+            FOREIGN KEY (destino_id) REFERENCES usuarios(id),
+            FOREIGN KEY (equipo_id) REFERENCES equipos(id),
+            FOREIGN KEY (campana_id) REFERENCES gestiones_maestro(id)
+        )
+    `);
+    console.log('[DB] Tabla envios_solicitudes verificada');
+} catch (e) {
+    console.log('[DB] Error con tabla envios_solicitudes:', e.message);
+}
+
+// Índices envios_solicitudes
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_envios_destino ON envios_solicitudes(destino_id)`); } catch (e) { /* ignorar */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_envios_equipo ON envios_solicitudes(equipo_id)`); } catch (e) { /* ignorar */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_envios_fecha ON envios_solicitudes(fecha_envio)`); } catch (e) { /* ignorar */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_envios_solicitud ON envios_solicitudes(solicitud_id)`); } catch (e) { /* ignorar */ }
+
+// ================================================================
 // 🆕 AUTO-SEED: Datos iniciales del sistema multi-equipo
 // Ejecuta el seed solo si las tablas están vacías
 // ================================================================

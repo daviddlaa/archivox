@@ -269,6 +269,80 @@ async function recalcularGestionadas(gestionId) {
             'UPDATE gestiones_maestro SET gestionadas = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
             [count, gestionId]
         );
+
+        // ================================================================
+        // HOOK: marcar filas de envios_solicitudes de esta campaña que ya
+        // fueron gestionadas, y notificar al remitente (agente sin líder).
+        // No rompe si la tabla aún no existe (dual DB traga errores en SQLite,
+        // pero PG lanza → lo amortiguamos con try/catch).
+        // ================================================================
+        try {
+            const envios = await pool.query(
+                `SELECT e.id, e.solicitud_id, e.remitente_id, e.destino_id, e.gestionada
+                 FROM envios_solicitudes e
+                 WHERE e.campana_id = ? AND e.gestionada = 0`,
+                [gestionId]
+            );
+            const filas = getRows(envios);
+            for (const f of filas) {
+                // ¿La solicitud ya tiene una gestion != Pendiente (última)?
+                const gestionadaRes = await pool.query(
+                    `SELECT tipo_gestion FROM gestiones g2
+                     WHERE g2.solicitud_id = ?
+                       AND (g2.gestion_maestro_id = ? OR g2.gestion_maestro_id IS NULL)
+                     ORDER BY g2.id DESC LIMIT 1`,
+                    [f.solicitud_id, gestionId]
+                );
+                const ultima = getFirstRow(gestionadaRes);
+                if (ultima && String(ultima.tipo_gestion) !== 'Pendiente') {
+                    await pool.query(
+                        `UPDATE envios_solicitudes SET gestionada = 1, fecha_gestion = CURRENT_TIMESTAMP, gestionada_por = (
+                            SELECT MAX(g2.usuario_id) FROM gestiones g2
+                            WHERE g2.solicitud_id = ? AND (g2.gestion_maestro_id = ? OR g2.gestion_maestro_id IS NULL)
+                         ) WHERE id = ?`,
+                        [f.solicitud_id, gestionId, f.id]
+                    );
+
+                    // Notificar al remitente si quien gestiona no es el remitente
+                    if (f.remitente_id) {
+                        try {
+                            const qn = await pool.query('SELECT nombre, username FROM usuarios WHERE id = ?', [f.remitente_id]);
+                            const rem = getFirstRow(qn);
+                            const qg = await pool.query(
+                                `SELECT u.nombre, u.username FROM gestiones g2
+                                 INNER JOIN usuarios u ON u.id = g2.usuario_id
+                                 WHERE g2.solicitud_id = ? AND (g2.gestion_maestro_id = ? OR g2.gestion_maestro_id IS NULL)
+                                 ORDER BY g2.id DESC LIMIT 1`,
+                                [f.solicitud_id, gestionId]
+                            );
+                            const gestor = getFirstRow(qg);
+                            const nombreGestor = gestor ? (gestor.nombre || gestor.username) : 'el agente destino';
+                            const nombreRemitente = rem ? (rem.nombre || rem.username) : null;
+
+                            // Solo notificar si el gestor no es el remitente (evita auto-notificación redundante)
+                            if (gestor && Number(gestor.usuario_id) !== Number(f.remitente_id)) {
+                                await crearYNotificar({
+                                    destinatarioId: f.remitente_id,
+                                    titulo: '✅ Tu solicitud fue gestionada',
+                                    mensaje: 'La solicitud #' + f.solicitud_id + ' fue gestionada por ' + nombreGestor + '.',
+                                    tipo: 'success', prioridad: 'normal',
+                                    accionUrl: '/gestion-lote?id=' + gestionId,
+                                    accionModulo: 'gestion-lote',
+                                    accionTexto: 'Ver campaña',
+                                    creadorId: null
+                                });
+                            }
+                            void nombreRemitente;
+                        } catch (eNotif) {
+                            console.error('[recalcularGestionadas] Error notificando remitente:', eNotif.message);
+                        }
+                    }
+                }
+            }
+        } catch (eHook) {
+            console.error('[recalcularGestionadas] Error hook envios_solicitudes:', eHook.message);
+        }
+
         return count;
     } catch (e) {
         console.error('[recalcularGestionadas] Error:', e.message);
@@ -1806,6 +1880,378 @@ async function crearCampanaSistema(req, res) {
     }
 }
 
+// ============================================================================
+// HELPER: Crear una notificación e emitirla por SSE a un usuario
+// (mismo patrón que liberacionScheduler / notificaciones.controller)
+// ============================================================================
+async function crearYNotificar({ destinatarioId, titulo, mensaje, tipo = 'info', prioridad = 'normal', accionUrl = null, accionModulo = null, accionTexto = null, creadorId = null }) {
+    const ins = await pool.query(
+        `INSERT INTO notificaciones (titulo, mensaje, tipo, prioridad, creador_id, destinatario_id, accion_url, accion_texto, accion_modulo, es_novedad, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)`,
+        [titulo, mensaje, tipo, prioridad, creadorId || null, destinatarioId, accionUrl || null, accionTexto || null, accionModulo || null]
+    );
+    const newId = ins.rows?.[0]?.id || ins.lastInsertRowid;
+
+    const notificacion = {
+        id: newId,
+        titulo: titulo,
+        mensaje: mensaje,
+        tipo: tipo,
+        prioridad: prioridad,
+        destinatario_id: destinatarioId,
+        accion_url: accionUrl || null,
+        accion_texto: accionTexto || null,
+        accion_modulo: accionModulo || null,
+        es_novedad: 0,
+        fecha_expiracion: null,
+        leida: 0,
+        recordatorio_id: null,
+        creador_username: null,
+        created_at: new Date().toISOString()
+    };
+    try {
+        notificationBus.emitir('notification.created', notificacion, destinatarioId);
+        notificationBus.emitirAUsuario('count.updated', { no_leidas: null }, destinatarioId);
+    } catch (e) {
+        console.error('[EnviarSolicitudes] Error SSE:', e.message);
+    }
+    return newId;
+}
+
+// ============================================================================
+// ENVIAR SOLICITUDES A UN AGENTE CON LÍDER (agente sin líder → agente con líder)
+// ============================================================================
+// POST /api/gestiones-maestro/enviar-solicitudes
+// Body: { destino_id, solicitudes_ids: [], comentario? }
+// - Crea una campaña tripartita (remitente + destino + líder del destino).
+// - Inserta una fila por solicitud en envios_solicitudes (trazabilidad).
+// - Notifica al destino y al líder de su equipo.
+async function enviarSolicitudes(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+        const user = req.session.usuario;
+
+        const { destino_id, solicitudes_ids, comentario } = req.body;
+        const destinoNum = Number(destino_id);
+        const ids = normalizarIdsSolicitud(solicitudes_ids);
+
+        if (!destinoNum || ids.length === 0) {
+            return res.status(400).json({ error: 'destino_id y al menos una solicitud son requeridos' });
+        }
+        if (destinoNum === usuario_id) {
+            return res.status(400).json({ error: 'No puedes enviarte solicitudes a ti mismo' });
+        }
+
+        // El remitente debe ser un agente SIN líder (no superadmin, no lider,
+        // y no debe pertenecer a un equipo con líder).
+        if (user.rol === 'superadmin') {
+            return res.status(403).json({ error: 'Un superadmin no puede enviar solicitudes' });
+        }
+        const remTieneLider = await pool.query(
+            `SELECT 1 FROM equipo_usuarios eu
+             WHERE eu.usuario_id = ? AND eu.fecha_salida IS NULL
+               AND EXISTS (
+                   SELECT 1 FROM equipo_usuarios eu4
+                   WHERE eu4.equipo_id = eu.equipo_id AND eu4.fecha_salida IS NULL AND eu4.es_lider = 1
+               )
+             LIMIT 1`,
+            [usuario_id]
+        );
+        if (getFirstRow(remTieneLider)) {
+            return res.status(403).json({ error: 'Solo los agentes sin líder pueden enviar solicitudes' });
+        }
+
+        // El destino debe ser un agente (es_lider=0) que pertenezca a un equipo con líder
+        const destResult = await pool.query(
+            `SELECT u.id, u.nombre, u.username, u.is_active,
+                    e.id as equipo_id, e.nombre as equipo_nombre,
+                    (SELECT eu3.usuario_id FROM equipo_usuarios eu3
+                     WHERE eu3.equipo_id = eu.equipo_id AND eu3.fecha_salida IS NULL AND eu3.es_lider = 1
+                     ORDER BY eu3.id ASC LIMIT 1) as lider_id
+             FROM equipo_usuarios eu
+             INNER JOIN usuarios u ON eu.usuario_id = u.id
+             INNER JOIN equipos e ON eu.equipo_id = e.id
+             WHERE eu.usuario_id = ? AND eu.fecha_salida IS NULL AND eu.es_lider = 0`,
+            [destinoNum]
+        );
+        const destino = getFirstRow(destResult);
+        if (!destino || !destino.lider_id) {
+            return res.status(400).json({ error: 'El destino debe ser un agente que tenga líder' });
+        }
+        if (!destino.is_active) {
+            return res.status(400).json({ error: 'El agente destino está inactivo' });
+        }
+
+        // Obtener datos del remitente para el nombre de la campaña
+        const remitRes = await pool.query('SELECT id, nombre, username FROM usuarios WHERE id = ?', [usuario_id]);
+        const remitente = getFirstRow(remitRes) || { nombre: 'Agente' };
+
+        // ================================================================
+        // 1. Crear la campaña tripartita
+        // ================================================================
+        const nombreCampana = 'Envío de ' + (remitente.nombre || remitente.username) + ' → ' + (destino.nombre || destino.username);
+        const solicitudesIdsJson = JSON.stringify(ids);
+
+        const resultGM = await pool.query(
+            `INSERT INTO gestiones_maestro (nombre, descripcion, usuario_id, equipo_id, estado, total_solicitudes, gestionadas, solicitudes_ids, asignado_a)
+             VALUES (?, ?, ?, ?, 'activa', ?, 0, ?, ?)`,
+            [nombreCampana, (comentario || 'Solicitud enviada por ' + (remitente.nombre || remitente.username)), usuario_id, destino.equipo_id, ids.length, solicitudesIdsJson, destinoNum]
+        );
+        const campanaId = resultGM.rows?.[0]?.id || resultGM.lastInsertRowid;
+
+        // Puente semáforo (todas sin_clasificar)
+        try {
+            await insertarSemaforoSinClasificar(campanaId, ids, usuario_id);
+        } catch (e) {
+            console.error('[enviarSolicitudes] Error semáforo:', e.message);
+        }
+
+        // Vincular campana_id en las solicitudes
+        for (const sid of ids) {
+            try {
+                await pool.query(
+                    'UPDATE solicitudes SET campana_id = ? WHERE id_solicitud = ? AND (campana_id IS NULL OR campana_id != ?)',
+                    [campanaId, sid, campanaId]
+                );
+            } catch (e) {
+                console.error('[enviarSolicitudes] Error vinculando campana_id ' + sid + ':', e.message);
+            }
+        }
+
+        // ================================================================
+        // 2. Trazabilidad: una fila por solicitud en envios_solicitudes
+        // ================================================================
+        for (const sid of ids) {
+            try {
+                await pool.query(
+                    `INSERT INTO envios_solicitudes (solicitud_id, remitente_id, destino_id, comentario, equipo_id, campana_id)
+                     VALUES (?, ?, ?, ?, ?, ?)`,
+                    [sid, usuario_id, destinoNum, comentario || null, destino.equipo_id, campanaId]
+                );
+            } catch (e) {
+                console.error('[enviarSolicitudes] Error insertando envio ' + sid + ':', e.message);
+            }
+        }
+
+        // ================================================================
+        // 3. Invalidar caché
+        // ================================================================
+        try { cache.invalidateAllCampanas(); } catch (e) { /* silencioso */ }
+        try { cache.invalidateDashboard(destinoNum); } catch (e) { /* silencioso */ }
+
+        // ================================================================
+        // 4. Notificaciones (destino + líder de su equipo)
+        // ================================================================
+        const accionUrl = '/gestion-lote?id=' + campanaId;
+        const accionModulo = 'gestion-lote';
+        const accionTexto = 'Ver campaña';
+
+        // Al agente destino
+        await crearYNotificar({
+            destinatarioId: destinoNum,
+            titulo: '📥 Recibiste ' + ids.length + ' solicitud(es)',
+            mensaje: (remitente.nombre || remitente.username) + ' te envió ' + ids.length
+                + ' solicitud(es) para gestionar. Revisa la campaña para comenzar.',
+            tipo: 'info', prioridad: 'alta',
+            accionUrl, accionModulo, accionTexto, creadorId: usuario_id
+        });
+
+        // Al líder del equipo del destino
+        if (destino.lider_id) {
+            await crearYNotificar({
+                destinatarioId: destino.lider_id,
+                titulo: '📋 Tu agente ' + (destino.nombre || destino.username) + ' recibió ' + ids.length + ' solicitud(es)',
+                mensaje: (remitente.nombre || remitente.username) + ' envió ' + ids.length
+                    + ' solicitud(es) a tu agente ' + (destino.nombre || destino.username) + '. Puedes gestionarlas o reasignarlas desde la campaña.',
+                tipo: 'info', prioridad: 'normal',
+                accionUrl, accionModulo, accionTexto, creadorId: usuario_id
+            });
+        }
+
+        // Auditoría
+        try {
+            await pool.query(
+                `INSERT INTO audit_log (usuario_id, accion, target_type, target_id, detalle, ip_address, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+                [usuario_id, 'solicitud.enviada', 'campana', campanaId,
+                 JSON.stringify({ destino_id: destinoNum, equipo_id: destino.equipo_id, cantidad: ids.length }),
+                 req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip]
+            );
+        } catch (e) { /* ignora error de auditoría */ }
+
+        res.status(201).json({
+            id: campanaId,
+            mensaje: ids.length + ' solicitud(es) enviada(s) a ' + (destino.nombre || destino.username),
+            total: ids.length
+        });
+    } catch (error) {
+        console.error('Error en enviarSolicitudes:', error);
+        res.status(500).json({ error: 'Error al enviar solicitudes', detalle: error.message });
+    }
+}
+
+// ============================================================================
+// REASIGNAR AGENTE DE UNA CAMPAÑA (líder del equipo de la campaña)
+// ============================================================================
+// POST /api/gestiones-maestro/:id/reasignar-agente
+// Body: { nuevo_agente_id }
+// - Solo el líder del equipo de la campaña (o superadmin/admin) puede reasignar.
+// - El nuevo agente debe pertenecer al mismo equipo.
+// - Actualiza gestiones_maestro.asignado_a y la traza en envios_solicitudes
+//   (conserva destino_id original, registra nuevo_destino_id).
+// - Notifica al remitente, al destino original y al nuevo destino.
+async function reasignarAgente(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+        const user = req.session.usuario;
+
+        const { id } = req.params;
+        const { nuevo_agente_id } = req.body;
+        const nuevoAgenteNum = Number(nuevo_agente_id);
+
+        if (!nuevoAgenteNum) {
+            return res.status(400).json({ error: 'nuevo_agente_id es requerido' });
+        }
+
+        // Acceso a la campaña y obtener equipo + remitente
+        const access = buildGestionAccessWhere(req, id);
+        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access);
+        const resultGM = await pool.query(checkSql, access.params);
+        const gestion = getFirstRow(resultGM);
+
+        if (!gestion) {
+            return res.status(404).json({ error: 'Gestión no encontrada' });
+        }
+
+        // Solo líder del equipo (o superadmin/admin) reasigna
+        if (user.rol !== 'superadmin' && user.rol !== 'admin') {
+            if (!user.es_lider) {
+                return res.status(403).json({ error: 'Solo el líder puede reasignar campañas' });
+            }
+            if (gestion.equipo_id !== user.equipo_id) {
+                return res.status(403).json({ error: 'No puedes reasignar campañas que no pertenecen a tu equipo' });
+            }
+        }
+
+        // El nuevo agente debe pertenecer al mismo equipo que la campaña
+        const checkAgente = await pool.query(
+            'SELECT u.id, u.nombre, u.username FROM usuarios u INNER JOIN equipo_usuarios eu ON u.id = eu.usuario_id WHERE u.id = ? AND eu.equipo_id = ? AND eu.fecha_salida IS NULL AND es_lider = 0',
+            [nuevoAgenteNum, gestion.equipo_id]
+        );
+        const nuevoAgente = getFirstRow(checkAgente);
+        if (!nuevoAgente) {
+            return res.status(400).json({ error: 'El nuevo agente no pertenece al equipo de esta campaña o no es un agente válido' });
+        }
+
+        const destinoAnteriorNum = gestion.asignado_a ? Number(gestion.asignado_a) : null;
+
+        // Actualizar asignado_a de la campaña
+        await pool.query(
+            'UPDATE gestiones_maestro SET asignado_a = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [nuevoAgenteNum, id]
+        );
+
+        // Trazabilidad: conservar destino original (destino_id) y registrar nuevo_destino_id
+        try {
+            await pool.query(
+                `UPDATE envios_solicitudes
+                 SET reasignada = 1, nuevo_destino_id = ?, reasignada_por = ?, fecha_reasignacion = CURRENT_TIMESTAMP
+                 WHERE campana_id = ? AND reasignada = 0`,
+                [nuevoAgenteNum, usuario_id, Number(id)]
+            );
+        } catch (e) {
+            console.error('[reasignarAgente] Error actualizando envios_solicitudes:', e.message);
+        }
+
+        cache.invalidateAllCampanas();
+
+        // ================================================================
+        // Notificaciones: remitente + destino original + nuevo destino
+        // ================================================================
+        const accionUrl = '/gestion-lote?id=' + id;
+        const accionModulo = 'gestion-lote';
+        const accionTexto = 'Ver campaña';
+
+        const remitenteNombre = null;
+        let remitenteId = null;
+        try {
+            const r = await pool.query('SELECT id, nombre FROM usuarios WHERE id = ?', [gestion.usuario_id]);
+            const rr = getFirstRow(r);
+            if (rr) { remitenteId = rr.id; remitenteNombre = rr.nombre; }
+        } catch (e) { /* silencioso */ }
+
+        const nombreLider = user.nombre || user.username;
+
+        // Al remitente (agente sin líder)
+        if (remitenteId && remitenteId !== nuevoAgenteNum) {
+            const nombreDestinoAnterior = destinoAnteriorNum ? (await obtenerNombreUsuario(destinoAnteriorNum)) : 'un agente';
+            await crearYNotificar({
+                destinatarioId: remitenteId,
+                titulo: '🔄 Tu solicitud fue reasignada',
+                mensaje: 'El líder ' + nombreLider + ' reasignó tu solicitud de ' + nombreDestinoAnterior
+                    + ' a ' + (nuevoAgente.nombre || nuevoAgente.username) + '.',
+                tipo: 'info', prioridad: 'normal',
+                accionUrl, accionModulo, accionTexto, creadorId: usuario_id
+            });
+        }
+
+        // Al destino original
+        if (destinoAnteriorNum && destinoAnteriorNum !== nuevoAgenteNum) {
+            await crearYNotificar({
+                destinatarioId: destinoAnteriorNum,
+                titulo: '🔄 Solicitud reasignada',
+                mensaje: 'El líder ' + nombreLider + ' reasignó a ' + (nuevoAgente.nombre || nuevoAgente.username)
+                    + ' la solicitud que habías recibido.',
+                tipo: 'info', prioridad: 'normal',
+                accionUrl, accionModulo, accionTexto, creadorId: usuario_id
+            });
+        }
+
+        // Al nuevo destino
+        await crearYNotificar({
+            destinatarioId: nuevoAgenteNum,
+            titulo: '📥 Recibiste una solicitud reasignada',
+            mensaje: 'El líder ' + nombreLider + ' te asignó la solicitud de la campaña. Revisa la campaña para gestionarla.',
+            tipo: 'info', prioridad: 'normal',
+            accionUrl, accionModulo, accionTexto, creadorId: usuario_id
+        });
+
+        // Auditoría
+        try {
+            await pool.query(
+                `INSERT INTO audit_log (usuario_id, accion, target_type, target_id, detalle, ip_address, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+                [usuario_id, 'solicitud.reasignada', 'campana', Number(id),
+                 JSON.stringify({ anterior: destinoAnteriorNum, nuevo: nuevoAgenteNum }),
+                 req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip]
+            );
+        } catch (e) { /* ignora error de auditoría */ }
+
+        res.json({
+            mensaje: 'Solicitud reasignada a ' + (nuevoAgente.nombre || nuevoAgente.username),
+            nuevo_agente_id: nuevoAgenteNum,
+            campaña_id: parseInt(id)
+        });
+    } catch (error) {
+        console.error('Error en reasignarAgente:', error);
+        res.status(500).json({ error: 'Error al reasignar agente', detalle: error.message });
+    }
+}
+
+// Helper para obtener el nombre de un usuario (con fallback al id)
+async function obtenerNombreUsuario(usuarioId) {
+    if (!usuarioId) return 'un agente';
+    const r = await pool.query('SELECT nombre, username FROM usuarios WHERE id = ?', [usuarioId]);
+    const row = getFirstRow(r);
+    return (row && (row.nombre || row.username)) || ('agente #' + usuarioId);
+}
+
 module.exports = {
     // Aliases en español para compatibilidad con las rutas
     crearGestionMaestro: createGestionMaestro,
@@ -1839,6 +2285,10 @@ module.exports = {
     createGestionMaestro: createGestionMaestro,
     updateGestionMaestro: updateGestionMaestro,
     deleteGestionMaestro: deleteGestionMaestro,
-    // Campaña asignada por el sistema (superadmin)
-    crearCampanaSistema: crearCampanaSistema
+    crearCampanaSistema: crearCampanaSistema,
+    // Envío de solicitudes a agente con líder (FASE 2)
+    enviarSolicitudes: enviarSolicitudes,
+    reasignarAgente: reasignarAgente,
+    // Helper reutilizable (notificaciones)
+    crearYNotificar: crearYNotificar
 };

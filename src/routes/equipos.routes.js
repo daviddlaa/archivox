@@ -19,6 +19,11 @@ router.use(requiresAuth);
 router.get('/mi-equipo', equiposController.miEquipo);
 
 // ============================================================================
+// AGENTES CON LÍDER (selector "Enviar a") — antes de /:id
+// ============================================================================
+router.get('/agentes-con-lider', equiposController.agentesConLider);
+
+// ============================================================================
 // RUTAS PÚBLICAS (para usuarios autenticados con permiso)
 // ============================================================================
 

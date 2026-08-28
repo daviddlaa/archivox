@@ -1151,6 +1151,16 @@ body .solicitud-card.seleccionada::after {
     box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
 }
 
+.floating-action-btn.btn-enviar {
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    color: white;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+}
+
+.floating-action-btn.btn-enviar:hover {
+    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.5);
+}
+
 .floating-action-close {
     display: inline-flex;
     align-items: center;

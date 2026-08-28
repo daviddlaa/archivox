@@ -1074,6 +1074,158 @@ async function confirmarAgregarCampanaDesktop() {
 }
 
 // ============================================================================
+// ENVIAR A (agente con líder) — DESKTOP
+// Un agente sin líder envía solicitudes a un agente con líder. Crea una campaña
+// tripartita. El selector carga /api/equipos/agentes-con-lider.
+// ============================================================================
+
+var agenteDestinoIdDesktop = null;
+
+async function abrirModalEnviarA() {
+    if (filasSeleccionadas.length === 0) {
+        alert('Selecciona al menos una solicitud primero');
+        return;
+    }
+
+    agenteDestinoIdDesktop = null;
+
+    var contenido = '';
+    contenido += '<div style="display: flex; flex-direction: column; max-height: 80vh; overflow: hidden; padding: 24px; max-width: 620px; margin: 0 auto;">';
+    contenido += '<div style="flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px;">';
+    contenido += '<h2 style="margin: 0; color: #1f2937; font-size: 20px;">➡️ Enviar a Agente</h2>';
+    contenido += '<button id="btn-confirmar-enviar-a" onclick="confirmarEnviarADesktop()" disabled style="padding: 10px 18px; background: #9ca3af; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: not-allowed; transition: all 0.2s ease; white-space: nowrap;">Selecciona un agente</button>';
+    contenido += '</div>';
+    contenido += '<div style="flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px;">';
+    contenido += '<div style="background: #e0e7ff; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #3730a3;">' + filasSeleccionadas.length + ' solicitudes seleccionadas</div>';
+    contenido += '<button onclick="cerrarModal()" class="btn-modal-cancelar">Cancelar</button>';
+    contenido += '</div>';
+    contenido += '<div style="flex-shrink: 0; margin-bottom: 12px;">';
+    contenido += '<label style="font-size: 12px; font-weight: 600; color: #4b5563; display:block; margin-bottom: 4px;">Comentario (opcional)</label>';
+    contenido += '<textarea id="comentario-enviar-a" rows="2" placeholder="Motivo de la solicitud..." style="width: 100%; box-sizing:border-box; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; font-family: inherit; resize: vertical;"></textarea>';
+    contenido += '</div>';
+    contenido += '<div id="agentes-list-desktop" style="flex: 1; min-height: 0; overflow-y: auto; text-align: center; padding: 40px; color: #6b7280;">⏳ Cargando agentes...</div>';
+    contenido += '<div style="flex-shrink:0; margin-top: 8px; font-size: 12px; color: #6b7280;">Se envía a <b>agentes con líder</b>. El líder podrá reasignarla cuando lo requiera.</div>';
+    contenido += '</div>';
+
+    crearModal(contenido);
+
+    try {
+        var response = await fetch('/api/equipos/agentes-con-lider', { credentials: 'include' });
+        if (!response.ok) throw new Error('Error al cargar agentes');
+        var data = await response.json();
+        var agentes = (data && data.data) || [];
+        renderizarListaAgentesDesktop(agentes);
+    } catch (error) {
+        console.error('[abrirModalEnviarA] Error:', error);
+        var listContainer = document.getElementById('agentes-list-desktop');
+        if (listContainer) listContainer.innerHTML = '<div style="color: #dc2626;">❌ Error al cargar agentes</div>';
+    }
+}
+
+function renderizarListaAgentesDesktop(agentes) {
+    var container = document.getElementById('agentes-list-desktop');
+    if (!container) return;
+
+    if (!agentes || agentes.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;">📭 No hay agentes con líder disponibles.<br><br><button onclick="cerrarModal()" class="btn-modal-cancelar">Cerrar</button></div>';
+        return;
+    }
+
+    var html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+    for (var i = 0; i < agentes.length; i++) {
+        var a = agentes[i];
+        var nombreAttr = String(a.usuario_nombre || a.usuario_username || 'Agente').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        var liderAttr = String(a.lider_nombre || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        var recomendado = a.metricas && a.metricas.es_recomendado;
+        var badge = '';
+        if (recomendado) {
+            badge = '<span style="background: #dcfce7; color: #065f46; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; margin-left: 6px;">⚡ Más rápido</span>';
+        }
+        html += '<div class="agente-item-select" data-id="' + a.usuario_id + '" data-nombre="' + nombreAttr + '" style="background: #f8fafc; border: 2px solid #e5e7eb; border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.2s ease;" onclick="seleccionarAgenteDestinoDesktop(this, \'' + a.usuario_id + '\')">';
+        html += '<div style="display: flex; justify-content: space-between; align-items: center;">';
+        html += '<div><span style="font-weight: 600; font-size: 14px; color: #1f2937;">' + panelEscapeHtml(a.usuario_nombre || a.usuario_username) + '</span>' + badge + '</div>';
+        html += '<span style="font-size: 11px; color: #6b7280; background:#eef2f7; padding: 2px 8px; border-radius: 8px;">' + panelEscapeHtml(a.equipo_nombre || '') + '</span>';
+        html += '</div>';
+        html += '<div style="margin-top: 4px; font-size: 12px; color: #6b7280;">👤 Líder: ' + panelEscapeHtml(a.lider_nombre || '—') + '</div>';
+        html += '</div>';
+    }
+    html += '</div>';
+
+    container.innerHTML = html;
+}
+
+function seleccionarAgenteDestinoDesktop(elemento, id) {
+    document.querySelectorAll('.agente-item-select').forEach(function(el) {
+        el.classList.remove('seleccionada');
+        el.style.borderColor = '#e5e7eb';
+        el.style.background = '#f8fafc';
+    });
+    elemento.classList.add('seleccionada');
+    elemento.style.borderColor = '#2563eb';
+    elemento.style.background = '#eff6ff';
+    agenteDestinoIdDesktop = id;
+
+    var btn = document.getElementById('btn-confirmar-enviar-a');
+    if (btn) {
+        btn.disabled = false;
+        btn.style.background = '#2563eb';
+        btn.style.cursor = 'pointer';
+        btn.textContent = '➡️ Enviar a este agente';
+    }
+}
+
+async function confirmarEnviarADesktop() {
+    if (!agenteDestinoIdDesktop) {
+        alert('Selecciona un agente destino primero');
+        return;
+    }
+    if (filasSeleccionadas.length === 0) {
+        alert('No hay solicitudes seleccionadas');
+        return;
+    }
+
+    var btn = document.getElementById('btn-confirmar-enviar-a');
+    if (btn) { btn.textContent = '⏳ Enviando...'; btn.disabled = true; }
+
+    var comentario = '';
+    var txt = document.getElementById('comentario-enviar-a');
+    if (txt) comentario = txt.value;
+
+    try {
+        var response = await fetch('/api/gestiones-maestro/enviar-solicitudes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                destino_id: agenteDestinoIdDesktop,
+                solicitudes_ids: filasSeleccionadas,
+                comentario: comentario
+            })
+        });
+        var resultado = await response.json();
+        if (response.ok) {
+            var enviadas = (resultado && resultado.total) ? resultado.total : filasSeleccionadas.length;
+            cerrarModal();
+            cancelarSeleccion();
+            queryCache.clear();
+            buscarEnServidor(true);
+            if (typeof mostrarToastSimple === 'function') {
+                mostrarToastSimple('✅ ' + enviadas + ' solicitud(es) enviada(s)');
+            } else {
+                alert('✅ ' + (resultado.mensaje || 'Solicitudes enviadas correctamente'));
+            }
+        } else {
+            alert('Error: ' + (resultado.error || 'Error desconocido'));
+            if (btn) { btn.textContent = '➡️ Enviar a este agente'; btn.disabled = false; }
+        }
+    } catch (error) {
+        console.error('Error enviando solicitudes:', error);
+        alert('Error al enviar solicitudes: ' + error.message);
+        if (btn) { btn.textContent = '➡️ Enviar a este agente'; btn.disabled = false; }
+    }
+}
+
+// ============================================================================
 // FUNCIONES FALTANTES - Renderizado, filtros, utilidades
 // ============================================================================
 

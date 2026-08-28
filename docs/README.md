@@ -822,6 +822,7 @@ SUPERADMIN (Nivel 100)
 | `permisos_equipo` | Permisos adicionales por equipo |
 | `asignaciones_solicitudes` | Solicitudes asignadas a equipos/agentes |
 | `campañas_equipo` | Campañas asociadas a equipos |
+| `envios_solicitudes` | Trazabilidad de envíos entre agentes (remitente→destino→líder): `solicitud_id, remitente_id, destino_id, comentario, equipo_id, campana_id, fecha_envio, gestionada, fecha_gestion, gestionada_por, reasignada, nuevo_destino_id, reasignada_por, fecha_reasignacion` |
 
 ### 8.5 Permisos del Líder vs Agente
 
@@ -1556,6 +1557,8 @@ La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tabla
 | PUT | `/api/gestiones-maestro/:id/solicitudes/:solicitudId/destacar` | ✅ | Destacar solicitud con acceso a campaña |
 | PUT | `/api/gestiones-maestro/:id/asignar-agente` | ✅ | Asignar agente |
 | PUT | `/api/gestiones-maestro/:id/quitar-asignacion` | ✅ | Quitar asignación |
+| POST | `/api/gestiones-maestro/enviar-solicitudes` | ✅ | Enviar solicitudes a un agente con líder (agente sin líder) → crea campaña tripartita + trazabilidad `envios_solicitudes` + notificaciones SSE |
+| POST | `/api/gestiones-maestro/:id/reasignar-agente` | ✅ | Reasignar la campaña a otro agente del mismo equipo (líder) — conserva `destino_id`, registra `nuevo_destino_id` + notifica remitente/origen/nuevo |
 
 ### 12.7 Ventas (`/api/excel`)
 
@@ -1618,6 +1621,7 @@ La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tabla
 |--------|------|------|-------------|
 | GET | `/api/equipos` | ✅ | Listar equipos |
 | GET | `/api/equipos/mi-equipo` | ✅ | Mi equipo actual |
+| GET | `/api/equipos/agentes-con-lider` | ✅ | Agentes con líder (selector "Enviar a") con métricas de velocidad + ⚡ recomendado |
 | GET | `/api/equipos/:id` | ✅ (equipo) | Obtener equipo |
 | GET | `/api/equipos/:id/miembros` | ✅ (equipo) | Miembros del equipo |
 | GET | `/api/equipos/:id/dashboard` | ✅ (equipo) | Dashboard del equipo |

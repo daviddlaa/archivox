@@ -475,6 +475,9 @@ function renderizarGridCampanasLanding() {
         html += '<div class="campaña-acciones-grid">';
         if (_esLider && _agentesEquipo.length > 0) {
             html += '<button type="button" class="campaña-btn-accion campaña-btn-asignar" onclick="event.stopPropagation(); abrirModalAsignarAgente(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.asignado_a || 'null') + ')" title="Asignar a agente">👤 Asignar</button>';
+            if (g.asignado_a) {
+                html += '<button type="button" class="campaña-btn-accion campaña-btn-reasignar" onclick="event.stopPropagation(); abrirModalReasignar(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.asignado_a || 'null') + ')" title="Reasignar a otro agente">🔄 Reasignar</button>';
+            }
         } else {
             html += '<button type="button" class="campaña-btn-accion campaña-btn-asignar" onclick="event.stopPropagation(); abrirModalEditarCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Editar campaña">✏️ Editar</button>';
         }
@@ -600,6 +603,9 @@ async function cargarListaCampanas() {
             
             if (_esLider && _agentesEquipo.length > 0) {
                 html += '<button type="button" class="campaña-btn-accion campaña-btn-asignar" onclick="event.stopPropagation(); CampanasPopover.close(); abrirModalAsignarAgente(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.asignado_a || 'null') + ')" title="Asignar a agente">👤 Asignar</button>';
+                if (g.asignado_a) {
+                    html += '<button type="button" class="campaña-btn-accion campaña-btn-reasignar" onclick="event.stopPropagation(); CampanasPopover.close(); abrirModalReasignar(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.asignado_a || 'null') + ')" title="Reasignar a otro agente">🔄 Reasignar</button>';
+                }
             } else {
                 html += '<button type="button" class="campaña-btn-accion campaña-btn-asignar" onclick="event.stopPropagation(); CampanasPopover.close(); abrirModalEditarCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Editar campaña">✏️ Editar</button>';
             }
@@ -2813,7 +2819,92 @@ async function quitarAsignacionAgente(campaniaId) {
     }
 }
 
-// ================== EDITAR CAMPAÑA ==================
+// ================== REASIGNAR AGENTE (envío entre agentes) ==================
+// Solo líder del equipo. El destino debe ser del mismo equipo. Se conserva la
+// traza del destino original (backend). Se notifica al remitente, al destino
+// original y al nuevo destino.
+function abrirModalReasignar(campaniaId, nombreCampania, asignadoActual, equipoCampana) {
+    if (!_esLider) {
+        alert('Solo el líder puede reasignar');
+        return;
+    }
+
+    // Reasignar requiere un agente asignado actualmente (campañas de envío)
+    if (!asignadoActual) {
+        alert('Esta campaña no tiene un agente asignado para reasignar');
+        return;
+    }
+
+    var listaAgentes = _agentesEquipo;
+    if (equipoCampana && Array.isArray(equipoCampana)) listaAgentes = equipoCampana;
+    if (listaAgentes.length === 0) {
+        alert('No tienes agentes en tu equipo para reasignar');
+        return;
+    }
+
+    var contenido = '';
+    contenido += '<div class="modal-asignar">';
+    contenido += '<h2>🔄 Reasignar Campaña</h2>';
+    contenido += '<p style="margin-bottom:16px;color:#6b7280;"><strong>Campaña:</strong> ' + escaparParaHTML(nombreCampania) + '</p>';
+    contenido += '<p style="margin-bottom:12px;font-size:12px;color:#6b7280;">La solicitud pasará del agente actual a otro agente de su mismo equipo. Se notificará al remitente, al agente anterior y al nuevo.</p>';
+
+    contenido += '<div class="modal-asignar-lista">';
+
+    for (var i = 0; i < listaAgentes.length; i++) {
+        var agente = listaAgentes[i];
+        var isActive = agente.is_active;
+        var esAsignado = String(agente.id) === String(asignadoActual);
+        if (esAsignado) continue;
+        var claseItem = 'asignar-item';
+
+        contenido += '<div class="' + claseItem + '" onclick="' + (isActive ? 'confirmarReasignarCampana(' + campaniaId + ', ' + agente.id + ')' : '') + '">';
+        contenido += '<div class="asignar-item-check">👤</div>';
+        contenido += '<div class="asignar-item-info">';
+        contenido += '<div class="asignar-item-nombre">' + escaparParaHTML(agente.nombre || agente.username) + '</div>';
+        contenido += '<div class="asignar-item-datos">@' + escaparParaHTML(agente.username) + ' · ' + parseInt(agente.asignadas || 0) + ' asignadas</div>';
+        if (!isActive) {
+            contenido += '<span style="font-size:11px;color:#dc2626;font-weight:600;">🔴 Inactivo</span>';
+        }
+        contenido += '</div>';
+        contenido += '</div>';
+    }
+
+    contenido += '</div>';
+
+    contenido += '<div class="modal-botones" style="margin-top:16px;">';
+    contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cerrar</button>';
+    contenido += '</div>';
+    contenido += '</div>';
+
+    crearModal(contenido);
+}
+
+async function confirmarReasignarCampana(campaniaId, nuevoAgenteId) {
+    if (!confirm('¿Reasignar esta solicitud a este agente?')) return;
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + campaniaId + '/reasignar-agente', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nuevo_agente_id: nuevoAgenteId })
+        });
+
+        var resultado = await response.json();
+
+        if (response.ok) {
+            alert('✅ ' + resultado.mensaje);
+            cerrarModal();
+            await cargarListaCampanas();
+            if (String(campaniaId) === String(gestionId)) {
+                await cargarDatosGestion();
+            }
+        } else {
+            alert('Error: ' + (resultado.error || 'Error al reasignar'));
+        }
+    } catch (error) {
+        console.error('Error reasignando:', error);
+        alert('Error al reasignar: ' + error.message);
+    }
+}
 
 function abrirModalEditarCampana(id, nombre, descripcion, fechaLimite, estado) {
     var nombreEsc = escaparParaHTML(nombre);

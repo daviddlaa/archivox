@@ -956,6 +956,14 @@ body {
     background: #059669;
 }
 
+.campaña-btn-reasignar {
+    background: #0d9488;
+}
+
+.campaña-btn-reasignar:hover {
+    background: #0f766e;
+}
+
 .campaña-btn-eliminar {
     background: #ef4444;
 }

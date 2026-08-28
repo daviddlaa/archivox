@@ -713,6 +713,37 @@ const initTables = async () => {
         `);
         console.log('   ✅ plantillas');
 
+        // ================================================================
+        // 🆕 TABLA: envios_solicitudes (trazabilidad de envíos entre agentes)
+        // Un agente sin líder envía solicitudes a un agente con líder. Cada
+        // fila es UN envío de UNA solicitud. La reasignación del líder
+        // conserva el destino original (destino_id) y registra nuevo_destino_id.
+        // ================================================================
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS envios_solicitudes (
+                id                 SERIAL PRIMARY KEY,
+                solicitud_id       INTEGER NOT NULL,
+                remitente_id       INTEGER NOT NULL REFERENCES usuarios(id),
+                destino_id         INTEGER NOT NULL REFERENCES usuarios(id),
+                comentario         TEXT,
+                equipo_id          INTEGER NOT NULL REFERENCES equipos(id),
+                campana_id         INTEGER NOT NULL REFERENCES gestiones_maestro(id),
+                fecha_envio        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                gestionada         INTEGER DEFAULT 0,
+                fecha_gestion      TIMESTAMP,
+                gestionada_por     INTEGER REFERENCES usuarios(id),
+                reasignada         INTEGER DEFAULT 0,
+                nuevo_destino_id   INTEGER REFERENCES usuarios(id),
+                reasignada_por     INTEGER REFERENCES usuarios(id),
+                fecha_reasignacion TIMESTAMP
+            )
+        `);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_envios_destino ON envios_solicitudes(destino_id)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_envios_equipo ON envios_solicitudes(equipo_id)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_envios_fecha ON envios_solicitudes(fecha_envio)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_envios_solicitud ON envios_solicitudes(solicitud_id)`);
+        console.log('   ✅ envios_solicitudes (tabla + índices)');
+
         console.log('   ✅ Tablas multi-equipo creadas/verificadas');
 
         // ================================================================

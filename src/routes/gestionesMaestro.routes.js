@@ -12,6 +12,12 @@ router.use(requiresAuth);
 // POST /api/gestiones-maestro - Crear nueva gestión
 router.post('/', controller.crearGestionMaestro);
 
+// POST /api/gestiones-maestro/enviar-solicitudes - Enviar solicitudes a agente con líder (FASE 2)
+router.post('/enviar-solicitudes', controller.enviarSolicitudes);
+
+// POST /api/gestiones-maestro/:id/reasignar-agente - Reasignar agente de una campaña (FASE 2)
+router.post('/:id/reasignar-agente', controller.reasignarAgente);
+
 // GET /api/gestiones-maestro - Listar todas las gestione
 router.get('/', controller.listarGestionesMaestro);
 

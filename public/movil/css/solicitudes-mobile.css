@@ -1240,6 +1240,16 @@
         box-shadow: 0 1px 4px rgba(124, 58, 237, 0.25);
     }
 
+    .action-bar-btn.btn-enviar {
+        background: linear-gradient(135deg, #0d9488, #0f766e);
+        color: white;
+        box-shadow: 0 3px 10px rgba(13, 148, 136, 0.35);
+    }
+
+    .action-bar-btn.btn-enviar:active {
+        box-shadow: 0 1px 4px rgba(13, 148, 136, 0.25);
+    }
+
     /* ===== Pantallas muy pequeñas: texto debajo del icono ===== */
     @media (max-width: 390px) {
         .action-bar-btn {

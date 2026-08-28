@@ -252,7 +252,7 @@ function renderizarGridCampanasLandingMovil() {
         }
         html += '  <div class="campana-landing-stats">' + (g.total_solicitudes || 0) + ' solicitudes · ' + completadas + ' completadas · ' + pct + '%</div>';
         html += '  <div class="campana-landing-bar"><span style="width:' + pct + '%"></span></div>';
-        html += '  <button type="button" class="campana-landing-more" onclick="event.stopPropagation(); abrirBottomSheetCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Acciones">⋯</button>';
+        html += '  <button type="button" class="campana-landing-more" onclick="event.stopPropagation(); abrirBottomSheetCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\', ' + (g.asignado_a || 'null') + ')" title="Acciones">⋯</button>';
         html += '</div>';
     }
     html += '</div>';
@@ -301,7 +301,7 @@ async function cargarListaCampanas() {
             html += '    <div class="campana-sheet-item-name">' + (g.nombre || 'Sin nombre') + (g.es_sistema ? ' <span class="campana-sheet-item-badge">🤖 Sistema</span>' : '') + '</div>';
             html += '    <div class="campana-sheet-item-stats">' + (g.total_solicitudes || 0) + ' solicitudes · ' + completadas + ' completadas · ' + pct + '%</div>';
             html += '  </div>';
-            html += '  <button class="campana-sheet-item-more" onclick="event.stopPropagation(); closeCampanasSheet(); abrirBottomSheetCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Acciones">⋯</button>';
+            html += '  <button class="campana-sheet-item-more" onclick="event.stopPropagation(); closeCampanasSheet(); abrirBottomSheetCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\', ' + (g.asignado_a || 'null') + ')" title="Acciones">⋯</button>';
             html += '</div>';
         }
 
@@ -2310,7 +2310,7 @@ async function eliminarCampañaMovil(id) {
 // Variable para evitar abrir múltiples bottom sheets
 var _bottomSheetAbierto = false;
 
-function abrirBottomSheetCampana(id, nombre, total, gestionadas, descripcion, fechaLimite, estado) {
+function abrirBottomSheetCampana(id, nombre, total, gestionadas, descripcion, fechaLimite, estado, asignadoActual) {
     if (_bottomSheetAbierto) return;
     _bottomSheetAbierto = true;
     
@@ -2335,6 +2335,13 @@ function abrirBottomSheetCampana(id, nombre, total, gestionadas, descripcion, fe
         itemsHTML += '  <span class="campaña-bs-item-icon">👤</span>';
         itemsHTML += '  <span class="campaña-bs-item-label">Asignar a agente</span>';
         itemsHTML += '</button>';
+        // Reasignar (solo si hay agente asignado actualmente)
+        if (asignadoActual) {
+            itemsHTML += '<button class="campaña-bs-item" onclick="cerrarBottomSheetCampana(); abrirModalReasignarMovil(' + id + ', \'' + escaparParaAtributo(nombre) + '\', ' + asignadoActual + ')">';
+            itemsHTML += '  <span class="campaña-bs-item-icon">🔄</span>';
+            itemsHTML += '  <span class="campaña-bs-item-label">Reasignar</span>';
+            itemsHTML += '</button>';
+        }
     }
     
     // Agregar solicitudes (si la campaña activa es esta)
@@ -2564,7 +2571,111 @@ async function quitarAsignacionAgenteMovil(campaniaId) {
     }
 }
 
-// ================== FIN NUEVAS FUNCIONES ==================
+// ================== REASIGNAR AGENTE (MÓVIL) ==================
+// Solo líder. La solicitud pasa del agente actual a otro agente del mismo equipo.
+// Se notifica al remitente, al agente anterior y al nuevo.
+
+function abrirModalReasignarMovil(campaniaId, nombreCampania, asignadoActual) {
+    if (!_esLider) {
+        alert('Solo el líder puede reasignar');
+        return;
+    }
+    if (!asignadoActual) {
+        alert('Esta campaña no tiene un agente asignado para reasignar');
+        return;
+    }
+    if (_agentesEquipo.length === 0) {
+        alert('No tienes agentes en tu equipo para reasignar');
+        return;
+    }
+
+    var nombreEsc = escaparParaHTML(nombreCampania);
+    var listaAgentes = '';
+
+    if (asignadoActual) {
+        listaAgentes += '<div class="campaña-bs-header-sub" style="padding:10px 16px;font-size:12px;">🔄 Reasignará esta solicitud a otro agente del mismo equipo. Se notificará al remitente, al agente anterior y al nuevo.</div>';
+        listaAgentes += '<div class="campaña-bs-divider"></div>';
+    }
+
+    for (var i = 0; i < _agentesEquipo.length; i++) {
+        var agente = _agentesEquipo[i];
+        var esActual = String(agente.id) === String(asignadoActual);
+        var isActive = agente.is_active !== false;
+
+        if (esActual || !isActive) continue; // Omitir actual e inactivos
+
+        var nombreAgente = escaparParaHTML(agente.nombre || agente.username || 'Agente #' + agente.id);
+        var asignadas = parseInt(agente.asignadas || 0);
+
+        listaAgentes += '<button class="campaña-bs-item" onclick="cerrarBottomSheetCampana(); setTimeout(function() { confirmarReasignarCampanaMovil(' + campaniaId + ', ' + agente.id + '); }, 250)">';
+        listaAgentes += '  <span class="campaña-bs-item-icon">👤</span>';
+        listaAgentes += '  <span class="campaña-bs-item-label">' + nombreAgente + ' · ' + asignadas + ' asignadas</span>';
+        listaAgentes += '</button>';
+    }
+
+    if (listaAgentes.indexOf('campaña-bs-item') === -1) {
+        alert('No hay agentes activos disponibles para reasignar en tu equipo');
+        return;
+    }
+
+    var overlay = document.getElementById('campaña-bs-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'campaña-bs-overlay';
+        overlay.className = 'campaña-bs-overlay';
+        document.body.appendChild(overlay);
+    }
+
+    overlay.innerHTML = '' +
+        '<div class="campaña-bs-overlay" id="campaña-bs-overlay-inner" onclick="cerrarBottomSheetCampana()"></div>' +
+        '<div class="campaña-bs-sheet" id="campaña-bs-sheet">' +
+            '<div class="campaña-bs-handle"></div>' +
+            '<div class="campaña-bs-header">' +
+                '<div>' +
+                    '<div class="campaña-bs-header-title">🔄 Reasignar Campaña</div>' +
+                    '<div class="campaña-bs-header-sub">' + nombreEsc + '</div>' +
+                '</div>' +
+                '<button class="campaña-bs-close" onclick="cerrarBottomSheetCampana()">✕</button>' +
+            '</div>' +
+            '<div class="campaña-bs-body">' +
+                listaAgentes +
+            '</div>' +
+        '</div>';
+
+    requestAnimationFrame(function() {
+        overlay.classList.add('visible');
+        var innerOverlay = document.getElementById('campaña-bs-overlay-inner');
+        var sheet = document.getElementById('campaña-bs-sheet');
+        if (innerOverlay) innerOverlay.classList.add('visible');
+        if (sheet) sheet.classList.add('visible');
+    });
+}
+
+async function confirmarReasignarCampanaMovil(campaniaId, nuevoAgenteId) {
+    if (!confirm('¿Reasignar esta solicitud a este agente?')) return;
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + campaniaId + '/reasignar-agente', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nuevo_agente_id: nuevoAgenteId })
+        });
+
+        var resultado = await response.json();
+
+        if (response.ok) {
+            alert('✅ ' + resultado.mensaje);
+            await cargarListaCampanas();
+            if (String(campaniaId) === String(gestionId)) {
+                await cargarDatosGestionMovil();
+            }
+        } else {
+            alert('Error: ' + (resultado.error || 'Error al reasignar'));
+        }
+    } catch (error) {
+        console.error('[movil] Error reasignando:', error);
+        alert('Error al reasignar: ' + error.message);
+    }
+}
 
 // Iniciar
 init();

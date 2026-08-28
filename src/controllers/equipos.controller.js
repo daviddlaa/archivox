@@ -566,6 +566,107 @@ async function miEquipo(req, res) {
 }
 
 // ============================================================================
+// AGENTES CON LÍDER (selector "Enviar a")
+// ============================================================================
+// GET /api/equipos/agentes-con-lider
+// Devuelve los agentes que pertenecen a un equipo con líder, para que un agente
+// sin líder pueda enviarles solicitudes. Excluye al propio usuario y a los que
+// no tienen una membresía activa. Añade métricas de velocidad (FASE 4) para
+// recomendar al agente más rápido gestionando (badge "⚡ Más rápido").
+async function agentesConLider(req, res) {
+    try {
+        const usuarioId = getUsuarioId(req);
+        if (!usuarioId) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+
+        const result = await pool.query(
+            `SELECT u.id as usuario_id, u.nombre as usuario_nombre, u.username as usuario_username,
+                    e.id as equipo_id, e.nombre as equipo_nombre,
+                    (SELECT u2.nombre FROM equipo_usuarios eu2
+                     INNER JOIN usuarios u2 ON eu2.usuario_id = u2.id
+                     WHERE eu2.equipo_id = e.id AND eu2.fecha_salida IS NULL AND eu2.es_lider = 1
+                     ORDER BY eu2.id ASC LIMIT 1) as lider_nombre
+             FROM equipo_usuarios eu
+             INNER JOIN usuarios u ON eu.usuario_id = u.id
+             INNER JOIN equipos e ON eu.equipo_id = e.id
+             WHERE eu.fecha_salida IS NULL
+               AND eu.es_lider = 0
+               AND u.is_active = 1
+               AND u.id != $1
+               AND EXISTS (
+                   SELECT 1 FROM equipo_usuarios eu3
+                   WHERE eu3.equipo_id = e.id AND eu3.fecha_salida IS NULL AND eu3.es_lider = 1
+               )
+             ORDER BY u.nombre ASC`,
+            [usuarioId]
+        );
+
+        // FASE 4: Métricas por agente (volumen y velocidad de gestión)
+        // Solo si la tabla envios_solicitudes existe
+        const agentes = [];
+        for (const ag of result.rows) {
+            let metrics = { recibidas: 0, gestionadas: 0, tiempo_promedio_min: null, es_recomendado: false };
+            try {
+                // Diferencia de fechas compatible con ambos motores:
+                // - SQLite: julianday(fin) - julianday(inicio) en minutos
+                // - PostgreSQL: EXTRACT(EPOCH FROM (fin - inicio)) / 60 en minutos
+                const esPostgres = !!process.env.DATABASE_URL;
+                const diffExpr = esPostgres
+                    ? '(EXTRACT(EPOCH FROM (e.fecha_gestion - e.fecha_envio)) / 60.0)'
+                    : '((julianday(e.fecha_gestion) - julianday(e.fecha_envio)) * 1440)';
+                const m = await pool.query(
+                    `SELECT
+                        COUNT(*) as recibidas,
+                        SUM(CASE WHEN e.gestionada = 1 THEN 1 ELSE 0 END) as gestionadas,
+                        AVG(CASE WHEN e.gestionada = 1 AND e.fecha_gestion IS NOT NULL AND e.fecha_envio IS NOT NULL
+                            THEN ${diffExpr} END) as tiempo_promedio_min
+                     FROM envios_solicitudes e
+                     WHERE e.destino_id = $1`,
+                    [ag.usuario_id]
+                );
+                const row = getFirstRowLocal(m);
+                metrics.recibidas = parseInt(row?.recibidas) || 0;
+                metrics.gestionadas = parseInt(row?.gestionadas) || 0;
+                if (row?.tiempo_promedio_min != null) {
+                    metrics.tiempo_promedio_min = Math.round(Number(row.tiempo_promedio_min) * 100) / 100;
+                }
+            } catch (e) {
+                // Tabla aún no existe o error: métricas vacías
+            }
+            agentes.push({ ...ag, metricas: metrics });
+        }
+
+        // Marcar el recomendado (más rápido): mayor ratio de gestión con menor tiempo promedio
+        let mejor = null;
+        for (const ag of agentes) {
+            const m = ag.metricas;
+            if (m.gestionadas > 0 && m.tiempo_promedio_min != null) {
+                const score = (m.gestionadas / (m.tiempo_promedio_min + 1));
+                if (!mejor || score > mejor.score) {
+                    mejor = { ag, score };
+                }
+            }
+        }
+        if (mejor) {
+            mejor.ag.metricas.es_recomendado = true;
+        }
+
+        res.json({ data: agentes });
+    } catch (err) {
+        console.error('[Equipos] Error agentesConLider:', err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+// Helper local para leer primera fila (compatible SQLite/PG) sin depender del scope
+function getFirstRowLocal(result) {
+    if (result && result.rows && result.rows.length > 0) return result.rows[0];
+    if (Array.isArray(result) && result.length > 0) return result[0];
+    return null;
+}
+
+// ============================================================================
 // DASHBOARD DEL EQUIPO (Líder)
 // ============================================================================
 // GET /api/equipos/:id/dashboard
@@ -870,6 +971,7 @@ module.exports = {
     removerMiembro,
     eliminar,
     miEquipo,
+    agentesConLider,
     dashboardEquipo,
     gestionesEquipo,
     campanasEquipo,
