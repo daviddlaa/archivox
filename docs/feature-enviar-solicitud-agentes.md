@@ -34,7 +34,13 @@ al agente más rápido gestionando.
 
 > **Selector de destino (`GET /api/equipos/agentes-con-lider`):** lista solo agentes con líder
 > **activo**, de rol `agente` y **excluye el equipo "Sistema"** (por defecto). Si un líder se
-> inactiva, su grupo deja de aparecer. Ver `fix-agentes-con-lider-filtros.md`.
+> inactiva, su grupo deja de aparecer.
+>
+> **"Sin líder" (remitente):** se decide igual que el destino — un usuario solo en el equipo
+> "Sistema" **no** cuenta como "tiene líder" y **puede enviar**. Solo se bloquea a quien
+> pertenece a un equipo no-"Sistema" con un líder real y activo.
+>
+> Ver `fix-agentes-con-lider-filtros.md`.
 
 ### 1.2 Campaña tripartita
 

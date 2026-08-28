@@ -34,6 +34,10 @@ Faltaban los filtros de **rol `agente`** y de **excluir el equipo "Sistema"**.
 
 Ni el `EXISTS` ni el subquery `lider_nombre` comprobaban si el líder estaba activo (`usuarios.is_active`). Al inactivar a un líder, su fila `equipo_usuarios` (`es_lider=1`, sin `fecha_salida`) persiste, y además ninguna desactivación (`toggleActivoAgente` en `equipos.controller.js`, `admin/usuarios/:id/toggle-active`) toca `fecha_salida`, por lo que **el grupo seguía apareciendo** con su líder inactivo.
 
+### 1.4 403 en el remitente: usuario sin líder bloqueado por el equipo "Sistema"
+
+El chequeo del remitente en `enviar-solicitudes` (`remTieneLider`) usaba el mismo `EXISTS` de equipo-con-líder **sin excluir "Sistema"**. Un usuario suelto en "Sistema" (que solo tiene al `superadmin` como líder del equipo por defecto) era tratado como "tiene líder" y se le negaba el envío con `403 Solo los agentes sin líder pueden enviar solicitudes`. Caso real: **Andres** (rol `user`, único equipo = "Sistema") no podía enviar pese a no tener ningún líder real.
+
 ---
 
 ## 2. Solución
@@ -47,7 +51,10 @@ Se endurecieron los filtros en `agentesConLider` (`src/controllers/equipos.contr
    - `lider_nombre`: `AND u2.is_active = TRUE`.
    - `EXISTS`: unir con `usuarios ul` y exigir `AND ul.is_active = TRUE`.
 
-Además, para consistencia, la validación del destino en `enviar-solicitudes` (`src/controllers/gestionesMaestro.controller.js`, consulta del destino ~1968) ahora también exige **líder activo** en su subquery `lider_id` y filtra destino `rol='agente'` y `e.nombre != 'Sistema'`. Así el backend no acepta enviar dentro de un grupo cuyo líder esté inactivo.
+Además, para consistencia, en `enviar-solicitudes` (`src/controllers/gestionesMaestro.controller.js`):
+
+- **Destino** (~consulta 1968): el subquery `lider_id` ahora exige **líder activo**, y el destino filtra `rol='agente'` y `e.nombre != 'Sistema'`. Así el backend no acepta enviar dentro de un grupo cuyo líder esté inactivo.
+- **Remitente** (`remTieneLider`, ~1953): el `EXISTS` ahora exige que el líder sea de un equipo **`e4.nombre != 'Sistema'`** y **activo** (`ul.is_active = TRUE`). Un usuario suelto en "Sistema" deja de contarse como "tiene líder" y **puede enviar**.
 
 ---
 
@@ -63,6 +70,10 @@ Consulta validada contra la BD de producción (PostgreSQL) para el usuario `davi
 
 **TOTAL: 8** (antes 14). Los sueltos de "Sistema" ya no aparecen y, si un líder se inactiva, su grupo deja de listarse.
 
+**Validación del remitente** (probada contra producción PostgreSQL):
+- `Andres` (id 5, solo "Sistema") → **no tiene líder real → PUEDE enviar** ✓ (antes 403).
+- `prueba` (19) y `usuariogrupo1` (11), del equipo de daviddlaa → tienen líder real → **bloqueados** ✓.
+
 Chequeos:
 - `node --check` en `equipos.controller.js` y `gestionesMaestro.controller.js` ✅
 - Boot local SQLite (`DATABASE_URL= NODE_ENV=development node app.js`) → `GET /api/equipos/agentes-con-lider` responde `200` sin errores ✅
@@ -73,6 +84,6 @@ Chequeos:
 ## 4. Archivos tocados
 
 - `src/controllers/equipos.controller.js` — filtros de `agentesConLider`.
-- `src/controllers/gestionesMaestro.controller.js` — validación de destino en `enviarSolicitudes`.
+- `src/controllers/gestionesMaestro.controller.js` — validación de destino y de remitente en `enviarSolicitudes`.
 - `docs/feature-enviar-solicitud-agentes.md` — nota sobre filtros del selector.
 - `docs/ESTADO-PROYECTO.md`, `docs/README.md` — documentación.

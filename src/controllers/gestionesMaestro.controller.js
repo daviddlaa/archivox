@@ -1955,7 +1955,11 @@ async function enviarSolicitudes(req, res) {
              WHERE eu.usuario_id = ? AND eu.fecha_salida IS NULL
                AND EXISTS (
                    SELECT 1 FROM equipo_usuarios eu4
+                   INNER JOIN equipos e4 ON e4.id = eu4.equipo_id
+                   INNER JOIN usuarios ul ON ul.id = eu4.usuario_id
                    WHERE eu4.equipo_id = eu.equipo_id AND eu4.fecha_salida IS NULL AND eu4.es_lider = 1
+                     AND ul.is_active = TRUE
+                     AND e4.nombre != 'Sistema'
                )
              LIMIT 1`,
             [usuario_id]
