@@ -448,11 +448,38 @@ exports.cambiarPassword = async (req, res) => {
 // ============================================================================
 // VERIFICAR SESIÓN ACTUAL
 // ============================================================================
-exports.verificarSesion = (req, res) => {
+exports.verificarSesion = async (req, res) => {
     if (req.session && req.session.usuario) {
+        const usuario = req.session.usuario;
+        let puedeEnviar = true;
+        try {
+            if (usuario.rol !== 'superadmin' && !usuario.is_superadmin) {
+                const miembroConLider = await pool.query(
+                    `SELECT 1 FROM equipo_usuarios eu
+                     WHERE eu.usuario_id = ? AND eu.fecha_salida IS NULL
+                       AND EXISTS (
+                           SELECT 1 FROM equipo_usuarios eu4
+                           INNER JOIN equipos e4 ON e4.id = eu4.equipo_id
+                           INNER JOIN usuarios ul ON ul.id = eu4.usuario_id
+                           WHERE eu4.equipo_id = eu.equipo_id AND eu4.fecha_salida IS NULL AND eu4.es_lider = 1
+                             AND ul.is_active = TRUE
+                             AND e4.nombre != 'Sistema'
+                       )
+                     LIMIT 1`,
+                    [usuario.id]
+                );
+                if (miembroConLider.rows.length > 0) {
+                    puedeEnviar = false;
+                }
+            } else {
+                puedeEnviar = false;
+            }
+        } catch (err) {
+            puedeEnviar = false;
+        }
         res.json({
             autenticado: true,
-            usuario: req.session.usuario
+            usuario: { ...usuario, puede_enviar: puedeEnviar }
         });
     } else {
         res.json({

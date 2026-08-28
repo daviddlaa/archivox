@@ -87,3 +87,28 @@ Chequeos:
 - `src/controllers/gestionesMaestro.controller.js` — validación de destino y de remitente en `enviarSolicitudes`.
 - `docs/feature-enviar-solicitud-agentes.md` — nota sobre filtros del selector.
 - `docs/ESTADO-PROYECTO.md`, `docs/README.md` — documentación.
+
+---
+
+## 5. UX: ocultar el botón "Enviar a" para quien no puede enviar
+
+**Problema:** el botón "Enviar a" (barra de selección + panel flotante en `solicitudes.html`, desktop y móvil) era **siempre visible** para todos. Un usuario que el backend bloquea (superadmin, o agente con líder real activo) veía el botón y al hacer submit obtenía `403`.
+
+**Contexto insuficiente:** el flag `es_lider`/`rol` de la sesión NO alcanza para saber con certeza si un agente (rol `agente`, `es_lider=false`) tiene líder real — p.ej. `prueba` tiene líder (DAVID) pero `es_lider=false`. Ocultar solo por `es_lider`/`rol` dejaría el botón visible a un agente gestionado que luego recibiría `403`. Haría falta consultar a la BD igual que el backend.
+
+**Solución (flag `puede_enviar`):**
+1. `src/controllers/auth.controller.js` — `verificarSesion` (ahora async) computa `puede_enviar` con la **misma** lógica de `remTieneLider`:
+   - `false` si el usuario es `superadmin`/`is_superadmin`.
+   - `false` si pertenece a un equipo no-"Sistema" con un **líder activo** (`EXISTS` con `e4.nombre != 'Sistema'` y `ul.is_active = TRUE`).
+   - en otro caso `true`.
+   - Devuelve `usuario: { ...req.session.usuario, puede_enviar }`.
+2. Frontend desktop y móvil — nueva variable `_puedeEnviar` + helper `aplicarVisibilidadEnviarA()` que pone `display:none` a los elementos `.btn-enviar`; se setea en `init()` al cargar `/api/auth/sesion`.
+
+**Verificación de la query `puede_enviar` contra producción PostgreSQL (solo lectura):**
+- `Andres` (5, solo "Sistema") → `puede_enviar=true` (botón visible) ✓
+- `prueba` (19) y `usuariogrupo1` (11) → `false` (oculto) ✓
+- `daviddlaa` (1, líder) → `false` (oculto) ✓
+
+Chequeos: `node --check` en `auth.controller.js`, `solicitudes.js` (desktop y móvil) ✅; boot local SQLite + `GET /api/auth/sesion` (401 por guard de auth, sin crash) ✅; query válidad en SQLite y PostgreSQL ✅.
+
+**Archivos:** `src/controllers/auth.controller.js`, `public/desktop/js/solicitudes.js`, `public/movil/js/solicitudes.js`. (Los botones `.btn-enviar` ya existen en `public/desktop/solicitudes.html` y `public/movil/solicitudes.html`; no requieren cambios.)

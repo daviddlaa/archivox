@@ -16,6 +16,14 @@ let fechaHastaActual = sessionStorage.getItem('sol_fecha_hasta') || '';
 let vendedorActual = sessionStorage.getItem('sol_vendedor') || '';
 var _esLider = false;
 var _nivelRol = 0;
+var _puedeEnviar = true;
+
+function aplicarVisibilidadEnviarA() {
+    var botones = document.querySelectorAll('.btn-enviar');
+    for (var i = 0; i < botones.length; i++) {
+        botones[i].style.display = _puedeEnviar ? '' : 'none';
+    }
+}
 
 // Toggle selección de card
 function toggleCard(id) {
@@ -238,6 +246,8 @@ async function init() {
                 var nivelMap = { superadmin: 100, admin: 50, lider: 30, agente: 20, user: 10 };
                 _nivelRol = nivelMap[rol] || 0;
                 _esLider = _nivelRol >= 30;
+                if (sesionData.usuario.puede_enviar !== undefined) _puedeEnviar = !!sesionData.usuario.puede_enviar;
+                aplicarVisibilidadEnviarA();
                 mostrarFiltrosLider();
             }
         } catch (e) { console.error('[Solicitudes Móvil] Error cargando sesión:', e); }

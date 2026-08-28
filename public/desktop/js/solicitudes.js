@@ -298,6 +298,8 @@ async function init() {
                 var nivelMap = { superadmin: 100, admin: 50, lider: 30, agente: 20, user: 10 };
                 _nivelRol = nivelMap[rol] || 0;
                 _esLider = _nivelRol >= 30;
+                if (sesionData.usuario.puede_enviar !== undefined) _puedeEnviar = !!sesionData.usuario.puede_enviar;
+                aplicarVisibilidadEnviarA();
                 if (_esLider) mostrarFiltrosLider();
             }
         } catch (e) { console.error('[Solicitudes] Error cargando sesión:', e); }
@@ -784,6 +786,15 @@ function generarInformeSeleccionadas() {
 // Variable global para saber si el usuario es líder y su equipo_id
 var _esLider = false;
 var _nivelRol = 0;
+var _puedeEnviar = true;
+
+// Oculta el botón "Enviar a" si el usuario no puede enviar solicitudes
+function aplicarVisibilidadEnviarA() {
+    var botones = document.querySelectorAll('.btn-enviar');
+    for (var i = 0; i < botones.length; i++) {
+        botones[i].style.display = _puedeEnviar ? '' : 'none';
+    }
+}
 var _equipoId = null;
 
 async function abrirModalNuevaGestion() {
