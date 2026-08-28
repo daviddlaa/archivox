@@ -583,20 +583,25 @@ async function agentesConLider(req, res) {
         const result = await pool.query(
             `SELECT u.id as usuario_id, u.nombre as usuario_nombre, u.username as usuario_username,
                     e.id as equipo_id, e.nombre as equipo_nombre,
-                    (SELECT u2.nombre FROM equipo_usuarios eu2
-                     INNER JOIN usuarios u2 ON eu2.usuario_id = u2.id
-                     WHERE eu2.equipo_id = e.id AND eu2.fecha_salida IS NULL AND eu2.es_lider = 1
-                     ORDER BY eu2.id ASC LIMIT 1) as lider_nombre
+                     (SELECT u2.nombre FROM equipo_usuarios eu2
+                      INNER JOIN usuarios u2 ON eu2.usuario_id = u2.id
+                      WHERE eu2.equipo_id = e.id AND eu2.fecha_salida IS NULL AND eu2.es_lider = 1
+                        AND u2.is_active = TRUE
+                      ORDER BY eu2.id ASC LIMIT 1) as lider_nombre
              FROM equipo_usuarios eu
              INNER JOIN usuarios u ON eu.usuario_id = u.id
              INNER JOIN equipos e ON eu.equipo_id = e.id
              WHERE eu.fecha_salida IS NULL
                AND eu.es_lider = 0
                AND u.is_active = TRUE
+               AND u.rol = 'agente'
+               AND e.nombre != 'Sistema'
                AND u.id != $1
                AND EXISTS (
                    SELECT 1 FROM equipo_usuarios eu3
+                   INNER JOIN usuarios ul ON ul.id = eu3.usuario_id
                    WHERE eu3.equipo_id = e.id AND eu3.fecha_salida IS NULL AND eu3.es_lider = 1
+                     AND ul.is_active = TRUE
                )
              ORDER BY u.nombre ASC`,
             [usuarioId]

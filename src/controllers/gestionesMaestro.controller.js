@@ -1969,12 +1969,15 @@ async function enviarSolicitudes(req, res) {
             `SELECT u.id, u.nombre, u.username, u.is_active,
                     e.id as equipo_id, e.nombre as equipo_nombre,
                     (SELECT eu3.usuario_id FROM equipo_usuarios eu3
+                     INNER JOIN usuarios ul ON ul.id = eu3.usuario_id
                      WHERE eu3.equipo_id = eu.equipo_id AND eu3.fecha_salida IS NULL AND eu3.es_lider = 1
+                       AND ul.is_active = TRUE
                      ORDER BY eu3.id ASC LIMIT 1) as lider_id
              FROM equipo_usuarios eu
              INNER JOIN usuarios u ON eu.usuario_id = u.id
              INNER JOIN equipos e ON eu.equipo_id = e.id
-             WHERE eu.usuario_id = ? AND eu.fecha_salida IS NULL AND eu.es_lider = 0`,
+             WHERE eu.usuario_id = ? AND eu.fecha_salida IS NULL AND eu.es_lider = 0
+               AND u.rol = 'agente' AND e.nombre != 'Sistema'`,
             [destinoNum]
         );
         const destino = getFirstRow(destResult);

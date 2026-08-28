@@ -1621,7 +1621,7 @@ La pasarela es **compacta (~20% más baja)**: paddings/fuentes de headers, tabla
 |--------|------|------|-------------|
 | GET | `/api/equipos` | ✅ | Listar equipos |
 | GET | `/api/equipos/mi-equipo` | ✅ | Mi equipo actual |
-| GET | `/api/equipos/agentes-con-lider` | ✅ | Agentes con líder (selector "Enviar a") con métricas de velocidad + ⚡ recomendado |
+| GET | `/api/equipos/agentes-con-lider` | ✅ | Agentes con **líder activo** (rol `agente`, excluye "Sistema"; selector "Enviar a") con métricas de velocidad + ⚡ recomendado |
 | GET | `/api/equipos/:id` | ✅ (equipo) | Obtener equipo |
 | GET | `/api/equipos/:id/miembros` | ✅ (equipo) | Miembros del equipo |
 | GET | `/api/equipos/:id/dashboard` | ✅ (equipo) | Dashboard del equipo |

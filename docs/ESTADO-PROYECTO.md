@@ -67,7 +67,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 - Importación Excel protegida (nunca toca registros ajenos) — [`fix-importacion-proteccion-datos-usuarios.md`](fix-importacion-proteccion-datos-usuarios.md)
 - Reactivación sin compra de solicitudes liberadas (>6 meses, banner + listado + campaña; excluye las separadas con 👎). **Scheduler semanal:** crea/reutiliza campaña automática, mueve de otras campañas, notifica con enlace — [`feature-liberacion-reactivacion-sin-compra.md`](feature-liberacion-reactivacion-sin-compra.md)
 - Guía de Solicitudes — tour interactivo de 6 pasos (una vez por usuario) — [`feature-guia-solicitudes-tour.md`](feature-guia-solicitudes-tour.md)
-- **"Enviar a" (solicitudes a agente con líder):** agente sin líder envía solicitudes a un agente con líder → campaña tripartita (remitente + destino + líder), tabla `envios_solicitudes` (trazabilidad + métricas de velocidad), reasignación por el líder con notificaciones SSE, y badge "⚡ Más rápido" — [`feature-enviar-solicitud-agentes.md`](feature-enviar-solicitud-agentes.md)
+- **"Enviar a" (solicitudes a agente con líder):** agente sin líder envía solicitudes a un agente con líder → campaña tripartita (remitente + destino + líder), tabla `envios_solicitudes` (trazabilidad + métricas de velocidad), reasignación por el líder con notificaciones SSE, y badge "⚡ Más rápido". El selector de destino lista solo agentes con **líder activo**, rol `agente`, y **excluye "Sistema"** — [`feature-enviar-solicitud-agentes.md`](feature-enviar-solicitud-agentes.md) y [`fix-agentes-con-lider-filtros.md`](fix-agentes-con-lider-filtros.md)
 
 ### 👥 Equipos / Panel del líder
 - Rediseño del panel del líder móvil (3 tabs, detalle de agente) — [`feature-rediseno-equipo-movil.md`](feature-rediseno-equipo-movil.md)
@@ -158,6 +158,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 | `feature-ux-comportamiento-campanas.md` | UX de campañas v2.0 |
 | `feature-widget-ultimas-gestiones-dashboard.md` | Widget últimas gestiones |
 | `fix-500-solicitudes-created_at.md` | Fix 500 admin solicitudes |
+| `fix-agentes-con-lider-filtros.md` | Fix selector "Enviar a": filtros rol agente, excluye Sistema, líder activo + 500 PG |
 | `fix-crear-campanas-error-constante.md` | Fix creación de campañas (const + equipo_id) |
 | `fix-campanas-actualizacion-en-vivo.md` | Campañas en vivo (SSE crear/renombrar/eliminar) |
 | `fix-importacion-proteccion-datos-usuarios.md` | Importación protegida |

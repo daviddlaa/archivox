@@ -32,6 +32,10 @@ al agente más rápido gestionando.
 - Envío **abierto todo el tiempo**: sin restricción de horario ni de frecuencia, individual y
   múltiple (selección de varias solicitudes).
 
+> **Selector de destino (`GET /api/equipos/agentes-con-lider`):** lista solo agentes con líder
+> **activo**, de rol `agente` y **excluye el equipo "Sistema"** (por defecto). Si un líder se
+> inactiva, su grupo deja de aparecer. Ver `fix-agentes-con-lider-filtros.md`.
+
 ### 1.2 Campaña tripartita
 
 La campaña creada se ve por las tres partes, cada una por su vía ya soportada en
