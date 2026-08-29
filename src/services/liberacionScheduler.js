@@ -17,6 +17,7 @@ const pool = require('../config/db');
 const cache = require('../config/cache');
 const notificationBus = require('./notificationBus');
 const liberacionService = require('./liberacion.service');
+const pushService = require('./pushService');
 
 // Cada 7 días (semanal)
 const INTERVALO_MS = 7 * 24 * 60 * 60 * 1000;
@@ -287,6 +288,13 @@ async function crearAlerta(usuarioId, total, campanaId) {
     };
     notificationBus.emitir('notification.created', notificacion, usuarioId);
     notificationBus.emitirAUsuario('count.updated', { no_leidas: null }, usuarioId);
+
+    // Push web (si el usuario tiene suscripciones activas; fire-and-forget)
+    try {
+        await pushService.enviarPushDesdeNotificacion(notificacion);
+    } catch (e) {
+        console.error('[LiberaciónScheduler] Error push:', e.message);
+    }
 
     return newId;
 }

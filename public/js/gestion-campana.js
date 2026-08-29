@@ -104,6 +104,11 @@
                 opciones.onConfirmar('⏰ Recordatorio programado');
                 cerrarModal();
                 opciones.onCargarDatos();
+                // Notificaciones push: ofrecer activarlas tras programar un recordatorio
+                // (push-suscripcion.js escucha este evento y muestra su banner contextual)
+                try {
+                    document.dispatchEvent(new CustomEvent('archivox:recordatorio-guardado'));
+                } catch (e) { /* push no disponible */ }
                 return;
             }
 

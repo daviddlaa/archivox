@@ -2,6 +2,7 @@
 const pool = require('../config/db');
 const cache = require('../config/cache.js');
 const notificationBus = require('../services/notificationBus');
+const pushService = require('../services/pushService');
 const { obtenerEquipoIdValido } = require('../utils/equipo');
 
 // Helper para obtener resultado de queries (compatible con SQLite y PostgreSQL)
@@ -1912,6 +1913,8 @@ async function crearYNotificar({ destinatarioId, titulo, mensaje, tipo = 'info',
     try {
         notificationBus.emitir('notification.created', notificacion, destinatarioId);
         notificationBus.emitirAUsuario('count.updated', { no_leidas: null }, destinatarioId);
+        // Push web (si el usuario tiene suscripciones activas; fire-and-forget)
+        pushService.enviarPushDesdeNotificacion(notificacion);
     } catch (e) {
         console.error('[EnviarSolicitudes] Error SSE:', e.message);
     }

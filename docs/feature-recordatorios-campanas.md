@@ -25,7 +25,7 @@ detalle de la campaña.
 
 Decisiones de diseño aprobadas: tabla nueva `recordatorios` (sin tocar `gestiones`), opción
 dedicada "⏰ Recordatorio" en el modal de gestión, badge ⏰ en cada tarjeta, y fase in-app
-hoy + notificaciones push (web/PWA) como roadmap documentado.
+hoy + notificaciones push (web/PWA) **[implementadas — ver `feature-notificaciones-push-web.md`]**.
 
 ---
 
@@ -197,8 +197,8 @@ el clic abre directamente la campaña.
 
 ## 6. Roadmap (fuera de alcance v1)
 
-- **Notificaciones push (web/PWA):** registrar el service worker y usar Push API +
-  suscripción por usuario para notificar aunque el sitio esté cerrado.
+- ~~**Notificaciones push (web/PWA)**~~ → ✅ **Implementadas (28/08/2026):** ver
+  [`feature-notificaciones-push-web.md`](feature-notificaciones-push-web.md).
 - Notificar también al agente asignado de la campaña (v1 notifica solo al creador).
 - Editar un recordatorio pendiente.
 - Recordatorios recurrentes.

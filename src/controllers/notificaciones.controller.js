@@ -8,6 +8,7 @@
 
 const pool = require('../config/db.js');
 const notificationBus = require('../services/notificationBus.js');
+const pushService = require('../services/pushService.js');
 
 // ============================================================================
 // LISTAR NOTIFICACIONES (admin: todas | usuario: solo las suyas)
@@ -200,6 +201,12 @@ exports.crear = async (req, res) => {
 
             // Emitir a todos o a usuario específico
             notificationBus.emitir('notification.created', notificacion, destinatario_id || null);
+
+            // Push web SOLO si la notificación tiene destinatario concreto
+            // (las globales destinatario_id = null no disparan push)
+            if (destinatario_id) {
+                pushService.enviarPushDesdeNotificacion(notificacion);
+            }
 
             // También emitir actualización de contador
             if (destinatario_id) {

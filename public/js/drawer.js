@@ -430,6 +430,10 @@
     window.cerrarSesion = function() {
         if (confirm('¿Estás seguro de cerrar sesión?')) {
             sessionStorage.setItem('justLoggedOut', Date.now().toString());
+            // Dar de baja la suscripción push de este dispositivo (si existe)
+            if (window.PushNotif && typeof window.PushNotif.desactivar === 'function') {
+                PushNotif.desactivar();
+            }
             fetch('/auth/logout', { method: 'POST', credentials: 'include' })
                 .then(function(r) { window.location.href = '/login'; })
                 .catch(function() { window.location.href = '/login'; });

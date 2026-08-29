@@ -24,6 +24,80 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 // ============================================================================
+// NOTIFICACIONES PUSH — estado + activar/desactivar desde el Perfil
+// ============================================================================
+// push-suscripcion.js se carga con `defer` (se ejecuta al terminar el parseo),
+// antes del evento `load`. Por eso se usa `load` para garantizar que el objeto
+// PushNotif ya existe.
+// ============================================================================
+window.addEventListener('load', function() {
+    var pushEst = document.getElementById('perfilPushEstado');
+    var btnActivar = document.getElementById('btnActivarPush');
+    var btnDesactivar = document.getElementById('btnDesactivarPush');
+
+    if (!pushEst || !window.PushNotif) return;
+
+    function renderizar(suscrito) {
+        var estado = PushNotif.estadoPermiso();
+        if (estado === 'no-soporte') {
+            pushEst.textContent = 'Tu navegador no soporta notificaciones push en este dispositivo.';
+            btnActivar.style.display = 'none';
+            btnDesactivar.style.display = 'none';
+        } else if (PushNotif.esIOSEnPestana()) {
+            pushEst.textContent = 'En iPhone/iPad, abre "Compartir" → "Añadir a Pantalla de Inicio" para activar las notificaciones.';
+            btnActivar.style.display = 'none';
+            btnDesactivar.style.display = 'none';
+        } else if (estado === 'denied') {
+            pushEst.textContent = 'Permiso bloqueado en este navegador. Actívalo desde la configuración del navegador.';
+            btnActivar.style.display = 'none';
+            btnDesactivar.style.display = 'none';
+        } else if (suscrito) {
+            pushEst.textContent = '✅ Este dispositivo recibe notificaciones push.';
+            btnActivar.style.display = 'none';
+            btnDesactivar.style.display = 'inline-block';
+        } else {
+            pushEst.textContent = 'Este dispositivo no tiene notificaciones push activadas.';
+            btnActivar.style.display = 'inline-block';
+            btnDesactivar.style.display = 'none';
+        }
+    }
+
+    function consultarEstado() {
+        if (PushNotif.soportado()) {
+            PushNotif.registrarSW().then(function(reg) {
+                return reg.pushManager.getSubscription();
+            }).then(function(sub) {
+                renderizar(Boolean(sub));
+            }).catch(function() { renderizar(false); });
+        } else {
+            renderizar(false);
+        }
+    }
+
+    btnActivar.addEventListener('click', function() {
+        btnActivar.disabled = true;
+        PushNotif.solicitar().then(function(r) {
+            btnActivar.disabled = false;
+            if (r.estado === 'suscrito' || r.estado === 'ya-suscrito') {
+                renderizar(true);
+            } else {
+                consultarEstado(); // refresca el mensaje según el permiso resultante
+            }
+        });
+    });
+
+    btnDesactivar.addEventListener('click', function() {
+        btnDesactivar.disabled = true;
+        PushNotif.desactivar().then(function() {
+            btnDesactivar.disabled = false;
+            renderizar(false);
+        });
+    });
+
+    consultarEstado();
+});
+
+// ============================================================================
 // CARGAR PERFIL
 // ============================================================================
 async function cargarPerfil() {

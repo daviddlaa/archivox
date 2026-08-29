@@ -1,0 +1,90 @@
+/* ============================================================================
+ * PUSH SUSCRIPCIÓN — Banner de activación de notificaciones push
+ * ============================================================================
+ * Shared para desktop y móvil (cargan /css/push-suscripcion.css).
+ * Estilos autocontenidos (sin depender de clases de página) para que el banner
+ * se vea bien en cualquier pantalla.
+ * ============================================================================ */
+
+.push-banner {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9000;
+    max-width: 520px;
+    width: calc(100% - 32px);
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid #6366f1;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    padding: 0;
+}
+
+.push-banner-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+}
+
+.push-banner-icono {
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.push-banner-info {
+    flex: 1;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #1f2937;
+}
+
+.push-banner-btn {
+    flex-shrink: 0;
+    background: #6366f1;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.push-banner-btn:hover {
+    background: #4f46e5;
+}
+
+.push-banner-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.push-banner-cerrar {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    line-height: 1;
+}
+
+.push-banner-cerrar:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+@media (max-width: 600px) {
+    .push-banner-inner {
+        flex-wrap: wrap;
+    }
+    .push-banner-btn {
+        width: 100%;
+    }
+}

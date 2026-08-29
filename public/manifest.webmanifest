@@ -1,0 +1,38 @@
+{
+    "name": "Archivox",
+    "short_name": "Archivox",
+    "description": "Gestión de solicitudes comerciales, campañas por lotes y equipos.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#6366f1",
+    "theme_color": "#6366f1",
+    "lang": "es",
+    "icons": [
+        {
+            "src": "/img/icono-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/img/icono-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/img/icono-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/img/icono-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

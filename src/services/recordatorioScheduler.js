@@ -19,6 +19,7 @@
 
 const pool = require('../config/db');
 const notificationBus = require('./notificationBus');
+const pushService = require('./pushService');
 
 // Cada 60 segundos
 const INTERVALO_MS = 60 * 1000;
@@ -100,6 +101,8 @@ async function procesarRecordatoriosVencidos() {
                     created_at: new Date().toISOString()
                 };
                 notificationBus.emitir('notification.created', notificacion, rec.usuario_id);
+                // Push web (si el usuario tiene suscripciones activas; fire-and-forget)
+                await pushService.enviarPushDesdeNotificacion(notificacion);
 
                 // 3. Marcar como notificado (idempotente)
                 await pool.query('UPDATE recordatorios SET notificado = 1 WHERE id = ?', [rec.id]);

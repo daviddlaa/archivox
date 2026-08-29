@@ -67,7 +67,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 - Importación Excel protegida (nunca toca registros ajenos) — [`fix-importacion-proteccion-datos-usuarios.md`](fix-importacion-proteccion-datos-usuarios.md)
 - Reactivación sin compra de solicitudes liberadas (>6 meses, banner + listado + campaña; excluye las separadas con 👎). **Scheduler semanal:** crea/reutiliza campaña automática, mueve de otras campañas, notifica con enlace — [`feature-liberacion-reactivacion-sin-compra.md`](feature-liberacion-reactivacion-sin-compra.md)
 - Guía de Solicitudes — tour interactivo de 6 pasos (una vez por usuario) — [`feature-guia-solicitudes-tour.md`](feature-guia-solicitudes-tour.md)
-- **"Enviar a" (solicitudes a agente con líder):** agente sin líder envía solicitudes a un agente con líder → campaña tripartita (remitente + destino + líder), tabla `envios_solicitudes` (trazabilidad + métricas de velocidad), reasignación por el líder con notificaciones SSE, y badge "⚡ Más rápido". El selector de destino lista solo agentes con **líder activo**, rol `agente`, y **excluye "Sistema"**; y el botón "Enviar a" se **oculta** para quien no puede enviar (superadmin o agente con líder real) vía el flag `puede_enviar` de `/api/auth/sesion` — [`feature-enviar-solicitud-agentes.md`](feature-enviar-solicitud-agentes.md) y [`fix-agentes-con-lider-filtros.md`](fix-agentes-con-lider-filtros.md)
+- **"Enviar a" (solicitudes a agente con líder):** agente sin líder envía solicitudes a un agente con líder → campaña tripartita (remitente + destino + líder), tabla `envios_solicitudes` (trazabilidad + métricas de velocidad), reasignación por el líder con notificaciones SSE, y badge "⚡ Más rápido". El selector de destino lista solo agentes con **líder activo**, rol `agente`, y **excluye "Sistema"**; y el botón "Enviar a" se **oculta** para quien no puede enviar (superadmin o agente con líder real) vía el flag `puede_enviar` de `/api/auth/sesion` — [`feature-enviar-solicitud-agentes.md`](feature-enviar-solicitud-agentes.md), [`fix-agentes-con-lider-filtros.md`](fix-agentes-con-lider-filtros.md) y [`verificar-e2e-enviar-solicitudes.md`](verificar-e2e-enviar-solicitudes.md)
 
 ### 👥 Equipos / Panel del líder
 - Rediseño del panel del líder móvil (3 tabs, detalle de agente) — [`feature-rediseno-equipo-movil.md`](feature-rediseno-equipo-movil.md)
@@ -88,6 +88,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 - Fix validación de IDs numéricos en campañas + eliminación de filtro `relaciones` en liberación — [`fix-validacion-ids-campana.md`](fix-validacion-ids-campana.md)
 - Fix creación de campañas (reasignación de `const` → 500 "Error al crear gestión") + `equipo_id` validado en tiempo real para que **todos los usuarios, indistintos de rol o equipo, puedan crear campañas** — [`fix-crear-campanas-error-constante.md`](fix-crear-campanas-error-constante.md)
 - Campañas en vivo: SSE `campanas.updated` al crear/renombrar/eliminar (grid desktop y móvil se actualiza sin recargar) — [`fix-campanas-actualizacion-en-vivo.md`](fix-campanas-actualizacion-en-vivo.md)
+- **Notificaciones push web (PWA/Web Push API + VAPID):** suscripción por usuario, push real para toda notificación in-app **con destinatario concreto** (globales no), app instalable (manifest + service worker + iconos), banner con gesto en dashboard + tras guardar ⏰ recordatorio, guía PWA para iOS, y tarjeta Activar/Desactivar en Perfil — [`feature-notificaciones-push-web.md`](feature-notificaciones-push-web.md)
 
 ---
 
@@ -144,6 +145,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 | `feature-login-movil-compacto.md` | Login móvil compacto |
 | `feature-liberacion-reactivacion-sin-compra.md` | Reactivación sin compra (>6 meses, excluye 👎, scheduler semanal con campaña automática) |
 | `feature-no-aplica-credito.md` | Flag "Ya no aplica para crédito" |
+| `feature-notificaciones-push-web.md` | Notificaciones push web (PWA/Web Push API + VAPID): suscripción por usuario, push para notificaciones con destinatario, app instalable |
 | `feature-panel-lateral-agentes.md` | Panel lateral de agentes |
 | `feature-panel-lateral-solicitudes.md` | Panel lateral de solicitudes |
 | `feature-plantillas-mensajes.md` | Plantillas de mensajes |
@@ -159,6 +161,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 | `feature-widget-ultimas-gestiones-dashboard.md` | Widget últimas gestiones |
 | `fix-500-solicitudes-created_at.md` | Fix 500 admin solicitudes |
 | `fix-agentes-con-lider-filtros.md` | Fix selector "Enviar a": filtros rol agente, excluye Sistema, líder activo + 500 PG + ocultar botón para quien no puede enviar (`puede_enviar`) |
+| `verificar-e2e-enviar-solicitudes.md` | Verificación E2E local (SQLite) del flujo "Enviar a" + reasignación del líder: envío, 3 vistas, trazabilidad, notificaciones, auditoría |
 | `fix-crear-campanas-error-constante.md` | Fix creación de campañas (const + equipo_id) |
 | `fix-campanas-actualizacion-en-vivo.md` | Campañas en vivo (SSE crear/renombrar/eliminar) |
 | `fix-importacion-proteccion-datos-usuarios.md` | Importación protegida |

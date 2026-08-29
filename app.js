@@ -371,6 +371,9 @@ app.use('/api/plantillas', require('./src/routes/plantillas.routes'));
 // Catálogos dinámicos (estados, segmentos, etc.)
 app.use('/api/catalogos', require('./src/routes/catalog.routes'));
 
+// 🆕 Notificaciones push web (Web Push API / VAPID)
+app.use('/api/push', require('./src/routes/push.routes'));
+
 // 🆕 Liberación / Reactivación sin compra (solicitudes APROBADA >6 meses sin relación)
 app.use('/api/liberacion', require('./src/routes/liberacion.routes'));
 

@@ -4,11 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Perfil - Archivox</title>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/img/icono-apple-touch.png">
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+    <link rel="stylesheet" href="/css/push-suscripcion.css">
     <link rel="stylesheet" href="/desktop/css/base.css">
     <link rel="stylesheet" href="/css/perfil.css">
     <link rel="stylesheet" href="/css/drawer.css">
     <link rel="stylesheet" href="/css/notificaciones.css">
-</head>
+
+    <script src="/js/push-suscripcion.js" defer></script></head>
 <body>
     <!-- Drawer wrapper (se llena dinámicamente) -->
     <div id="drawer-wrapper"></div>
@@ -79,6 +84,18 @@
                             </div>
                             <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                         </form>
+                    </div>
+
+                    <!-- Tarjeta: Notificaciones push -->
+                    <div class="perfil-card">
+                        <div class="perfil-card-header">
+                            <h2>🔔 Notificaciones Push</h2>
+                        </div>
+                        <div class="perfil-form">
+                            <p class="perfil-push-estado" id="perfilPushEstado">Verificando soporte…</p>
+                            <button type="button" id="btnActivarPush" class="btn btn-primary" style="display:none; margin-top:10px;">Activar notificaciones</button>
+                            <button type="button" id="btnDesactivarPush" class="btn btn-warning" style="display:none; margin-top:10px;">Desactivar en este dispositivo</button>
+                        </div>
                     </div>
 
                     <!-- Tarjeta: Cambiar contraseña -->
