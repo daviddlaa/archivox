@@ -62,6 +62,14 @@ CREATE TABLE push_subscriptions (
 CREATE UNIQUE INDEX idx_push_subscriptions_usuario_endpoint ON push_subscriptions(usuario_id, endpoint);
 ```
 
+> **⚠️ Ojo con el guard `SCHEMA_VERSION` (PostgreSQL):** al añadir un DDL en
+> `initDb.pg.js` hay que **incrementar `SCHEMA_VERSION`** (v7 → **v8** en este caso). Si no,
+> la BD de producción ya está en `v7` y el arranque salta todo el DDL ("arranque rápido") → la
+> tabla nunca se crea y `/api/push/estado` responde 500
+> (`relation "push_subscriptions" does not exist`, visible en los logs de Render como
+> `[Push] Error consultando estado:`). `initDb.js` (SQLite local) corre siempre el DDL, por
+> eso el bug solo apareció en producción.
+
 ## 4. API (`/api/push`, todas con `requiresAuth`)
 
 | Método | Ruta | Descripción |
