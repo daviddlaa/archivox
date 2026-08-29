@@ -262,7 +262,8 @@
         return {
             solicitar: function (ev) {
                 var banner = ev.currentTarget.closest('.push-banner');
-                if (banner) banner.querySelector('.push-banner-btn').disabled = true;
+                var btn = banner ? banner.querySelector('.push-banner-btn') : null;
+                if (btn) btn.disabled = true;
                 solicitar().then(function (r) {
                     if (r.estado === 'suscrito' || r.estado === 'ya-suscrito') {
                         if (banner) banner.remove();
@@ -277,6 +278,16 @@
                             var tie2 = banner.querySelector('.push-banner-info');
                             if (tie2) tie2.textContent = 'En iPhone/iPad, abre "Compartir" → "Añadir a Pantalla de Inicio" para activar notificaciones.';
                         }
+                    } else {
+                        // 'error' | 'no-soporte': re-habilitar y explicar (no dejar
+                        // el botón muerto sin feedback)
+                        if (banner) {
+                            var tie3 = banner.querySelector('.push-banner-info');
+                            if (tie3) tie3.textContent = r.estado === 'no-soporte'
+                                ? 'Este navegador no soporta notificaciones push.'
+                                : 'No se pudo activar. Revisa tu conexión e inténtalo de nuevo.';
+                        }
+                        if (btn) btn.disabled = false;
                     }
                 });
             },
@@ -315,7 +326,7 @@
             '<div class="push-banner-inner">' +
                 '<span class="push-banner-icono">🔔</span>' +
                 '<span class="push-banner-info">Activa las notificaciones push para no perderte recordatorios y alertas aunque cierres la pestaña.</span>' +
-                '<button type="button" class="push-banner-btn">Activar notificaciones</button>' +
+                '<button type="button" class="push-banner-btn" data-accion="solicitar">Activar notificaciones</button>' +
                 '<button type="button" class="push-banner-cerrar" aria-label="Cerrar">✕</button>' +
             '</div>',
             { solicitar: acciones.solicitar }
@@ -360,7 +371,7 @@
             '<div class="push-banner-inner">' +
                 '<span class="push-banner-icono">🔔</span>' +
                 '<span class="push-banner-info">¿Quieres que te avisemos aquí cuando venza el recordatorio?</span>' +
-                '<button type="button" class="push-banner-btn">Sí, activar</button>' +
+                '<button type="button" class="push-banner-btn" data-accion="solicitar">Sí, activar</button>' +
                 '<button type="button" class="push-banner-cerrar" aria-label="Cerrar">✕</button>' +
             '</div>',
             { solicitar: acciones.solicitar }
