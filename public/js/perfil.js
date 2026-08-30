@@ -80,6 +80,10 @@ window.addEventListener('load', function() {
             btnActivar.disabled = false;
             if (r.estado === 'suscrito' || r.estado === 'ya-suscrito') {
                 renderizar(true);
+            } else if (r.error && pushEst) {
+                // El navegador falló al suscribirse: mostrar el motivo real
+                // (típicamente clave VAPID mal configurada en el entorno)
+                pushEst.textContent = 'No se pudo activar: ' + r.error;
             } else {
                 consultarEstado(); // refresca el mensaje según el permiso resultante
             }
