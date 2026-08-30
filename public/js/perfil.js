@@ -39,12 +39,13 @@ window.addEventListener('load', function() {
 
     function renderizar(suscrito) {
         var estado = PushNotif.estadoPermiso();
-        if (estado === 'no-soporte') {
-            pushEst.textContent = 'Tu navegador no soporta notificaciones push en este dispositivo.';
+        if (PushNotif.esIOSEnPestana()) {
+            // iPhone/iPad en pestaña normal: el push solo llega con la app instalada.
+            pushEst.textContent = 'En iPhone/iPad, abre "Compartir" → "Añadir a Pantalla de Inicio" para activar las notificaciones.';
             btnActivar.style.display = 'none';
             btnDesactivar.style.display = 'none';
-        } else if (PushNotif.esIOSEnPestana()) {
-            pushEst.textContent = 'En iPhone/iPad, abre "Compartir" → "Añadir a Pantalla de Inicio" para activar las notificaciones.';
+        } else if (estado === 'no-soporte') {
+            pushEst.textContent = 'Tu navegador no soporta notificaciones push en este dispositivo.';
             btnActivar.style.display = 'none';
             btnDesactivar.style.display = 'none';
         } else if (estado === 'denied') {

@@ -38,6 +38,15 @@
         return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
     }
 
+    // True en un dispositivo Apple (iPhone/iPad/iPod) incluso con iPadOS que
+    // envía userAgent de escritorio (MacIntel + pantalla táctil)
+    function esApple() {
+        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) return true;
+        // iPadOS 13+ en Safari: userAgent de Mac pero con touch 3D/multi
+        if (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1) return true;
+        return false;
+    }
+
     // True en Safari/Chromium en una PWA instalada (display-mode standalone)
     function esPWAInstalada() {
         return (
@@ -46,11 +55,12 @@
         );
     }
 
-    // True en iOS Safari en pestaña normal (no PWA): push NO disponible
+    // True en un dispositivo Apple en pestaña NORMAL (no PWA): push NO
+    // disponible → guía de instalación. Se calcula SIN requerir soporte de
+    // push porque en iOS la propia API puede existir pero rechazar la
+    // suscripción fuera de la PWA ("Registration failed - push service error").
     function esIOSEnPestana() {
-        if (!soportado()) return false;
-        var esIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        return esIOS && !esPWAInstalada();
+        return esApple() && !esPWAInstalada();
     }
 
     function estadoPermiso() {
@@ -112,10 +122,7 @@
     // ============================================================================
     function crearSuscripcion(registration) {
         return obtenerVapidKey().then(function (vapidKey) {
-            return registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(vapidKey),
-            });
+            return suscribirseConReintento(registration, vapidKey);
         }).then(function (suscripcion) {
             // Guardar en el backend (upsert por usuario+endpoint)
             return fetch('/api/push/subscribe', {
@@ -137,6 +144,30 @@
         });
     }
 
+    // Chrome/FCM lanza "Registration failed - push service error" cuando ya
+    // existe una suscripción del mismo service worker creada con OTRA clave
+    // aplicacionServerKey, o cuando la anterior quedó huérfana. Se detecta la
+    // suscripción vieja, se da de baja y se reintenta una sola vez.
+    function suscribirseConReintento(registration, vapidKey) {
+        function intentar() {
+            return registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(vapidKey),
+            });
+        }
+        return intentar().catch(function (err) {
+            return registration.pushManager.getSubscription().then(function (vieja) {
+                if (!vieja) throw err; // no hay nada viejo que limpiar: error real
+                return vieja.unsubscribe().then(function (ok) {
+                    if (!ok) throw err;
+                    return intentar();
+                }, function () {
+                    throw err;
+                });
+            });
+        });
+    }
+
     // ============================================================================
     // FLUJO COMPLETO DE SUSCRIPCIÓN (llamar DENTRO de un gesto del usuario)
     // ============================================================================
@@ -144,8 +175,8 @@
     //   { estado: 'suscrito' | 'ya-suscrito' | 'denegado' | 'no-soporte' | 'error', error? }
     // ============================================================================
     function solicitar() {
-        if (!soportado()) return Promise.resolve({ estado: 'no-soporte' });
         if (esIOSEnPestana()) return Promise.resolve({ estado: 'ios-pestana' });
+        if (!soportado()) return Promise.resolve({ estado: 'no-soporte' });
 
         // Ya con permiso: solo asegurar la suscripción en el navegador + BD
         if (Notification.permission === 'granted') {
@@ -311,8 +342,30 @@
     // El clic en el botón es el GESTO que destraba el prompt en Firefox/iOS.
     // ============================================================================
     function bannerDashboard() {
+        // En iPhone/iPad en pestaña normal el push NO está disponible:
+        // mostrar la guía de instalación PWA (una vez por navegador).
+        if (esIOSEnPestana()) {
+            if (localStorage.getItem(LS_BANNER)) return null;
+            var contIOS = crearBanner(
+                '<div class="push-banner-inner">' +
+                    '<span class="push-banner-icono">📱</span>' +
+                    '<span class="push-banner-info">En iPhone/iPad: abre "Compartir" → <b>"Añadir a Pantalla de Inicio"</b> para recibir las notificaciones.</span>' +
+                    '<button type="button" class="push-banner-cerrar" aria-label="Cerrar">✕</button>' +
+                '</div>',
+                {}
+            );
+            var closeIOS = contIOS.querySelector('.push-banner-cerrar');
+            if (closeIOS) {
+                closeIOS.addEventListener('click', function () {
+                    localStorage.setItem(LS_BANNER, '1');
+                    contIOS.remove();
+                });
+            }
+            global.document.body.appendChild(contIOS);
+            return contIOS;
+        }
+
         if (!soportado()) return null;
-        if (esIOSEnPestana()) return null; // la guía se muestra mejor en Contextual
         if (estadoPermiso() !== 'default') return null;
         if (localStorage.getItem(LS_BANNER)) return null;
 
@@ -345,8 +398,8 @@
     // En iOS pestaña muestra la guía de instalación PWA.
     // ============================================================================
     function bannerTrasRecordatorio() {
-        if (!soportado()) return null;
-
+        // En iPhone/iPad en pestaña normal el push NO está disponible (aunque
+        // PushManager exista en iOS 16.4+): se avisa cómo instalar la PWA.
         if (esIOSEnPestana()) {
             return crearBanner(
                 '<div class="push-banner-inner">' +
@@ -357,6 +410,8 @@
                 {}
             );
         }
+
+        if (!soportado()) return null;
 
         if (estadoPermiso() === 'granted') return null; // ya suscrito, no molestar
         if (estadoPermiso() === 'denied') return null;
