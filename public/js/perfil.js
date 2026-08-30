@@ -82,9 +82,9 @@ window.addEventListener('load', function() {
             if (r.estado === 'suscrito' || r.estado === 'ya-suscrito') {
                 renderizar(true);
             } else if (r.error && pushEst) {
-                // El navegador falló al suscribirse: mostrar el motivo real
-                // (típicamente clave VAPID mal configurada en el entorno)
-                pushEst.textContent = 'No se pudo activar: ' + r.error;
+                // El navegador falló al suscribirse: mostrar una explicación
+                // accionable (nunca el error técnico crudo del navegador)
+                pushEst.textContent = 'No se pudo activar: ' + (PushNotif.errorLegible ? PushNotif.errorLegible(r.error) : r.error);
             } else {
                 consultarEstado(); // refresca el mensaje según el permiso resultante
             }

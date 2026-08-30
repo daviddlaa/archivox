@@ -144,10 +144,11 @@
         });
     }
 
-    // Chrome/FCM lanza "Registration failed - push service error" cuando ya
-    // existe una suscripción del mismo service worker creada con OTRA clave
-    // aplicacionServerKey, o cuando la anterior quedó huérfana. Se detecta la
-    // suscripción vieja, se da de baja y se reintenta una sola vez.
+    // Chrome/FCM lanza "Registration failed - push service error" cuando:
+    //  a) hay una suscripción vieja del mismo service worker creada con OTRA
+    //     aplicacionServerKey (se limpia y se reintenta), o
+    //  b) FCM responde mal/transitoriamente tras conceder el permiso (Android).
+    // Se reintenta con pequeñas pausas y se da de baja la suscripción obsoleta.
     function suscribirseConReintento(registration, vapidKey) {
         function intentar() {
             return registration.pushManager.subscribe({
@@ -155,17 +156,34 @@
                 applicationServerKey: urlBase64ToUint8Array(vapidKey),
             });
         }
+        function espera(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
         return intentar().catch(function (err) {
-            return registration.pushManager.getSubscription().then(function (vieja) {
-                if (!vieja) throw err; // no hay nada viejo que limpiar: error real
-                return vieja.unsubscribe().then(function (ok) {
-                    if (!ok) throw err;
-                    return intentar();
-                }, function () {
-                    throw err;
+            return espera(250).then(function () {
+                return intentar();
+            }).catch(function () {
+                return registration.pushManager.getSubscription().then(function (vieja) {
+                    if (!vieja) throw err;          // nada viejo que limpiar: error real
+                    return vieja.unsubscribe().then(function (ok) {
+                        if (!ok) throw err;
+                        return espera(500).then(intentar);
+                    }, function () {
+                        throw err;
+                    });
                 });
             });
         });
+    }
+
+    // Convierte el error técnico del navegador en un mensaje accionable.
+    function mensajeErrorSuscripcion(msg) {
+        if (!msg) return 'inténtalo de nuevo.';
+        var m = String(msg);
+        if (/push service error|registration failed/i.test(m)) {
+            return detectarPlataforma() === 'movil'
+                ? 'el navegador no pudo conectarse al servicio de notificaciones. Verifica tu conexión, actualiza Chrome y los servicios de Google, o prueba con otra red (datos móviles o WiFi).'
+                : 'el servicio de notificaciones del navegador no respondió. Verifica tu conexión e inténtalo de nuevo.';
+        }
+        return m + '.';
     }
 
     // ============================================================================
@@ -304,14 +322,13 @@
                             if (tie2) tie2.textContent = 'En iPhone/iPad, abre "Compartir" → "Añadir a Pantalla de Inicio" para activar notificaciones.';
                         }
                     } else {
-                        // 'error' | 'no-soporte': re-habilitar y mostrar el MOTIVO
-                        // real (típicamente una clave VAPID mal copiada en el entorno)
+                        // 'error' | 'no-soporte': re-habilitar y mostrar una
+                        // explicación accionable (nunca el error técnico crudo)
                         if (banner) {
                             var tie3 = banner.querySelector('.push-banner-info');
-                            var motivo = r.error ? ' (' + r.error + ')' : '';
                             if (tie3) tie3.textContent = r.estado === 'no-soporte'
                                 ? 'Este navegador no soporta notificaciones push.'
-                                : 'No se pudo activar.' + motivo + '. Inténtalo otra vez.';
+                                : 'No se pudo activar: ' + mensajeErrorSuscripcion(r.error) + ' Inténtalo otra vez.';
                         }
                         if (btn) btn.disabled = false;
                     }
@@ -439,6 +456,7 @@
         registrarSW: registrarSW,
         solicitar: solicitar,
         desactivar: desactivar,
+        errorLegible: mensajeErrorSuscripcion,
         bannerDashboard: bannerDashboard,
         bannerTrasRecordatorio: bannerTrasRecordatorio,
     };
