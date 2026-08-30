@@ -147,40 +147,34 @@
         if (!soportado()) return Promise.resolve({ estado: 'no-soporte' });
         if (esIOSEnPestana()) return Promise.resolve({ estado: 'ios-pestana' });
 
-        // Si ya están suscritos y en la BD, no hacer nada ruidoso
-        return registrarSW().then(function (registration) {
-            if (Notification.permission === 'granted') {
-                return registration.pushManager.getSubscription().then(function (existe) {
-                    if (existe) {
-                        // Asegurar que la BD conoce la suscripción (upsert idempotente)
-                        return sincronizarBD(existe).then(function () {
-                            return { estado: 'ya-suscrito' };
-                        });
-                    }
-                    return crearSuscripcion(registration).then(function () {
-                        return { estado: 'suscrito' };
-                    });
-                });
-            }
-
-            if (Notification.permission === 'denied') {
-                return Promise.resolve({ estado: 'denegado' });
-            }
-
-            // permission === 'default' → pedir permiso (requiere gesto; aquí se llama desde un clic)
-            return Notification.requestPermission().then(function (permiso) {
-                if (permiso !== 'granted') {
-                    return { estado: 'denegado' };
-                }
-                return registrarse(registration).then(function () {
-                    return { estado: 'suscrito' };
-                }, function () {
-                    return { estado: 'error' };
-                });
+        // Ya con permiso: solo asegurar la suscripción en el navegador + BD
+        if (Notification.permission === 'granted') {
+            return registrarSW().then(function (registration) {
+                return registrarse(registration);
+            }).then(function () {
+                return { estado: 'ya-suscrito' };
+            }).catch(function (err) {
+                console.error('[Push] Error en solicitar (ya con permiso):', err);
+                return { estado: 'error', error: err.message };
             });
-        }).catch(function (err) {
-            console.error('[Push] Error en solicitar:', err);
-            return { estado: 'error', error: err.message };
+        }
+
+        if (Notification.permission === 'denied') {
+            return Promise.resolve({ estado: 'denegado' });
+        }
+
+        // permission === 'default': pedir el permiso ANTES de cualquier await,
+        // dentro del gesto del clic (Chrome/Firefox exigen la activación vigente).
+        return Notification.requestPermission().then(function (permiso) {
+            if (permiso !== 'granted') return { estado: 'denegado' };
+            return registrarSW().then(function (registration) {
+                return registrarse(registration);
+            }).then(function () {
+                return { estado: 'suscrito' };
+            }).catch(function (err) {
+                console.error('[Push] Error tras conceder permiso:', err);
+                return { estado: 'error', error: err.message };
+            });
         });
     }
 
@@ -267,7 +261,7 @@
                 solicitar().then(function (r) {
                     if (r.estado === 'suscrito' || r.estado === 'ya-suscrito') {
                         if (banner) banner.remove();
-                        mostrarToast('🔔 Listo: recibirás notificaciones aquí');
+                        try { mostrarToast('🔔 Listo: recibirás notificaciones aquí'); } catch (e) { /* sin toast */ }
                     } else if (r.estado === 'denegado') {
                         if (banner) {
                             var tie = banner.querySelector('.push-banner-info');
@@ -279,13 +273,14 @@
                             if (tie2) tie2.textContent = 'En iPhone/iPad, abre "Compartir" → "Añadir a Pantalla de Inicio" para activar notificaciones.';
                         }
                     } else {
-                        // 'error' | 'no-soporte': re-habilitar y explicar (no dejar
-                        // el botón muerto sin feedback)
+                        // 'error' | 'no-soporte': re-habilitar y mostrar el MOTIVO
+                        // real (típicamente una clave VAPID mal copiada en el entorno)
                         if (banner) {
                             var tie3 = banner.querySelector('.push-banner-info');
+                            var motivo = r.error ? ' (' + r.error + ')' : '';
                             if (tie3) tie3.textContent = r.estado === 'no-soporte'
                                 ? 'Este navegador no soporta notificaciones push.'
-                                : 'No se pudo activar. Revisa tu conexión e inténtalo de nuevo.';
+                                : 'No se pudo activar.' + motivo + '. Inténtalo otra vez.';
                         }
                         if (btn) btn.disabled = false;
                     }
