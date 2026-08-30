@@ -146,29 +146,53 @@
 
     // Chrome/FCM lanza "Registration failed - push service error" cuando:
     //  a) hay una suscripción vieja del mismo service worker creada con OTRA
-    //     aplicacionServerKey (se limpia y se reintenta), o
-    //  b) FCM responde mal/transitoriamente tras conceder el permiso (Android).
-    // Se reintenta con pequeñas pausas y se da de baja la suscripción obsoleta.
+    //     aplicacionServerKey,
+    //  b) FCM responde mal/transitoriamente tras conceder el permiso (Android),
+    //  c) la registración del service worker en Chrome quedó ROTA de un
+    //     despliegue previo (caso real en móvil: nada en la BD ni en el
+    //     navegador, y subscribir falla siempre).
+    // Se reintenta con pausas, se limpia la suscripción obsoleta y, si aún
+    // falla, se desregistra el SW y se registra de nuevo ("borrar y rehacer").
     function suscribirseConReintento(registration, vapidKey) {
+        function key() {
+            return urlBase64ToUint8Array(vapidKey);
+        }
         function intentar() {
-            return registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(vapidKey),
-            });
+            return registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key() });
+        }
+        function suscribirEn(reg) {
+            return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key() });
         }
         function espera(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-        return intentar().catch(function (err) {
-            return espera(250).then(function () {
-                return intentar();
-            }).catch(function () {
+        // Desregistra el SW roto, vuelve a registrarlo y espera a que quede activo.
+        function resetServiceWorker() {
+            return registration.unregister().catch(function () { return false; })
+                .then(function () { return espera(400); })
+                .then(registrarSW)
+                .then(function () {
+                    return espera(300).then(function () { return navigator.serviceWorker.ready; });
+                });
+        }
+        function esErrorServicio(err) {
+            return !!err && /push service error|registration failed/i.test(String(err.message));
+        }
+        return intentar().catch(function (err1) {
+            if (!esErrorServicio(err1)) throw err1;
+            // 2º intento (permiso Android propagándose / FCM transitorio)
+            return espera(250).then(intentar).catch(function () {
+                // Limpiar una suscripción vieja con otra clave y reintentar
                 return registration.pushManager.getSubscription().then(function (vieja) {
-                    if (!vieja) throw err;          // nada viejo que limpiar: error real
+                    if (!vieja) return resetServiceWorker().then(suscribirEn).catch(function () { throw err1; });
                     return vieja.unsubscribe().then(function (ok) {
-                        if (!ok) throw err;
-                        return espera(500).then(intentar);
+                        if (!ok) return resetServiceWorker().then(suscribirEn).catch(function () { throw err1; });
+                        return espera(500).then(intentar).catch(function () {
+                            return resetServiceWorker().then(suscribirEn).catch(function () { throw err1; });
+                        });
                     }, function () {
-                        throw err;
+                        return resetServiceWorker().then(suscribirEn).catch(function () { throw err1; });
                     });
+                }).catch(function () {
+                    return resetServiceWorker().then(suscribirEn).catch(function () { throw err1; });
                 });
             });
         });
