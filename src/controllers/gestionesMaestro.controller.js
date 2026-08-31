@@ -2230,7 +2230,8 @@ async function asignarAVariosAgentes(req, res) {
             const nombreClone = 'Usuario ' + nombreBase + ', asigna a ' + (ag.nombre || ag.username || 'Agente #' + ag.id);
             const ins = await q(
                 `INSERT INTO gestiones_maestro (nombre, descripcion, usuario_id, equipo_id, estado, es_sistema, total_solicitudes, gestionadas, fecha_limite, solicitudes_ids, asignado_a)
-                 VALUES ($1, $2, $3, $4, 'activa', 1, $5, 0, $6, $7, $8)`,
+                 VALUES ($1, $2, $3, $4, 'activa', 1, $5, 0, $6, $7, $8)
+                 RETURNING id`,
                 [nombreClone, origen.descripcion || 'Asignada por el sistema', usuario_id, ag.equipo_id, solicitudIds.length, origen.fecha_limite || null, solicitudesIdsJson, ag.id]
             );
             const clonId = (ins && ins.rows && ins.rows[0] && ins.rows[0].id != null) ? Number(ins.rows[0].id) : Number(ins.lastInsertRowid);
