@@ -16,12 +16,14 @@ var _esLider = false;
 var _esSistema = false;
 var _equipoActual = null;
 var _agentesEquipo = [];
+var _sesion = null;
 
 // Determinar si el usuario actual es líder
 async function verificarRolUsuario() {
     try {
         var res = await fetch('/api/auth/sesion');
         var sesion = await res.json();
+        _sesion = sesion;
         if (sesion.autenticado && sesion.usuario) {
             var rolU = sesion.usuario.rol;
             var esAdminU = (rolU === 'superadmin' || rolU === 'admin' || sesion.usuario.is_superadmin);
@@ -1234,8 +1236,8 @@ function copiarNombreCedula(nombre, cedula) {
 
 function anexarRemitenteCampana(texto) {
     if (!datosGestion || !datosGestion.remitente_nombre) return texto;
-    var esPropia = sesion && sesion.autenticado && sesion.usuario &&
-        Number(datosGestion.usuario_id) === Number(sesion.usuario.id);
+    var esPropia = _sesion && _sesion.autenticado && _sesion.usuario &&
+        Number(datosGestion.usuario_id) === Number(_sesion.usuario.id);
     if (esPropia) return texto;
     var nombreRemitente = String(datosGestion.remitente_nombre).trim();
     if (!nombreRemitente) return texto;
