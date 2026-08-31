@@ -1200,7 +1200,13 @@ function escaparParaHTML(texto) {
 }
 
 function escaparParaAtributo(texto) {
-    return String(texto || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return String(texto || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 }
 
 function copiarNombreCedula(nombre, cedula) {
@@ -2649,7 +2655,7 @@ function abrirModalAsignarVariosMovil(campaniaId, nombreCampania) {
                         listaAgentes +
                         '<div id="sistema-seleccion-contador-movil" style="padding:10px 16px;font-size:13px;color:#374151;">0 seleccionados</div>' +
                         '<div class="campaña-bs-divider"></div>' +
-                        '<button class="campaña-bs-item" style="color:#ffffff;background:#2563eb;" onclick="asignarVariosAgentesMovil(' + campaniaId + ', ' + escaparParaAtributo(nombreCampania) + ')">' +
+                        '<button class="campaña-bs-item" style="color:#ffffff;background:#2563eb;" onclick="asignarVariosAgentesMovil(' + campaniaId + ')">' +
                         '  <span class="campaña-bs-item-icon">📤</span>' +
                         '  <span class="campaña-bs-item-label">Asignar seleccionados</span>' +
                         '</button>' +
@@ -2679,7 +2685,7 @@ function abrirModalAsignarVariosMovil(campaniaId, nombreCampania) {
         });
 }
 
-async function asignarVariosAgentesMovil(campaniaId, nombreCampania) {
+async function asignarVariosAgentesMovil(campaniaId) {
     var cbs = document.querySelectorAll('.sistema-agente-cb-movil:checked');
     var agentes_ids = [];
     for (var i = 0; i < cbs.length; i++) {
@@ -2688,6 +2694,15 @@ async function asignarVariosAgentesMovil(campaniaId, nombreCampania) {
     if (agentes_ids.length === 0) {
         alert('Selecciona al menos un agente');
         return;
+    }
+    var nombreCampania = 'Gestión #' + campaniaId;
+    if (Array.isArray(campañas)) {
+        for (var k = 0; k < campañas.length; k++) {
+            if (String(campañas[k].id) === String(campaniaId)) {
+                nombreCampania = campañas[k].nombre || nombreCampania;
+                break;
+            }
+        }
     }
     if (!confirm('¿Asignar la campaña "' + nombreCampania + '" a ' + agentes_ids.length + ' agente(s)? Se creará una copia para cada uno.')) {
         return;

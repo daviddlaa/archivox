@@ -1685,7 +1685,13 @@ document.addEventListener('click', function(e) {
 });
 
 function escaparParaAtributo(texto) {
-    return String(texto || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return String(texto || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 }
 
 function copiarNombreCedula(nombre, cedula) {
@@ -2857,7 +2863,7 @@ function abrirModalAsignarVariosDesktop(campaniaId, nombreCampania) {
 
             contenido += '<div class="modal-botones" style="margin-top:16px;">';
             contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cerrar</button>';
-            contenido += '<button class="btn-confirmar" onclick="asignarVariosAgentesDesktop(' + campaniaId + ', ' + escaparParaAtributo(nombreCampania) + ')">📤 Asignar seleccionados</button>';
+            contenido += '<button class="btn-confirmar" onclick="asignarVariosAgentesDesktop(' + campaniaId + ')">📤 Asignar seleccionados</button>';
             contenido += '</div>';
             contenido += '</div>';
 
@@ -2878,7 +2884,7 @@ function abrirModalAsignarVariosDesktop(campaniaId, nombreCampania) {
         });
 }
 
-async function asignarVariosAgentesDesktop(campaniaId, nombreCampania) {
+async function asignarVariosAgentesDesktop(campaniaId) {
     var cbs = document.querySelectorAll('.sistema-agente-cb:checked');
     var agentes_ids = [];
     for (var i = 0; i < cbs.length; i++) {
@@ -2887,6 +2893,15 @@ async function asignarVariosAgentesDesktop(campaniaId, nombreCampania) {
     if (agentes_ids.length === 0) {
         alert('Selecciona al menos un agente');
         return;
+    }
+    var nombreCampania = 'Gestión #' + campaniaId;
+    if (Array.isArray(campañas)) {
+        for (var k = 0; k < campañas.length; k++) {
+            if (String(campañas[k].id) === String(campaniaId)) {
+                nombreCampania = campañas[k].nombre || nombreCampania;
+                break;
+            }
+        }
     }
     if (!confirm('¿Asignar la campaña "' + nombreCampania + '" a ' + agentes_ids.length + ' agente(s)? Se creará una copia para cada uno.')) {
         return;
