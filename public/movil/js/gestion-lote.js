@@ -1028,8 +1028,10 @@ function normalizarBusqueda(texto) {
 
 function renderizarSolicitudes(lista, sinEntrada) {
     var container = document.getElementById('lista-solicitudes');
-    // Guardar posición de scroll antes de re-render
-    var scrollY = container ? container.scrollTop : 0;
+    // Guardar posición de scroll antes de re-render. En móvil el scroll real ocurre
+    // en la ventana/documento (la lista no es un contenedor con overflow), por eso se
+    // usa window.scrollY en vez de container.scrollTop (que siempre es 0).
+    var scrollY = (typeof window.scrollY === 'number') ? window.scrollY : 0;
     if (container) container.classList.toggle('no-stagger', !!sinEntrada);
     actualizarIndicadorFiltros();
     if (!lista || lista.length === 0) {
@@ -1148,9 +1150,10 @@ html += '<div class="sol-botones sol-botones-fila">';
         html += '</div></section>';
     }
     container.innerHTML = html;
-    // Restaurar posición de scroll si el contenido es lo suficientemente largo
-    if (scrollY > 0 && container.scrollHeight > scrollY) {
-        container.scrollTop = scrollY;
+    // Restaurar posición de scroll si el contenido es lo suficientemente largo.
+    // En móvil el scroll real está en la ventana, no en la lista.
+    if (scrollY > 0 && (document.body.scrollHeight || document.documentElement.scrollHeight) > scrollY) {
+        window.scrollTo(0, scrollY);
     }
 }
 
@@ -1248,13 +1251,27 @@ function llamarDesdeGestionLote(solicitudId, celular, nombre) {
         return;
     }
     if (window.TemporizadorLlamada) {
-        // Popup de llamada con contador (Fase 1 v2): al guardar, refresca la campaña
+        // Popup de llamada con contador (Fase 1 v2). Al guardar se actualiza la tarjeta
+        // EN MEMORIA (igual que el flujo de seguimiento) para NO recargar toda la lista
+        // y así conservar filtro, scroll y foco; el backend ya persistió la gestión.
         window.TemporizadorLlamada.abrirLlamada({
             solicitudId: solicitudId,
             celular: celular,
             nombre: nombre || '',
             gestionId: gestionId,
-            onGuardada: function() { cargarDatosGestionMovil(); }
+            onGuardada: function(data, sid) {
+                var gestion = data && data.tipo_gestion ? data : null;
+                if (gestion && window.GestionCampana && window.GestionCampana.aplicarGestionLocal) {
+                    window.GestionCampana.aplicarGestionLocal(String(sid != null ? sid : solicitudId), {
+                        gestion_id: data.id,
+                        tipo_gestion: data.tipo_gestion,
+                        gestion_obs: data.observacion != null ? data.observacion : '',
+                        fecha_gestion: data.fecha_gestion || null
+                    });
+                }
+                renderizarSolicitudes(todasLasSolicitudes, true);
+                actualizarProgreso();
+            }
         });
         return;
     }

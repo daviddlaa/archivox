@@ -1443,8 +1443,11 @@ function normalizarBusqueda(texto) {
 // Renderizar lista de solicitudes
 function renderizarSolicitudes(lista) {
     var container = document.getElementById('lista-solicitudes');
-    // Guardar posición de scroll antes de re-render
-    var scrollY = container ? container.scrollTop : 0;
+    // Guardar posición de scroll antes de re-render. En escritorio el scroll real
+    // ocurre en .contenido (overflow-y:auto), no en la lista (que es un grid), así
+    // que se lee scrollTop de .contenido.
+    var scrollEl = document.querySelector('.contenido');
+    var scrollY = scrollEl ? scrollEl.scrollTop : 0;
     
     if (!lista || lista.length === 0) {
         container.innerHTML = '<div class="empty">No hay solicitudes en esta gestión</div>';
@@ -1616,9 +1619,10 @@ function renderizarSolicitudes(lista) {
         html += '</div></section>';
     }
     container.innerHTML = html;
-    // Restaurar posición de scroll si el contenido es lo suficientemente largo
-    if (scrollY > 0 && container.scrollHeight > scrollY) {
-        container.scrollTop = scrollY;
+    // Restaurar posición de scroll si el contenido es lo suficientemente largo.
+    // El scroll real está en .contenido, no en la lista.
+    if (scrollY > 0 && scrollEl && scrollEl.scrollHeight > scrollY) {
+        scrollEl.scrollTop = scrollY;
     }
 }
 

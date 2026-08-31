@@ -196,6 +196,10 @@
     window.GestionCampana = {
         guardarGestionIndividual: guardarGestionIndividual,
         guardarRecordatorioModal: guardarRecordatorioModal,
-        alternarModoRecordatorio: alternarModoRecordatorio
+        alternarModoRecordatorio: alternarModoRecordatorio,
+        // Actualiza la tarjeta en memoria tras guardar una gestión/petición sin recargar
+        // toda la lista. Reutilizada por el temporizador de llamada (móvil) y el flujo
+        // de seguimiento para no perder filtro, scroll ni foco.
+        aplicarGestionLocal: aplicarGestionLocal
     };
 })(window);

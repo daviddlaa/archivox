@@ -88,7 +88,8 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 - Fix validación de IDs numéricos en campañas + eliminación de filtro `relaciones` en liberación — [`fix-validacion-ids-campana.md`](fix-validacion-ids-campana.md)
 - Fix creación de campañas (reasignación de `const` → 500 "Error al crear gestión") + `equipo_id` validado en tiempo real para que **todos los usuarios, indistintos de rol o equipo, puedan crear campañas** — [`fix-crear-campanas-error-constante.md`](fix-crear-campanas-error-constante.md)
 - Campañas en vivo: SSE `campanas.updated` al crear/renombrar/eliminar (grid desktop y móvil se actualiza sin recargar) — [`fix-campanas-actualizacion-en-vivo.md`](fix-campanas-actualizacion-en-vivo.md)
-- **Notificaciones push web (PWA/Web Push API + VAPID):** suscripción por usuario, push real para toda notificación in-app **con destinatario concreto** (globales no), app instalable (manifest + service worker + iconos), banner con gesto en dashboard + tras guardar ⏰ recordatorio, guía PWA para iOS, y tarjeta Activar/Desactivar en Perfil — [`feature-notificaciones-push-web.md`](feature-notificaciones-push-web.md)
+- **Notificaciones push web (PWA/Web Push API + VAPID):** suscripción por usuario, push real para toda notificación in-app **con destinatario concreto** (globales no), app instalable (manifest + service worker + iconos), banner con gesto en dashboard + tras guardar ⏰ recordatorio, guía PWA para iOS, tarjeta Activar/Desactivar en Perfil, detección iPadOS (`maxTouchPoints`), y `subscribe` robusto (reintentos + limpiado de suscripción obsoleta + reset del SW). **Hallazgo:** hay dispositivos Android cuyo navegador no puede contactar con FCM (Chrome y Brave fallan; no llega fecha a la BD); es a nivel dispositivo, no de la app — [`feature-notificaciones-push-web.md`](feature-notificaciones-push-web.md) y [`fix-push-movil-push-service-error.md`](fix-push-movil-push-service-error.md)
+- Fix de foco/scroll al guardar gestiones en campañas (llamar 📞 y seguimiento/contenidos): el scroll real se lee del contenedor correcto (`.contenido` en escritorio, `window` en móvil) y el temporizador de llamada actualiza la tarjeta **en memoria** para no recargar la lista ni perder filtro/foco — [`fix-foco-scroll-guardar-gestiones-campanas.md`](fix-foco-scroll-guardar-gestiones-campanas.md)
 
 ---
 
@@ -146,6 +147,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 | `feature-liberacion-reactivacion-sin-compra.md` | Reactivación sin compra (>6 meses, excluye 👎, scheduler semanal con campaña automática) |
 | `feature-no-aplica-credito.md` | Flag "Ya no aplica para crédito" |
 | `feature-notificaciones-push-web.md` | Notificaciones push web (PWA/Web Push API + VAPID): suscripción por usuario, push para notificaciones con destinatario, app instalable |
+| `fix-push-movil-push-service-error.md` | Push móvil "push service error": detección iPadOS/iOS en pestaña, reintentos + limpiado de suscripción vieja + reset del SW, errores accionables, y hallazgo de dispositivos sin FCM |
 | `feature-panel-lateral-agentes.md` | Panel lateral de agentes |
 | `feature-panel-lateral-solicitudes.md` | Panel lateral de solicitudes |
 | `feature-plantillas-mensajes.md` | Plantillas de mensajes |

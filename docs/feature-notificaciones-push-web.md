@@ -110,9 +110,10 @@ plataforma con `urlParaPlataforma` (`/m/x` ↔ `/x`).
   todas las páginas junto a `apple-touch-icon`, `favicon` y `push-suscripcion.css`.
 - **`public/js/push-suscripcion.js`** — API global `PushNotif`: `soportado()`,
   `esPWAInstalada()`, `esIOSEnPestana()`, `estadoPermiso()`, `registrarSW()`,
-  `solicitar()`, `desactivar()`, `bannerDashboard()`, `bannerTrasRecordatorio()`. Se
-  auto-inicializa en el dashboard (banner one-time + registro silencioso del SW) y escucha
-  el evento `archivox:recordatorio-guardado` (disparado por `gestión-campana.js`).
+  `solicitar()`, `desactivar()`, `errorLegible(err)`, `bannerDashboard()`,
+  `bannerTrasRecordatorio()`. Se auto-inicializa en el dashboard (banner one-time +
+  registro silencioso del SW) y escucha el evento `archivox:recordatorio-guardado`
+  (disparado por `gestión-campana.js`).
 - **`public/perfil.html` + `perfil.js`** — tarjeta "🔔 Notificaciones push": estado
   (soportado/instalable iOS/permiso), botones Activar/Desactivar, y guía PWA en iOS.
 - **`public/js/drawer.js`** — `cerrarSesion()` desactiva las suscripciones push al salir.
@@ -126,7 +127,40 @@ plataforma con `urlParaPlataforma` (`/m/x` ↔ `/x`).
 - En Render hay que **añadir esas 3 variables** (el `web-push` exige `VAPID_SUBJECT` para
   enviar). HTTPS es obligatorio para Web Push (Render ya lo da).
 
-## 8. Limitaciones conocidas
+## 8. Robustez del `subscribe` y diagnóstico móvil (cliente)
+
+`pushManager.subscribe` falla con `"Registration failed - push service error"` en tres
+casos reales que ya se han dado en producción. La app los maneja así
+(`suscribirseConReintento` en `push-suscripcion.js`):
+
+1. **Suscripción vieja del mismo SW con otra `applicationServerKey`** → se intenta
+   `getSubscription()`, se hace `unsubscribe()` a la obsoleta y se reintenta.
+2. **FCM transitorio / propagación del permiso en Android** → 2 intentos iniciales con
+   pausa de 250 ms.
+3. **Registración del SW "rota" en el navegador** (típico tras varios despliegues; el
+   teléfono no crea fila en la BD ni suscripción en el navegador, y `subscribe` falla
+   siempre) → se **desregistra el SW, se re-registra y se espera `serviceWorker.ready`**
+   antes de un intento final ("borrar y rehacer").
+
+Además:
+
+- **Detección iPadOS:** el iPadOS 13+ envía user-agent de escritorio (`Macintosh`); se
+  detecta con `maxTouchPoints > 1` (`esApple()`). `esIOSEnPestana()` = Apple **y** sin PWA
+  instalada, y **no** depende de `soportado()` (antes la guía quedaba oculta en iPad).
+- **iOS siempre a la guía:** en pestaña normal de iPhone/iPad (incl. iOS 16.4+, que expone
+  la API pero rechaza el `subscribe` sin app instalada) el flujo `solicitar()` devuelve
+  `ios-pestana` **antes** de comprobar soporte; banner del dashboard y tarjeta de Perfil
+  muestran "Compartir → Añadir a Pantalla de Inicio". `bannerDashboard()` y
+  `bannerTrasRecordatorio()` muestran la guía incluso cuando `!soportado()`.
+- **Errores accionables:** `errorLegible()` traduce el error técnico del navegador a un
+  mensaje en español (variante móvil si `detectarPlataforma() === 'movil'`); Perfil y el
+  banner nunca exponen el texto crudo del navegador. Los logs (`console.error`) sí guardan
+  el motivo real.
+- Verificación de la detección con Chromium headless (emulación de UA/`maxTouchPoints`):
+  iPad→`true`, iPhone→`true`, Android/desktop→`false` ✓, y el flujo Android completo
+  (UA Pixel 5 + permiso concedido + sin suscripción previa) → suscripción real guardada ✓.
+
+## 9. Limitaciones conocidas
 
 - **iOS Safari en pestaña normal:** no recibe push (Apple lo desactiva). Con la app
   **instalada** (Añadir a Home Screen) e iOS ≥ 16.4 sí. La UI muestra la guía.
@@ -135,8 +169,16 @@ plataforma con `urlParaPlataforma` (`/m/x` ↔ `/x`).
 - Las notificaciones **globales** no generan push (decisión).
 - Los navegadores pueden limitar el formato del icono/payload; se usa el payload mínimo
   estándar para máxima compatibilidad.
+- **Dispositivos Android sin acceso a FCM (hallazgo en producción 30/08/2026):** hay
+  teléfonos cuyo Chrome/Brave **nunca** consigue crear la suscripción (`push service
+  error`) aunque el permiso esté permitido y todo esté actualizado, con datos y WiFi.
+  El `subscribe` ocurre 100% dentro del navegador; el servidor no participa (no llega
+  ninguna fila a `push_subscriptions`). Si falla en Chrome y Brave y funciona en otro
+  dispositivo → el bloqueo es del propio teléfono/ROM/red (FCM inalcanzable, sin cuenta
+  de Google en Chrome, ROM sin servicios de Google, DNS privado/VPN regional). Probar en
+  otro navegador/dispositivo confirma que la app no tiene fallo.
 
-## 9. Verificación E2E
+## 10. Verificación E2E
 
 - Flujo API completo en local (SQLite): login → `vapid-public-key` → `subscribe` (upsert) →
   `estado` → `DELETE subscribe` ✓ (curl real).
