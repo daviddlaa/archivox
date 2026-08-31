@@ -25,7 +25,8 @@ const _MODALES = {
     createAgente: 'createAgenteModal',
     moverUsuario: 'moverUsuarioModal',
     eliminarEquipo: 'eliminarEquipoModal',
-    crearCampana: 'crearCampanaModal'
+    crearCampana: 'crearCampanaModal',
+    asignarVariosCampana: 'asignarVariosCampanaModal'
 };
 
 /**
@@ -2502,6 +2503,118 @@ async function crearCampanaSistema() {
     } catch (err) {
         console.error('[Admin] Error creando campaña sistema:', err);
         alert('Error al crear la campaña: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+    }
+}
+
+// ============================================================================
+// ASIGNAR UNA CAMPAÑA (DEL SISTEMA) A VARIOS AGENTES CON LÍDER
+// ============================================================================
+async function abrirModalAsignarVarios() {
+    _abrirModal(_MODALES.asignarVariosCampana);
+    document.getElementById('asignarVariosContador').textContent = '0 seleccionados';
+    await Promise.all([cargarCampanasParaAsignar(), cargarAgentesParaAsignar()]);
+}
+
+function cerrarModalAsignarVarios() {
+    _cerrarModal(_MODALES.asignarVariosCampana);
+}
+
+async function cargarCampanasParaAsignar() {
+    const sel = document.getElementById('asignarVariosCampanaSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Cargando campañas...</option>';
+    try {
+        const res = await fetch('/api/gestiones-maestro');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const campanas = (data && data.data) ? data.data : (Array.isArray(data) ? data : []);
+        let html = '<option value="">Selecciona la campaña...</option>';
+        campanas.forEach(function(c) {
+            const etiqueta = c.es_sistema ? '🤖 ' : '';
+            html += '<option value="' + c.id + '">' + etiqueta + '#' + c.id + ' — ' + escapeHtml(c.nombre || 'Sin nombre') + '</option>';
+        });
+        sel.innerHTML = html;
+    } catch (err) {
+        console.error('[Admin] Error cargando campañas:', err);
+        sel.innerHTML = '<option value="">Error cargando campañas</option>';
+    }
+}
+
+async function cargarAgentesParaAsignar() {
+    const cont = document.getElementById('asignarVariosAgentesList');
+    if (!cont) return;
+    cont.innerHTML = 'Cargando agentes...';
+    try {
+        const res = await fetch('/api/equipos/agentes-con-lider');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const agentes = (data && data.data) || [];
+        if (agentes.length === 0) {
+            cont.innerHTML = '<div style="color:#6b7280;font-size:13px;padding:8px;">No hay agentes con líder disponibles</div>';
+            return;
+        }
+        let html = '';
+        agentes.forEach(function(ag) {
+            const recomendado = ag.metricas && ag.metricas.es_recomendado;
+            html += '<label style="display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid #f3f4f6;cursor:pointer;">';
+            html += '<input type="checkbox" class="admin-agente-asignar-cb" value="' + ag.usuario_id + '" style="width:16px;height:16px;">';
+            html += '<div style="font-size:14px;">' + escapeHtml(ag.usuario_nombre || ag.usuario_username) + ' <span style="color:#9ca3af;font-size:13px;">@' + escapeHtml(ag.usuario_username) + '</span><br><span style="font-size:12px;color:#6b7280;">👑 ' + escapeHtml(ag.lider_nombre || 'Líder') + (recomendado ? ' · ⚡ Más rápido' : '') + '</span></div>';
+            html += '</label>';
+        });
+        cont.innerHTML = html;
+        const cbs = cont.querySelectorAll('.admin-agente-asignar-cb');
+        cbs.forEach(function(cb) {
+            cb.addEventListener('change', actualizarContadorAsignarVarios);
+        });
+    } catch (err) {
+        console.error('[Admin] Error cargando agentes:', err);
+        cont.innerHTML = '<div style="color:#dc2626;font-size:13px;">Error cargando agentes</div>';
+    }
+}
+
+function actualizarContadorAsignarVarios() {
+    const n = document.querySelectorAll('.admin-agente-asignar-cb:checked').length;
+    const contador = document.getElementById('asignarVariosContador');
+    if (contador) contador.textContent = n + ' seleccionados';
+}
+
+async function asignarVariosCampanaAdmin() {
+    const campaniaId = document.getElementById('asignarVariosCampanaSelect').value;
+    const cbs = document.querySelectorAll('.admin-agente-asignar-cb:checked');
+    const agentes_ids = [];
+    cbs.forEach(function(cb) { agentes_ids.push(Number(cb.value)); });
+
+    if (!campaniaId) return alert('Selecciona la campaña a asignar');
+    if (agentes_ids.length === 0) return alert('Selecciona al menos un agente');
+    if (!confirm('¿Asignar la campaña #' + campaniaId + ' a ' + agentes_ids.length + ' agente(s)? Se creará una copia para cada uno.')) {
+        return;
+    }
+
+    const btn = document.getElementById('btnGuardarAsignarVarios');
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Asignando...';
+
+    try {
+        const res = await fetch('/api/gestiones-maestro/' + campaniaId + '/asignar-a-varios-agentes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ agentes_ids: agentes_ids })
+        });
+        const result = await res.json();
+        if (!res.ok) {
+            throw new Error(result.error || result.detalle || 'HTTP ' + res.status);
+        }
+        cerrarModalAsignarVarios();
+        mostrarToast('✅ ' + (result.mensaje || 'Campaña asignada'));
+        cargarCampanasParaAsignar();
+        actualizarContadorAsignarVarios();
+    } catch (err) {
+        console.error('[Admin] Error asignando campaña a varios:', err);
+        alert('Error al asignar: ' + err.message);
     } finally {
         btn.disabled = false;
         btn.textContent = original;

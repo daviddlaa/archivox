@@ -13,6 +13,7 @@ var _recomendacionMovilTimer = null;
 
 // Estado de líder/agentes (como en desktop)
 var _esLider = false;
+var _esSistema = false;
 var _equipoActual = null;
 var _agentesEquipo = [];
 
@@ -22,8 +23,13 @@ async function verificarRolUsuario() {
         var res = await fetch('/api/auth/sesion');
         var sesion = await res.json();
         if (sesion.autenticado && sesion.usuario) {
-            _esLider = !!(sesion.usuario.es_lider || sesion.usuario.rol === 'superadmin' || sesion.usuario.rol === 'admin');
+            var rolU = sesion.usuario.rol;
+            var esAdminU = (rolU === 'superadmin' || rolU === 'admin' || sesion.usuario.is_superadmin);
+            _esLider = !!(sesion.usuario.es_lider || esAdminU);
             _equipoActual = sesion.usuario.equipo_id || null;
+            // Puede asignar a varios agentes: miembro del equipo 'Sistema' (puede_enviar=true)
+            // o admin/superadmin. El backend valida la autorización exacta.
+            _esSistema = (sesion.usuario.puede_enviar === true) || esAdminU;
             return _esLider;
         }
     } catch (e) {
@@ -2370,6 +2376,13 @@ function abrirBottomSheetCampana(id, nombre, total, gestionadas, descripcion, fe
             itemsHTML += '</button>';
         }
     }
+        // Asignar a varios agentes (agente del sistema / admin)
+        if (_esSistema) {
+            itemsHTML += '<button class="campaña-bs-item" onclick="cerrarBottomSheetCampana(); abrirModalAsignarVariosMovil(' + id + ', \'' + escaparParaAtributo(nombre) + '\')">';
+            itemsHTML += '  <span class="campaña-bs-item-icon">🔀</span>';
+            itemsHTML += '  <span class="campaña-bs-item-label">Asignar a varios agentes</span>';
+            itemsHTML += '</button>';
+        }
     
     // Agregar solicitudes (si la campaña activa es esta)
     if (gestionId && String(gestionId) === String(id) && typeof abrirModalAgregarSolicitudesMovil === 'function') {
@@ -2576,6 +2589,120 @@ async function asignarAgenteMovil(campaniaId, agenteId) {
     } catch (error) {
         console.error('[movil] Error asignando agente:', error);
         alert('Error al asignar agente: ' + error.message);
+    }
+}
+
+// ================== ASIGNAR A VARIOS AGENTES (SISTEMA) — MÓVIL ==================
+function abrirModalAsignarVariosMovil(campaniaId, nombreCampania) {
+    fetch('/api/equipos/agentes-con-lider')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            var agentes = (data && data.data) || [];
+            if (agentes.length === 0) {
+                alert('No hay agentes con líder para asignar');
+                return;
+            }
+
+            var listaAgentes = '';
+            for (var i = 0; i < agentes.length; i++) {
+                var ag = agentes[i];
+                var recomendado = ag.metricas && ag.metricas.es_recomendado;
+                listaAgentes += '<label class="campaña-bs-item" style="display:flex;align-items:center;gap:10px;cursor:pointer;">';
+                listaAgentes += '  <input type="checkbox" class="sistema-agente-cb-movil" value="' + escaparParaAtributo(ag.usuario_id) + '" style="width:18px;height:18px;flex-shrink:0;">';
+                listaAgentes += '  <span class="campaña-bs-item-label">' + escaparParaHTML(ag.usuario_nombre || ag.usuario_username) + ' <span style="color:#9ca3af;font-size:12px;">@' + escaparParaHTML(ag.usuario_username) + '</span><br><span style="font-size:12px;color:#6b7280;">👑 ' + escaparParaHTML(ag.lider_nombre || 'Líder') + (recomendado ? ' · ⚡ Más rápido' : '') + '</span></span>';
+                listaAgentes += '</label>';
+            }
+
+            cancelarLimpiezaBottomSheet();
+            var overlay = document.getElementById('campaña-bs-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'campaña-bs-overlay';
+                overlay.className = 'campaña-bs-overlay';
+                document.body.appendChild(overlay);
+            }
+
+            overlay.innerHTML = '' +
+                '<div class="campaña-bs-overlay" id="campaña-bs-overlay-inner" onclick="cerrarBottomSheetCampana()"></div>' +
+                '<div class="campaña-bs-sheet" id="campaña-bs-sheet">' +
+                    '<div class="campaña-bs-handle"></div>' +
+                    '<div class="campaña-bs-header">' +
+                        '<div>' +
+                            '<div class="campaña-bs-header-title">🔀 Asignar a varios agentes</div>' +
+                            '<div class="campaña-bs-header-sub">' + escaparParaHTML(nombreCampania) + ' · Se creará una copia por agente</div>' +
+                        '</div>' +
+                        '<button class="campaña-bs-close" onclick="cerrarBottomSheetCampana()">✕</button>' +
+                    '</div>' +
+                    '<div class="campaña-bs-body" style="max-height:50vh;overflow-y:auto;">' +
+                        listaAgentes +
+                        '<div id="sistema-seleccion-contador-movil" style="padding:10px 16px;font-size:13px;color:#374151;">0 seleccionados</div>' +
+                        '<div class="campaña-bs-divider"></div>' +
+                        '<button class="campaña-bs-item" style="color:#ffffff;background:#2563eb;" onclick="asignarVariosAgentesMovil(' + campaniaId + ', ' + escaparParaAtributo(nombreCampania) + ')">' +
+                        '  <span class="campaña-bs-item-icon">📤</span>' +
+                        '  <span class="campaña-bs-item-label">Asignar seleccionados</span>' +
+                        '</button>' +
+                    '</div>' +
+                '</div>';
+
+            requestAnimationFrame(function() {
+                overlay.classList.add('visible');
+                var innerOverlay = document.getElementById('campaña-bs-overlay-inner');
+                var sheet = document.getElementById('campaña-bs-sheet');
+                if (innerOverlay) innerOverlay.classList.add('visible');
+                if (sheet) sheet.classList.add('visible');
+            });
+
+            var cbs = document.querySelectorAll('.sistema-agente-cb-movil');
+            var contador = document.getElementById('sistema-seleccion-contador-movil');
+            for (var j = 0; j < cbs.length; j++) {
+                cbs[j].addEventListener('change', function() {
+                    var sel = document.querySelectorAll('.sistema-agente-cb-movil:checked').length;
+                    if (contador) contador.textContent = sel + ' seleccionados';
+                });
+            }
+        })
+        .catch(function(err) {
+            console.error('[movil] Error cargando agentes:', err);
+            alert('Error al cargar agentes: ' + err.message);
+        });
+}
+
+async function asignarVariosAgentesMovil(campaniaId, nombreCampania) {
+    var cbs = document.querySelectorAll('.sistema-agente-cb-movil:checked');
+    var agentes_ids = [];
+    for (var i = 0; i < cbs.length; i++) {
+        agentes_ids.push(Number(cbs[i].value));
+    }
+    if (agentes_ids.length === 0) {
+        alert('Selecciona al menos un agente');
+        return;
+    }
+    if (!confirm('¿Asignar la campaña "' + nombreCampania + '" a ' + agentes_ids.length + ' agente(s)? Se creará una copia para cada uno.')) {
+        return;
+    }
+
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + campaniaId + '/asignar-a-varios-agentes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ agentes_ids: agentes_ids })
+        });
+
+        var resultado = await response.json();
+
+        if (response.ok) {
+            alert('✅ ' + (resultado.mensaje || 'Campaña asignada'));
+            cerrarBottomSheetCampana();
+            await cargarListaCampanas();
+            if (String(campaniaId) === String(gestionId)) {
+                await cargarDatosGestionMovil();
+            }
+        } else {
+            alert('Error: ' + (resultado.error || 'Error al asignar a varios agentes'));
+        }
+    } catch (error) {
+        console.error('[movil] Error asignando a varios:', error);
+        alert('Error al asignar a varios agentes: ' + error.message);
     }
 }
 

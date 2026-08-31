@@ -2104,6 +2104,247 @@ async function enviarSolicitudes(req, res) {
 }
 
 // ============================================================================
+// ASIGNAR UNA CAMPAÑA A VARIOS AGENTES CON LÍDER (agente del sistema / admin)
+// ============================================================================
+// POST /api/gestiones-maestro/:id/asignar-a-varios-agentes
+// Body: { agentes_ids: [1,2,...] }
+// - Autorizado para: miembros del equipo 'Sistema' (dueños de su campaña) y
+//   admin/superadmin (pueden asignar cualquier campaña, incl. del sistema).
+// - Crea UNA copia (clon) de la campaña por cada agente destino, con:
+//   usuario_id = remitente, equipo_id = equipo del agente, asignado_a = agente,
+//   es_sistema = 1, nombre = "Usuario <remitente>, asigna a <destino>".
+// - Valida todos los destinos ANTES de escribir (máx 20, sin duplicados ni
+//   auto-asignación, solo agentes con líder activo). Duplicados permitidos.
+// - Trazabilidad en envios_solicitudes + notificaciones a agente y su líder.
+async function asignarAVariosAgentes(req, res) {
+    try {
+        const usuario_id = getUsuarioId(req);
+        if (!usuario_id) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+        const user = req.session.usuario;
+
+        const { id } = req.params;
+        const agentesIds = normalizarIdsSolicitud(req.body && req.body.agentes_ids);
+
+        if (agentesIds.length === 0) {
+            return res.status(400).json({ error: 'Selecciona al menos un agente destino' });
+        }
+        const MAX_AGENTES = 20;
+        if (agentesIds.length > MAX_AGENTES) {
+            return res.status(400).json({ error: 'Máximo ' + MAX_AGENTES + ' agentes por asignación' });
+        }
+
+        // --- Autorización: admin/superadmin o miembro del equipo 'Sistema' ---
+        const esAdmin = (user.rol === 'superadmin' || user.rol === 'admin' || user.is_superadmin);
+        let esSistema = false;
+        if (!esAdmin) {
+            const sistRes = await pool.query(
+                `SELECT 1 FROM equipo_usuarios eu
+                 INNER JOIN equipos e ON e.id = eu.equipo_id
+                 WHERE eu.usuario_id = ? AND eu.fecha_salida IS NULL AND e.nombre = 'Sistema'
+                 LIMIT 1`,
+                [usuario_id]
+            );
+            esSistema = !!getFirstRow(sistRes);
+            if (!esSistema) {
+                return res.status(403).json({ error: 'Solo miembros del equipo Sistema o administradores pueden asignar a varios agentes' });
+            }
+        }
+
+        // --- Verificar que la campaña existe y el usuario tiene acceso ---
+        const access = buildGestionAccessWhere(req, id);
+        const checkSql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access);
+        const resultGM = await pool.query(checkSql, access.params);
+        const origen = getFirstRow(resultGM);
+        if (!origen) {
+            return res.status(404).json({ error: 'Campaña no encontrada' });
+        }
+        // Miembro del sistema solo puede asignar sus propias campañas.
+        if (!esAdmin && Number(origen.usuario_id) !== Number(usuario_id)) {
+            return res.status(403).json({ error: 'Solo puedes asignar tus propias campañas' });
+        }
+
+        let solicitudIds = [];
+        try { solicitudIds = JSON.parse(origen.solicitudes_ids || '[]'); } catch (e) { solicitudIds = []; }
+        if (solicitudIds.length === 0) {
+            return res.status(400).json({ error: 'La campaña no tiene solicitudes para asignar' });
+        }
+
+        // --- Validar destinos en lote (todos antes de escribir) ---
+        const placeholders = agentesIds.map(function(_, i) { return '$' + (i + 1); }).join(',');
+        const destRes = await pool.query(
+            `SELECT u.id, u.nombre, u.username, u.is_active,
+                    e.id as equipo_id, e.nombre as equipo_nombre,
+                    (SELECT eu3.usuario_id FROM equipo_usuarios eu3
+                     INNER JOIN usuarios ul ON ul.id = eu3.usuario_id
+                     WHERE eu3.equipo_id = eu.equipo_id AND eu3.fecha_salida IS NULL AND eu3.es_lider = 1
+                       AND ul.is_active = TRUE
+                     ORDER BY eu3.id ASC LIMIT 1) as lider_id
+             FROM equipo_usuarios eu
+             INNER JOIN usuarios u ON eu.usuario_id = u.id
+             INNER JOIN equipos e ON eu.equipo_id = e.id
+             WHERE eu.usuario_id IN (` + placeholders + `)
+               AND eu.fecha_salida IS NULL AND eu.es_lider = 0
+               AND u.rol = 'agente' AND e.nombre != 'Sistema'
+             ORDER BY u.nombre ASC`,
+            agentesIds
+        );
+        const validados = {};
+        getRows(destRes).forEach(function(ag) { validados[String(ag.id)] = ag; });
+
+        // Detectar ids inválidos / repetidos / auto-asignación
+        const errores = [];
+        const destinos = [];
+        const vistos = {};
+        for (const agId of agentesIds) {
+            if (String(agId) === String(usuario_id)) {
+                errores.push('no puedes asignarte a ti mismo');
+                continue;
+            }
+            if (vistos[String(agId)]) continue; // duplicado ya reportado
+            vistos[String(agId)] = true;
+            const ag = validados[String(agId)];
+            if (!ag || !ag.lider_id) {
+                errores.push('el agente #' + agId + ' no es un agente con líder válido');
+            } else if (!ag.is_active) {
+                errores.push(ag.nombre + ' está inactivo');
+            } else {
+                destinos.push(ag);
+            }
+        }
+        if (errores.length > 0) {
+            return res.status(400).json({ error: 'No se pudo asignar: ' + errores.join('; ') });
+        }
+
+        // --- Datos del remitente para el nombre de la campaña ---
+        const remitRes = await pool.query('SELECT nombre, username FROM usuarios WHERE id = ?', [usuario_id]);
+        const remitente = getFirstRow(remitRes) || { nombre: 'Sistema', username: 'Sistema' };
+        const nombreBase = remitente.nombre || remitente.username || 'Sistema';
+
+        const solicitudesIdsJson = JSON.stringify(solicitudIds);
+
+        // Crea el clon para un destino (insert + semáforo + trazabilidad) usando la
+        // función de query `q` (una transacción en PostgreSQL, o pool en SQLite).
+        const crearClon = async function(ag, q) {
+            const nombreClone = 'Usuario ' + nombreBase + ', asigna a ' + (ag.nombre || ag.username || 'Agente #' + ag.id);
+            const ins = await q(
+                `INSERT INTO gestiones_maestro (nombre, descripcion, usuario_id, equipo_id, estado, es_sistema, total_solicitudes, gestionadas, fecha_limite, solicitudes_ids, asignado_a)
+                 VALUES ($1, $2, $3, $4, 'activa', 1, $5, 0, $6, $7, $8)`,
+                [nombreClone, origen.descripcion || 'Asignada por el sistema', usuario_id, ag.equipo_id, solicitudIds.length, origen.fecha_limite || null, solicitudesIdsJson, ag.id]
+            );
+            const clonId = (ins && ins.rows && ins.rows[0] && ins.rows[0].id != null) ? Number(ins.rows[0].id) : Number(ins.lastInsertRowid);
+
+            // Puente semáforo (todas sin_clasificar; idempotente, usa pool)
+            try {
+                await insertarSemaforoSinClasificar(clonId, solicitudIds, usuario_id);
+            } catch (e) {
+                console.error('[asignarAVariosAgentes] Error semáforo clon ' + clonId + ':', e.message);
+            }
+
+            // Trazabilidad (una fila por solicitud)
+            for (const sid of solicitudIds) {
+                try {
+                    await q(
+                        `INSERT INTO envios_solicitudes (solicitud_id, remitente_id, destino_id, comentario, equipo_id, campana_id)
+                         VALUES ($1, $2, $3, $4, $5, $6)`,
+                        [sid, usuario_id, ag.id, 'Campaña asignada por el sistema', ag.equipo_id, clonId]
+                    );
+                } catch (e) {
+                    console.error('[asignarAVariosAgentes] Error envio ' + sid + ':', e.message);
+                }
+            }
+
+            return {
+                id: clonId,
+                agente: { id: ag.id, nombre: ag.nombre || ag.username, username: ag.username },
+                lider_id: ag.lider_id
+            };
+        };
+
+        const clones = [];
+        const procesarAgentes = async function(q) {
+            for (const ag of destinos) {
+                clones.push(await crearClon(ag, q));
+            }
+        };
+
+        // Ejecutar: en transacción (PostgreSQL) o secuencial (SQLite).
+        if (typeof pool.connect === 'function') {
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                await procesarAgentes(function(sql, params) { return client.query(sql, params); });
+                await client.query('COMMIT');
+            } catch (err) {
+                try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+                throw err;
+            } finally {
+                client.release();
+            }
+        } else {
+            await procesarAgentes(function(sql, params) { return pool.query(sql, params); });
+        }
+
+        // --- Invalidar caché ---
+        try { cache.invalidateAllCampanas(); } catch (e) { /* silencioso */ }
+        for (const c of clones) {
+            try { cache.invalidateDashboard(c.agente.id); } catch (e) { /* silencioso */ }
+        }
+
+        // --- Notificaciones por destino (agente + su líder) ---
+        for (let i = 0; i < clones.length; i++) {
+            const c = clones[i];
+            const accionUrl = '/gestion-lote?id=' + c.id;
+            const accionModulo = 'gestion-lote';
+            const accionTexto = 'Ver campaña';
+            try {
+                await crearYNotificar({
+                    destinatarioId: c.agente.id,
+                    titulo: '📥 Te asignaron la campaña "' + (origen.nombre || '') + '" con ' + solicitudIds.length + ' solicitud(es)',
+                    mensaje: (nombreBase) + ' te asignó ' + solicitudIds.length + ' solicitud(es) para gestionar. Revisa la campaña para comenzar.',
+                    tipo: 'info', prioridad: 'alta',
+                    accionUrl, accionModulo, accionTexto, creadorId: usuario_id
+                });
+            } catch (e) { console.error('[asignarAVariosAgentes] Error notif agente', c.agente.id, e.message); }
+
+            if (c.lider_id) {
+                try {
+                    await crearYNotificar({
+                        destinatarioId: c.lider_id,
+                        titulo: '📋 Tu agente ' + (c.agente.nombre || c.agente.username) + ' recibió la campaña "' + (origen.nombre || '') + '"',
+                        mensaje: (nombreBase) + ' asignó la campaña "' + (origen.nombre || '') + '" a tu agente ' + (c.agente.nombre || c.agente.username) + '. Puedes gestionarla o reasignarla desde la campaña.',
+                        tipo: 'info', prioridad: 'normal',
+                        accionUrl, accionModulo, accionTexto, creadorId: usuario_id
+                    });
+                } catch (e) { console.error('[asignarAVariosAgentes] Error notif lider', c.lider_id, e.message); }
+            }
+        }
+
+        // --- Auditoría ---
+        try {
+            await pool.query(
+                `INSERT INTO audit_log (usuario_id, accion, target_type, target_id, detalle, ip_address, created_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)`,
+                [usuario_id, 'campana.asignada.varios', 'campana', parseInt(id),
+                 JSON.stringify({ agentes: clones.map(function(c) { return c.agente.id; }), total_agentes: clones.length, total_solicitudes: solicitudIds.length }),
+                 req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip]
+            );
+        } catch (e) { /* ignora error de auditoría */ }
+
+        res.status(201).json({
+            clones: clones,
+            total_agentes: clones.length,
+            total_solicitudes: solicitudIds.length,
+            mensaje: 'Campaña asignada a ' + clones.length + ' agente(s)'
+        });
+    } catch (error) {
+        console.error('Error en asignarAVariosAgentes:', error);
+        res.status(500).json({ error: 'Error al asignar la campaña a varios agentes', detalle: error.message });
+    }
+}
+
+// ============================================================================
 // REASIGNAR AGENTE DE UNA CAMPAÑA (líder del equipo de la campaña)
 // ============================================================================
 // POST /api/gestiones-maestro/:id/reasignar-agente
@@ -2300,5 +2541,7 @@ module.exports = {
     enviarSolicitudes: enviarSolicitudes,
     reasignarAgente: reasignarAgente,
     // Helper reutilizable (notificaciones)
-    crearYNotificar: crearYNotificar
+    crearYNotificar: crearYNotificar,
+    // Asignar una campaña a varios agentes con líder (agente del sistema / admin)
+    asignarAVariosAgentes: asignarAVariosAgentes
 };

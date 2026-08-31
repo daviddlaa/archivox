@@ -7,6 +7,7 @@ var solicitudes = [];
 var todasLasSolicitudes = [];
 var campañas = [];
 var _esLider = false;
+var _esSistema = false;
 var _equipoActual = null;
 var _agentesEquipo = [];
 var filtroSemaforo = null;
@@ -481,6 +482,9 @@ function renderizarGridCampanasLanding() {
         } else {
             html += '<button type="button" class="campaña-btn-accion campaña-btn-asignar" onclick="event.stopPropagation(); abrirModalEditarCampana(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', \'' + escaparParaAtributo(g.descripcion || '') + '\', \'' + (g.fecha_limite || '') + '\', \'' + (g.estado || 'Activa') + '\')" title="Editar campaña">✏️ Editar</button>';
         }
+        if (_esSistema) {
+            html += '<button type="button" class="campaña-btn-accion campaña-btn-asignar" onclick="event.stopPropagation(); abrirModalAsignarVariosDesktop(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\')" title="Asignar a varios agentes">🔀 Asignar a varios</button>';
+        }
         html += '<button type="button" class="campaña-btn-accion campaña-btn-eliminar" onclick="event.stopPropagation(); confirmarEliminarCampaña(' + g.id + ', \'' + escaparParaAtributo(g.nombre || 'Gestión #' + g.id) + '\', ' + (g.total_solicitudes || 0) + ', ' + (g.gestionadas || 0) + ')" title="Eliminar campaña">🗑️ Eliminar</button>';
         html += '</div>';
         html += '</div>';
@@ -495,8 +499,13 @@ async function verificarRolUsuario() {
         var res = await fetch('/api/auth/sesion');
         var sesion = await res.json();
         if (sesion.autenticado && sesion.usuario) {
-            _esLider = !!(sesion.usuario.es_lider || sesion.usuario.rol === 'superadmin' || sesion.usuario.rol === 'admin');
+            var rolU = sesion.usuario.rol;
+            var esAdminU = (rolU === 'superadmin' || rolU === 'admin' || sesion.usuario.is_superadmin);
+            _esLider = !!(sesion.usuario.es_lider || esAdminU);
             _equipoActual = sesion.usuario.equipo_id || null;
+            // Puede asignar a varios agentes: miembro del equipo 'Sistema' (puede_enviar=true)
+            // o admin/superadmin. El backend valida la autorización exacta.
+            _esSistema = (sesion.usuario.puede_enviar === true) || esAdminU;
             return _esLider;
         }
     } catch (e) {
@@ -2797,6 +2806,102 @@ async function asignarAgente(campaniaId, agenteId) {
     } catch (error) {
         console.error('Error asignando agente:', error);
         alert('Error al asignar agente: ' + error.message);
+    }
+}
+
+// ================== ASIGNAR CAMPAÑA A VARIOS AGENTES (SISTEMA) ==================
+
+function abrirModalAsignarVariosDesktop(campaniaId, nombreCampania) {
+    fetch('/api/equipos/agentes-con-lider')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            var agentes = (data && data.data) || [];
+            if (agentes.length === 0) {
+                alert('No hay agentes con líder para asignar');
+                return;
+            }
+
+            var contenido = '';
+            contenido += '<div class="modal-asignar">';
+            contenido += '<h2>🔀 Asignar a varios agentes</h2>';
+            contenido += '<p style="margin-bottom:16px;color:#6b7280;"><strong>Campaña:</strong> ' + escaparParaHTML(nombreCampania) + '</p>';
+            contenido += '<p style="margin-bottom:12px;color:#374151;font-size:13px;">Se creará una copia de la campaña para cada agente seleccionado.</p>';
+
+            contenido += '<div class="modal-sistema-seleccion" style="max-height:340px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:10px;">';
+            for (var i = 0; i < agentes.length; i++) {
+                var ag = agentes[i];
+                var recomendado = ag.metricas && ag.metricas.es_recomendado;
+                contenido += '<label class="asignar-item" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f3f4f6;cursor:pointer;">';
+                contenido += '<input type="checkbox" class="sistema-agente-cb" value="' + escaparParaAtributo(ag.usuario_id) + '" style="width:16px;height:16px;">';
+                contenido += '<div class="asignar-item-info">';
+                contenido += '<div class="asignar-item-nombre">' + escaparParaHTML(ag.usuario_nombre || ag.usuario_username) + ' <span style="color:#9ca3af;font-weight:400;">@' + escaparParaHTML(ag.usuario_username) + '</span></div>';
+                contenido += '<div class="asignar-item-datos">👑 ' + escaparParaHTML(ag.lider_nombre || 'Líder') + (recomendado ? ' · <span style="color:#059669;font-weight:600;">⚡ Más rápido</span>' : '') + '</div>';
+                contenido += '</div>';
+                contenido += '</label>';
+            }
+            contenido += '</div>';
+
+            contenido += '<div style="margin-top:12px;font-size:13px;color:#374151;" id="sistema-seleccion-contador">0 seleccionados</div>';
+
+            contenido += '<div class="modal-botones" style="margin-top:16px;">';
+            contenido += '<button class="btn-cancelar" onclick="cerrarModal()">Cerrar</button>';
+            contenido += '<button class="btn-confirmar" onclick="asignarVariosAgentesDesktop(' + campaniaId + ', ' + escaparParaAtributo(nombreCampania) + ')">📤 Asignar seleccionados</button>';
+            contenido += '</div>';
+            contenido += '</div>';
+
+            crearModal(contenido);
+
+            var cbs = document.querySelectorAll('.sistema-agente-cb');
+            var contador = document.getElementById('sistema-seleccion-contador');
+            for (var j = 0; j < cbs.length; j++) {
+                cbs[j].addEventListener('change', function() {
+                    var sel = document.querySelectorAll('.sistema-agente-cb:checked').length;
+                    if (contador) contador.textContent = sel + ' seleccionados';
+                });
+            }
+        })
+        .catch(function(err) {
+            console.error('Error cargando agentes:', err);
+            alert('Error al cargar agentes: ' + err.message);
+        });
+}
+
+async function asignarVariosAgentesDesktop(campaniaId, nombreCampania) {
+    var cbs = document.querySelectorAll('.sistema-agente-cb:checked');
+    var agentes_ids = [];
+    for (var i = 0; i < cbs.length; i++) {
+        agentes_ids.push(Number(cbs[i].value));
+    }
+    if (agentes_ids.length === 0) {
+        alert('Selecciona al menos un agente');
+        return;
+    }
+    if (!confirm('¿Asignar la campaña "' + nombreCampania + '" a ' + agentes_ids.length + ' agente(s)? Se creará una copia para cada uno.')) {
+        return;
+    }
+
+    try {
+        var response = await fetch('/api/gestiones-maestro/' + campaniaId + '/asignar-a-varios-agentes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ agentes_ids: agentes_ids })
+        });
+
+        var resultado = await response.json();
+
+        if (response.ok) {
+            alert('✅ ' + (resultado.mensaje || 'Campaña asignada'));
+            cerrarModal();
+            await cargarListaCampanas();
+            if (String(campaniaId) === String(gestionId)) {
+                await cargarDatosGestion();
+            }
+        } else {
+            alert('Error: ' + (resultado.error || 'Error al asignar a varios agentes'));
+        }
+    } catch (error) {
+        console.error('Error asignando a varios:', error);
+        alert('Error al asignar a varios agentes: ' + error.message);
     }
 }
 

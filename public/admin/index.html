@@ -256,6 +256,7 @@
                     <input type="text" id="filterSolVendedor" placeholder="Vendedor" style="width:120px;padding:8px;border:1px solid #d1d5db;border-radius:8px;" onchange="cargarSolicitudesGlobales(1)">
                     <button class="admin-btn admin-btn-primary" onclick="exportarSolicitudesGlobales()">📥 Exportar Excel</button>
                     <button class="admin-btn admin-btn-primary" id="btnCrearCampanaSistema" onclick="abrirModalCrearCampana()" disabled>🚀 Crear campaña</button>
+                    <button class="admin-btn admin-btn-primary" onclick="abrirModalAsignarVarios()">🔀 Asignar a varios</button>
                     <span id="contadorSeleccionSol" class="contador-seleccion-sol"></span>
                 </div>
             </div>
@@ -818,6 +819,35 @@
             <div class="admin-modal-footer">
                 <button class="admin-btn" onclick="cerrarModalCrearCampana()">Cancelar</button>
                 <button class="admin-btn admin-btn-primary" id="btnGuardarCampanaSistema" onclick="crearCampanaSistema()">Crear Campaña</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL ASIGNAR CAMPAÑA A VARIOS AGENTES ==================== -->
+    <div id="asignarVariosCampanaModal" class="admin-modal">
+        <div class="admin-modal-content" style="max-width: 560px;">
+            <div class="admin-modal-header">
+                <h2>🔀 Asignar campaña a varios agentes</h2>
+                <button class="admin-modal-close" onclick="cerrarModalAsignarVarios()">✕</button>
+            </div>
+            <div class="admin-modal-body">
+                <div style="background:#eef2ff;padding:12px;border-radius:10px;margin-bottom:16px;font-size:13px;color:#4338ca;line-height:1.5;">
+                    Se creará una <b>copia</b> de la campaña seleccionada para cada agente
+                    con líder elegido. Se notificará a cada agente y a su líder.
+                </div>
+                <div class="form-group">
+                    <label>Campaña a asignar *</label>
+                    <select id="asignarVariosCampanaSelect" onchange=""></select>
+                </div>
+                <div class="form-group">
+                    <label>Agentes destino (selección múltiple)</label>
+                    <div id="asignarVariosAgentesList" style="max-height:260px;overflow-y:auto;border:1px solid #d1d5db;border-radius:8px;padding:8px;"></div>
+                </div>
+                <div id="asignarVariosContador" style="font-size:13px;color:#374151;margin-top:8px;">0 seleccionados</div>
+            </div>
+            <div class="admin-modal-footer">
+                <button class="admin-btn" onclick="cerrarModalAsignarVarios()">Cancelar</button>
+                <button class="admin-btn admin-btn-primary" id="btnGuardarAsignarVarios" onclick="asignarVariosCampanaAdmin()">📤 Asignar seleccionados</button>
             </div>
         </div>
     </div>

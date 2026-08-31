@@ -18,6 +18,10 @@ router.post('/enviar-solicitudes', controller.enviarSolicitudes);
 // POST /api/gestiones-maestro/:id/reasignar-agente - Reasignar agente de una campaña (FASE 2)
 router.post('/:id/reasignar-agente', controller.reasignarAgente);
 
+// POST /api/gestiones-maestro/:id/asignar-a-varios-agentes - Asignar la campaña
+// a varios agentes con líder (agente del equipo Sistema / admin / superadmin)
+router.post('/:id/asignar-a-varios-agentes', controller.asignarAVariosAgentes);
+
 // GET /api/gestiones-maestro - Listar todas las gestione
 router.get('/', controller.listarGestionesMaestro);
 
