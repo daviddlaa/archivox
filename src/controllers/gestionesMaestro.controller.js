@@ -439,7 +439,7 @@ async function getGestionMaestroById(req, res) {
         
         // Obtener gestión maestro con control de acceso según rol
         const access = buildGestionAccessWhere(req, id);
-        const sql = 'SELECT gm.* FROM gestiones_maestro gm WHERE ' + buildGestionSQL(access);
+        const sql = 'SELECT gm.*, u.nombre AS remitente_nombre FROM gestiones_maestro gm LEFT JOIN usuarios u ON u.id = gm.usuario_id WHERE ' + buildGestionSQL(access);
         const resultGM = await pool.query(sql, access.params);
         
         const gestion = getFirstRow(resultGM);

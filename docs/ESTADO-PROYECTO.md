@@ -46,6 +46,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 - Acciones visibles en tarjetas de campañas (Historial, No aplica, Quitar como icon-buttons) — [`feature-acciones-visibles-tarjetas-campanas.md`](feature-acciones-visibles-tarjetas-campanas.md)
 - Uniformar botones de acciones en tarjetas (Seguimiento/Directo verticales + Chat WhatsApp movido a cinta) — [`fix-uniformar-botones-acciones-tarjeta.md`](fix-uniformar-botones-acciones-tarjeta.md)
 - **Asignar campaña a varios agentes con líder:** un miembro del equipo **"Sistema"** (o admin/superadmin) asigna una campaña **ya creada** a varios agentes con líder en una sola acción, creando **una copia por agente** (`nombre = "Usuario <remitente>, asigna a <destino>"`, `equipo_id = destino`, `asignado_a = destino`, `es_sistema=1`), con puente semáforo por clon, trazabilidad en `envios_solicitudes`, y notificaciones al agente + a su líder. Máx 20 agentes, sin auto-asignación, duplicados permitidos. UI en desktop, móvil y Admin — [`feature-asignar-campana-varios-agentes.md`](feature-asignar-campana-varios-agentes.md)
+- Al copiar "nombre y cédula" de un cliente dentro de una campaña, se anexa el **nombre del remitente** que envió esa campaña (`<Nombre> - <Cédula> - <Remitente>`), para guardar el contacto con quién lo atendió; **no** se anexa cuando la campaña es propia del agente (`usuario_id === yo`). El backend expone `remitente_nombre` en el detalle de campaña — [`feature-remitente-al-copiar-datos-cliente.md`](feature-remitente-al-copiar-datos-cliente.md)
 
 ### 📞 Métricas de gestión (Fase 1 del plan)
 - **Popup de llamada con contador** desde el botón 📞 de cada tarjeta (móvil): duración real + resultado estructurado (9 buckets) — [`plan-metricas-llamadas-semaforo.md`](plan-metricas-llamadas-semaforo.md) §8
@@ -123,6 +124,7 @@ Todo lo de esta sección está **en producción/desarrollado**; cada ítem enlaz
 |---|---|
 | `feature-admin-campanas-sistema.md` | Campañas "Asignadas por el sistema" |
 | `feature-asignar-campana-varios-agentes.md` | Asignar una campaña a varios agentes con líder (copia por agente, notificaciones, admin) |
+| `feature-remitente-al-copiar-datos-cliente.md` | Anexar nombre del remitente al copiar nombre y cédula en campañas |
 | `feature-admin-solicitudes-globales.md` | Solicitudes globales SuperAdmin |
 | `feature-backup-dump-superadmin.md` | Backup de BD con un clic |
 | `feature-buscador-global-campanas.md` | Búsqueda global en todas las campañas |

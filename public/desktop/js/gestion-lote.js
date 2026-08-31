@@ -1706,7 +1706,19 @@ function copiarNombreCedula(nombre, cedula) {
         return;
     }
 
+    texto = anexarRemitenteCampana(texto);
+
     copiarTexto(texto, 'nombre y cédula');
+}
+
+function anexarRemitenteCampana(texto) {
+    if (!datosGestion || !datosGestion.remitente_nombre) return texto;
+    var esPropia = sesion && sesion.autenticado && sesion.usuario &&
+        Number(datosGestion.usuario_id) === Number(sesion.usuario.id);
+    if (esPropia) return texto;
+    var nombreRemitente = String(datosGestion.remitente_nombre).trim();
+    if (!nombreRemitente) return texto;
+    return texto + ' - ' + nombreRemitente;
 }
 
 function copiarTexto(texto, etiqueta) {
