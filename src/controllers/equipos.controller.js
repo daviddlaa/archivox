@@ -375,6 +375,23 @@ async function moverUsuario(req, res) {
                 [id, usuario_id, es_lider ? 1 : 0]
             );
 
+            // Restringir visibilidad de campañas al mover el agente:
+            // 1) El agente deja de ver las campañas de otros líderes que le fueron
+            //    asignadas (asignado_a). Esas vuelven a su líder original.
+            await client.query(
+                `UPDATE gestiones_maestro SET asignado_a = NULL
+                 WHERE asignado_a = $1`,
+                [usuario_id]
+            );
+
+            // 2) Las campañas que el agente mismo creó (usuario_id = él) se remapean
+            //    al equipo destino para que su nuevo líder pueda verlas y supervisarlas.
+            await client.query(
+                `UPDATE gestiones_maestro SET equipo_id = $1
+                 WHERE usuario_id = $2`,
+                [id, usuario_id]
+            );
+
             await client.query('COMMIT');
 
             await auditar(adminId, 'usuario.transferido', 'equipo', parseInt(id),
@@ -742,6 +759,7 @@ async function gestionesEquipo(req, res) {
              INNER JOIN equipo_usuarios eu ON u.id = eu.usuario_id
              LEFT JOIN solicitudes s ON g.solicitud_id = s.id_solicitud
              WHERE eu.equipo_id = $1 AND eu.fecha_salida IS NULL
+               AND g.fecha_gestion >= eu.fecha_ingreso
              ORDER BY g.fecha_gestion DESC
              LIMIT $2 OFFSET $3`,
             [id, parseInt(limite), parseInt(offset)]

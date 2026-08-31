@@ -2326,10 +2326,20 @@ async function eliminarCampañaMovil(id) {
 
 // Variable para evitar abrir múltiples bottom sheets
 var _bottomSheetAbierto = false;
+// Timer pendiente de limpieza del overlay (evita que un cierre previo borre el sheet recién abierto)
+var _bsClearTimer = null;
+
+function cancelarLimpiezaBottomSheet() {
+    if (_bsClearTimer) {
+        clearTimeout(_bsClearTimer);
+        _bsClearTimer = null;
+    }
+}
 
 function abrirBottomSheetCampana(id, nombre, total, gestionadas, descripcion, fechaLimite, estado, asignadoActual) {
     if (_bottomSheetAbierto) return;
     _bottomSheetAbierto = true;
+    cancelarLimpiezaBottomSheet();
     
     try {
         var pendientes = total - gestionadas;
@@ -2444,13 +2454,15 @@ function cerrarBottomSheetCampana() {
     _bottomSheetAbierto = false;
     
     // Limpiar overlay después de animación
-    setTimeout(function() {
+    if (_bsClearTimer) clearTimeout(_bsClearTimer);
+    _bsClearTimer = setTimeout(function() {
         if (overlay) {
             if (overlay._escapeHandler) {
                 document.removeEventListener('keydown', overlay._escapeHandler);
             }
             overlay.innerHTML = '';
         }
+        _bsClearTimer = null;
     }, 300);
 }
 
@@ -2508,6 +2520,7 @@ function abrirModalAsignarAgenteMovil(campaniaId, nombreCampania) {
     }
     
     // Mostrar bottom sheet con agentes
+    cancelarLimpiezaBottomSheet();
     var overlay = document.getElementById('campaña-bs-overlay');
     if (!overlay) {
         overlay = document.createElement('div');
@@ -2635,6 +2648,7 @@ function abrirModalReasignarMovil(campaniaId, nombreCampania, asignadoActual) {
         return;
     }
 
+    cancelarLimpiezaBottomSheet();
     var overlay = document.getElementById('campaña-bs-overlay');
     if (!overlay) {
         overlay = document.createElement('div');

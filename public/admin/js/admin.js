@@ -2061,10 +2061,12 @@ async function moverUsuario() {
     if (!equipoDestinoId) return alert('Selecciona un equipo destino');
 
     try {
-        const res = await fetch(`/api/equipos/${equipoActualId}/mover-usuario`, {
-            method: 'PUT',
+        // La petición va al EQUIPO DESTINO (el backend mueve el usuario al :id de la URL),
+        // con método POST y es_lider:false (se mueve un agente, no el líder).
+        const res = await fetch(`/api/equipos/${equipoDestinoId}/mover-usuario`, {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ usuario_id: usuarioId, equipo_destino_id: equipoDestinoId })
+            body: JSON.stringify({ usuario_id: usuarioId, es_lider: false })
         });
         const result = await res.json();
         if (res.ok) {
